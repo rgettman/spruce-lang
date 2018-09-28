@@ -1,0 +1,18 @@
+namespace org.spruce.test;
+
+recognize spruce.collections.*;
+
+public class Tokens
+{
+    shared void main(String[] args)
+    {
+        out.println("String test");
+        out.println(""""Hello world!"""");
+        int i := 12345;
+        int j := 23456;
+        int k := i + j;
+        double pi := 3.14159;
+        out.println(k);
+    }
+
+}
