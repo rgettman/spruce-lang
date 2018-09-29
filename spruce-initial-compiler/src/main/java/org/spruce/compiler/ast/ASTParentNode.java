@@ -131,6 +131,15 @@ public abstract class ASTParentNode extends ASTNode
     }
 
     /**
+     * Collapses then prints this node.
+     */
+    public void collapseThenPrint()
+    {
+        collapse();
+        print();
+    }
+
+    /**
      * Finds the non-collapsible descendant node.
      * @param child Starting from the given <code>ASTNode</code>.
      * @return Returns the non-collapsible descendant node.  Could be

@@ -170,6 +170,143 @@ public class Parser
     //**************************************
 
     /**
+     * Parses an <code>ASTLocalVariableDeclarationStatement</code>.
+     * @return An <code>ASTLocalVariableDeclarationStatement</code>.
+     */
+    public ASTLocalVariableDeclarationStatement parseLocalVariableDeclarationStatement()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        ASTLocalVariableDeclaration localVarDecl = parseLocalVariableDeclaration();
+        if (accept(SEMICOLON) == null)
+        {
+            throw new CompileException("Missing semicolon.");
+        }
+        ASTLocalVariableDeclarationStatement node = new ASTLocalVariableDeclarationStatement(loc, Arrays.asList(localVarDecl));
+        node.setOperation(SEMICOLON);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTLocalVariableDeclaration</code>.
+     * @return An <code>ASTLocalVariableDeclaration</code>.
+     */
+    public ASTLocalVariableDeclaration parseLocalVariableDeclaration()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(3);
+        if (isAcceptedOperator(Arrays.asList(FINAL, CONST)) != null)
+        {
+            children.add(parseVariableModifierList());
+        }
+        children.add(parseLocalVariableType());
+        children.add(parseVariableDeclaratorList());
+        return new ASTLocalVariableDeclaration(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTVariableModifierList</code>.
+     * @return An <code>ASTVariableModifierList</code>.
+     */
+    public ASTVariableModifierList parseVariableModifierList()
+    {
+        if (isAcceptedOperator(Arrays.asList(FINAL, CONST)) == null)
+        {
+            throw new CompileException("Expected final or const.");
+        }
+        ASTVariableModifierList node = null;
+        while (isAcceptedOperator(Arrays.asList(FINAL, CONST)) != null)
+        {
+            Location loc = myScanner.getCurrToken().getLocation();
+            ASTVariableModifier varMod = parseVariableModifier();
+            if (node == null)
+            {
+                List<ASTNode> children = Arrays.asList(varMod);
+                node = new ASTVariableModifierList(loc, children);
+            }
+            else
+            {
+                List<ASTNode> children = Arrays.asList(node, varMod);
+                node = new ASTVariableModifierList(loc, children);
+            }
+        }
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTVariableModifier</code>.
+     * @return An <code>ASTVariableModifier</code>.
+     */
+    public ASTVariableModifier parseVariableModifier()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        TokenType operation = isAcceptedOperator(Arrays.asList(FINAL, CONST));
+        if (operation == null)
+        {
+            throw new CompileException("Expected final or const.");
+        }
+        accept(operation);
+        ASTVariableModifier node = new ASTVariableModifier(loc, Collections.emptyList());
+        node.setOperation(operation);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTVariableDeclarator</code>; they are left-associative
+     * with each other.
+     * @return An <code>ASTVariableDeclarator</code>.
+     */
+    public ASTVariableDeclaratorList parseVariableDeclaratorList()
+    {
+        return parseBinaryExpressionLeftAssociative(
+                t -> test(t, IDENTIFIER),
+                "Expected identifier",
+                Collections.singletonList(COMMA),
+                this::parseVariableDeclarator,
+                ASTVariableDeclaratorList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTVariableDeclarator</code>.
+     * @return An <code>ASTVariableDeclarator</code>.
+     */
+    public ASTVariableDeclarator parseVariableDeclarator()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(2);
+        children.add(parseIdentifier());
+        ASTVariableDeclarator node = new ASTVariableDeclarator(loc, children);
+        if (test(curr(), ASSIGNMENT))
+        {
+            accept(ASSIGNMENT);
+            children.add(parseVariableInitializer());
+            node.setOperation(ASSIGNMENT);
+        }
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTLocalVariableType</code>.
+     * @return An <code>ASTLocalVariableType</code>.
+     */
+    public ASTLocalVariableType parseLocalVariableType()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (test(curr(), AUTO))
+        {
+            accept(AUTO);
+            ASTLocalVariableType node = new ASTLocalVariableType(loc, Collections.emptyList());
+            node.setOperation(AUTO);
+            return node;
+        }
+        else
+        {
+            ASTDataType dt = parseDataType();
+            return new ASTLocalVariableType(loc, Collections.singletonList(dt));
+        }
+    }
+
+    /**
      * Parses an <code>ASTStatement</code>.
      * @return An <code>ASTStatement</code>.
      */
@@ -1590,6 +1727,11 @@ public class Parser
         {
             ASTExpressionNoIncrDecr exprNoIncrDecr = parseExpressionNoIncrDecr();
             return new ASTVariableInitializer(loc, Arrays.asList(exprNoIncrDecr));
+        }
+        else if (test(curr(), OPEN_BRACE))
+        {
+            ASTArrayInitializer arrayInit = parseArrayInitializer();
+            return new ASTVariableInitializer(loc, Arrays.asList(arrayInit));
         }
         else
         {

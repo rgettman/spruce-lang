@@ -15,7 +15,7 @@ import org.spruce.compiler.scanner.Location;
 public class ASTDimExpr extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTDims</code> at the given <code>Location</code>
+     * Constructs an <code>ASTDimExpr</code> at the given <code>Location</code>
      * and with possibly a node as its child.
      * @param location The <code>Location</code>.
      * @param children The child nodes.

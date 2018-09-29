@@ -21,7 +21,7 @@ public class ParserTypesTest
      * Tests data type of data type (no array).
      */
     @Test
-    public void testDataTypeDataTypeNoArray()
+    public void testDataTypeOfDataTypeNoArray()
     {
         Parser parser = new Parser(new Scanner("spruce.lang.String"));
         ASTDataType node = parser.parseDataType();
@@ -32,7 +32,7 @@ public class ParserTypesTest
      * Tests data type of array type.
      */
     @Test
-    public void testDataTypeArrayType()
+    public void testDataTypeOfArrayType()
     {
         Parser parser = new Parser(new Scanner("spruce.lang.String[]"));
         ASTDataType node = parser.parseDataType();
@@ -47,15 +47,7 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("spruce.lang.String[][]"));
         ASTArrayType node = parser.parseArrayType();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTDataTypeNoArray.class, ASTDims.class);
-        compareClasses(expectedClasses, children);
-
-        node.collapse();
-        node.print();
+        checkBinary(node, ASTDataTypeNoArray.class, ASTDims.class);
     }
 
     /**
@@ -85,15 +77,14 @@ public class ParserTypesTest
         children = curr.getChildren();
         assertEquals(0, children.size());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests data type (no array) of simple type.
      */
     @Test
-    public void testDataTypeNoArraySimpleType()
+    public void testDataTypeNoArrayOfSimpleType()
     {
         Parser parser = new Parser(new Scanner("List<?>"));
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
@@ -144,7 +135,7 @@ public class ParserTypesTest
      * Tests simple type of identifier and type arguments.
      */
     @Test
-    public void testSimpleTypeIdentifierTypeArguments()
+    public void testSimpleTypeOfIdentifierTypeArguments()
     {
         Parser parser = new Parser(new Scanner("Map<?, ?>"));
         ASTSimpleType node = parser.parseSimpleType();
@@ -166,7 +157,7 @@ public class ParserTypesTest
      * Tests intersection type of data type.
      */
     @Test
-    public void testIntersectionTypeDataType()
+    public void testIntersectionTypeOfDataType()
     {
         Parser parser = new Parser(new Scanner("Student"));
         ASTIntersectionType node = parser.parseIntersectionType();
@@ -199,7 +190,7 @@ public class ParserTypesTest
      * Tests type arguments of type argument list.
      */
     @Test
-    public void testTypeArgumentsTypeArgumentList()
+    public void testTypeArgumentsOfTypeArgumentList()
     {
         Parser parser = new Parser(new Scanner("<?>"));
         ASTTypeArguments node = parser.parseTypeArguments();
@@ -210,7 +201,7 @@ public class ParserTypesTest
      * Tests type argument list of type argument.
      */
     @Test
-    public void testTypeArgumentListTypeArgument()
+    public void testTypeArgumentListOfTypeArgument()
     {
         Parser parser = new Parser(new Scanner("?"));
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
@@ -232,7 +223,7 @@ public class ParserTypesTest
      * Tests type argument of wildcard.
      */
     @Test
-    public void testTypeArgumentWildcard()
+    public void testTypeArgumentOfWildcard()
     {
         Parser parser = new Parser(new Scanner("?"));
         ASTTypeArgument node = parser.parseTypeArgument();
@@ -243,7 +234,7 @@ public class ParserTypesTest
      * Tests type argument of data type.
      */
     @Test
-    public void testTypeArgumentDataType()
+    public void testTypeArgumentOfDataType()
     {
         Parser parser = new Parser(new Scanner("Employee"));
         ASTTypeArgument node = parser.parseTypeArgument();
@@ -258,13 +249,7 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("?"));
         ASTWildcard node = parser.parseWildcard();
-
-        assertEquals(QUESTION_MARK, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(0, children.size());
-
-        node.collapse();
-        node.print();
+        checkEmpty(node, QUESTION_MARK);
     }
 
     /**
@@ -275,52 +260,29 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("? <: Employee"));
         ASTWildcard node = parser.parseWildcard();
-
-        assertEquals(QUESTION_MARK, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTWildcardBounds);
-
-        node.collapse();
-        node.print();
+        checkSimple(node, ASTWildcardBounds.class, QUESTION_MARK);
     }
 
     /**
      * Tests wildcard bounds of subtype.
      */
     @Test
-    public void testWildcardBoundsSubtype()
+    public void testWildcardBoundsOfSubtype()
     {
         Parser parser = new Parser(new Scanner("<: Employee"));
         ASTWildcardBounds node = parser.parseWildcardBounds();
-
-        assertEquals(SUBTYPE, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTDataType);
-
-        node.collapse();
-        node.print();
+        checkSimple(node, ASTDataType.class, SUBTYPE);
     }
 
     /**
      * Tests wildcard bounds of supertype.
      */
     @Test
-    public void testWildcardBoundsSupertype()
+    public void testWildcardBoundsOfSupertype()
     {
         Parser parser = new Parser(new Scanner(":> Employee"));
         ASTWildcardBounds node = parser.parseWildcardBounds();
+        checkSimple(node, ASTDataType.class, SUPERTYPE);
 
-        assertEquals(SUPERTYPE, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTDataType);
-
-        node.collapse();
-        node.print();
     }
 }

@@ -21,7 +21,7 @@ public class ParserNamesTest
      * Tests type name as a simple identifier.
      */
     @Test
-    public void testTypeNameIdentifier()
+    public void testTypeNameOfIdentifier()
     {
         Parser parser = new Parser(new Scanner("simple"));
         ASTTypeName node = parser.parseTypeName();
@@ -35,15 +35,14 @@ public class ParserNamesTest
         ASTIdentifier identifier = (ASTIdentifier) child;
         assertEquals("simple", identifier.getValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests type name as two identifiers separated by ".".
      */
     @Test
-    public void testTypeNameTwoIdentifiers()
+    public void testTypeNameOfTwoIdentifiers()
     {
         Parser parser = new Parser(new Scanner("one.two"));
         ASTTypeName node = parser.parseTypeName();
@@ -55,7 +54,7 @@ public class ParserNamesTest
      * Tests type name as three identifiers separated by ".".
      */
     @Test
-    public void testTypeNameThreeIdentifiers()
+    public void testTypeNameOfThreeIdentifiers()
     {
         Parser parser = new Parser(new Scanner("one.two.three"));
         ASTTypeName node = parser.parseTypeName();
@@ -67,7 +66,7 @@ public class ParserNamesTest
      * Tests package/type name as a simple identifier.
      */
     @Test
-    public void testPackageOrTypeNameIdentifier()
+    public void testPackageOrTypeNameOfIdentifier()
     {
         Parser parser = new Parser(new Scanner("simple"));
         ASTPackageOrTypeName node = parser.parsePackageOrTypeName();
@@ -81,15 +80,14 @@ public class ParserNamesTest
         ASTIdentifier identifier = (ASTIdentifier) child;
         assertEquals("simple", identifier.getValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests package/type name as two identifiers separated by ".".
      */
     @Test
-    public void testPackageOrTypeNameTwoIdentifiers()
+    public void testPackageOrTypeNameOfTwoIdentifiers()
     {
         Parser parser = new Parser(new Scanner("one.two"));
         ASTPackageOrTypeName node = parser.parsePackageOrTypeName();
@@ -101,7 +99,7 @@ public class ParserNamesTest
      * Tests package/type name as three identifiers separated by ".".
      */
     @Test
-    public void testPackageOrTypeNameThreeIdentifiers()
+    public void testPackageOrTypeNameOfThreeIdentifiers()
     {
         Parser parser = new Parser(new Scanner("one.two.three"));
         ASTPackageOrTypeName node = parser.parsePackageOrTypeName();
@@ -113,7 +111,7 @@ public class ParserNamesTest
      * Tests expression name as a simple identifier.
      */
     @Test
-    public void testExpressionNameIdentifier()
+    public void testExpressionNameOfIdentifier()
     {
         Parser parser = new Parser(new Scanner("simple"));
         ASTExpressionName node = parser.parseExpressionName();
@@ -127,15 +125,14 @@ public class ParserNamesTest
         ASTIdentifier identifier = (ASTIdentifier) child;
         assertEquals("simple", identifier.getValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests expression name as two identifiers separated by ".".
      */
     @Test
-    public void testExpressionNameTwoIdentifiers()
+    public void testExpressionNameOfTwoIdentifiers()
     {
         Parser parser = new Parser(new Scanner("one.two"));
         ASTExpressionName node = parser.parseExpressionName();
@@ -147,7 +144,7 @@ public class ParserNamesTest
      * Tests expression name as three identifiers separated by ".".
      */
     @Test
-    public void testExpressionNameThreeIdentifiers()
+    public void testExpressionNameOfThreeIdentifiers()
     {
         Parser parser = new Parser(new Scanner("one.two.three"));
         ASTExpressionName node = parser.parseExpressionName();
@@ -159,7 +156,7 @@ public class ParserNamesTest
      * Tests ambiguous name as a simple identifier.
      */
     @Test
-    public void testAmbiguousNameIdentifier()
+    public void testAmbiguousNameOfIdentifier()
     {
         Parser parser = new Parser(new Scanner("simple"));
         ASTAmbiguousName node = parser.parseAmbiguousName();
@@ -173,15 +170,14 @@ public class ParserNamesTest
         ASTIdentifier identifier = (ASTIdentifier) child;
         assertEquals("simple", identifier.getValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests ambiguous name as two identifiers separated by ".".
      */
     @Test
-    public void testAmbiguousNameTwoIdentifiers()
+    public void testAmbiguousNameOfTwoIdentifiers()
     {
         Parser parser = new Parser(new Scanner("one.two"));
         ASTAmbiguousName node = parser.parseAmbiguousName();
@@ -193,7 +189,7 @@ public class ParserNamesTest
      * Tests ambiguous name as three identifiers separated by ".".
      */
     @Test
-    public void testAmbiguousNameThreeIdentifiers()
+    public void testAmbiguousNameOfThreeIdentifiers()
     {
         Parser parser = new Parser(new Scanner("one.two.three"));
         ASTAmbiguousName node = parser.parseAmbiguousName();

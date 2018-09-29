@@ -24,7 +24,7 @@ import org.spruce.compiler.scanner.Location;
 public class ASTAssignment extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTAssignmentExpression</code> at the given <code>Location</code>
+     * Constructs an <code>ASTAssignment</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.

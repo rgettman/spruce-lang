@@ -357,7 +357,7 @@ public enum TokenType
     /**
      * Implicitly typed variable.  Still strongly typed, like Java 10.
      */
-    VAR,
+    AUTO,
     /**
      * The "this" object reference for constructors and non-shared methods.
      */

@@ -237,7 +237,7 @@ public class ScannerTest
             line += "\n    double d := 6 as double;";
             line += "\n    char c := '7';";
             line += "\n    boolean z := false;";
-            line += "\n    var z_2 := true;";
+            line += "\n    auto z_2 := true;";
             line += "\n    String str := null;";
             line += "\n    return this;";
             line += "\n}";
@@ -293,7 +293,7 @@ public class ScannerTest
                 new Token(IDENTIFIER, "z"), new Token(ASSIGNMENT, ":="),
                 new Token(FALSE, "false"), new Token(SEMICOLON, ";"),
 
-                new Token(VAR, "var"),
+                new Token(AUTO, "auto"),
                 new Token(IDENTIFIER, "z_2"), new Token(ASSIGNMENT, ":="),
                 new Token(TRUE, "true"), new Token(SEMICOLON, ";"),
 
@@ -601,10 +601,10 @@ public class ScannerTest
     @Test
     public void testMapsTo()
     {
-        String line = "var map := { \"one\" : 1, \"two\" : 2 };";
+        String line = "auto map := { \"one\" : 1, \"two\" : 2 };";
 
         List<Token> expectedTokens = Arrays.asList(
-                new Token(VAR, "var"), new Token(IDENTIFIER, "map"),
+                new Token(AUTO, "auto"), new Token(IDENTIFIER, "map"),
                 new Token(ASSIGNMENT, ":="), new Token(OPEN_BRACE, "{"), new Token(STRING_LITERAL, "one"),
                 new Token(COLON, ":"), new Token(INT_LITERAL, "1"), new Token(COMMA, ","),
                 new Token(STRING_LITERAL, "two"), new Token(COLON, ":"), new Token(INT_LITERAL, "2"),

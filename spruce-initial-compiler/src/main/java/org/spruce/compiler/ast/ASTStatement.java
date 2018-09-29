@@ -14,6 +14,11 @@ import org.spruce.compiler.scanner.Location;
  * <em>
  * StatementExpression:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;StatementExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;BreakStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ContinueStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;FallthroughStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ReturnStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ThrowStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
  * &nbsp;&nbsp;&nbsp;&nbsp;IfThenStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;IfThenElseStatement<br>
@@ -21,12 +26,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DoWhileStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ForStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;BreakStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ContinueStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;FallthroughStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ReturnStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;SynchronizedStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ThrowStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;TryExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Block
  * </em>
@@ -34,7 +34,7 @@ import org.spruce.compiler.scanner.Location;
 public class ASTStatement extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTStatementExpression</code> at the given <code>Location</code>
+     * Constructs an <code>ASTStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.

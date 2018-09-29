@@ -11,14 +11,13 @@ import org.spruce.compiler.scanner.Location;
  * <em>
  * VariableInitializer:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionNoIncrDecr<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ArrayInitializer
  * </em>
  */
 public class ASTVariableInitializer extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTClassLiteral</code> at the given <code>Location</code>
+     * Constructs an <code>ASTVariableInitializer</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.

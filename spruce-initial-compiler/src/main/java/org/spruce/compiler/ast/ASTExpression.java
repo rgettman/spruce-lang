@@ -28,7 +28,7 @@ import org.spruce.compiler.scanner.Location;
 public class ASTExpression extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTExpressionNoIncrDecr</code> at the given <code>Location</code>
+     * Constructs an <code>ASTExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.

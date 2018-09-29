@@ -17,7 +17,7 @@ import org.spruce.compiler.scanner.TokenType;
 public class ASTMethodInvocation extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTElementAccess</code> at the given <code>Location</code>
+     * Constructs an <code>ASTMethodInvocation</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */

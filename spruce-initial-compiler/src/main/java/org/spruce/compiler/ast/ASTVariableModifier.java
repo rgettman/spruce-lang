@@ -5,23 +5,23 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTDimExprs</code> is a set of dim expr instances.</p>
+ * <p>An <code>ASTVariableModifier</code> is "final" or "const".</p>
  *
  * <em>
- * DimExprs:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DimExpr<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DimExprs DimExpr
+ * VariableModifier:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;final<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;const
  * </em>
  */
-public class ASTDimExprs extends ASTParentNode
+public class ASTVariableModifier extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTDimExprs</code> at the given <code>Location</code>
-     * and with possibly a node as its child.
+     * Constructs an <code>ASTVariableModifier</code> at the given <code>Location</code>
+     * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTDimExprs(Location location, List<ASTNode> children)
+    public ASTVariableModifier(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

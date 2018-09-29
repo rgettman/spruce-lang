@@ -22,7 +22,7 @@ import org.spruce.compiler.scanner.Location;
 public class ASTPrimitiveType extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTLiteral</code> at the given <code>Location</code>
+     * Constructs an <code>ASTPrimitiveType</code> at the given <code>Location</code>
      * and with one child as its node.
      * @param location The <code>Location</code>.
      * @param child The child node.

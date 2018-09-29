@@ -17,7 +17,7 @@ import org.spruce.compiler.scanner.Location;
 public class ASTAssertStatement extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTThrowStatement</code> at the given <code>Location</code>
+     * Constructs an <code>ASTAssertStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.

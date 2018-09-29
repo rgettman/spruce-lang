@@ -5,23 +5,23 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTDimExprs</code> is a set of dim expr instances.</p>
+ * <p>An <code>ASTLocalVariableType</code> is a data type or "auto".</p>
  *
  * <em>
- * DimExprs:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DimExpr<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DimExprs DimExpr
+ * LocalVariableType:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;DataType<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;auto
  * </em>
  */
-public class ASTDimExprs extends ASTParentNode
+public class ASTLocalVariableType extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTDimExprs</code> at the given <code>Location</code>
-     * and with possibly a node as its child.
+     * Constructs an <code>ASTLocalVariableType</code> at the given <code>Location</code>
+     * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTDimExprs(Location location, List<ASTNode> children)
+    public ASTLocalVariableType(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

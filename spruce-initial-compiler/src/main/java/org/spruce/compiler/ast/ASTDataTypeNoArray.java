@@ -10,8 +10,8 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * DataTypeNoArray:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;SimpleType [TypeArguments]<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray . SimpleType [TypeArguments]
+ * &nbsp;&nbsp;&nbsp;&nbsp;SimpleType<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray . SimpleType
  * </em>
  */
 public class ASTDataTypeNoArray extends ASTParentNode

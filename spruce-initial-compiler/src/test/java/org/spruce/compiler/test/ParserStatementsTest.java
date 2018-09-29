@@ -1,6 +1,7 @@
 package org.spruce.compiler.test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.spruce.compiler.ast.*;
@@ -18,10 +19,169 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ParserStatementsTest
 {
     /**
+     * Tests local variable declaration statement.
+     */
+    @Test
+    public void testLocalVariableDeclarationStatement()
+    {
+        Parser parser = new Parser(new Scanner("Integer[] values := {1, 2, 3};"));
+        ASTLocalVariableDeclarationStatement node = parser.parseLocalVariableDeclarationStatement();
+        checkSimple(node, ASTLocalVariableDeclaration.class, SEMICOLON);
+    }
+    /**
+     * Tests local variable declaration without modifiers.
+     */
+    @Test
+    public void testLocalVariableDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("Boolean result := true, done := false"));
+        ASTLocalVariableDeclaration node = parser.parseLocalVariableDeclaration();
+        checkBinary(node, ASTLocalVariableType.class, ASTVariableDeclaratorList.class);
+    }
+
+    /**
+     * Tests local variable declaration with modifiers.
+     */
+    @Test
+    public void testLocalVariableDeclarationOfModifiers()
+    {
+        Parser parser = new Parser(new Scanner("final const Boolean result := true, done := false"));
+        ASTLocalVariableDeclaration node = parser.parseLocalVariableDeclaration();
+
+        assertNull(node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTVariableModifierList.class, ASTLocalVariableType.class, ASTVariableDeclaratorList.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests variable modifier list of variable modifier.
+     */
+    @Test
+    public void testVariableModifierListOfVariableModifier()
+    {
+        Parser parser = new Parser(new Scanner("const"));
+        ASTVariableModifierList node = parser.parseVariableModifierList();
+        checkSimple(node, ASTVariableModifier.class);
+    }
+    /**
+     * Tests variable modifier list of variable modifiers.
+     */
+    @Test
+    public void testVariableModifierListOfVariableModifiers()
+    {
+        Parser parser = new Parser(new Scanner("final const"));
+        ASTVariableModifierList node = parser.parseVariableModifierList();
+        checkBinaryLeftAssociative(node, Collections.singletonList(null), ASTVariableModifierList.class, ASTVariableModifier.class);
+    }
+
+    /**
+     * Tests variable modifier of "const".
+     */
+    @Test
+    public void testVariableModifierOfConst()
+    {
+        Parser parser = new Parser(new Scanner("const"));
+        ASTVariableModifier node = parser.parseVariableModifier();
+        checkEmpty(node, CONST);
+    }
+
+    /**
+     * Tests variable modifier of "final".
+     */
+    @Test
+    public void testVariableModifierOfFinal()
+    {
+        Parser parser = new Parser(new Scanner("final"));
+        ASTVariableModifier node = parser.parseVariableModifier();
+        checkEmpty(node, FINAL);
+    }
+
+    /**
+     * Tests variable declarator list of variable declarator.
+     */
+    @Test
+    public void testVariableDeclaratorListOfVariableDeclarator()
+    {
+        Parser parser = new Parser(new Scanner("a := b"));
+        ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
+        checkSimple(node, ASTVariableDeclarator.class);
+    }
+
+    /**
+     * Tests variable declarator list.
+     */
+    @Test
+    public void testVariableDeclaratorList()
+    {
+        Parser parser = new Parser(new Scanner("x := 1, y := x"));
+        ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
+        checkBinaryLeftAssociative(node, Arrays.asList(COMMA), ASTVariableDeclaratorList.class, ASTVariableDeclarator.class);
+    }
+
+    /**
+     * Tests nested variable declarator lists.
+     */
+    @Test
+    public void testVariableDeclaratorListNested()
+    {
+        Parser parser = new Parser(new Scanner("a := 1, b := a + 1, c := 2 * b"));
+        ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
+        checkBinaryLeftAssociative(node, Arrays.asList(COMMA, COMMA), ASTVariableDeclaratorList.class, ASTVariableDeclarator.class);
+    }
+
+    /**
+     * Tests variable declarator of identifier.
+     */
+    @Test
+    public void testVariableDeclaratorOfIdentifier()
+    {
+        Parser parser = new Parser(new Scanner("varName"));
+        ASTVariableDeclarator node = parser.parseVariableDeclarator();
+        checkSimple(node, ASTIdentifier.class);
+    }
+
+    /**
+     * Tests variable declarator of identifier and variable initializer.
+     */
+    @Test
+    public void testVariableDeclaratorOfIdentifierVariableInitializer()
+    {
+        Parser parser = new Parser(new Scanner("count := 2"));
+        ASTVariableDeclarator node = parser.parseVariableDeclarator();
+        checkBinary(node, ASSIGNMENT, ASTIdentifier.class, ASTVariableInitializer.class);
+    }
+
+    /**
+     * Tests local variable type of data type.
+     */
+    @Test
+    public void testLocalVariableTypeOfDataType()
+    {
+        Parser parser = new Parser(new Scanner("spruce.lang.String[][])"));
+        ASTLocalVariableType node = parser.parseLocalVariableType();
+        checkSimple(node, ASTDataType.class);
+    }
+
+    /**
+     * Tests local variable type of "auto".
+     */
+    @Test
+    public void testLocalVariableTypeOfAuto()
+    {
+        Parser parser = new Parser(new Scanner("auto"));
+        ASTLocalVariableType node = parser.parseLocalVariableType();
+        checkEmpty(node, AUTO);
+    }
+
+    /**
      * Tests statement of expression statement.
      */
     @Test
-    public void testStatementExpressionStatement()
+    public void testStatementOfExpressionStatement()
     {
         Parser parser = new Parser(new Scanner("x := x + 1;"));
         ASTStatement node = parser.parseStatement();
@@ -32,7 +192,7 @@ public class ParserStatementsTest
      * Tests statement of return statement.
      */
     @Test
-    public void testStatementReturnStatement()
+    public void testStatementOfReturnStatement()
     {
         Parser parser = new Parser(new Scanner("return true;"));
         ASTStatement node = parser.parseStatement();
@@ -43,7 +203,7 @@ public class ParserStatementsTest
      * Tests statement of throw statement.
      */
     @Test
-    public void testStatementThrowStatement()
+    public void testStatementOfThrowStatement()
     {
         Parser parser = new Parser(new Scanner("throw new CompileException(\"Error message\");"));
         ASTStatement node = parser.parseStatement();
@@ -54,7 +214,7 @@ public class ParserStatementsTest
      * Tests statement of break statement.
      */
     @Test
-    public void testStatementBreakStatement()
+    public void testStatementOfBreakStatement()
     {
         Parser parser = new Parser(new Scanner("break;"));
         ASTStatement node = parser.parseStatement();
@@ -65,7 +225,7 @@ public class ParserStatementsTest
      * Tests statement of break statement.
      */
     @Test
-    public void testStatementContinueStatement()
+    public void testStatementOfContinueStatement()
     {
         Parser parser = new Parser(new Scanner("continue;"));
         ASTStatement node = parser.parseStatement();
@@ -76,7 +236,7 @@ public class ParserStatementsTest
      * Tests statement of break statement.
      */
     @Test
-    public void testStatementFallthroughStatement()
+    public void testStatementOfFallthroughStatement()
     {
         Parser parser = new Parser(new Scanner("fallthrough;"));
         ASTStatement node = parser.parseStatement();
@@ -87,7 +247,7 @@ public class ParserStatementsTest
      * Tests statement of assert statement.
      */
     @Test
-    public void testStatementAssertStatement()
+    public void testStatementOfAssertStatement()
     {
         Parser parser = new Parser(new Scanner("assert status = true;"));
         ASTStatement node = parser.parseStatement();
@@ -109,7 +269,7 @@ public class ParserStatementsTest
      * Tests return statement with expression.
      */
     @Test
-    public void testReturnStatementExpression()
+    public void testReturnStatementOfExpression()
     {
         Parser parser = new Parser(new Scanner("return x.y + 2;"));
         ASTReturnStatement node = parser.parseReturnStatement();
@@ -120,7 +280,7 @@ public class ParserStatementsTest
      * Tests throw statement with expression.
      */
     @Test
-    public void testThrowStatementExpression()
+    public void testThrowStatementOfExpression()
     {
         Parser parser = new Parser(new Scanner("throw new Exception();"));
         ASTThrowStatement node = parser.parseThrowStatement();
@@ -164,7 +324,7 @@ public class ParserStatementsTest
      * Tests assert statement of expression.
      */
     @Test
-    public void testAssertStatementExpression()
+    public void testAssertStatementOfExpression()
     {
         Parser parser = new Parser(new Scanner("assert result = true;"));
         ASTAssertStatement node = parser.parseAssertStatement();
@@ -175,26 +335,18 @@ public class ParserStatementsTest
      * Tests assert statement of 2 expressions.
      */
     @Test
-    public void testAssertStatementTwoExpression()
+    public void testAssertStatementOfTwoExpressions()
     {
         Parser parser = new Parser(new Scanner("assert result = true : \"Assertion failed!\";"));
         ASTAssertStatement node = parser.parseAssertStatement();
-
-        assertEquals(ASSERT, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTExpression.class, ASTExpression.class);
-        compareClasses(expectedClasses, children);
-
-        node.collapse();
-        node.print();
+        checkBinary(node, ASSERT, ASTExpression.class, ASTExpression.class);
     }
 
     /**
      * Tests expression statement of statement expression.
      */
     @Test
-    public void testExpressionStatementStatementExpression()
+    public void testExpressionStatementOfStatementExpression()
     {
         Parser parser = new Parser(new Scanner("x++;"));
         ASTExpressionStatement node = parser.parseExpressionStatement();
@@ -206,15 +358,14 @@ public class ParserStatementsTest
         ASTNode child = children.get(0);
         assertTrue(child instanceof ASTStatementExpression);
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests statement expression of assignment.
      */
     @Test
-    public void testStatementExpressionAssignment()
+    public void testStatementExpressionOfAssignment()
     {
         Parser parser = new Parser(new Scanner("x := 0"));
         ASTStatementExpression node = parser.parseStatementExpression();
@@ -226,15 +377,14 @@ public class ParserStatementsTest
         ASTNode child = children.get(0);
         assertTrue(child instanceof ASTAssignment);
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests statement expression of postfix expression.
      */
     @Test
-    public void testStatementExpressionPostfixExpression()
+    public void testStatementExpressionOfPostfixExpression()
     {
         Parser parser = new Parser(new Scanner("x.y++"));
         ASTStatementExpression node = parser.parseStatementExpression();
@@ -246,15 +396,14 @@ public class ParserStatementsTest
         ASTNode child = children.get(0);
         assertTrue(child instanceof ASTPostfixExpression);
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests statement expression of prefix expression.
      */
     @Test
-    public void testStatementExpressionPrefixExpression()
+    public void testStatementExpressionOfPrefixExpression()
     {
         Parser parser = new Parser(new Scanner("--x.y"));
         ASTStatementExpression node = parser.parseStatementExpression();
@@ -266,15 +415,14 @@ public class ParserStatementsTest
         ASTNode child = children.get(0);
         assertTrue(child instanceof ASTPrefixExpression);
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests statement expression of method invocation.
      */
     @Test
-    public void testStatementExpressionMethodInvocation()
+    public void testStatementExpressionOfMethodInvocation()
     {
         Parser parser = new Parser(new Scanner("x.y(2)"));
         ASTStatementExpression node = parser.parseStatementExpression();
@@ -286,15 +434,14 @@ public class ParserStatementsTest
         ASTNode child = children.get(0);
         assertTrue(child instanceof ASTMethodInvocation);
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests statement expression of class instance creation expression.
      */
     @Test
-    public void testStatementExpressionClassInstanceCreationExpression()
+    public void testStatementExpressioOfnClassInstanceCreationExpression()
     {
         Parser parser = new Parser(new Scanner("new SideEffect()"));
         ASTStatementExpression node = parser.parseStatementExpression();
@@ -306,7 +453,6 @@ public class ParserStatementsTest
         ASTNode child = children.get(0);
         assertTrue(child instanceof ASTClassInstanceCreationExpression);
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 }

@@ -5,22 +5,24 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTFallthroughStatement</code> is "fallthrough" followed by a semicolon.</p>
+ * <p>An <code>ASTVariableDeclarator</code> is an identifier optionally
+ * followed by assignment to a variable initializer.</p>
  *
  * <em>
- * FallthroughStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;fallthrough ;<br>
+ * VariableDeclarator:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;Identifier := VariableInitializer
  * </em>
  */
-public class ASTFallthroughStatement extends ASTParentNode
+public class ASTVariableDeclarator extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTFallthroughStatement</code> at the given <code>Location</code>
+     * Constructs an <code>ASTVariableDeclarator</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTFallthroughStatement(Location location, List<ASTNode> children)
+    public ASTVariableDeclarator(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

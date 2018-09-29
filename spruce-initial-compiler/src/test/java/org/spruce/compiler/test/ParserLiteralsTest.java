@@ -21,7 +21,7 @@ public class ParserLiteralsTest
      * Tests class literal of type name.
      */
     @Test
-    public void testClassLiteralTypeName()
+    public void testClassLiteralOfTypeName()
     {
         Parser parser = new Parser(new Scanner("String.class"));
         ASTClassLiteral node = parser.parseClassLiteral();
@@ -33,19 +33,18 @@ public class ParserLiteralsTest
         ASTNode child = children.get(0);
         assertTrue(child instanceof ASTTypeName);
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests class literal of type name and bracket pairs.
      */
     @Test
-    public void testClassLiteralTypeNameBracketPairs()
+    public void testClassLiteralOfTypeNameBracketPairs()
     {
         Parser parser = new Parser(new Scanner("Int[][].class"));
         ASTClassLiteral node = parser.parseClassLiteral();
-        node.print();
+
         assertEquals(CLASS, node.getOperation());
         List<ASTNode> children = node.getChildren();
         assertEquals(2, children.size());
@@ -66,15 +65,14 @@ public class ParserLiteralsTest
         children = dims.getChildren();
         assertEquals(0, children.size());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests an integer literal.
      */
     @Test
-    public void testLiteralInteger()
+    public void testLiteralOfInteger()
     {
         Parser parser = new Parser(new Scanner("1234"));
         ASTLiteral node = parser.parseLiteral();
@@ -87,15 +85,14 @@ public class ParserLiteralsTest
         ASTIntegerLiteral integerLiteral = (ASTIntegerLiteral) child;
         assertEquals(1234, integerLiteral.getNumericValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests a floating point literal.
      */
     @Test
-    public void testLiteralFloatingPoint()
+    public void testLiteralOfFloatingPoint()
     {
         Parser parser = new Parser(new Scanner("1234.5"));
         ASTLiteral node = parser.parseLiteral();
@@ -108,15 +105,14 @@ public class ParserLiteralsTest
         ASTFloatingPointLiteral floatingPointLiteral = (ASTFloatingPointLiteral) child;
         assertEquals(1234.5, floatingPointLiteral.getNumericValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests a character literal.
      */
     @Test
-    public void testLiteralCharacter()
+    public void testLiteralOfCharacter()
     {
         Parser parser = new Parser(new Scanner("'c'"));
         ASTLiteral node = parser.parseLiteral();
@@ -129,15 +125,14 @@ public class ParserLiteralsTest
         ASTCharacterLiteral charLiteral = (ASTCharacterLiteral) child;
         assertEquals('c', charLiteral.getCharacterValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests a normal string literal.
      */
     @Test
-    public void testLiteralStringNormal()
+    public void testLiteralOfStringNormal()
     {
         Parser parser = new Parser(new Scanner("\"s\\tring\""));
         ASTLiteral node = parser.parseLiteral();
@@ -150,15 +145,14 @@ public class ParserLiteralsTest
         ASTStringLiteral strLiteral = (ASTStringLiteral) child;
         assertEquals("s\tring", strLiteral.getStringValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests a raw string literal.
      */
     @Test
-    public void testLiteralStringRaw()
+    public void testLiteralOfStringRaw()
     {
         Parser parser = new Parser(new Scanner("\"\"\"\"stri\\ng\"\"\"\""));
         ASTLiteral node = parser.parseLiteral();
@@ -171,15 +165,14 @@ public class ParserLiteralsTest
         ASTStringLiteral strLiteral = (ASTStringLiteral) child;
         assertEquals("\"stri\\ng\"", strLiteral.getStringValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests a true boolean literal.
      */
     @Test
-    public void testLiteralBooleanTrue()
+    public void testLiteralOfBooleanTrue()
     {
         Parser parser = new Parser(new Scanner("true"));
         ASTLiteral node = parser.parseLiteral();
@@ -192,15 +185,14 @@ public class ParserLiteralsTest
         ASTBooleanLiteral boolLiteral = (ASTBooleanLiteral) child;
         assertTrue(boolLiteral.getBooleanValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests a false boolean literal.
      */
     @Test
-    public void testLiteralBooleanFalse()
+    public void testLiteralOfBooleanFalse()
     {
         Parser parser = new Parser(new Scanner("false"));
         ASTLiteral node = parser.parseLiteral();
@@ -213,15 +205,14 @@ public class ParserLiteralsTest
         ASTBooleanLiteral boolLiteral = (ASTBooleanLiteral) child;
         assertFalse(boolLiteral.getBooleanValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 
     /**
      * Tests a null literal.
      */
     @Test
-    public void testLiteralNull()
+    public void testLiteralOfNull()
     {
         Parser parser = new Parser(new Scanner("null"));
         ASTLiteral node = parser.parseLiteral();
@@ -234,7 +225,6 @@ public class ParserLiteralsTest
         ASTNullLiteral nullLiteral = (ASTNullLiteral) child;
         assertNull(nullLiteral.getNullValue());
 
-        node.collapse();
-        node.print();
+        node.collapseThenPrint();
     }
 }

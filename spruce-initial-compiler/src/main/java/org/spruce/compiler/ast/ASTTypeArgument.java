@@ -17,7 +17,7 @@ import org.spruce.compiler.scanner.TokenType;
 public class ASTTypeArgument extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTWildcard</code> at the given <code>Location</code>
+     * Constructs an <code>ASTTypeArgument</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.

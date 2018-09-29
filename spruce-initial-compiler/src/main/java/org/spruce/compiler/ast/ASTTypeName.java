@@ -11,7 +11,7 @@ import org.spruce.compiler.scanner.Location;
  * <em>
  * TypeName:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;PackageOrTypeName . Identifier<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;PackageOrTypeName . Identifier
  * </em>
  */
 public class ASTTypeName extends ASTParentNode
