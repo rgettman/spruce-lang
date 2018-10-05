@@ -139,6 +139,7 @@ public class Parser
      *     <li>!</li>
      *     <li>identifier</li>
      *     <li><code>this</code></li>
+     *     <li><code>super</code></li>
      *     <li>(</li>
      * </ul>
      * @param t A <code>Token</code>.
@@ -159,6 +160,7 @@ public class Parser
         case THIS:
         case OPEN_PARENTHESIS:
         case NEW:
+        case SUPER:
             return true;
         default:
             return false;
@@ -170,6 +172,82 @@ public class Parser
     //**************************************
 
     /**
+     * Parses an <code>ASTBlock</code>.
+     * @return An <code>ASTBlock</code>.
+     */
+    public ASTBlock parseBlock()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (accept(OPEN_BRACE) == null)
+        {
+            throw new CompileException("Expected '{'.");
+        }
+        List<ASTNode> children = new ArrayList<>(1);
+        ASTBlock node = new ASTBlock(loc, children);
+        node.setOperation(OPEN_BRACE);
+        if (!test(curr(), CLOSE_BRACE))
+        {
+            children.add(parseBlockStatements());
+        }
+        if (accept(CLOSE_BRACE) == null)
+        {
+            throw new CompileException("Expected '}'.");
+        }
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTBlockStatements</code>.
+     * @return An <code>ASTBlockStatements</code>.
+     */
+    public ASTBlockStatements parseBlockStatements()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>();
+        ASTBlockStatements node = new ASTBlockStatements(loc, children);
+        while (!test(curr(), CLOSE_BRACE))
+        {
+            children.add(parseBlockStatement());
+        }
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTBlockStatement</code>.
+     * @return An <code>ASTBlockStatement</code>.
+     */
+    public ASTBlockStatement parseBlockStatement()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        switch(curr().getType())
+        {
+        case FINAL:
+        case CONST:
+        case AUTO:
+            return new ASTBlockStatement(loc, Arrays.asList(parseLocalVariableDeclarationStatement()));
+        case IDENTIFIER:
+            ASTDataType dt = parseDataType();
+            // DataType varName ...
+            if (test(curr(), IDENTIFIER))
+            {
+                return new ASTBlockStatement(loc, Arrays.asList(parseLocalVariableDeclarationStatement(dt)));
+            }
+            else
+            {
+                // Convert to Expression Name.
+                ASTExpressionName exprName = dt.convertToExpressionName();
+                // There may be more or a Primary to parse, e.g. method
+                // invocation, element access, and/or qualified class instance
+                // creation.
+                ASTPrimary primary = parsePrimary(exprName);
+                return new ASTBlockStatement(loc, Arrays.asList(parseStatement(primary)));
+            }
+        default:
+            return new ASTBlockStatement(loc, Arrays.asList(parseStatement()));
+        }
+    }
+
+    /**
      * Parses an <code>ASTLocalVariableDeclarationStatement</code>.
      * @return An <code>ASTLocalVariableDeclarationStatement</code>.
      */
@@ -177,6 +255,25 @@ public class Parser
     {
         Location loc = myScanner.getCurrToken().getLocation();
         ASTLocalVariableDeclaration localVarDecl = parseLocalVariableDeclaration();
+        if (accept(SEMICOLON) == null)
+        {
+            throw new CompileException("Missing semicolon.");
+        }
+        ASTLocalVariableDeclarationStatement node = new ASTLocalVariableDeclarationStatement(loc, Arrays.asList(localVarDecl));
+        node.setOperation(SEMICOLON);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTLocalVariableDeclarationStatement</code>, given an
+     * already parsed <code>ASTDataType</code>.
+     * @param dt An already parsed <code>ASTDataType</code>.
+     * @return An <code>ASTLocalVariableDeclarationStatement</code>.
+     */
+    public ASTLocalVariableDeclarationStatement parseLocalVariableDeclarationStatement(ASTDataType dt)
+    {
+        Location loc = dt.getLocation();
+        ASTLocalVariableDeclaration localVarDecl = parseLocalVariableDeclaration(dt);
         if (accept(SEMICOLON) == null)
         {
             throw new CompileException("Missing semicolon.");
@@ -204,6 +301,21 @@ public class Parser
     }
 
     /**
+     * Parses an <code>ASTLocalVariableDeclaration</code>, given an already
+     * parsed <code>ASTDataType</code>.
+     * @param dt An already parsed <code>ASTDataType</code>.
+     * @return An <code>ASTLocalVariableDeclaration</code>.
+     */
+    public ASTLocalVariableDeclaration parseLocalVariableDeclaration(ASTDataType dt)
+    {
+        Location loc = dt.getLocation();
+        List<ASTNode> children = new ArrayList<>(3);
+        children.add(new ASTLocalVariableType(loc, Collections.singletonList(dt)));
+        children.add(parseVariableDeclaratorList());
+        return new ASTLocalVariableDeclaration(loc, children);
+    }
+
+    /**
      * Parses an <code>ASTVariableModifierList</code>.
      * @return An <code>ASTVariableModifierList</code>.
      */
@@ -213,21 +325,13 @@ public class Parser
         {
             throw new CompileException("Expected final or const.");
         }
-        ASTVariableModifierList node = null;
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>();
+        children.add(parseVariableModifier());
+        ASTVariableModifierList node = new ASTVariableModifierList(loc, children);
         while (isAcceptedOperator(Arrays.asList(FINAL, CONST)) != null)
         {
-            Location loc = myScanner.getCurrToken().getLocation();
-            ASTVariableModifier varMod = parseVariableModifier();
-            if (node == null)
-            {
-                List<ASTNode> children = Arrays.asList(varMod);
-                node = new ASTVariableModifierList(loc, children);
-            }
-            else
-            {
-                List<ASTNode> children = Arrays.asList(node, varMod);
-                node = new ASTVariableModifierList(loc, children);
-            }
+            children.add(parseVariableModifier());
         }
         return node;
     }
@@ -337,6 +441,17 @@ public class Parser
             ASTExpressionStatement exprStmt = parseExpressionStatement();
             return new ASTStatement(loc, Arrays.asList(exprStmt));
         }
+    }
+
+    /**
+     * Parses an <code>ASTStatement</code>, given an already parsed
+     * <code>ASTPrimary</code>.
+     * @param primary An already parsed <code>ASTPrimary</code>.
+     * @return An <code>ASTStatement</code>.
+     */
+    public ASTStatement parseStatement(ASTPrimary primary)
+    {
+        return new ASTStatement(primary.getLocation(), Arrays.asList(parseExpressionStatement(primary)));
     }
 
     /**
@@ -492,6 +607,24 @@ public class Parser
     }
 
     /**
+     * Parses an <code>ASTExpressionStatement</code>, given an already parsed
+     * <code>ASTPrimary</code>.
+     * @param primary An already parsed <code>ASTPrimary</code>.
+     * @return An <code>ASTExpressionStatement</code>.
+     */
+    public ASTExpressionStatement parseExpressionStatement(ASTPrimary primary)
+    {
+        ASTStatementExpression stmtExpr = parseStatementExpression(primary);
+        if (accept(SEMICOLON) == null)
+        {
+            throw new CompileException("Semicolon expected.");
+        }
+        ASTExpressionStatement exprStmt = new ASTExpressionStatement(primary.getLocation(), Arrays.asList(stmtExpr));
+        exprStmt.setOperation(SEMICOLON);
+        return exprStmt;
+    }
+
+    /**
      * Parses an <code>ASTStatementExpression</code>.
      * @return An <code>ASTStatementExpression</code>.
      */
@@ -506,29 +639,41 @@ public class Parser
         if (isPrimary(curr()))
         {
             ASTPrimary primary = parsePrimary();
-            if (test(curr(), INCREMENT) || test(curr(), DECREMENT))
-            {
-                return new ASTStatementExpression(loc, Arrays.asList(parsePostfixExpression(loc, primary.getLeftHandSide())));
-            }
-            else
-            {
-                // Primary may already be a method invocation or class instance creation expression.
-                // If so, retrieve and use it.
-                ASTNode child = primary.getChildren().get(0);
-                if (child instanceof ASTMethodInvocation || child instanceof ASTClassInstanceCreationExpression)
-                {
-                    return new ASTStatementExpression(loc, Arrays.asList(child));
-                }
-                else
-                {
-                    // Assume assignment.
-                    return new ASTStatementExpression(loc, Arrays.asList(parseAssignment(loc, primary.getLeftHandSide())));
-                }
-            }
+            return parseStatementExpression(primary);
         }
         else
         {
             throw new CompileException("Expected assignment, post/pre increment/decrement, or method invocation.");
+        }
+    }
+
+    /**
+     * Parses an <code>ASTStatementExpression</code>, given an already parsed
+     * <code>ASTPrimary</code>.
+     * @param primary An already parsed <code>ASTPrimary</code>.
+     * @return An <code>ASTStatementExpression</code>.
+     */
+    public ASTStatementExpression parseStatementExpression(ASTPrimary primary)
+    {
+        Location loc = primary.getLocation();
+        if (test(curr(), INCREMENT) || test(curr(), DECREMENT))
+        {
+            return new ASTStatementExpression(loc, Arrays.asList(parsePostfixExpression(loc, primary.getLeftHandSide())));
+        }
+        else
+        {
+            // Primary may already be a method invocation or class instance creation expression.
+            // If so, retrieve and use it.
+            ASTNode child = primary.getChildren().get(0);
+            if (child instanceof ASTMethodInvocation || child instanceof ASTClassInstanceCreationExpression)
+            {
+                return new ASTStatementExpression(loc, Arrays.asList(child));
+            }
+            else
+            {
+                // Assume assignment.
+                return new ASTStatementExpression(loc, Arrays.asList(parseAssignment(loc, primary.getLeftHandSide())));
+            }
         }
     }
 
@@ -587,10 +732,10 @@ public class Parser
      */
     public ASTTypeArgumentList parseTypeArgumentList()
     {
-        return parseBinaryExpressionLeftAssociative(
+        return parseMultiple(
                 Parser::isTypeArgument,
                 "Expected a type argument.",
-                Arrays.asList(COMMA),
+                COMMA,
                 this::parseTypeArgument,
                 ASTTypeArgumentList::new);
     }
@@ -1192,10 +1337,10 @@ public class Parser
     {
         if (isExpression(curr()))
         {
-            return parseBinaryExpressionLeftAssociative(
+            return parseMultiple(
                     Parser::isExpression,
                     "Expected an expression.",
-                    Arrays.asList(COMMA),
+                    COMMA,
                     this::parseExpression,
                     ASTArgumentList::new);
         }
@@ -1206,20 +1351,20 @@ public class Parser
     }
 
     /**
-     * Parses an <code>ASTMethodInvocation</code>, given an <code>ASTPrimary</code>
+     * Parses an <code>ASTMethodInvocation</code>, given an <code>ASTIdentifier</code>
      * that has already been parsed and its <code>Location</code>.
-     * @param loc The <code>Location</code> of <code>primary</code>.
-     * @param primary An already parsed <code>ASTPrimary</code>.
+     * @param identifier An already parsed <code>ASTIdentifier</code>.
      * @return An <code>ASTMethodInvocation</code>.
      */
-    public ASTMethodInvocation parseMethodInvocation(Location loc, ASTPrimary primary)
+    public ASTMethodInvocation parseMethodInvocation(ASTIdentifier identifier)
     {
+        Location loc = identifier.getLocation();
         if (accept(OPEN_PARENTHESIS) == null)
         {
             throw new CompileException("Expected '('.");
         }
         List<ASTNode> children = new ArrayList<>(2);
-        children.add(primary);
+        children.add(identifier);
         if (!test(curr(), CLOSE_PARENTHESIS))
         {
             children.add(parseArgumentList());
@@ -1229,7 +1374,197 @@ public class Parser
             throw new CompileException("Expected ')'.");
         }
 
-        return new ASTMethodInvocation(loc, children);
+        ASTMethodInvocation node = new ASTMethodInvocation(loc, children);
+        node.setOperation(OPEN_PARENTHESIS);
+        return node;
+    }
+
+    /**
+     * <p>Parses an <code>ASTMethodInvocation</code>, starting with <code>super</code>.</p>
+     * <em>MethodInvocation: super . [TypeArguments] Identifier ( [ArgumentList] )</em>
+     * @return An <code>ASTMethodInvocation</code>.
+     */
+    public ASTMethodInvocation parseMethodInvocationSuper()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(4);
+        children.add(parseSuper());
+        if (accept(DOT) == null)
+        {
+            throw new CompileException("Expected '.'.");
+        }
+        if (test(curr(), LESS_THAN))
+        {
+            children.add(parseTypeArguments());
+        }
+        children.add(parseIdentifier());
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!test(curr(), CLOSE_PARENTHESIS))
+        {
+            children.add(parseArgumentList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+
+        ASTMethodInvocation node = new ASTMethodInvocation(loc, children);
+        node.setOperation(OPEN_PARENTHESIS);
+        return node;
+    }
+
+    /**
+     * <p>Parses an <code>ASTMethodInvocation</code>, with <code>super</code>,
+     * starting with an already parsed <code>ExpressionName</code>, which is
+     * converted to an <code>ASTTypeName</code>.</p>
+     * <em>MethodInvocation: TypeName . super . [TypeArguments] Identifier ( [ArgumentList] )</em>
+     * @return An <code>ASTMethodInvocation</code>.
+     */
+    public ASTMethodInvocation parseMethodInvocationSuper(ASTExpressionName exprName)
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(5);
+        children.add(exprName.convertToTypeName());
+        if (accept(DOT) == null)
+        {
+            throw new CompileException("Expected '.'.");
+        }
+        children.add(parseSuper());
+        if (accept(DOT) == null)
+        {
+            throw new CompileException("Expected '.'.");
+        }
+        if (test(curr(), LESS_THAN))
+        {
+            children.add(parseTypeArguments());
+        }
+        children.add(parseIdentifier());
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!test(curr(), CLOSE_PARENTHESIS))
+        {
+            children.add(parseArgumentList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+
+        ASTMethodInvocation node = new ASTMethodInvocation(loc, children);
+        node.setOperation(OPEN_PARENTHESIS);
+        return node;
+    }
+
+    /**
+     * <p>Parses an <code>ASTMethodInvocation</code>, given an <code>ASTPrimary</code>
+     * that has already been parsed.</p>
+     * <em>MethodInvocation: Primary . [TypeArguments] Identifier ( [ArgumentList] )</em>
+     * @param primary An already parsed <code>ASTPrimary</code>.
+     * @return An <code>ASTMethodInvocation</code>.
+     */
+    public ASTMethodInvocation parseMethodInvocation(ASTPrimary primary)
+    {
+        if (accept(DOT) == null)
+        {
+            throw new CompileException("Expected '.'.");
+        }
+        List<ASTNode> children = new ArrayList<>(4);
+        children.add(primary);
+        if (test(curr(), LESS_THAN))
+        {
+            children.add(parseTypeArguments());
+        }
+        children.add(parseIdentifier());
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!test(curr(), CLOSE_PARENTHESIS))
+        {
+            children.add(parseArgumentList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+
+        ASTMethodInvocation node = new ASTMethodInvocation(primary.getLocation(), children);
+        node.setOperation(OPEN_PARENTHESIS);
+        return node;
+    }
+
+    /**
+     * <p>Parses an <code>ASTMethodInvocation</code>, given an <code>ASTExpressionName</code>
+     * that has already been parsed.</p>
+     * <em>MethodInvocation: ExpressionName . Identifier ( [ArgumentList] )</em>
+     * @param exprName An already parsed <code>ASTExpressionName</code>.
+     * @return An <code>ASTMethodInvocation</code>.
+     */
+    public ASTMethodInvocation parseMethodInvocation(ASTExpressionName exprName)
+    {
+        List<ASTNode> children = new ArrayList<>(4);
+        children.add(exprName);
+        if (accept(DOT) == null)
+        {
+            throw new CompileException("Expected '.'.");
+        }
+        if (test(curr(), LESS_THAN))
+        {
+            children.add(parseTypeArguments());
+        }
+        children.add(parseIdentifier());
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!test(curr(), CLOSE_PARENTHESIS))
+        {
+            children.add(parseArgumentList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+
+        ASTMethodInvocation node = new ASTMethodInvocation(exprName.getLocation(), children);
+        node.setOperation(OPEN_PARENTHESIS);
+        return node;
+    }
+
+    /**
+     * <p>Parses an <code>ASTMethodInvocation</code>, given an <code>ASTExpressionName</code>
+     * that has already been parsed and broken up into the given <code>ASTExpressionName</code>
+     * and an <code>ASTIdentifier</code> serving as the method name.</p>
+     * <em>MethodInvocation: ExpressionName . Identifier ( [ArgumentList] )</em>
+     * @param exprName An already parsed <code>ASTExpressionName</code>.
+     * @return An <code>ASTMethodInvocation</code>.
+     */
+    public ASTMethodInvocation parseMethodInvocation(ASTExpressionName exprName, ASTIdentifier methodName)
+    {
+        List<ASTNode> children = new ArrayList<>(3);
+        children.add(exprName);
+        children.add(methodName);
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!test(curr(), CLOSE_PARENTHESIS))
+        {
+            children.add(parseArgumentList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+
+        ASTMethodInvocation node = new ASTMethodInvocation(exprName.getLocation(), children);
+        node.setOperation(OPEN_PARENTHESIS);
+        return node;
     }
 
     /**
@@ -1284,32 +1619,26 @@ public class Parser
         }
         else if (test(curr(), IDENTIFIER))
         {
-            ASTExpressionName expressionName = parseExpressionName();
-
-            if ( (test(curr(), DOT) && test(peek(), CLASS)) || test(curr(), OPEN_CLOSE_BRACKET))
+            if (test(peek(), OPEN_PARENTHESIS))
             {
-                // exprName.class OR exprName[]
-                // Get the class literal and get out.
-                ASTTypeName tn = expressionName.convertToTypeName();
-                return new ASTPrimary(loc, Arrays.asList(parseClassLiteral(tn)));
-            }
-            else if (test(curr(), DOT) && test(peek(), THIS))
-            {
-                ASTTypeName tn = expressionName.convertToTypeName();
-                accept(DOT);
-                primary = new ASTPrimary(loc, Arrays.asList(tn, parseThis()));
-                primary.setOperation(DOT);
-                return primary;
+                // id(args)
+                ASTIdentifier methodName = parseIdentifier();
+                primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocation(methodName)));
             }
             else
             {
-                primary = new ASTPrimary(loc, Arrays.asList(expressionName));
+                ASTExpressionName expressionName = parseExpressionName();
+                primary = parsePrimary(expressionName);
             }
         }
         else if (test(curr(), THIS))
         {
             ASTThis keywordThis = parseThis();
             primary = new ASTPrimary(loc, Arrays.asList(keywordThis));
+        }
+        else if (test(curr(), SUPER))
+        {
+            primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocationSuper()));
         }
         else if (test(curr(), OPEN_PARENTHESIS))
         {
@@ -1357,23 +1686,110 @@ public class Parser
             throw new CompileException("Expected: literal, expression name, or array or class instance creation expression.");
         }
 
-        if (test(curr(), DOT) && test(peek(), NEW))
+        // Qualified Class Instance Creation, Element Access, and Method Invocations may chain up.
+        // E.g. new Foo()[i].method1()[j].method2().new Bar()
+        return parsePrimary(primary);
+    }
+
+    /**
+     * Parses an <code>ASTPrimary</code>, given an already parsed
+     * <code>ASTExpressionName</code>.
+     * @param exprName An already parsed <code>ASTExpressionName</code>.
+     * @return An <code>ASTPrimary</code>.
+     */
+    public ASTPrimary parsePrimary(ASTExpressionName exprName)
+    {
+        ASTPrimary primary;
+        Location loc = exprName.getLocation();
+
+        // If exprName is a simple identifier, then it is the method name.
+        List<ASTNode> children = exprName.getChildren();
+        if (children.size() == 1 && test(curr(), OPEN_PARENTHESIS))
         {
-            ASTClassInstanceCreationExpression cice = parseClassInstanceCreationExpression(primary);
-            return new ASTPrimary(loc, Arrays.asList(cice));
+            // id( -> method invocation
+            ASTIdentifier methodName = (ASTIdentifier) children.get(0);
+            primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocation(methodName)));
+            return parsePrimary(primary);
         }
 
-        if (test(curr(), OPEN_PARENTHESIS))
+        if ((test(curr(), DOT) && test(peek(), CLASS)) || test(curr(), OPEN_CLOSE_BRACKET))
         {
-            ASTMethodInvocation mi = parseMethodInvocation(loc, primary);
-            primary = new ASTPrimary(loc, Arrays.asList(mi));
+            // exprName.class OR exprName[]
+            // Get the class literal and get out.
+            ASTTypeName tn = exprName.convertToTypeName();
+            return new ASTPrimary(loc, Arrays.asList(parseClassLiteral(tn)));
         }
-        if (test(curr(), OPEN_BRACKET))
+        else if (test(curr(), DOT) && test(peek(), THIS))
         {
-            ASTElementAccess ea = parseElementAccess(loc, primary);
-            primary = new ASTPrimary(loc, Arrays.asList(ea));
+            // TypeName.this
+            ASTTypeName tn = exprName.convertToTypeName();
+            accept(DOT);
+            primary = new ASTPrimary(loc, Arrays.asList(tn, parseThis()));
+            primary.setOperation(DOT);
         }
+        else if (test(curr(), DOT) && test(peek(), LESS_THAN))
+        {
+            // ExprName.<TypeArgs>methodName(args)
+            primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocation(exprName)));
+        }
+        else if (test(curr(), DOT) && test(peek(), SUPER))
+        {
+            // TypeName.super.<TypeArgs>methodName(args)
+            primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocationSuper(exprName)));
+        }
+        else if (test(curr(), OPEN_PARENTHESIS))
+        {
+            // ExprNameExceptForMethodName.methodName(args)
+            children = exprName.getChildren();
+            ASTIdentifier methodName = (ASTIdentifier) children.get(1);
+            ASTAmbiguousName ambiguous = (ASTAmbiguousName) children.get(0);
+            ASTExpressionName actual = new ASTExpressionName(ambiguous.getLocation(), ambiguous.getChildren());
+            actual.setOperation(ambiguous.getOperation());
+            primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocation(actual, methodName)));
+        }
+        else
+        {
+            // ExpressionName
+            primary = new ASTPrimary(loc, Arrays.asList(exprName));
+        }
+        return parsePrimary(primary);
+    }
 
+    /**
+     * Parses an <code>ASTPrimary</code>, given an already parsed
+     * <code>ASTPrimary</code>.  This accounts for circularity in the Primary
+     * productions, where method invocations, element access, and qualified
+     * class instance creations can be chained.
+     * @param primary An already parsed <code>ASTPrimary</code>.
+     * @return An <code>ASTPrimary</code>.
+     */
+    public ASTPrimary parsePrimary(ASTPrimary primary)
+    {
+        Location loc = primary.getLocation();
+        // Qualified Class Instance Creation, Element Access, and Method Invocations may chain up.
+        // E.g. new Foo()[i].method1()[j].method2().new Bar()
+        while (test(curr(), OPEN_BRACKET) ||
+                (test(curr(), DOT) && test(peek(), NEW)) ||
+                (test(curr(), DOT) && test(peek(), LESS_THAN)) ||
+                (test(curr(), DOT) && test(peek(), IDENTIFIER))
+                )
+        {
+            if (test(curr(), DOT) && test(peek(), NEW))
+            {
+                ASTClassInstanceCreationExpression cice = parseClassInstanceCreationExpression(primary);
+                primary = new ASTPrimary(loc, Arrays.asList(cice));
+            }
+            if (test(curr(), DOT) && (test(peek(), LESS_THAN) || test(peek(), IDENTIFIER)))
+            {
+                ASTMethodInvocation mi = parseMethodInvocation(primary);
+                primary = new ASTPrimary(loc, Arrays.asList(mi));
+            }
+            if (test(curr(), OPEN_BRACKET))
+            {
+                ASTElementAccess ea = parseElementAccess(loc, primary);
+                primary = new ASTPrimary(loc, Arrays.asList(ea));
+            }
+        }
         return primary;
     }
 
@@ -1548,38 +1964,12 @@ public class Parser
      */
     public ASTArrayCreationExpression parseArrayCreationExpression()
     {
-        Location loc = myScanner.getCurrToken().getLocation();
         if (accept(NEW) == null)
         {
             throw new CompileException("Expected new.");
         }
-        List<ASTNode> children = new ArrayList<>(3);
-        children.add(parseTypeToInstantiate());
-        boolean dimExprsPresent = false;
-        if (test(curr(), OPEN_BRACKET))
-        {
-            children.add(parseDimExprs());
-            dimExprsPresent = true;
-        }
-        if (test(curr(), OPEN_CLOSE_BRACKET))
-        {
-            children.add(parseDims());
-        }
-        if (children.size() == 0)
-        {
-            throw new CompileException("Expected \"[\".");
-        }
-        if (test(curr(), OPEN_BRACE))
-        {
-            if (dimExprsPresent)
-            {
-                throw new CompileException("Array initializer not expected with dimension expressions.");
-            }
-            children.add(parseArrayInitializer());
-        }
-        ASTArrayCreationExpression node = new ASTArrayCreationExpression(loc, children);
-        node.setOperation(NEW);
-        return node;
+        ASTTypeToInstantiate tti = parseTypeToInstantiate();
+        return parseArrayCreationExpression(tti);
     }
 
     /**
@@ -1623,8 +2013,7 @@ public class Parser
     }
 
     /**
-     * Parses an <code>ASTDimExprs</code>; they are left-
-     * associative with each other.
+     * Parses an <code>ASTDimExprs</code>.
      * @return An <code>ASTDimExprs</code>.
      */
     public ASTDimExprs parseDimExprs()
@@ -1638,10 +2027,10 @@ public class Parser
 
             while (test(curr(), OPEN_BRACKET))
             {
-                children = new ArrayList<>(2);
-                children.add(node);
+                //children = new ArrayList<>(2);
+                //children.add(node);
                 children.add(parseDimExpr());
-                node = new ASTDimExprs(loc, children);
+                //node = new ASTDimExprs(loc, children);
             }
             return node;
         }
@@ -1707,10 +2096,10 @@ public class Parser
      */
     public ASTVariableInitializerList parseVariableInitializerList()
     {
-        return parseBinaryExpressionLeftAssociative(
+        return parseMultiple(
                 t -> isPrimary(t) || test(t, OPEN_BRACE),
                 "Expected expression (no incr/decr) or array initializer.",
-                Collections.singletonList(COMMA),
+                COMMA,
                 this::parseVariableInitializer,
                 ASTVariableInitializerList::new
         );
@@ -1833,6 +2222,47 @@ public class Parser
                 children.add(childParser.get());
                 node = nodeSupplier.apply(loc, children);
                 node.setOperation(curr);
+            }
+            return node;
+        }
+        else
+        {
+            throw new CompileException(initialErrorMessage);
+        }
+    }
+
+    /**
+     * Helper method to avoid duplicating code for parsing list-like expressions.
+     * @param isOnInitialToken Determines whether a given token is a valid
+     *      token on which to start parsing the desired node.
+     * @param initialErrorMessage If the initial token is not a valid token,
+     *      the <code>CompilerException</code> thrown has this message.
+     * @param acceptedToken The accepted <code>TokenTypes</code>
+     *      that can serve as the separator.
+     * @param childParser Parses and returns the child node (list item).
+     * @param nodeSupplier Creates the desired node, given a <code>Location</code>
+     *      and a <code>List</code> of child nodes.
+     * @param <T> The type of node to parse and create.
+     * @return A node of the desired type with all children parsed in order,
+     *      leftmost first.
+     */
+    private <T extends ASTParentNode> T parseMultiple(Predicate<Token> isOnInitialToken, String initialErrorMessage,
+                                                      TokenType acceptedToken,
+                                                      Supplier<? extends ASTNode> childParser,
+                                                      BiFunction<Location, List<ASTNode>, T> nodeSupplier)
+    {
+        if (isOnInitialToken.test(curr()))
+        {
+            Location loc = myScanner.getCurrToken().getLocation();
+            List<ASTNode> children = new ArrayList<>();
+            children.add(childParser.get());
+            T node = nodeSupplier.apply(loc, children);
+            node.setOperation(acceptedToken);
+
+            while (test(curr(), acceptedToken) && isOnInitialToken.test(peek()))
+            {
+                accept(acceptedToken);
+                children.add(childParser.get());
             }
             return node;
         }
@@ -2062,6 +2492,23 @@ public class Parser
         else
         {
             throw new CompileException("Expected 'this'.");
+        }
+    }
+
+    /**
+     * Parses an <code>ASTSuper</code>.
+     * @return An <code>ASTSuper</code>.
+     */
+    public ASTSuper parseSuper()
+    {
+        Token t;
+        if ((t = accept(SUPER)) != null)
+        {
+            return new ASTSuper(t.getLocation(), t.getValue());
+        }
+        else
+        {
+            throw new CompileException("Expected 'super'.");
         }
     }
 

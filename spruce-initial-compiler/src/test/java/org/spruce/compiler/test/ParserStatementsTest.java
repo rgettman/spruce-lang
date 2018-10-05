@@ -19,6 +19,105 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ParserStatementsTest
 {
     /**
+     * Tests block of empty braces.
+     */
+    @Test
+    public void testBlockOfNothing()
+    {
+        Parser parser = new Parser(new Scanner("{}"));
+        ASTBlock node = parser.parseBlock();
+        checkEmpty(node, OPEN_BRACE);
+    }
+
+    /**
+     * Tests block of block statements.
+     */
+    @Test
+    public void testBlockOfBlockStatements()
+    {
+        Parser parser = new Parser(new Scanner("{Integer a := 1;\nInteger b := 2;\nreturn a + b;}"));
+        ASTBlock node = parser.parseBlock();
+        checkSimple(node, ASTBlockStatements.class, OPEN_BRACE);
+    }
+
+    /**
+     * Test block statements of block statement instances.
+     */
+    @Test
+    public void testBlockStatements()
+    {
+        Parser parser = new Parser(new Scanner("final String stmt := \"Statement one!\";\nconst Integer stmt2Nbr := 2;\ni++;}"));
+        ASTBlockStatements node = parser.parseBlockStatements();
+        checkList(node, null, ASTBlockStatement.class, 3);
+    }
+
+    /**
+     * Tests block statement of modifier and local variable declaration.
+     */
+    @Test
+    public void testBlockStatementOfModifierDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("final Integer i := 1;"));
+        ASTBlockStatement node = parser.parseBlockStatement();
+        checkSimple(node, ASTLocalVariableDeclarationStatement.class);
+    }
+
+    /**
+     * Tests block statement of local variable declaration.
+     */
+    @Test
+    public void testBlockStatementOfDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("Integer i := 1;"));
+        ASTBlockStatement node = parser.parseBlockStatement();
+        checkSimple(node, ASTLocalVariableDeclarationStatement.class);
+    }
+
+    /**
+     * Tests block statement of assignment.
+     */
+    @Test
+    public void testBlockStatementOfAssignment()
+    {
+        Parser parser = new Parser(new Scanner("i := 1;"));
+        ASTBlockStatement node = parser.parseBlockStatement();
+        checkSimple(node, ASTStatement.class);
+    }
+
+    /**
+     * Tests block statement of method invocation.
+     */
+    @Test
+    public void testBlockStatementOfMethodInvocation()
+    {
+        Parser parser = new Parser(new Scanner("i(j);"));
+        ASTBlockStatement node = parser.parseBlockStatement();
+        checkSimple(node, ASTStatement.class);
+    }
+
+    /**
+     * Tests block statement of qualified class instance creation expression.
+     */
+    @Test
+    public void testBlockStatementOfCICE()
+    {
+        Parser parser = new Parser(new Scanner("i.new J();"));
+        ASTBlockStatement node = parser.parseBlockStatement();
+        checkSimple(node, ASTStatement.class);
+    }
+
+    /**
+     * Tests block statement of return statement.
+     */
+    @Test
+    public void testBlockStatementOfReturn()
+    {
+        Parser parser = new Parser(new Scanner("return true;"));
+        ASTBlockStatement node = parser.parseBlockStatement();
+        checkSimple(node, ASTStatement.class);
+    }
+
+    /**
      * Tests local variable declaration statement.
      */
     @Test
@@ -75,7 +174,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("final const"));
         ASTVariableModifierList node = parser.parseVariableModifierList();
-        checkBinaryLeftAssociative(node, Collections.singletonList(null), ASTVariableModifierList.class, ASTVariableModifier.class);
+        checkList(node, null, ASTVariableModifier.class, 2);
     }
 
     /**

@@ -15,15 +15,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassLiteral<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionName<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;this<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . this<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;( Expression )<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess<br> // Array, List, Map access with [i]
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodInvocation<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ArrayCreationExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ClassInstanceCreationExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
- * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . this<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodReference
- * &nbsp;&nbsp;&nbsp;&nbsp;ClassInstanceCreationExpression<br>
  * </em>
  */
 public class ASTPrimary extends ASTParentNode

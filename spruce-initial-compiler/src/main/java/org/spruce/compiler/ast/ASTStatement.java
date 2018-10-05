@@ -12,7 +12,7 @@ import org.spruce.compiler.scanner.Location;
  * <p>At this time, the design poses no empty statement or labeled statement.</p>
  *
  * <em>
- * StatementExpression:<br>
+ * Statement:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;StatementExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;BreakStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ContinueStatement<br>

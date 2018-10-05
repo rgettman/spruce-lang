@@ -5,12 +5,11 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTVariableModifierList</code> is a set variable modifiers.</p>
+ * <p>An <code>ASTVariableModifierList</code> is a list of variable modifiers.</p>
  *
  * <em>
  * VariableModifierList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;VariableModifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;VariableModifierList VariableModifier
+ * &nbsp;&nbsp;&nbsp;&nbsp;VariableModifier {VariableModifier}
  * </em>
  */
 public class ASTVariableModifierList extends ASTParentNode

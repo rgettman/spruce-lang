@@ -1,7 +1,9 @@
 package org.spruce.compiler.ast;
 
+import java.util.Arrays;
 import java.util.List;
 
+import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -34,5 +36,24 @@ public class ASTDataType extends ASTParentNode
     public boolean isCollapsible()
     {
         return false;
+    }
+
+    /**
+     * Converts this into an <code>ASTExpressionName</code>.
+     * @return An <code>ASTExpressionName</code>.
+     */
+    public ASTExpressionName convertToExpressionName()
+    {
+        List<ASTNode> children = getChildren();
+        ASTNode child = children.get(0);
+        if (child instanceof ASTArrayType)
+        {
+            throw new CompileException("Expected variable.");
+        }
+        ASTDataTypeNoArray dtna = (ASTDataTypeNoArray) child;
+        List<ASTNode> exprNameChildren = dtna.convertChildren();
+        ASTExpressionName exprName = new ASTExpressionName(getLocation(), exprNameChildren);
+        exprName.setOperation(getOperation());
+        return exprName;
     }
 }

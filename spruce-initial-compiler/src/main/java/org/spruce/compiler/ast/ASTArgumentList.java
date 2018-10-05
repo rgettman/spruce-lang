@@ -7,12 +7,9 @@ import org.spruce.compiler.scanner.Location;
 /**
  * <p>An <code>ASTArgumentList</code> is a comma-separated list of expressions.
  *
- * <p>The operators associated with argument lists are left-associative.</p>
- *
  * <em>
  * ArgumentList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Expression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ArgumentList , Expression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;Expression {, Expression}
  * </em>
  */
 public class ASTArgumentList extends ASTParentNode

@@ -1205,7 +1205,7 @@ public class ParserExpressionsTest
     {
         Parser parser = new Parser(new Scanner("a, 1, b + c"));
         ASTArgumentList node = parser.parseArgumentList();
-        checkBinaryLeftAssociative(node, Arrays.asList(COMMA, COMMA), ASTArgumentList.class, ASTExpression.class);
+        checkList(node, COMMA, ASTExpression.class, 3);
     }
 
     /**
@@ -1352,10 +1352,52 @@ public class ParserExpressionsTest
     }
 
     /**
-     * Tests primary of method invocation.
+     * Tests primary of method invocation, expression name.
      */
     @Test
-    public void testPrimaryOfMethodInvocation()
+    public void testPrimaryOfMethodInvocationOfExpressionName()
+    {
+        Parser parser = new Parser(new Scanner("expr.name.methodName()"));
+        ASTPrimary node = parser.parsePrimary();
+
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTMethodInvocation);
+
+        ASTMethodInvocation mi = (ASTMethodInvocation) child;
+        checkBinary(mi, OPEN_PARENTHESIS, ASTExpressionName.class, ASTIdentifier.class);
+    }
+
+    /**
+     * Tests primary of method invocation, expression name and type arguments.
+     */
+    @Test
+    public void testPrimaryOfMethodInvocationOfExpressionNameTypeArguments()
+    {
+        Parser parser = new Parser(new Scanner("expr.name.<T>methodName(one)"));
+        ASTPrimary node = parser.parsePrimary();
+
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTMethodInvocation);
+
+        ASTMethodInvocation mi = (ASTMethodInvocation) child;
+        assertEquals(OPEN_PARENTHESIS, mi.getOperation());
+        children = mi.getChildren();
+        assertEquals(4, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionName.class, ASTTypeArguments.class, ASTIdentifier.class, ASTArgumentList.class);
+        compareClasses(expectedClasses, children);
+        ASTIdentifier methodName = (ASTIdentifier) children.get(2);
+        assertEquals("methodName", methodName.getValue());
+    }
+
+    /**
+     * Tests primary of method invocation, simple name.
+     */
+    @Test
+    public void testPrimaryOfMethodInvocationOfSimpleName()
     {
         Parser parser = new Parser(new Scanner("methodName(helperMethod(i), (a + b), ++j)"));
         ASTPrimary node = parser.parsePrimary();
@@ -1366,7 +1408,55 @@ public class ParserExpressionsTest
         assertTrue(child instanceof ASTMethodInvocation);
 
         ASTMethodInvocation mi = (ASTMethodInvocation) child;
-        checkBinary(mi, OPEN_PARENTHESIS, ASTPrimary.class, ASTArgumentList.class);
+        checkBinary(mi, OPEN_PARENTHESIS, ASTIdentifier.class, ASTArgumentList.class);
+    }
+
+    /**
+     * Tests primary of method invocation starting with <code>super</code>.
+     */
+    @Test
+    public void testPrimaryOfMethodInvocationOfSuper()
+    {
+        Parser parser = new Parser(new Scanner("super.<T>inheritedMethod(\"super\")"));
+        ASTPrimary node = parser.parsePrimary();
+
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTMethodInvocation);
+
+        ASTMethodInvocation mi = (ASTMethodInvocation) child;
+        assertEquals(OPEN_PARENTHESIS, mi.getOperation());
+        children = mi.getChildren();
+        assertEquals(4, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTSuper.class, ASTTypeArguments.class, ASTIdentifier.class, ASTArgumentList.class);
+        compareClasses(expectedClasses, children);
+        ASTIdentifier methodName = (ASTIdentifier) children.get(2);
+        assertEquals("inheritedMethod", methodName.getValue());
+    }
+
+    /**
+     * Tests primary of method invocation starting with <code>super</code>.
+     */
+    @Test
+    public void testPrimaryOfMethodInvocationOfTypeNameSuper()
+    {
+        Parser parser = new Parser(new Scanner("org.test.EnclosingClass.super.<T>inheritedMethod(\"super\")"));
+        ASTPrimary node = parser.parsePrimary();
+
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTMethodInvocation);
+
+        ASTMethodInvocation mi = (ASTMethodInvocation) child;
+        assertEquals(OPEN_PARENTHESIS, mi.getOperation());
+        children = mi.getChildren();
+        assertEquals(5, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTTypeName.class, ASTSuper.class, ASTTypeArguments.class, ASTIdentifier.class, ASTArgumentList.class);
+        compareClasses(expectedClasses, children);
+        ASTIdentifier methodName = (ASTIdentifier) children.get(3);
+        assertEquals("inheritedMethod", methodName.getValue());
     }
 
     /**
@@ -1429,6 +1519,99 @@ public class ParserExpressionsTest
         Parser parser = new Parser(new Scanner("qualified.type.this"));
         ASTPrimary node = parser.parsePrimary();
         checkBinary(node, DOT, ASTTypeName.class, ASTThis.class);
+    }
+
+    /**
+     * Tests nested primary expressions, including Class Instance Creation
+     * Expressions, Method Invocations, and Element Accesses.
+     */
+    @Test
+    public void testPrimaryOfNested()
+    {
+        Parser parser = new Parser(new Scanner("new Foo()[i].method1()[j].<T>method2(1).new Bar()"));
+        ASTPrimary node = parser.parsePrimary();
+
+        assertNull(node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTClassInstanceCreationExpression);
+
+        ASTClassInstanceCreationExpression outerCice = (ASTClassInstanceCreationExpression) child;
+        assertNull(outerCice.getOperation());
+        children = outerCice.getChildren();
+        assertEquals(2, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTPrimary.class, ASTUnqualifiedClassInstanceCreationExpression.class);
+        compareClasses(expectedClasses, children);
+
+        ASTPrimary pMethod2 = (ASTPrimary) children.get(0);
+        assertNull(pMethod2.getOperation());
+        children = pMethod2.getChildren();
+        assertEquals(1, children.size());
+        child = children.get(0);
+        assertTrue(child instanceof ASTMethodInvocation);
+
+        ASTMethodInvocation method2 = (ASTMethodInvocation) children.get(0);
+        assertEquals(OPEN_PARENTHESIS, method2.getOperation());
+        children = method2.getChildren();
+        assertEquals(4, children.size());
+        expectedClasses = Arrays.asList(ASTPrimary.class, ASTTypeArguments.class, ASTIdentifier.class, ASTArgumentList.class);
+        compareClasses(expectedClasses, children);
+        ASTIdentifier methodName2 = (ASTIdentifier) children.get(2);
+        assertEquals("method2", methodName2.getValue());
+
+        ASTPrimary pJElementAccess = (ASTPrimary) children.get(0);
+        assertNull(pJElementAccess.getOperation());
+        children = pJElementAccess.getChildren();
+        assertEquals(1, children.size());
+        child = children.get(0);
+        assertTrue(child instanceof ASTElementAccess);
+
+        ASTElementAccess jElementAccess = (ASTElementAccess) child;
+        assertEquals(OPEN_BRACKET, jElementAccess.getOperation());
+        children = jElementAccess.getChildren();
+        assertEquals(2, children.size());
+        expectedClasses = Arrays.asList(ASTPrimary.class, ASTExpression.class);
+        compareClasses(expectedClasses, children);
+
+        ASTPrimary pMethod1 = (ASTPrimary) children.get(0);
+        assertNull(pMethod1.getOperation());
+        children = pMethod1.getChildren();
+        assertEquals(1, children.size());
+        child = children.get(0);
+        assertTrue(child instanceof ASTMethodInvocation);
+
+        ASTMethodInvocation method1 = (ASTMethodInvocation) children.get(0);
+        assertEquals(OPEN_PARENTHESIS, method1.getOperation());
+        children = method1.getChildren();
+        assertEquals(2, children.size());
+        expectedClasses = Arrays.asList(ASTPrimary.class, ASTIdentifier.class);
+        compareClasses(expectedClasses, children);
+        ASTIdentifier methodName1 = (ASTIdentifier) children.get(1);
+        assertEquals("method1", methodName1.getValue());
+
+        ASTPrimary pIElementAccess = (ASTPrimary) children.get(0);
+        assertNull(pIElementAccess.getOperation());
+        children = pIElementAccess.getChildren();
+        assertEquals(1, children.size());
+        child = children.get(0);
+        assertTrue(child instanceof ASTElementAccess);
+
+        ASTElementAccess iElementAccess = (ASTElementAccess) child;
+        assertEquals(OPEN_BRACKET, iElementAccess.getOperation());
+        children = iElementAccess.getChildren();
+        assertEquals(2, children.size());
+        expectedClasses = Arrays.asList(ASTPrimary.class, ASTExpression.class);
+        compareClasses(expectedClasses, children);
+
+        ASTPrimary pInnerCice = (ASTPrimary) children.get(0);
+        assertNull(pInnerCice.getOperation());
+        children = pInnerCice.getChildren();
+        assertEquals(1, children.size());
+        child = children.get(0);
+        assertTrue(child instanceof ASTClassInstanceCreationExpression);
+
+        node.collapseThenPrint();
     }
 
     /**
@@ -1563,26 +1746,7 @@ public class ParserExpressionsTest
     {
         Parser parser = new Parser(new Scanner("[1][2][3]"));
         ASTDimExprs node = parser.parseDimExprs();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTDimExprs.class, ASTDimExpr.class);
-        compareClasses(expectedClasses, children);
-
-        ASTDimExprs child = (ASTDimExprs) children.get(0);
-        assertNull(child.getOperation());
-        children = child.getChildren();
-        assertEquals(2, children.size());
-        compareClasses(expectedClasses, children);
-
-        child = (ASTDimExprs) children.get(0);
-        assertNull(child.getOperation());
-        children = child.getChildren();
-        assertEquals(1, children.size());
-        assertTrue(children.get(0) instanceof ASTDimExpr);
-
-        node.collapseThenPrint();
+        checkList(node, null, ASTDimExpr.class, 3);
     }
 
     /**
@@ -1626,7 +1790,7 @@ public class ParserExpressionsTest
     {
         Parser parser = new Parser(new Scanner("i + 1"));
         ASTVariableInitializerList node = parser.parseVariableInitializerList();
-        checkSimple(node, ASTVariableInitializer.class);
+        checkSimple(node, ASTVariableInitializer.class, COMMA);
     }
 
     /**
@@ -1637,7 +1801,7 @@ public class ParserExpressionsTest
     {
         Parser parser = new Parser(new Scanner("x + 1, y - 1"));
         ASTVariableInitializerList node = parser.parseVariableInitializerList();
-        checkBinaryLeftAssociative(node, Arrays.asList(COMMA), ASTVariableInitializerList.class, ASTVariableInitializer.class);
+        checkList(node, COMMA, ASTVariableInitializer.class, 2);
     }
 
     /**
@@ -1648,7 +1812,7 @@ public class ParserExpressionsTest
     {
         Parser parser = new Parser(new Scanner("this, count + 1, sumSoFar + value"));
         ASTVariableInitializerList node = parser.parseVariableInitializerList();
-        checkBinaryLeftAssociative(node, Arrays.asList(COMMA, COMMA), ASTVariableInitializerList.class, ASTVariableInitializer.class);
+        checkList(node, COMMA, ASTVariableInitializer.class, 3);
     }
 
     /**

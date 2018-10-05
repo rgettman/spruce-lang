@@ -1,7 +1,9 @@
 package org.spruce.compiler.ast;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -35,5 +37,38 @@ public class ASTDataTypeNoArray extends ASTParentNode
     public boolean isCollapsible()
     {
         return false;
+    }
+
+    /**
+     * Converts the children from (DTNA, SimpleType) to (AmbiguousName, Identifier)
+     * or (SimpleType) to (Identifier).
+     * @return A <code>List</code> of child nodes suitable for an
+     *     <code>ASTAmbiguousName</code> or an <code>ASTExpressionName</code>.
+     */
+    public List<ASTNode> convertChildren()
+    {
+        List<ASTNode> children = getChildren();
+        List<ASTNode> convertedChildren = new ArrayList<>(children.size());
+        for (ASTNode child : children)
+        {
+            if (child instanceof ASTDataTypeNoArray)
+            {
+                ASTDataTypeNoArray dtna = (ASTDataTypeNoArray) child;
+                ASTAmbiguousName ambName = new ASTAmbiguousName(dtna.getLocation(), dtna.convertChildren());
+                ambName.setOperation(dtna.getOperation());
+                convertedChildren.add(ambName);
+            }
+            else if (child instanceof ASTSimpleType)
+            {
+                ASTSimpleType st = (ASTSimpleType) child;
+                List<ASTNode> stChildren = st.getChildren();
+                if (stChildren.size() > 1)
+                {
+                    throw new CompileException("Variable declarator expected after type.");
+                }
+                convertedChildren.add(stChildren.get(0)); // ASTIdentifier
+            }
+        }
+        return convertedChildren;
     }
 }

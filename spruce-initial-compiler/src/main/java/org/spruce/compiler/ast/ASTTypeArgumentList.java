@@ -7,14 +7,11 @@ import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTTypeArgumentList</code> is a comma-separated list of type
- * arguments.</p>
- *
- * <p>The operators associated with type argument lists are left-associative.</p>
+ * argument instances.</p>
  *
  * <em>
  * TypeArgumentList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;TypeArgument<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;TypeArgumentList , TypeArgument
+ * &nbsp;&nbsp;&nbsp;&nbsp;TypeArgument {, TypeArgument}
  * </em>
  */
 public class ASTTypeArgumentList extends ASTParentNode

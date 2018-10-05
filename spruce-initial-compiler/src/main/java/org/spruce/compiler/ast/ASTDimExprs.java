@@ -5,12 +5,11 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTDimExprs</code> is a set of dim expr instances.</p>
+ * <p>An <code>ASTDimExprs</code> is a list of dim expr instances.</p>
  *
  * <em>
  * DimExprs:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DimExpr<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DimExprs DimExpr
+ * &nbsp;&nbsp;&nbsp;&nbsp;DimExpr {DimExpr}<br>
  * </em>
  */
 public class ASTDimExprs extends ASTParentNode

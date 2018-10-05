@@ -205,7 +205,7 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("?"));
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
-        checkSimple(node, ASTTypeArgument.class);
+        checkSimple(node, ASTTypeArgument.class, COMMA);
     }
 
     /**
@@ -216,7 +216,7 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("Employee, ?, ? <: Number"));
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
-        checkBinaryLeftAssociative(node, Arrays.asList(COMMA, COMMA), ASTTypeArgumentList.class, ASTTypeArgument.class);
+        checkList(node, COMMA, ASTTypeArgument.class, 3);
     }
 
     /**

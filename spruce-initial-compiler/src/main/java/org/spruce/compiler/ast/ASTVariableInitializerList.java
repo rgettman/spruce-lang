@@ -5,16 +5,12 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTVariableInitializerList</code> is one or more comma-separated
- * expressions (no incr/decr).</p>
- *
- * <p>The operators associated with variable initializer lists are left-associative.</p>
+ * <p>An <code>ASTVariableInitializerList</code> is a list of comma-separated
+ * variable initializer instances.</p>
  *
  * <em>
  * VariableInitializerList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;VariableInitializer<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;VariableInitializerList , VariableInitializer
- * </em>
+ * &nbsp;&nbsp;&nbsp;&nbsp;VariableInitializer {, VariableInitializer}
  */
 public class ASTVariableInitializerList extends ASTParentNode
 {

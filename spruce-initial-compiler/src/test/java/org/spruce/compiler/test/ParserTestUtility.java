@@ -240,6 +240,33 @@ public class ParserTestUtility
     }
 
     /**
+     * Helper method to test the list node relationship:
+     *                 parent(operation)
+     *                  /    |    \    \
+     *              child  child  ...  child
+     *
+     * The parent node is expected to have the given operation, and all
+     * children are expected to be of the given child class.
+     * @param node The parent node to check.
+     * @param expectedOperation The operation that the parent node is expected
+     *      to have.
+     * @param expectedSize The expected size of the list of child nodes.
+     * @param childClass The class of the all children.
+     */
+    static void checkList(ASTParentNode node, TokenType expectedOperation, Class<? extends ASTNode> childClass, int expectedSize)
+    {
+        assertEquals(expectedOperation, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(expectedSize, children.size());
+        for (ASTNode child : children)
+        {
+            assertTrue(childClass.isInstance(child));
+        }
+
+        node.collapseThenPrint();
+    }
+
+    /**
      * Helper method to test the binary node relationship:
      *                 parent
      *                 /    \
