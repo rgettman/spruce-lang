@@ -1,7 +1,6 @@
 package org.spruce.compiler.test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.spruce.compiler.ast.*;
@@ -207,7 +206,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("a := b"));
         ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
-        checkSimple(node, ASTVariableDeclarator.class);
+        checkSimple(node, ASTVariableDeclarator.class, COMMA);
     }
 
     /**
@@ -218,7 +217,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("x := 1, y := x"));
         ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
-        checkBinaryLeftAssociative(node, Arrays.asList(COMMA), ASTVariableDeclaratorList.class, ASTVariableDeclarator.class);
+        checkList(node, COMMA, ASTVariableDeclarator.class, 2);
     }
 
     /**
@@ -229,7 +228,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("a := 1, b := a + 1, c := 2 * b"));
         ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
-        checkBinaryLeftAssociative(node, Arrays.asList(COMMA, COMMA), ASTVariableDeclaratorList.class, ASTVariableDeclarator.class);
+        checkList(node, COMMA, ASTVariableDeclarator.class, 3);
     }
 
     /**
@@ -274,6 +273,17 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("auto"));
         ASTLocalVariableType node = parser.parseLocalVariableType();
         checkEmpty(node, AUTO);
+    }
+
+    /**
+     * Tests statement of block.
+     */
+    @Test
+    public void testStatementOfBlock()
+    {
+        Parser parser = new Parser(new Scanner("{x := x + 1;}"));
+        ASTStatement node = parser.parseStatement();
+        checkSimple(node, ASTBlock.class);
     }
 
     /**
@@ -351,6 +361,295 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("assert status = true;"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTAssertStatement.class);
+    }
+
+    /**
+     * Tests statement of if statement.
+     */
+    @Test
+    public void testStatementOfIfStatement()
+    {
+        Parser parser = new Parser(new Scanner("if (success) { return true; }"));
+        ASTStatement node = parser.parseStatement();
+        checkSimple(node, ASTIfStatement.class);
+    }
+
+    /**
+     * Tests statement of while statement.
+     */
+    @Test
+    public void testStatementOfWhileStatement()
+    {
+        Parser parser = new Parser(new Scanner("while (shouldContinue) doWork();"));
+        ASTStatement node = parser.parseStatement();
+        checkSimple(node, ASTWhileStatement.class);
+    }
+
+    /**
+     * Tests statement of do statement.
+     */
+    @Test
+    public void testStatementOfDoStatement()
+    {
+        Parser parser = new Parser(new Scanner("do { work(); } while (shouldContinue);"));
+        ASTStatement node = parser.parseStatement();
+        checkSimple(node, ASTDoStatement.class);
+    }
+
+    /**
+     * Tests statement of synchronized statement.
+     */
+    @Test
+    public void testStatementOfSynchronizedStatement()
+    {
+        Parser parser = new Parser(new Scanner("synchronized (myLock) {\n    myLock.wait();\n}"));
+        ASTStatement node = parser.parseStatement();
+        checkSimple(node, ASTSynchronizedStatement.class);
+    }
+
+    /**
+     * Tests statement of for statement.
+     */
+    @Test
+    public void testStatementOfForStatement()
+    {
+        Parser parser = new Parser(new Scanner("for (;;) doWork();"));
+        ASTStatement node = parser.parseStatement();
+        checkSimple(node, ASTForStatement.class);
+    }
+
+    /**
+     * Tests simple if statement.
+     */
+    @Test
+    public void testIfStatementOfSimple()
+    {
+        Parser parser = new Parser(new Scanner("if (success) { return true; }"));
+        ASTIfStatement node = parser.parseIfStatement();
+
+        assertEquals(IF, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(2, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTStatement.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests if statement with init.
+     */
+    @Test
+    public void testIfStatementOfInit()
+    {
+        Parser parser = new Parser(new Scanner("if {String line := br.readLine()} (line != null) out.println(line);"));
+        ASTIfStatement node = parser.parseIfStatement();
+
+        assertEquals(IF, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests if statement with else.
+     */
+    @Test
+    public void testIfStatementOfElse()
+    {
+        Parser parser = new Parser(new Scanner("if (result) {\n    out.println(\"Test passed.\");\n} else {\n    out.println(\"Test FAILED!\");\n}"));
+        ASTIfStatement node = parser.parseIfStatement();
+
+        assertEquals(IF, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests nested if statements (if/else if/else).
+     */
+    @Test
+    public void testIfStatementNested()
+    {
+        Parser parser = new Parser(new Scanner("if (result) {\n    out.println(\"Test passed.\");\n} else if (DEBUG) {\n    out.println(\"Test failed in debug mode!\");\n} else {\n    out.println(\"Test FAILED!\");\n}"));
+        ASTIfStatement node = parser.parseIfStatement();
+
+        assertEquals(IF, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
+        compareClasses(expectedClasses, children);
+
+        ASTStatement nested = (ASTStatement) children.get(2);
+        assertNull(nested.getOperation());
+        children = nested.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTIfStatement);
+
+        ASTIfStatement nestedIf = (ASTIfStatement) child;
+        assertEquals(IF, nestedIf.getOperation());
+        children = nestedIf.getChildren();
+        assertEquals(3, children.size());
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests simple while statement.
+     */
+    @Test
+    public void testWhileStatementOfSimple()
+    {
+        Parser parser = new Parser(new Scanner("while (shouldContinue) { doWork(); }"));
+        ASTWhileStatement node = parser.parseWhileStatement();
+
+        assertEquals(WHILE, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(2, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTStatement.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests while statement with init.
+     */
+    @Test
+    public void testWhileStatementOfInit()
+    {
+        Parser parser = new Parser(new Scanner("while {String line := br.readLine()} (line != null) out.println(line);"));
+        ASTWhileStatement node = parser.parseWhileStatement();
+
+        assertEquals(WHILE, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests do statement.
+     */
+    @Test
+    public void testDoStatement()
+    {
+        Parser parser = new Parser(new Scanner("do { work(); } while (shouldContinue);"));
+        ASTDoStatement node = parser.parseDoStatement();
+
+        assertEquals(DO, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(2, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTStatement.class, ASTExpressionNoIncrDecr.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests synchronized statement.
+     */
+    @Test
+    public void tesSynchronizedStatement()
+    {
+        Parser parser = new Parser(new Scanner("synchronized (lock) { lock.notifyAll(); }"));
+        ASTSynchronizedStatement node = parser.parseSynchronizedStatement();
+
+        assertEquals(SYNCHRONIZED, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(2, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTBlock.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests for statement of basic for statement of all 3 parts.
+     */
+    @Test
+    public void testForStatementOfBasicForStatementAll3()
+    {
+        Parser parser = new Parser(new Scanner("for (Int i := 0; i < 10; i++) {\n    out.println(i);\n}"));
+        ASTForStatement node = parser.parseForStatement();
+
+        assertEquals(FOR, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTBasicForStatement);
+
+        ASTBasicForStatement basicForStmt = (ASTBasicForStatement) child;
+        assertEquals(SEMICOLON, basicForStmt.getOperation());
+        children = basicForStmt.getChildren();
+        assertEquals(4, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatementExpressionList.class, ASTStatement.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests for statement of basic for statement of infinite loop.
+     */
+    @Test
+    public void testForStatementOfBasicForStatementInfiniteLoop()
+    {
+        Parser parser = new Parser(new Scanner("for (;;) {\n    out.println(\"Hello world!\");\n}"));
+        ASTForStatement node = parser.parseForStatement();
+
+        assertEquals(FOR, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTBasicForStatement);
+
+        ASTBasicForStatement basicForStmt = (ASTBasicForStatement) child;
+        assertEquals(SEMICOLON, basicForStmt.getOperation());
+        children = basicForStmt.getChildren();
+        assertEquals(1, children.size());
+        child = children.get(0);
+        assertTrue(child instanceof ASTStatement);
+
+        node.collapseThenPrint();
+    }
+
+
+
+    /**
+     * Tests for statement of enhanced for statement.
+     */
+    @Test
+    public void testForStatementOfEnhancedForStatement()
+    {
+        Parser parser = new Parser(new Scanner("for (Int i : array) {\n    sum += i;\n}"));
+        ASTForStatement node = parser.parseForStatement();
+
+        assertEquals(FOR, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTEnhancedForStatement);
+
+        ASTEnhancedForStatement enhForStmt = (ASTEnhancedForStatement) child;
+        assertEquals(COLON, enhForStmt.getOperation());
+        children = enhForStmt.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTLocalVariableDeclaration.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
     }
 
     /**
@@ -458,6 +757,78 @@ public class ParserStatementsTest
         assertTrue(child instanceof ASTStatementExpression);
 
         node.collapseThenPrint();
+    }
+
+    /**
+     * Tests init of local variable declaration.
+     */
+    @Test
+    public void testInitOfLocalVariableDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("Int i := 0, j := 0"));
+        ASTInit node = parser.parseInit();
+        checkSimple(node, ASTLocalVariableDeclaration.class);
+    }
+
+    /**
+     * Tests init of statement expression.
+     */
+    @Test
+    public void testInitOfStatementExpression()
+    {
+        Parser parser = new Parser(new Scanner("i := 0"));
+        ASTInit node = parser.parseInit();
+
+        assertNull(node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTStatementExpressionList);
+
+        ASTStatementExpressionList list = (ASTStatementExpressionList) child;
+        checkSimple(list, ASTStatementExpression.class, COMMA);
+    }
+
+    /**
+     * Tests init of statement expression list.
+     */
+    @Test
+    public void testInitOfStatementExpressionList()
+    {
+        Parser parser = new Parser(new Scanner("i := 0, j := 0, k := 1"));
+        ASTInit node = parser.parseInit();
+
+        assertNull(node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTStatementExpressionList);
+
+        ASTStatementExpressionList list = (ASTStatementExpressionList) child;
+        checkList(list, COMMA, ASTStatementExpression.class, 3);
+    }
+
+    /**
+     * Tests statement expression list of statement expression.
+     */
+    @Test
+    public void testStatementExpressionListOfStatementExpression()
+    {
+        Parser parser = new Parser(new Scanner("i := 0"));
+        ASTStatementExpressionList node = parser.parseStatementExpressionList();
+        checkSimple(node, ASTStatementExpression.class, COMMA);
+    }
+
+    /**
+     * Tests statement expression lists of nested statement expression lists
+     * (here, just multiple statement expressions).
+     */
+    @Test
+    public void testStatementExpressionListNested()
+    {
+        Parser parser = new Parser(new Scanner("i := 0, j := 0, k := 1"));
+        ASTStatementExpressionList node = parser.parseStatementExpressionList();
+        checkList(node, COMMA, ASTStatementExpression.class, 3);
     }
 
     /**

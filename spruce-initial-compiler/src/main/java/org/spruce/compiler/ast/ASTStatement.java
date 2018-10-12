@@ -13,22 +13,21 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * Statement:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;Block<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;StatementExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;BreakStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ContinueStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;FallthroughStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ReturnStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ThrowStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
- * &nbsp;&nbsp;&nbsp;&nbsp;IfThenStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;IfThenElseStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;IfStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;WhileStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DoWhileStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ForStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;DoWhileStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;SynchronizedStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;TryExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Block
+ * &nbsp;&nbsp;&nbsp;&nbsp;TryStatement
  * </em>
  */
 public class ASTStatement extends ASTParentNode

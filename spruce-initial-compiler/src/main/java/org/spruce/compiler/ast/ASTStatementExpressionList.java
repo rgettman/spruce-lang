@@ -5,23 +5,23 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTVariableDeclaratorList</code> is a comma-separated list of
- * variable declarators.</p>
+ * <p>An <code>ASTStatementExpressionList</code> is a comma-separated list of
+ * statement expressions.</p>
  *
  * <em>
- * VariableDeclaratorList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;VariableDeclarator {, VariableDeclarator}
+ * StatementExpressionList:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;StatementExpression {, StatementExpression}
  * </em>
  */
-public class ASTVariableDeclaratorList extends ASTParentNode
+public class ASTStatementExpressionList extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTVariableDeclaratorList</code> at the given <code>Location</code>
+     * Constructs an <code>ASTStatementExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTVariableDeclaratorList(Location location, List<ASTNode> children)
+    public ASTStatementExpressionList(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

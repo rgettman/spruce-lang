@@ -5,23 +5,23 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTVariableDeclaratorList</code> is a comma-separated list of
- * variable declarators.</p>
+ * <p>An <code>ASTSynchronizedStatement</code> is "synchronized", followed by
+ * an expression (no incr/decr) in parentheses, and a block.</p>
  *
  * <em>
- * VariableDeclaratorList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;VariableDeclarator {, VariableDeclarator}
+ * SynchronizedStatement:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;synchronized ( ExpressionNoIncrDecr ) Block
  * </em>
  */
-public class ASTVariableDeclaratorList extends ASTParentNode
+public class ASTSynchronizedStatement extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTVariableDeclaratorList</code> at the given <code>Location</code>
+     * Constructs an <code>ASTSynchronizedStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTVariableDeclaratorList(Location location, List<ASTNode> children)
+    public ASTSynchronizedStatement(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

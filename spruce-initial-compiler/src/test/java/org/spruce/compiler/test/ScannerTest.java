@@ -227,7 +227,8 @@ public class ScannerTest
     @Test
     public void testMethodAndPrimitiveTypes()
     {
-        String line = "abstract shared strictfp native synchronized transient volatile override void testMethod() throws Exception {";
+        String line = "abstract shared strictfp native transient volatile override void testMethod() throws Exception {";
+            line += "\n    synchronized (obj) {}";
             line += "\n    int[] iarray := new int[] {1, 2, 3};";
             line += "\n    byte b := 1;";
             line += "\n    short s := 2;";
@@ -245,12 +246,16 @@ public class ScannerTest
         List<Token> expectedTokens = Arrays.asList(
                 new Token(ABSTRACT, "abstract"), new Token(SHARED, "shared"),
                 new Token(STRICTFP, "strictfp"), new Token(NATIVE, "native"),
-                new Token(SYNCHRONIZED, "synchronized"), new Token(TRANSIENT, "transient"),
+                new Token(TRANSIENT, "transient"),
                 new Token(VOLATILE, "volatile"), new Token(OVERRIDE, "override"),
                 new Token(VOID, "void"), new Token(IDENTIFIER, "testMethod"),
                 new Token(OPEN_PARENTHESIS, "("), new Token(CLOSE_PARENTHESIS, ")"),
                 new Token(THROWS, "throws"),
                 new Token(IDENTIFIER, "Exception"), new Token(OPEN_BRACE, "{"),
+
+                new Token(SYNCHRONIZED, "synchronized"), new Token(OPEN_PARENTHESIS, "("),
+                new Token(IDENTIFIER, "obj"), new Token(CLOSE_PARENTHESIS, ")"),
+                new Token(OPEN_BRACE, "{"), new Token(CLOSE_BRACE, "}"),
 
                 new Token(INT, "int"), new Token(OPEN_CLOSE_BRACKET, "[]"),
                 new Token(IDENTIFIER, "iarray"), new Token(ASSIGNMENT, ":="),

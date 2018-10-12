@@ -10,7 +10,8 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * LocalVariableDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;VariableModifierList LocalVariableType VariableDeclaratorList
+ * &nbsp;&nbsp;&nbsp;&nbsp;VariableModifierList LocalVariableType VariableDeclaratorList<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;LocalVariableType VariableDeclaratorList
  * </em>
  */
 public class ASTLocalVariableDeclaration extends ASTParentNode
