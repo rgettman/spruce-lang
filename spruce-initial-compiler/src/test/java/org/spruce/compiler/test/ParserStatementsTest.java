@@ -126,6 +126,7 @@ public class ParserStatementsTest
         ASTLocalVariableDeclarationStatement node = parser.parseLocalVariableDeclarationStatement();
         checkSimple(node, ASTLocalVariableDeclaration.class, SEMICOLON);
     }
+
     /**
      * Tests local variable declaration without modifiers.
      */
@@ -416,6 +417,276 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("for (;;) doWork();"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTForStatement.class);
+    }
+
+    /**
+     * Tests statement of try statement.
+     */
+    @Test
+    public void testStatementOfTryStatement()
+    {
+        Parser parser = new Parser(new Scanner("try {\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n}"));
+        ASTStatement node = parser.parseStatement();
+        checkSimple(node, ASTTryStatement.class);
+    }
+
+    /**
+     * Tests try statement of catch.
+     */
+    @Test
+    public void testTryStatementOfCatch()
+    {
+        Parser parser = new Parser(new Scanner("try {\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n}"));
+        ASTTryStatement node = parser.parseTryStatement();
+        checkBinary(node, TRY, ASTBlock.class, ASTCatches.class);
+    }
+
+    /**
+     * Tests try statement of finally.
+     */
+    @Test
+    public void testTryStatementOfFinally()
+    {
+        Parser parser = new Parser(new Scanner("try {\n    br.readLine();\n} finally {\n    br.close();\n}"));
+        ASTTryStatement node = parser.parseTryStatement();
+        checkBinary(node, TRY, ASTBlock.class, ASTFinally.class);
+    }
+
+    /**
+     * Tests try statement of resource specification.
+     */
+    @Test
+    public void testTryStatementOfResourceSpecification()
+    {
+        Parser parser = new Parser(new Scanner("try (BufferedReader br := new BufferedReader()){\n    br.readLine();\n}"));
+        ASTTryStatement node = parser.parseTryStatement();
+        checkBinary(node, TRY, ASTResourceSpecification.class, ASTBlock.class);
+    }
+
+    /**
+     * Tests try statement of all optionals.
+     */
+    @Test
+    public void testTryStatementOfAll()
+    {
+        Parser parser = new Parser(new Scanner("try (BufferedReader br := new BufferedReader()){\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n} finally {\n    br.close();\n}"));
+        ASTTryStatement node = parser.parseTryStatement();
+
+        assertEquals(TRY, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(4, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTResourceSpecification.class, ASTBlock.class, ASTCatches.class, ASTFinally.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests resource specification of resource list.
+     */
+    @Test
+    public void testResourceSpecification()
+    {
+        Parser parser = new Parser(new Scanner("(fr; BufferedReader br := new BufferedReader(fr))"));
+        ASTResourceSpecification node = parser.parseResourceSpecification();
+        checkSimple(node, ASTResourceList.class);
+    }
+
+    /**
+     * Tests resource specification of resource list and semicolon.
+     */
+    @Test
+    public void testResourceSpecificationSemicolon()
+    {
+        Parser parser = new Parser(new Scanner("(fr; BufferedReader br := new BufferedReader(fr);)"));
+        ASTResourceSpecification node = parser.parseResourceSpecification();
+        checkSimple(node, ASTResourceList.class);
+    }
+
+    /**
+     * Tests resource list of resource.
+     */
+    @Test
+    public void testResourceListOfResource()
+    {
+        Parser parser = new Parser(new Scanner("BufferedReader br := new BufferedReader()"));
+        ASTResourceList node = parser.parseResourceList();
+        checkSimple(node, ASTResource.class, SEMICOLON);
+    }
+
+    /**
+     * Tests resource list of nested resource lists (here, just multiple resources).
+     */
+    @Test
+    public void testResourceListNested()
+    {
+        Parser parser = new Parser(new Scanner("fr; BufferedReader br := new BufferedReader(fr)"));
+        ASTResourceList node = parser.parseResourceList();
+        checkList(node, SEMICOLON, ASTResource.class, 2);
+    }
+
+    /**
+     * Test resource of resource declaration.
+     */
+    @Test
+    public void testResourceOfResourceDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("BufferedReader br := new BufferedReader()"));
+        ASTResource node = parser.parseResource();
+        checkSimple(node, ASTResourceDeclaration.class);
+    }
+
+    /**
+     * Test resource of expression name.
+     */
+    @Test
+    public void testResourceOfExpressionName()
+    {
+        Parser parser = new Parser(new Scanner("br"));
+        ASTResource node = parser.parseResource();
+        checkSimple(node, ASTExpressionName.class);
+    }
+
+    /**
+     * Test resource of field access.
+     */
+    @Test
+    public void testResourceOfFieldAccess()
+    {
+        Parser parser = new Parser(new Scanner("super.br"));
+        ASTResource node = parser.parseResource();
+        checkSimple(node, ASTFieldAccess.class);
+    }
+
+    /**
+     * Test resource declaration, no variable modifiers.
+     */
+    @Test
+    public void testResourceDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("BufferedReader br := new BufferedReader()"));
+        ASTResourceDeclaration node = parser.parseResourceDeclaration();
+
+        assertEquals(ASSIGNMENT, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTLocalVariableType.class, ASTIdentifier.class, ASTExpressionNoIncrDecr.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Test resource declaration, with variable modifiers.
+     */
+    @Test
+    public void testResourceDeclarationOfVariableModifier()
+    {
+        Parser parser = new Parser(new Scanner("final BufferedReader br := new BufferedReader()"));
+        ASTResourceDeclaration node = parser.parseResourceDeclaration();
+
+        assertEquals(ASSIGNMENT, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(4, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTVariableModifierList.class, ASTLocalVariableType.class, ASTIdentifier.class, ASTExpressionNoIncrDecr.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Test catches of catch clauses.
+     */
+    @Test
+    public void testCatches()
+    {
+        Parser parser = new Parser(new Scanner("catch (FileNotFoundException e) { err.println(e.getMessage()); }\ncatch (IOException e) {out.println(e.getMessage()); }"));
+        ASTCatches node = parser.parseCatches();
+        checkList(node, null, ASTCatchClause.class, 2);
+    }
+
+    /**
+     * Tests catch clause.
+     */
+    @Test
+    public void testCatchClause()
+    {
+        Parser parser = new Parser(new Scanner("catch (CompileException ce) { out.println(ce.getMessage()); }"));
+        ASTCatchClause node = parser.parseCatchClause();
+        checkBinary(node, CATCH, ASTCatchFormalParameter.class, ASTBlock.class);
+    }
+
+    /**
+     * Tests catch type of data type.
+     */
+    @Test
+    public void testCatchTypeOfDataType()
+    {
+        Parser parser = new Parser(new Scanner("Exception"));
+        ASTCatchType node = parser.parseCatchType();
+        checkSimple(node, ASTDataType.class, BITWISE_OR);
+    }
+
+    /**
+     * Tests catch formal parameter without modifiers.
+     */
+    @Test
+    public void testCatchFormalParameter()
+    {
+        Parser parser = new Parser(new Scanner("Exception e"));
+        ASTCatchFormalParameter node = parser.parseCatchFormalParameter();
+        checkBinary(node, ASTCatchType.class, ASTIdentifier.class);
+    }
+
+    /**
+     * Tests catch formal parameter with modifiers.
+     */
+    @Test
+    public void testCatchFormalParameterOfModifiers()
+    {
+        Parser parser = new Parser(new Scanner("final CustomException ce"));
+        ASTCatchFormalParameter node = parser.parseCatchFormalParameter();
+
+        assertNull(node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTVariableModifierList.class, ASTCatchType.class, ASTIdentifier.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests catch type.
+     */
+    @Test
+    public void testCatchType()
+    {
+        Parser parser = new Parser(new Scanner("IOException | SQLException"));
+        ASTCatchType node = parser.parseCatchType();
+        checkList(node, BITWISE_OR, ASTDataType.class, 2);
+    }
+
+    /**
+     * Tests nested catch types, here, just a list of data types.
+     */
+    @Test
+    public void testCatchTypeNested()
+    {
+        Parser parser = new Parser(new Scanner("ArrayIndexOutOfBoundsException | NullPointerException | IllegalArgumentException"));
+        ASTCatchType node = parser.parseCatchType();
+        checkList(node, BITWISE_OR, ASTDataType.class, 3);
+    }
+
+    /**
+     * Tests finally block.
+     */
+    @Test
+    public void testFinally()
+    {
+        Parser parser = new Parser(new Scanner("finally { out.println(\"Always executed!\"); }"));
+        ASTFinally node = parser.parseFinally();
+        checkSimple(node, ASTBlock.class, FINALLY);
     }
 
     /**

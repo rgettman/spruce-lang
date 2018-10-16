@@ -1352,6 +1352,72 @@ public class ParserExpressionsTest
     }
 
     /**
+     * Tests primary of field access of super.
+     */
+    @Test
+    public void testPrimaryOfFieldAccessOfSuper()
+    {
+        Parser parser = new Parser(new Scanner("super.superclassField"));
+        ASTPrimary node = parser.parsePrimary();
+
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTFieldAccess);
+
+        ASTFieldAccess fa = (ASTFieldAccess) child;
+        checkBinary(fa, DOT, ASTSuper.class, ASTIdentifier.class);
+    }
+
+    /**
+     * Tests primary of field access of type name and super.
+     */
+    @Test
+    public void testPrimaryOfFieldAccessOfTypeNameSuper()
+    {
+        Parser parser = new Parser(new Scanner("EnclosingClass.super.superclassField"));
+        ASTPrimary node = parser.parsePrimary();
+
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTFieldAccess);
+
+        ASTFieldAccess fa = (ASTFieldAccess) child;
+        assertEquals(DOT, fa.getOperation());
+        children = fa.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTTypeName.class, ASTSuper.class, ASTIdentifier.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests primary of field access of primary.
+     */
+    @Test
+    public void testPrimaryOfFieldAccessOfPrimary()
+    {
+        Parser parser = new Parser(new Scanner("method().field"));
+        ASTPrimary node = parser.parsePrimary();
+
+        List<ASTNode> children = node.getChildren();
+        assertEquals(1, children.size());
+        ASTNode child = children.get(0);
+        assertTrue(child instanceof ASTFieldAccess);
+
+        ASTFieldAccess fa = (ASTFieldAccess) child;
+        assertEquals(DOT, fa.getOperation());
+        children = fa.getChildren();
+        assertEquals(2, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(ASTPrimary.class, ASTIdentifier.class);
+        compareClasses(expectedClasses, children);
+
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests primary of method invocation, expression name.
      */
     @Test
@@ -1523,12 +1589,12 @@ public class ParserExpressionsTest
 
     /**
      * Tests nested primary expressions, including Class Instance Creation
-     * Expressions, Method Invocations, and Element Accesses.
+     * Expressions, Method Invocations, Field Accesses, and Element Accesses.
      */
     @Test
     public void testPrimaryOfNested()
     {
-        Parser parser = new Parser(new Scanner("new Foo()[i].method1()[j].<T>method2(1).new Bar()"));
+        Parser parser = new Parser(new Scanner("new Foo()[i].field1.method1()[j].field2.<T>method2(1).new Bar()"));
         ASTPrimary node = parser.parsePrimary();
 
         assertNull(node.getOperation());
@@ -1560,6 +1626,22 @@ public class ParserExpressionsTest
         ASTIdentifier methodName2 = (ASTIdentifier) children.get(2);
         assertEquals("method2", methodName2.getValue());
 
+        ASTPrimary pFieldAccess2 = (ASTPrimary) children.get(0);
+        assertNull(pFieldAccess2.getOperation());
+        children = pFieldAccess2.getChildren();
+        assertEquals(1, children.size());
+        child = children.get(0);
+        assertTrue(child instanceof ASTFieldAccess);
+
+        ASTFieldAccess fieldAccess2 = (ASTFieldAccess) child;
+        assertEquals(DOT, fieldAccess2.getOperation());
+        children = fieldAccess2.getChildren();
+        assertEquals(2, children.size());
+        expectedClasses = Arrays.asList(ASTPrimary.class, ASTIdentifier.class);
+        compareClasses(expectedClasses, children);
+        ASTIdentifier fieldName2 = (ASTIdentifier) children.get(1);
+        assertEquals("field2", fieldName2.getValue());
+
         ASTPrimary pJElementAccess = (ASTPrimary) children.get(0);
         assertNull(pJElementAccess.getOperation());
         children = pJElementAccess.getChildren();
@@ -1589,6 +1671,22 @@ public class ParserExpressionsTest
         compareClasses(expectedClasses, children);
         ASTIdentifier methodName1 = (ASTIdentifier) children.get(1);
         assertEquals("method1", methodName1.getValue());
+
+        ASTPrimary pFieldAccess1 = (ASTPrimary) children.get(0);
+        assertNull(pFieldAccess1.getOperation());
+        children = pFieldAccess1.getChildren();
+        assertEquals(1, children.size());
+        child = children.get(0);
+        assertTrue(child instanceof ASTFieldAccess);
+
+        ASTFieldAccess fieldAccess1 = (ASTFieldAccess) child;
+        assertEquals(DOT, fieldAccess1.getOperation());
+        children = fieldAccess1.getChildren();
+        assertEquals(2, children.size());
+        expectedClasses = Arrays.asList(ASTPrimary.class, ASTIdentifier.class);
+        compareClasses(expectedClasses, children);
+        ASTIdentifier fieldName1 = (ASTIdentifier) children.get(1);
+        assertEquals("field1", fieldName1.getValue());
 
         ASTPrimary pIElementAccess = (ASTPrimary) children.get(0);
         assertNull(pIElementAccess.getOperation());
