@@ -431,6 +431,160 @@ public class ParserStatementsTest
     }
 
     /**
+     * Tests statement of switch statement.
+     */
+    @Test
+    public void testStatementOfSwitchStatement()
+    {
+        Parser parser = new Parser(new Scanner("switch (code) {\ncase 1: out.println(\"One\");\ncase 2: out.println(\"Two\");\ndefault: out.println(\"Unexpected\");\n}"));
+        ASTStatement node = parser.parseStatement();
+        checkSimple(node, ASTSwitchStatement.class);
+    }
+
+    /**
+     * Tests switch statement.
+     */
+    @Test
+    public void testSwitchStatement()
+    {
+        Parser parser = new Parser(new Scanner("switch (code) {\ncase 1: out.println(\"One\");\ncase 2: out.println(\"Two\");\ndefault: out.println(\"Unexpected\");\n}"));
+        ASTSwitchStatement node = parser.parseSwitchStatement();
+        checkBinary(node, SWITCH, ASTExpression.class, ASTSwitchBlock.class);
+    }
+
+    /**
+     * Tests empty switch block.
+     */
+    @Test
+    public void testSwitchBlockEmpty()
+    {
+        Parser parser = new Parser(new Scanner("{}"));
+        ASTSwitchBlock node = parser.parseSwitchBlock();
+        checkEmpty(node, OPEN_BRACE);
+    }
+
+    /**
+     * Tests switch block of switch cases.
+     */
+    @Test
+    public void testSwitchBlockOfSwitchCases()
+    {
+        Parser parser = new Parser(new Scanner("{case 1: out.println(\"Success\");}"));
+        ASTSwitchBlock node = parser.parseSwitchBlock();
+        checkSimple(node, ASTSwitchCases.class, OPEN_BRACE);
+    }
+
+    /**
+     * Tests switch cases of switch case.
+     */
+    @Test
+    public void testSwitchCasesOfSwitchCase()
+    {
+        Parser parser = new Parser(new Scanner("case 1: out.println(\"Success\");}"));
+        ASTSwitchCases node = parser.parseSwitchCases();
+        checkSimple(node, ASTSwitchCase.class);
+    }
+
+    /**
+     * Tests switch cases of switch case instances (here, just multiple switch cases).
+     */
+    @Test
+    public void testSwitchCasesNested()
+    {
+        Parser parser = new Parser(new Scanner("case 1: out.println(\"Success\");\ncase 2: out.println(\"Pass\");}"));
+        ASTSwitchCases node = parser.parseSwitchCases();
+        checkList(node, null, ASTSwitchCase.class, 2);
+    }
+
+    /**
+     * Tests switch case of block statements.
+     */
+    @Test
+    public void testSwitchCaseOfBlockStatements()
+    {
+        Parser parser = new Parser(new Scanner("case 1, 2, 3:\n    out.println(\"Case found!\");\n    fallthrough;\n}"));
+        ASTSwitchCase node = parser.parseSwitchCase();
+        checkBinary(node, ASTSwitchLabel.class, ASTBlockStatements.class);
+    }
+
+    /**
+     * Tests switch case of no statements.
+     */
+    @Test
+    public void testSwitchCaseOfEmpty()
+    {
+        Parser parser = new Parser(new Scanner("case 1, 2, 3:}"));
+        ASTSwitchCase node = parser.parseSwitchCase();
+        checkSimple(node, ASTSwitchLabel.class);
+    }
+
+    /**
+     * Tests switch label of case and switch values.
+     */
+    @Test
+    public void testSwitchLabelOfCase()
+    {
+        Parser parser = new Parser(new Scanner("case 1, 2, 3:"));
+        ASTSwitchLabel node = parser.parseSwitchLabel();
+        checkSimple(node, ASTSwitchValues.class, CASE);
+    }
+
+    /**
+     * Tests switch label of default.
+     */
+    @Test
+    public void testSwitchLabelOfDefault()
+    {
+        Parser parser = new Parser(new Scanner("default:"));
+        ASTSwitchLabel node = parser.parseSwitchLabel();
+        checkEmpty(node, DEFAULT);
+    }
+
+    /**
+     * Tests switch values of expression (no incr/decr).
+     */
+    @Test
+    public void testSwitchValuesOfExpressionNoIncrDecr()
+    {
+        Parser parser = new Parser(new Scanner("1"));
+        ASTSwitchValues node = parser.parseSwitchValues();
+        checkSimple(node, ASTSwitchValue.class, COMMA);
+    }
+
+    /**
+     * Tests nested switch values (here, just multiple instances of switch value).
+     */
+    @Test
+    public void testSwitchValuesNested()
+    {
+        Parser parser = new Parser(new Scanner("1, 2, 3"));
+        ASTSwitchValues node = parser.parseSwitchValues();
+        checkList(node, COMMA, ASTSwitchValue.class, 3);
+    }
+
+    /**
+     * Tests switch value of identifier.
+     */
+    @Test
+    public void testSwitchValueOfIdentifier()
+    {
+        Parser parser = new Parser(new Scanner("BLUE:"));
+        ASTSwitchValue node = parser.parseSwitchValue();
+        checkSimple(node, ASTIdentifier.class);
+    }
+
+    /**
+     * Tests switch value of expression (no incr/decr).
+     */
+    @Test
+    public void testSwitchValueOfExpressionNoIncrDecr()
+    {
+        Parser parser = new Parser(new Scanner("1 + 2"));
+        ASTSwitchValue node = parser.parseSwitchValue();
+        checkSimple(node, ASTExpressionNoIncrDecr.class);
+    }
+
+    /**
      * Tests try statement of catch.
      */
     @Test

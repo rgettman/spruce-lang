@@ -26,7 +26,6 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;SynchronizedStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ForStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;TryStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
  * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatement
  * </em>
  */

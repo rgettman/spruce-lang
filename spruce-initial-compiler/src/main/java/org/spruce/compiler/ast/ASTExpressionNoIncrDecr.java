@@ -14,7 +14,7 @@ import org.spruce.compiler.scanner.Location;
  * <em>
  * ExpressionNoIncrDecr:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;AssignmentExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;<strong>TThe following will also be a production:</strong><br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
  * &nbsp;&nbsp;&nbsp;&nbsp;LambdaExpression
  * </em>
  */

@@ -202,14 +202,12 @@ public class Parser
      */
     public ASTBlockStatements parseBlockStatements()
     {
-        Location loc = myScanner.getCurrToken().getLocation();
-        List<ASTNode> children = new ArrayList<>();
-        ASTBlockStatements node = new ASTBlockStatements(loc, children);
-        while (!test(curr(), CLOSE_BRACE))
-        {
-            children.add(parseBlockStatement());
-        }
-        return node;
+        return parseMultiple(
+                t -> !test(t, CLOSE_BRACE) && !test(t, DEFAULT) && !test(t, CASE),
+                "Expected statement or local variable declaration.",
+                this::parseBlockStatement,
+                ASTBlockStatements::new
+        );
     }
 
     /**
@@ -321,19 +319,12 @@ public class Parser
      */
     public ASTVariableModifierList parseVariableModifierList()
     {
-        if (isAcceptedOperator(Arrays.asList(FINAL, CONST)) == null)
-        {
-            throw new CompileException("Expected final or const.");
-        }
-        Location loc = myScanner.getCurrToken().getLocation();
-        List<ASTNode> children = new ArrayList<>();
-        children.add(parseVariableModifier());
-        ASTVariableModifierList node = new ASTVariableModifierList(loc, children);
-        while (isAcceptedOperator(Arrays.asList(FINAL, CONST)) != null)
-        {
-            children.add(parseVariableModifier());
-        }
-        return node;
+        return parseMultiple(
+                t -> test(t, FINAL) || test(t, CONST),
+                "Expected final or const.",
+                this::parseVariableModifier,
+                ASTVariableModifierList::new
+        );
     }
 
     /**
@@ -361,7 +352,7 @@ public class Parser
      */
     public ASTVariableDeclaratorList parseVariableDeclaratorList()
     {
-        return parseMultiple(
+        return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected identifier",
                 COMMA,
@@ -458,6 +449,9 @@ public class Parser
         case TRY:
             ASTTryStatement tryStmt = parseTryStatement();
             return new ASTStatement(loc, Arrays.asList(tryStmt));
+        case SWITCH:
+            ASTSwitchStatement switchStmt = parseSwitchStatement();
+            return new ASTStatement(loc, Arrays.asList(switchStmt));
         default:
             ASTExpressionStatement exprStmt = parseExpressionStatement();
             return new ASTStatement(loc, Arrays.asList(exprStmt));
@@ -473,6 +467,156 @@ public class Parser
     public ASTStatement parseStatement(ASTPrimary primary)
     {
         return new ASTStatement(primary.getLocation(), Arrays.asList(parseExpressionStatement(primary)));
+    }
+
+    /**
+     * Parses an <code>ASTSwitchStatement</code>.
+     * @return An <code>ASTSwitchStatement</code>.
+     */
+    public ASTSwitchStatement parseSwitchStatement()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(2);
+        if (accept(SWITCH) == null)
+        {
+            throw new CompileException("Expected switch.");
+        }
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        children.add(parseExpression());
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+        children.add(parseSwitchBlock());
+        ASTSwitchStatement node = new ASTSwitchStatement(loc, children);
+        node.setOperation(SWITCH);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTSwitchBlock</code>.
+     * @return An <code>ASTSwitchBlock</code>.
+     */
+    public ASTSwitchBlock parseSwitchBlock()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (accept(OPEN_BRACE) == null)
+        {
+            throw new CompileException("Expected '{'.");
+        }
+        List<ASTNode> children = new ArrayList<>(1);
+        if (!test(curr(), CLOSE_BRACE))
+        {
+            children.add(parseSwitchCases());
+        }
+        if (accept(CLOSE_BRACE) == null)
+        {
+            throw new CompileException("Expected '}'.");
+        }
+        ASTSwitchBlock node = new ASTSwitchBlock(loc, children);
+        node.setOperation(OPEN_BRACE);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTSwitchCases</code>.
+     * @return An <code>ASTSwitchCases</code>.
+     */
+    public ASTSwitchCases parseSwitchCases()
+    {
+        return parseMultiple(
+                t -> test(t, DEFAULT) || test(t, CASE),
+                "Expected case label or default.",
+                this::parseSwitchCase,
+                ASTSwitchCases::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTSwitchCase</code>.
+     * @return An <code>ASTSwitchCase</code>.
+     */
+    public ASTSwitchCase parseSwitchCase()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(2);
+        children.add(parseSwitchLabel());
+        if (isAcceptedOperator(Arrays.asList(CLOSE_BRACE, CASE, DEFAULT)) == null)
+        {
+            children.add(parseBlockStatements());
+        }
+        return new ASTSwitchCase(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTSwitchLabel</code>.
+     * @return An <code>ASTSwitchLabel</code>.
+     */
+    public ASTSwitchLabel parseSwitchLabel()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (test(curr(), CASE))
+        {
+            accept(CASE);
+            ASTSwitchLabel node = new ASTSwitchLabel(loc, Arrays.asList(parseSwitchValues()));
+            if (accept(COLON) == null)
+            {
+                throw new CompileException("Expected colon.");
+            }
+            node.setOperation(CASE);
+            return node;
+        }
+        else if (test(curr(), DEFAULT))
+        {
+            accept(DEFAULT);
+            ASTSwitchLabel node = new ASTSwitchLabel(loc, Collections.emptyList());
+            if (accept(COLON) == null)
+            {
+                throw new CompileException("Expected colon.");
+            }
+            node.setOperation(DEFAULT);
+            return node;
+        }
+        else
+        {
+            throw new CompileException("Expected case or default.");
+        }
+    }
+
+    /**
+     * Parses an <code>ASTSwitchValues</code>.
+     * @return An <code>ASTSwitchValues</code>.
+     */
+    public ASTSwitchValues parseSwitchValues()
+    {
+        return parseList(
+                Parser::isExpression,
+                "Expected an expression.",
+                COMMA,
+                this::parseSwitchValue,
+                ASTSwitchValues::new);
+    }
+
+    /**
+     * Parses an <code>ASTSwitchValue</code>.
+     * @return An <code>ASTSwitchValue</code>.
+     */
+    public ASTSwitchValue parseSwitchValue()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(1);
+        if (test(curr(), IDENTIFIER) && (test(peek(), COLON) || test(peek(), COMMA)))
+        {
+            children.add(parseIdentifier());
+        }
+        else
+        {
+            children.add(parseExpressionNoIncrDecr());
+        }
+        return new ASTSwitchValue(loc, children);
     }
 
     /**
@@ -538,7 +682,7 @@ public class Parser
      */
     public ASTResourceList parseResourceList()
     {
-        return parseMultiple(
+        return parseList(
                 t -> isPrimary(t) || isAcceptedOperator(Arrays.asList(FINAL, CONST, AUTO)) != null,
                 "Expected an expression.",
                 SEMICOLON,
@@ -647,14 +791,12 @@ public class Parser
      */
     public ASTCatches parseCatches()
     {
-        Location loc = myScanner.getCurrToken().getLocation();
-        List<ASTNode> children = new ArrayList<>();
-        ASTCatches node = new ASTCatches(loc, children);
-        while (test(curr(), CATCH))
-        {
-            children.add(parseCatchClause());
-        }
-        return node;
+        return parseMultiple(
+                t -> test(t, CATCH),
+                "Expected catch clause.",
+                this::parseCatchClause,
+                ASTCatches::new
+        );
     }
 
     /**
@@ -707,7 +849,7 @@ public class Parser
      */
     public ASTCatchType parseCatchType()
     {
-        return parseMultiple(
+        return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected data type.",
                 BITWISE_OR,
@@ -1224,7 +1366,7 @@ public class Parser
      */
     public ASTStatementExpressionList parseStatementExpressionList()
     {
-        return parseMultiple(
+        return parseList(
                 t -> test(t, INCREMENT) || test(t, DECREMENT) || isPrimary(t),
                 "Expected a statement expression.",
                 COMMA,
@@ -1368,7 +1510,7 @@ public class Parser
      */
     public ASTTypeArgumentList parseTypeArgumentList()
     {
-        return parseMultiple(
+        return parseList(
                 Parser::isTypeArgument,
                 "Expected a type argument.",
                 COMMA,
@@ -1973,7 +2115,7 @@ public class Parser
     {
         if (isExpression(curr()))
         {
-            return parseMultiple(
+            return parseList(
                     Parser::isExpression,
                     "Expected an expression.",
                     COMMA,
@@ -2739,26 +2881,12 @@ public class Parser
      */
     public ASTDimExprs parseDimExprs()
     {
-        if (test(curr(), OPEN_BRACKET))
-        {
-            Location loc = myScanner.getCurrToken().getLocation();
-            List<ASTNode> children = new ArrayList<>(2);
-            children.add(parseDimExpr());
-            ASTDimExprs node = new ASTDimExprs(loc, children);
-
-            while (test(curr(), OPEN_BRACKET))
-            {
-                //children = new ArrayList<>(2);
-                //children.add(node);
-                children.add(parseDimExpr());
-                //node = new ASTDimExprs(loc, children);
-            }
-            return node;
-        }
-        else
-        {
-            throw new CompileException("Expected \"[\".");
-        }
+        return parseMultiple(
+                t -> test(t, OPEN_BRACKET),
+                "Expected \"[\".",
+                this::parseDimExpr,
+                ASTDimExprs::new
+        );
     }
 
     /**
@@ -2817,7 +2945,7 @@ public class Parser
      */
     public ASTVariableInitializerList parseVariableInitializerList()
     {
-        return parseMultiple(
+        return parseList(
                 t -> isPrimary(t) || test(t, OPEN_BRACE),
                 "Expected expression (no incr/decr) or array initializer.",
                 COMMA,
@@ -2954,6 +3082,7 @@ public class Parser
 
     /**
      * Helper method to avoid duplicating code for parsing list-like expressions.
+     * <em>List:  Element {sep Element}</em>
      * @param isOnInitialToken Determines whether a given token is a valid
      *      token on which to start parsing the desired node.
      * @param initialErrorMessage If the initial token is not a valid token,
@@ -2967,10 +3096,10 @@ public class Parser
      * @return A node of the desired type with all children parsed in order,
      *      leftmost first.
      */
-    private <T extends ASTParentNode> T parseMultiple(Predicate<Token> isOnInitialToken, String initialErrorMessage,
-                                                      TokenType acceptedToken,
-                                                      Supplier<? extends ASTNode> childParser,
-                                                      BiFunction<Location, List<ASTNode>, T> nodeSupplier)
+    private <T extends ASTParentNode> T parseList(Predicate<Token> isOnInitialToken, String initialErrorMessage,
+                                                  TokenType acceptedToken,
+                                                  Supplier<? extends ASTNode> childParser,
+                                                  BiFunction<Location, List<ASTNode>, T> nodeSupplier)
     {
         if (isOnInitialToken.test(curr()))
         {
@@ -2991,6 +3120,40 @@ public class Parser
         {
             throw new CompileException(initialErrorMessage);
         }
+    }
+
+    /**
+     * Helper method to avoid duplicating code for parsing multiple expressions
+     * in a repeating production.
+     * <em>Repeating:  Element {Element}</em>
+     * @param isOnInitialToken Determines whether a given token is a valid
+     *      token on which to start parsing the desired node.
+     * @param initialErrorMessage If the initial token is not a valid token,
+     *      the <code>CompilerException</code> thrown has this message.
+     * @param childParser Parses and returns the child node (repeating item).
+     * @param nodeSupplier Creates the desired node, given a <code>Location</code>
+     *      and a <code>List</code> of child nodes.
+     * @param <T> The type of node to parse and create.
+     * @return A node of the desired type with all children parsed in order,
+     *      leftmost first.
+     */
+    private <T extends ASTParentNode> T parseMultiple(Predicate<Token> isOnInitialToken, String initialErrorMessage,
+                                                      Supplier<? extends ASTNode> childParser,
+                                                      BiFunction<Location, List<ASTNode>, T> nodeSupplier)
+    {
+        if (!isOnInitialToken.test(curr()))
+        {
+            throw new CompileException(initialErrorMessage);
+        }
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>();
+        children.add(childParser.get());
+        T node = nodeSupplier.apply(loc, children);
+        while (isOnInitialToken.test(curr()))
+        {
+            children.add(childParser.get());
+        }
+        return node;
     }
 
     /**
