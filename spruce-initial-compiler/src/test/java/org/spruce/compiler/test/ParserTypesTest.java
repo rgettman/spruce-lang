@@ -1,7 +1,6 @@
 package org.spruce.compiler.test;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.ast.*;
@@ -26,6 +25,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("spruce.lang.String"));
         ASTDataType node = parser.parseDataType();
         checkSimple(node, ASTDataTypeNoArray.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -37,6 +37,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("spruce.lang.String[]"));
         ASTDataType node = parser.parseDataType();
         checkSimple(node, ASTArrayType.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -48,6 +49,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("spruce.lang.String[][]"));
         ASTArrayType node = parser.parseArrayType();
         checkBinary(node, ASTDataTypeNoArray.class, ASTDims.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -57,26 +59,14 @@ public class ParserTypesTest
     public void testDims()
     {
         Parser parser = new Parser(new Scanner("[][][]"));
-        ASTDims node = parser.parseDims(), curr = node;
+        ASTDims node = parser.parseDims();
+        checkSimple(node, ASTDims.class, OPEN_CLOSE_BRACKET);
 
-        assertEquals(OPEN_CLOSE_BRACKET, curr.getOperation());
-        List<ASTNode> children = curr.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTDims);
-        curr = (ASTDims) child;
+        ASTDims child = (ASTDims) node.getChildren().get(0);
+        checkSimple(child, ASTDims.class, OPEN_CLOSE_BRACKET);
+        child = (ASTDims) child.getChildren().get(0);
 
-        assertEquals(OPEN_CLOSE_BRACKET, curr.getOperation());
-        children = curr.getChildren();
-        assertEquals(1, children.size());
-        child = children.get(0);
-        assertTrue(child instanceof ASTDims);
-        curr = (ASTDims) child;
-
-        assertEquals(OPEN_CLOSE_BRACKET, curr.getOperation());
-        children = curr.getChildren();
-        assertEquals(0, children.size());
-
+        checkEmpty(child, OPEN_CLOSE_BRACKET);
         node.collapseThenPrint();
     }
 
@@ -89,6 +79,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("List<?>"));
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         checkSimple(node, ASTSimpleType.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -100,6 +91,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("A<?>.B<?>"));
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT), ASTDataTypeNoArray.class, ASTSimpleType.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -111,6 +103,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("spruce.collections.List<?>"));
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), ASTDataTypeNoArray.class, ASTSimpleType.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -121,14 +114,10 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("Simple"));
         ASTSimpleType node = parser.parseSimpleType();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTIdentifier);
-        ASTIdentifier id = (ASTIdentifier) child;
+        checkSimple(node, ASTIdentifier.class);
+        ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("Simple", id.getValue());
+        node.collapseThenPrint();
     }
 
     /**
@@ -139,18 +128,10 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("Map<?, ?>"));
         ASTSimpleType node = parser.parseSimpleType();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTIdentifier);
-        ASTIdentifier id = (ASTIdentifier) child;
+        checkBinary(node, ASTIdentifier.class, ASTTypeArguments.class);
+        ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("Map", id.getValue());
-
-        child = children.get(1);
-        assertTrue(child instanceof ASTTypeArguments);
+        node.collapseThenPrint();
     }
 
     /**
@@ -162,6 +143,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("Student"));
         ASTIntersectionType node = parser.parseIntersectionType();
         checkSimple(node, ASTDataType.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -173,6 +155,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("Student & Person"));
         ASTIntersectionType node = parser.parseIntersectionType();
         checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_AND), ASTIntersectionType.class, ASTDataType.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -184,6 +167,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("Student & Person & Learner"));
         ASTIntersectionType node = parser.parseIntersectionType();
         checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_AND, BITWISE_AND), ASTIntersectionType.class, ASTDataType.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -195,6 +179,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("<?>"));
         ASTTypeArguments node = parser.parseTypeArguments();
         checkSimple(node, ASTTypeArgumentList.class, LESS_THAN);
+        node.collapseThenPrint();
     }
 
     /**
@@ -206,6 +191,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("?"));
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
         checkSimple(node, ASTTypeArgument.class, COMMA);
+        node.collapseThenPrint();
     }
 
     /**
@@ -217,6 +203,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("Employee, ?, ? <: Number"));
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
         checkList(node, COMMA, ASTTypeArgument.class, 3);
+        node.collapseThenPrint();
     }
 
     /**
@@ -228,6 +215,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("?"));
         ASTTypeArgument node = parser.parseTypeArgument();
         checkSimple(node, ASTWildcard.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -239,6 +227,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("Employee"));
         ASTTypeArgument node = parser.parseTypeArgument();
         checkSimple(node, ASTDataType.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -250,6 +239,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("?"));
         ASTWildcard node = parser.parseWildcard();
         checkEmpty(node, QUESTION_MARK);
+        node.collapseThenPrint();
     }
 
     /**
@@ -261,6 +251,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("? <: Employee"));
         ASTWildcard node = parser.parseWildcard();
         checkSimple(node, ASTWildcardBounds.class, QUESTION_MARK);
+        node.collapseThenPrint();
     }
 
     /**
@@ -272,6 +263,7 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner("<: Employee"));
         ASTWildcardBounds node = parser.parseWildcardBounds();
         checkSimple(node, ASTDataType.class, SUBTYPE);
+        node.collapseThenPrint();
     }
 
     /**
@@ -283,6 +275,6 @@ public class ParserTypesTest
         Parser parser = new Parser(new Scanner(":> Employee"));
         ASTWildcardBounds node = parser.parseWildcardBounds();
         checkSimple(node, ASTDataType.class, SUPERTYPE);
-
+        node.collapseThenPrint();
     }
 }

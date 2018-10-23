@@ -40,8 +40,6 @@ public class ParserTestUtility
         assertEquals(operation, node.getOperation());
         List<ASTNode> children = node.getChildren();
         assertEquals(0, children.size());
-
-        node.collapseThenPrint();
     }
 
     /**
@@ -61,8 +59,6 @@ public class ParserTestUtility
 
         ASTNode child = children.get(0);
         assertTrue(childClass.isInstance(child));
-
-        node.collapseThenPrint();
     }
 
     /**
@@ -83,8 +79,6 @@ public class ParserTestUtility
 
         ASTNode child = children.get(0);
         assertTrue(childClass.isInstance(child));
-
-        node.collapseThenPrint();
     }
 
     /**
@@ -113,8 +107,6 @@ public class ParserTestUtility
         children = child.getChildren();
         assertEquals(1, children.size());
         assertTrue(childClass.isInstance(children.get(0)));
-
-        node.collapseThenPrint();
     }
 
     /**
@@ -157,8 +149,6 @@ public class ParserTestUtility
         children = child.getChildren();
         assertEquals(1, children.size());
         assertTrue(childClass.isInstance(children.get(0)));
-
-        node.collapseThenPrint();
     }
 
     /**
@@ -209,8 +199,6 @@ public class ParserTestUtility
         assertTrue(childClass.isInstance(children.get(0)));
         ASTValueNode valueChild = (ASTValueNode) children.get(0);
         assertEquals(expectedValues.get(expectedOperations.size()), valueChild.getValue());
-
-        node.collapseThenPrint();
     }
 
     /**
@@ -235,8 +223,6 @@ public class ParserTestUtility
         assertEquals(2, children.size());
         List<Class<?>> expectedClasses = Arrays.asList(firstClass, secondClass);
         compareClasses(expectedClasses, children);
-
-        node.collapseThenPrint();
     }
 
     /**
@@ -262,8 +248,6 @@ public class ParserTestUtility
         {
             assertTrue(childClass.isInstance(child));
         }
-
-        node.collapseThenPrint();
     }
 
     /**
@@ -285,8 +269,53 @@ public class ParserTestUtility
         assertEquals(2, children.size());
         List<Class<?>> expectedClasses = Arrays.asList(firstClass, secondClass);
         compareClasses(expectedClasses, children);
+    }
 
-        node.collapseThenPrint();
+    /**
+     * Helper method to test the trinary node relationship:
+     *               parent(operation)
+     *                /    |     \
+     *           child1  child2  child3
+     *
+     * The parent node is expected to have the given operation, and the
+     * children are expected to be of the given classes.
+     * @param node The parent node to check.
+     * @param expectedOperation The operation that the parent node is expected
+     *      to have.
+     * @param firstClass The class of the first child node.
+     * @param secondClass The class of the second child node.
+     * @param thirdClass The class of the third child node.
+     */
+    static void checkTrinary(ASTParentNode node, TokenType expectedOperation,
+        Class<? extends ASTNode> firstClass, Class<? extends ASTNode> secondClass, Class<? extends ASTNode> thirdClass)
+    {
+        assertEquals(expectedOperation, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(3, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(firstClass, secondClass, thirdClass);
+        compareClasses(expectedClasses, children);
+    }
+
+    /**
+     * Helper method to test the n-ary node relationship:
+     *                 parent(operation)
+     *                /    |     |     \
+     *           child1 child2 child3  childN
+     *
+     * The parent node is expected to have the given operation, and the
+     * children are expected to be of the given classes.
+     * @param node The parent node to check.
+     * @param expectedOperation The operation that the parent node is expected
+     *      to have.
+     * @param classes The classes of each child.
+     */
+    static void checkNary(ASTParentNode node, TokenType expectedOperation, Class<?>... classes)
+    {
+        assertEquals(expectedOperation, node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(classes.length, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(classes);
+        compareClasses(expectedClasses, children);
     }
 
     /**
@@ -313,7 +342,5 @@ public class ParserTestUtility
         assertEquals(2, children.size());
         List<Class<?>> expectedClasses = Arrays.asList(ASTLeftHandSide.class, ASTAssignmentExpression.class);
         compareClasses(expectedClasses, children);
-
-        node.collapseThenPrint();
     }
 }

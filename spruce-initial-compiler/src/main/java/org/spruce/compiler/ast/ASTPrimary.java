@@ -22,7 +22,6 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ArrayCreationExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassInstanceCreationExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodReference
  * </em>
  */

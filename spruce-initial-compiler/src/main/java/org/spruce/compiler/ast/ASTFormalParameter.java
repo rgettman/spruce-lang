@@ -5,31 +5,27 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTClassLiteral</code> is a data type followed by "." and "class".</p>
- *
- * <p>
- *     TODO: When annotations are introduced, make sure they aren't allowed
- *     when parsing "Dims" here.
- * </p>
+ * <p>An <code>ASTFormalParameter</code> is an optional variable modifier list,
+ * a data type, and an identifier.</p>
  *
  * <em>
- * ClassLiteral:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DataType . class
+ * FormalParameter:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;VariableModifierList DataType Identifier<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;DataType Identifier
  * </em>
  */
-public class ASTClassLiteral extends ASTParentNode
+public class ASTFormalParameter extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTClassLiteral</code> at the given <code>Location</code>
+     * Constructs an <code>ASTFormalParameter</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTClassLiteral(Location location, List<ASTNode> children)
+    public ASTFormalParameter(Location location, List<ASTNode> children)
     {
         super(location, children);
     }
-
 
     /**
      * This node is collapsible.

@@ -675,7 +675,7 @@ public class ScannerTest
         String line = "char err := '';";
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }
@@ -689,7 +689,7 @@ public class ScannerTest
         String line = "char err := 'ab';";
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }
@@ -704,7 +704,7 @@ public class ScannerTest
         String line = "String err := \"Not ended!\nreturn;";
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }
@@ -719,7 +719,7 @@ public class ScannerTest
         String line = "String err := \"Not ended!";
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }
@@ -735,7 +735,7 @@ public class ScannerTest
 
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }
@@ -749,7 +749,7 @@ public class ScannerTest
         String line = "String err := \"\\a\";";
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }
@@ -763,7 +763,7 @@ public class ScannerTest
         String line = "double d := 3.14e";
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }
@@ -777,7 +777,7 @@ public class ScannerTest
         String line = "double d := 3.14e+";
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }
@@ -791,7 +791,7 @@ public class ScannerTest
         String line = "double d := 3.14e-";
         Scanner scanner = new Scanner(line);
         scanner.next();
-        scanner.next();
+        //scanner.next();
         //scanner.next();
         assertThrows(CompileException.class, scanner::next);
     }

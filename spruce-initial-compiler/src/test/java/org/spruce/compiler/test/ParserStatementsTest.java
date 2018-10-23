@@ -146,14 +146,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("final const Boolean result := true, done := false"));
         ASTLocalVariableDeclaration node = parser.parseLocalVariableDeclaration();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(3, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTVariableModifierList.class, ASTLocalVariableType.class, ASTVariableDeclaratorList.class);
-        compareClasses(expectedClasses, children);
-
-        node.collapseThenPrint();
+        checkTrinary(node, null, ASTVariableModifierList.class, ASTLocalVariableType.class, ASTVariableDeclaratorList.class);
     }
 
     /**
@@ -625,13 +618,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("try (BufferedReader br := new BufferedReader()){\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n} finally {\n    br.close();\n}"));
         ASTTryStatement node = parser.parseTryStatement();
-
-        assertEquals(TRY, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(4, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTResourceSpecification.class, ASTBlock.class, ASTCatches.class, ASTFinally.class);
-        compareClasses(expectedClasses, children);
-
+        checkNary(node, TRY, ASTResourceSpecification.class, ASTBlock.class, ASTCatches.class, ASTFinally.class);
         node.collapseThenPrint();
     }
 
@@ -720,14 +707,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("BufferedReader br := new BufferedReader()"));
         ASTResourceDeclaration node = parser.parseResourceDeclaration();
-
-        assertEquals(ASSIGNMENT, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(3, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTLocalVariableType.class, ASTIdentifier.class, ASTExpressionNoIncrDecr.class);
-        compareClasses(expectedClasses, children);
-
-        node.collapseThenPrint();
+        checkTrinary(node, ASSIGNMENT, ASTLocalVariableType.class, ASTIdentifier.class, ASTExpressionNoIncrDecr.class);
     }
 
     /**
@@ -738,13 +718,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("final BufferedReader br := new BufferedReader()"));
         ASTResourceDeclaration node = parser.parseResourceDeclaration();
-
-        assertEquals(ASSIGNMENT, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(4, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTVariableModifierList.class, ASTLocalVariableType.class, ASTIdentifier.class, ASTExpressionNoIncrDecr.class);
-        compareClasses(expectedClasses, children);
-
+        checkNary(node, ASSIGNMENT, ASTVariableModifierList.class, ASTLocalVariableType.class, ASTIdentifier.class, ASTExpressionNoIncrDecr.class);
         node.collapseThenPrint();
     }
 
@@ -800,14 +774,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("final CustomException ce"));
         ASTCatchFormalParameter node = parser.parseCatchFormalParameter();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(3, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTVariableModifierList.class, ASTCatchType.class, ASTIdentifier.class);
-        compareClasses(expectedClasses, children);
-
-        node.collapseThenPrint();
+        checkTrinary(node, null, ASTVariableModifierList.class, ASTCatchType.class, ASTIdentifier.class);
     }
 
     /**
@@ -851,13 +818,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("if (success) { return true; }"));
         ASTIfStatement node = parser.parseIfStatement();
-
-        assertEquals(IF, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTStatement.class);
-        compareClasses(expectedClasses, children);
-
+        checkBinary(node, IF, ASTExpressionNoIncrDecr.class, ASTStatement.class);
         node.collapseThenPrint();
     }
 
@@ -869,14 +830,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("if {String line := br.readLine()} (line != null) out.println(line);"));
         ASTIfStatement node = parser.parseIfStatement();
-
-        assertEquals(IF, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(3, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
-        compareClasses(expectedClasses, children);
-
-        node.collapseThenPrint();
+        checkTrinary(node, IF, ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
     }
 
     /**
@@ -887,14 +841,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("if (result) {\n    out.println(\"Test passed.\");\n} else {\n    out.println(\"Test FAILED!\");\n}"));
         ASTIfStatement node = parser.parseIfStatement();
-
-        assertEquals(IF, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(3, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
-        compareClasses(expectedClasses, children);
-
-        node.collapseThenPrint();
+        checkTrinary(node, IF, ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
     }
 
     /**
@@ -905,25 +852,12 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("if (result) {\n    out.println(\"Test passed.\");\n} else if (DEBUG) {\n    out.println(\"Test failed in debug mode!\");\n} else {\n    out.println(\"Test FAILED!\");\n}"));
         ASTIfStatement node = parser.parseIfStatement();
+        checkTrinary(node, IF, ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
 
-        assertEquals(IF, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(3, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
-        compareClasses(expectedClasses, children);
-
-        ASTStatement nested = (ASTStatement) children.get(2);
-        assertNull(nested.getOperation());
-        children = nested.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTIfStatement);
-
-        ASTIfStatement nestedIf = (ASTIfStatement) child;
-        assertEquals(IF, nestedIf.getOperation());
-        children = nestedIf.getChildren();
-        assertEquals(3, children.size());
-        compareClasses(expectedClasses, children);
+        ASTStatement nested = (ASTStatement) node.getChildren().get(2);
+        checkSimple(nested, ASTIfStatement.class);
+        ASTIfStatement nestedIf = (ASTIfStatement) nested.getChildren().get(0);
+        checkTrinary(nestedIf, IF, ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
 
         node.collapseThenPrint();
     }
@@ -936,13 +870,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("while (shouldContinue) { doWork(); }"));
         ASTWhileStatement node = parser.parseWhileStatement();
-
-        assertEquals(WHILE, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTStatement.class);
-        compareClasses(expectedClasses, children);
-
+        checkBinary(node, WHILE, ASTExpressionNoIncrDecr.class, ASTStatement.class);
         node.collapseThenPrint();
     }
 
@@ -954,13 +882,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("while {String line := br.readLine()} (line != null) out.println(line);"));
         ASTWhileStatement node = parser.parseWhileStatement();
-
-        assertEquals(WHILE, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(3, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
-        compareClasses(expectedClasses, children);
-
+        checkTrinary(node, WHILE, ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
         node.collapseThenPrint();
     }
 
@@ -972,13 +894,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("do { work(); } while (shouldContinue);"));
         ASTDoStatement node = parser.parseDoStatement();
-
-        assertEquals(DO, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTStatement.class, ASTExpressionNoIncrDecr.class);
-        compareClasses(expectedClasses, children);
-
+        checkBinary(node, DO, ASTStatement.class, ASTExpressionNoIncrDecr.class);
         node.collapseThenPrint();
     }
 
@@ -986,17 +902,11 @@ public class ParserStatementsTest
      * Tests synchronized statement.
      */
     @Test
-    public void tesSynchronizedStatement()
+    public void testSynchronizedStatement()
     {
         Parser parser = new Parser(new Scanner("synchronized (lock) { lock.notifyAll(); }"));
         ASTSynchronizedStatement node = parser.parseSynchronizedStatement();
-
-        assertEquals(SYNCHRONIZED, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTExpressionNoIncrDecr.class, ASTBlock.class);
-        compareClasses(expectedClasses, children);
-
+        checkBinary(node, SYNCHRONIZED, ASTExpressionNoIncrDecr.class, ASTBlock.class);
         node.collapseThenPrint();
     }
 
@@ -1008,20 +918,9 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("for (Int i := 0; i < 10; i++) {\n    out.println(i);\n}"));
         ASTForStatement node = parser.parseForStatement();
-
-        assertEquals(FOR, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTBasicForStatement);
-
-        ASTBasicForStatement basicForStmt = (ASTBasicForStatement) child;
-        assertEquals(SEMICOLON, basicForStmt.getOperation());
-        children = basicForStmt.getChildren();
-        assertEquals(4, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatementExpressionList.class, ASTStatement.class);
-        compareClasses(expectedClasses, children);
-
+        checkSimple(node, ASTBasicForStatement.class, FOR);
+        ASTBasicForStatement basicForStmt = (ASTBasicForStatement) node.getChildren().get(0);
+        checkNary(basicForStmt, SEMICOLON, ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatementExpressionList.class, ASTStatement.class);
         node.collapseThenPrint();
     }
 
@@ -1033,24 +932,11 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("for (;;) {\n    out.println(\"Hello world!\");\n}"));
         ASTForStatement node = parser.parseForStatement();
-
-        assertEquals(FOR, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTBasicForStatement);
-
-        ASTBasicForStatement basicForStmt = (ASTBasicForStatement) child;
-        assertEquals(SEMICOLON, basicForStmt.getOperation());
-        children = basicForStmt.getChildren();
-        assertEquals(1, children.size());
-        child = children.get(0);
-        assertTrue(child instanceof ASTStatement);
-
+        checkSimple(node, ASTBasicForStatement.class, FOR);
+        ASTBasicForStatement basicForStmt = (ASTBasicForStatement) node.getChildren().get(0);
+        checkSimple(basicForStmt, ASTStatement.class, SEMICOLON);
         node.collapseThenPrint();
     }
-
-
 
     /**
      * Tests for statement of enhanced for statement.
@@ -1060,20 +946,9 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("for (Int i : array) {\n    sum += i;\n}"));
         ASTForStatement node = parser.parseForStatement();
-
-        assertEquals(FOR, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTEnhancedForStatement);
-
-        ASTEnhancedForStatement enhForStmt = (ASTEnhancedForStatement) child;
-        assertEquals(COLON, enhForStmt.getOperation());
-        children = enhForStmt.getChildren();
-        assertEquals(3, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(ASTLocalVariableDeclaration.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
-        compareClasses(expectedClasses, children);
-
+        checkSimple(node, ASTEnhancedForStatement.class, FOR);
+        ASTEnhancedForStatement enhForStmt = (ASTEnhancedForStatement) node.getChildren().get(0);
+        checkTrinary(enhForStmt, COLON, ASTLocalVariableDeclaration.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
         node.collapseThenPrint();
     }
 
@@ -1086,6 +961,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("return;"));
         ASTReturnStatement node = parser.parseReturnStatement();
         checkEmpty(node, RETURN);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1097,6 +973,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("return x.y + 2;"));
         ASTReturnStatement node = parser.parseReturnStatement();
         checkSimple(node, ASTExpression.class, RETURN);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1108,6 +985,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("throw new Exception();"));
         ASTThrowStatement node = parser.parseThrowStatement();
         checkSimple(node, ASTExpression.class, THROW);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1119,6 +997,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("break;"));
         ASTBreakStatement node = parser.parseBreakStatement();
         checkEmpty(node, BREAK);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1130,6 +1009,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("continue;"));
         ASTContinueStatement node = parser.parseContinueStatement();
         checkEmpty(node, CONTINUE);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1141,6 +1021,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("fallthrough;"));
         ASTFallthroughStatement node = parser.parseFallthroughStatement();
         checkEmpty(node, FALLTHROUGH);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1152,6 +1033,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("assert result = true;"));
         ASTAssertStatement node = parser.parseAssertStatement();
         checkSimple(node, ASTExpression.class, ASSERT);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1163,6 +1045,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("assert result = true : \"Assertion failed!\";"));
         ASTAssertStatement node = parser.parseAssertStatement();
         checkBinary(node, ASSERT, ASTExpression.class, ASTExpression.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1173,14 +1056,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("x++;"));
         ASTExpressionStatement node = parser.parseExpressionStatement();
-
-        assertEquals(SEMICOLON, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTStatementExpression);
-
+        checkSimple(node, ASTStatementExpression.class, SEMICOLON);
         node.collapseThenPrint();
     }
 
@@ -1193,6 +1069,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("Int i := 0, j := 0"));
         ASTInit node = parser.parseInit();
         checkSimple(node, ASTLocalVariableDeclaration.class);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1203,15 +1080,10 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("i := 0"));
         ASTInit node = parser.parseInit();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTStatementExpressionList);
-
-        ASTStatementExpressionList list = (ASTStatementExpressionList) child;
+        checkSimple(node, ASTStatementExpressionList.class);
+        ASTStatementExpressionList list = (ASTStatementExpressionList) node.getChildren().get(0);
         checkSimple(list, ASTStatementExpression.class, COMMA);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1222,15 +1094,10 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("i := 0, j := 0, k := 1"));
         ASTInit node = parser.parseInit();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTStatementExpressionList);
-
-        ASTStatementExpressionList list = (ASTStatementExpressionList) child;
+        checkSimple(node, ASTStatementExpressionList.class);
+        ASTStatementExpressionList list = (ASTStatementExpressionList) node.getChildren().get(0);
         checkList(list, COMMA, ASTStatementExpression.class, 3);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1242,6 +1109,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("i := 0"));
         ASTStatementExpressionList node = parser.parseStatementExpressionList();
         checkSimple(node, ASTStatementExpression.class, COMMA);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1254,6 +1122,7 @@ public class ParserStatementsTest
         Parser parser = new Parser(new Scanner("i := 0, j := 0, k := 1"));
         ASTStatementExpressionList node = parser.parseStatementExpressionList();
         checkList(node, COMMA, ASTStatementExpression.class, 3);
+        node.collapseThenPrint();
     }
 
     /**
@@ -1264,14 +1133,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("x := 0"));
         ASTStatementExpression node = parser.parseStatementExpression();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTAssignment);
-
+        checkSimple(node, ASTAssignment.class);
         node.collapseThenPrint();
     }
 
@@ -1283,14 +1145,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("x.y++"));
         ASTStatementExpression node = parser.parseStatementExpression();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTPostfixExpression);
-
+        checkSimple(node, ASTPostfixExpression.class);
         node.collapseThenPrint();
     }
 
@@ -1302,14 +1157,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("--x.y"));
         ASTStatementExpression node = parser.parseStatementExpression();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTPrefixExpression);
-
+        checkSimple(node, ASTPrefixExpression.class);
         node.collapseThenPrint();
     }
 
@@ -1321,14 +1169,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("x.y(2)"));
         ASTStatementExpression node = parser.parseStatementExpression();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTMethodInvocation);
-
+        checkSimple(node, ASTMethodInvocation.class);
         node.collapseThenPrint();
     }
 
@@ -1340,14 +1181,7 @@ public class ParserStatementsTest
     {
         Parser parser = new Parser(new Scanner("new SideEffect()"));
         ASTStatementExpression node = parser.parseStatementExpression();
-
-        assertNull(node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-
-        ASTNode child = children.get(0);
-        assertTrue(child instanceof ASTClassInstanceCreationExpression);
-
+        checkSimple(node, ASTClassInstanceCreationExpression.class);
         node.collapseThenPrint();
     }
 }

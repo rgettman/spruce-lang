@@ -28,6 +28,7 @@ public class Scanner
 
     private Token myCurrToken;
     private Token myNextToken;
+    private Token myPeekToken;
 
     /**
      * Constructs a <code>Scanner</code> based on a <code>String</code>.
@@ -117,9 +118,21 @@ public class Scanner
      * @return The next <code>Token</code>, or <code>null</code> if there
      * isn't one yet.
      */
-    public Token peekNextToken()
+    public Token getNextToken()
     {
         return myNextToken;
+    }
+
+    /**
+     * Returns the peek <code>Token</code>, or <code>null</code> if there
+     * isn't one yet.  If there is a peek <code>Token</code>, determines the
+     * next <code>Token</code> after that and returns it.
+     * @return The peek <code>Token</code>, or <code>null</code> if there
+     * isn't one yet.
+     */
+    public Token getPeekToken()
+    {
+        return myPeekToken;
     }
 
     /**
@@ -144,11 +157,18 @@ public class Scanner
         {
             myCurrToken = advanceSkippingWhitespaceComments();
             myNextToken = advanceSkippingWhitespaceComments();
+            myPeekToken = advanceSkippingWhitespaceComments();
+        }
+        else if (myPeekToken.getType() != TokenType.EOF)
+        {
+            myCurrToken = myNextToken;
+            myNextToken = myPeekToken;
+            myPeekToken = advanceSkippingWhitespaceComments();
         }
         else if (myNextToken.getType() != TokenType.EOF)
         {
             myCurrToken = myNextToken;
-            myNextToken = advanceSkippingWhitespaceComments();
+            myNextToken = myPeekToken;
         }
         else if (myCurrToken.getType() != TokenType.EOF)
         {
