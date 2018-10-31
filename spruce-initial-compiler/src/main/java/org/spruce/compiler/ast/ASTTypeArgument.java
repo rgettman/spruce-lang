@@ -9,7 +9,7 @@ import org.spruce.compiler.scanner.TokenType;
  * <p>An <code>ASTTypeArgument</code> is a wildcard or a reference type.</p>
  *
  * <em>
- * Wildcard:<br>
+ * TypeArgument:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Wildcard<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;DataType
  * </em>

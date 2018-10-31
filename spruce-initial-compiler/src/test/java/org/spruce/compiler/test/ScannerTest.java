@@ -505,18 +505,20 @@ public class ScannerTest
     }
 
     /**
-     * Tests recognizing at-sign, <code>instanceof</code>, and <code>is</code>.
+     * Tests recognizing at-sign, <code>instanceof</code>, <code>is</code>, and <code>isnt</code>.
      */
     @Test
     public void testInstanceOfIsAtSign()
     {
-        String line = "@NotNull a is b a instanceof b";
+        String line = "@NotNull a is b a instanceof b a isnt b";
 
         List<Token> expectedTokens = Arrays.asList(
                 new Token(AT_SIGN, "@"), new Token(IDENTIFIER, "NotNull"),
                 new Token(IDENTIFIER, "a"), new Token(IS, "is"),
                 new Token(IDENTIFIER, "b"),
                 new Token(IDENTIFIER, "a"), new Token(INSTANCEOF, "instanceof"),
+                new Token(IDENTIFIER, "b"),
+                new Token(IDENTIFIER, "a"), new Token(ISNT, "isnt"),
                 new Token(IDENTIFIER, "b")
                 );
 

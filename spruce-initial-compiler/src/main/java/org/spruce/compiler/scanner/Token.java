@@ -13,7 +13,7 @@ public class Token
     private Location myLocation;
 
     /**
-     * Constructs  a <code>Token</code> with the given <code>TokenType</code>,
+     * Constructs a <code>Token</code> with the given <code>TokenType</code>,
      * the given value.
      * @param type The <code>TokenType</code>.
      * @param value The string value of the token.

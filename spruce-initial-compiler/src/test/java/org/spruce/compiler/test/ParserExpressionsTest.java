@@ -656,6 +656,18 @@ public class ParserExpressionsTest
     }
 
     /**
+     * Tests relational expression of "isnt" and compare expression.
+     */
+    @Test
+    public void testRelationalExpressionOfIsnt()
+    {
+        Parser parser = new Parser(new Scanner("obj isnt null"));
+        ASTRelationalExpression node = parser.parseRelationalExpression();
+        checkBinaryLeftAssociative(node, Arrays.asList(ISNT), ASTRelationalExpression.class, ASTCompareExpression.class);
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests nested relational expressions.
      */
     @Test

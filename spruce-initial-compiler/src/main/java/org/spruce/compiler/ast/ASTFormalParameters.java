@@ -5,22 +5,22 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTIntersectionType</code> is an "&" separated list of DataTypes.</p>
+ * <p>An <code>ASTFormalParameters</code> is comma-separated list of formal parameter instances.</p>
  *
  * <em>
- * IntersectionType:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DataType {& DataType}
+ * FormalParameters:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;FormalParameter {, FormalParameter}
  * </em>
  */
-public class ASTIntersectionType extends ASTParentNode
+public class ASTFormalParameters extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTIntersectionType</code> at the given <code>Location</code>
+     * Constructs an <code>ASTFormalParameters</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTIntersectionType(Location location, List<ASTNode> children)
+    public ASTFormalParameters(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

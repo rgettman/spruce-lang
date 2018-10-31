@@ -5,22 +5,22 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTIntersectionType</code> is an "&" separated list of DataTypes.</p>
+ * <p>An <code>ASTStrictfpModifier</code> is "strictfp".</p>
  *
  * <em>
- * IntersectionType:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DataType {& DataType}
+ * StrictfpModifier:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;strictfp
  * </em>
  */
-public class ASTIntersectionType extends ASTParentNode
+public class ASTStrictfpModifier extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTIntersectionType</code> at the given <code>Location</code>
+     * Constructs an <code>ASTStrictfpModifier</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTIntersectionType(Location location, List<ASTNode> children)
+    public ASTStrictfpModifier(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

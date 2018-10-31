@@ -2,13 +2,13 @@ package org.spruce.compiler.test;
 
 import java.util.Arrays;
 
-import org.junit.jupiter.api.Test;
 import org.spruce.compiler.ast.*;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
 
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -135,6 +135,81 @@ public class ParserTypesTest
     }
 
     /**
+     * Tests type parameters of type parameter list.
+     */
+    @Test
+    public void testTypeParametersOfTypeParameterList()
+    {
+        Parser parser = new Parser(new Scanner("<K, V>"));
+        ASTTypeParameters node = parser.parseTypeParameters();
+        checkSimple(node, ASTTypeParameterList.class, LESS_THAN);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests type parameter list of type parameter.
+     */
+    @Test
+    public void testTypeParameterListOfTypeParameter()
+    {
+        Parser parser = new Parser(new Scanner("E"));
+        ASTTypeParameterList node = parser.parseTypeParameterList();
+        checkSimple(node, ASTTypeParameter.class, COMMA);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests parameter list of nested parameter lists (here, just multiple parameters).
+     */
+    @Test
+    public void testTypeParameterListNested()
+    {
+        Parser parser = new Parser(new Scanner("K, V, T <: Map<K, V>"));
+        ASTTypeParameterList node = parser.parseTypeParameterList();
+        checkList(node, COMMA, ASTTypeParameter.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests simple type parameter.
+     */
+    @Test
+    public void testTypeParameterSimple()
+    {
+        Parser parser = new Parser(new Scanner("T"));
+        ASTTypeParameter node = parser.parseTypeParameter();
+        checkSimple(node, ASTIdentifier.class);
+        ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
+        assertEquals("T", id.getValue());
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests type parameter of bounds (intersection type).
+     */
+    @Test
+    public void testTypeParameterOfBounds()
+    {
+        Parser parser = new Parser(new Scanner("N <: Number"));
+        ASTTypeParameter node = parser.parseTypeParameter();
+        checkBinary(node, ASTIdentifier.class, ASTTypeBound.class);
+        ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
+        assertEquals("N", id.getValue());
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests type bound of intersection type.
+     */
+    @Test
+    public void testTypeBoundOfIntersectionType()
+    {
+        Parser parser = new Parser(new Scanner("<: Student & Serializable"));
+        ASTTypeBound node = parser.parseTypeBound();
+        checkSimple(node, ASTIntersectionType.class, SUBTYPE);
+    }
+
+    /**
      * Tests intersection type of data type.
      */
     @Test
@@ -142,7 +217,7 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("Student"));
         ASTIntersectionType node = parser.parseIntersectionType();
-        checkSimple(node, ASTDataType.class);
+        checkSimple(node, ASTDataType.class, BITWISE_AND);
         node.collapseThenPrint();
     }
 
@@ -154,7 +229,7 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("Student & Person"));
         ASTIntersectionType node = parser.parseIntersectionType();
-        checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_AND), ASTIntersectionType.class, ASTDataType.class);
+        checkList(node, BITWISE_AND, ASTDataType.class, 2);
         node.collapseThenPrint();
     }
 
@@ -166,7 +241,7 @@ public class ParserTypesTest
     {
         Parser parser = new Parser(new Scanner("Student & Person & Learner"));
         ASTIntersectionType node = parser.parseIntersectionType();
-        checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_AND, BITWISE_AND), ASTIntersectionType.class, ASTDataType.class);
+        checkList(node, BITWISE_AND, ASTDataType.class, 3);
         node.collapseThenPrint();
     }
 

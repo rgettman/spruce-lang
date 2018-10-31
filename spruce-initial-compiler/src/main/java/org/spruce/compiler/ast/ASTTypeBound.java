@@ -6,24 +6,23 @@ import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.TokenType;
 
 /**
- * <p>An <code>ASTWildcardBounds</code> is a "&lt;:" or ":&gt;" followed by a
- * DataType.</p>
+ * <p>An <code>ASTTypeBound</code> is a "&lt;:" or ":&gt;" followed by an
+ * IntersectionType.</p>
  *
  * <em>
- * WildcardBounds:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;&lt;: DataType<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;:&gt; DataType
+ * TypeBound:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;&lt;: IntersectionType<br>
  * </em>
  */
-public class ASTWildcardBounds extends ASTParentNode
+public class ASTTypeBound extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTWildcardBounds</code> at the given <code>Location</code>
+     * Constructs an <code>ASTTypeBound</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTWildcardBounds(Location location, List<ASTNode> children)
+    public ASTTypeBound(Location location, List<ASTNode> children)
     {
         super(location, children, TokenType.QUESTION_MARK);
     }

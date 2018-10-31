@@ -1,8 +1,5 @@
 package org.spruce.compiler.test;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.spruce.compiler.ast.*;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
@@ -10,7 +7,6 @@ import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
-import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * All tests for the parser related to statements.

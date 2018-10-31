@@ -91,6 +91,17 @@ public class Parser
     }
 
     /**
+     * Simple test if the given token's type exists in a list of token types.
+     * @param t The <code>Token</code>.
+     * @param tokenTypes The list of expected token types.
+     * @return Whether the given token's type exists in a list of token types.
+     */
+    private static boolean test(Token t, TokenType... tokenTypes)
+    {
+        return Arrays.asList(tokenTypes).contains(t.getType());
+    }
+
+    /**
      * Tests if the current token's type matches the given type.
      * @param tokenType The expected token type.
      * @return Whether the current token's type matches the given type.
@@ -157,7 +168,7 @@ public class Parser
      */
     private static boolean isExpression(Token t)
     {
-        return (test(t, INCREMENT) || test(t, DECREMENT) || isPrimary(t));
+        return (test(t, INCREMENT, DECREMENT) || isPrimary(t));
     }
 
     /**
@@ -167,7 +178,7 @@ public class Parser
      */
     private static boolean isTypeArgument(Token t)
     {
-        return (test(t, QUESTION_MARK) || test(t, IDENTIFIER));
+        return (test(t, QUESTION_MARK, IDENTIFIER));
     }
 
     /**
@@ -211,20 +222,408 @@ public class Parser
     //**************************************
 
     /**
-     * Parses an <code>ASTBlock</code>.
-     * @return An <code>ASTBlock</code>.
+     * Parses an <code>ASTConstructorInvocation</code>.
+     * @return An <code>ASTConstructorInvocation</code>.
+     */
+    public ASTConstructorInvocation parseConstructorInvocation()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(4);
+        if (accept(COLON) == null)
+        {
+            throw new CompileException("Expected ':' for explicit constructor invocation.");
+        }
+        ASTPrimary primary = null;
+        if (isAcceptedOperator(Arrays.asList(CONSTRUCTOR, SUPER, LESS_THAN)) == null)
+        {
+            // Primary . [TypeArguments] super
+            // ExpressionName . [TypeArguments] super
+            try
+            {
+                primary = parsePrimary();
+
+                // Must be an expression name or a primary.
+                List<ASTNode> pChildren = primary.getChildren();
+                if (pChildren.size() == 1 && pChildren.get(0) instanceof ASTExpressionName)
+                {
+                    children.add(pChildren.get(0));
+                }
+                else
+                {
+                    children.add(primary);
+                }
+                if (accept(DOT) == null)
+                {
+                    throw new CompileException("Expected '.' between expression and super.");
+                }
+                if (isCurr(LESS_THAN))
+                {
+                    children.add(parseTypeArguments());
+                }
+            }
+            catch (CompileException containsAlreadyParsed)
+            {
+                // Occurs with ExpressionName . TypeArguments super
+                // The parsePrimary method will attempt to produce a
+                // MethodInvocation until it finds "super", when it throws this
+                // Exception.  At that point the ExpressionName and
+                // TypeArguments have already been parsed.  Capture them here.
+                // See parseMethodInvocation(ASTExpressionName).
+                children.addAll(containsAlreadyParsed.getAlreadyParsed());
+            }
+        }
+        else if (isCurr(LESS_THAN))
+        {
+            children.add(parseTypeArguments());
+        }
+
+        ASTConstructorInvocation node = new ASTConstructorInvocation(loc, children);
+        if (primary != null)
+        {
+            if (accept(SUPER) == null)
+            {
+                // ExpressionName and Primary can only have super.
+                throw new CompileException("Expected super after expression dot for explicit superclass constructor invocation.");
+            }
+            node.setOperation(SUPER);
+        }
+        else
+        {
+            TokenType operation = isAcceptedOperator(Arrays.asList(SUPER, CONSTRUCTOR));
+            if (operation == null)
+            {
+                throw new CompileException("Expected constructor or super for explicit constructor invocation.");
+            }
+            accept(operation);
+            node.setOperation(operation);
+        }
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!isCurr(CLOSE_PARENTHESIS))
+        {
+            children.add(parseArgumentList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTStrictfpModifier</code>.
+     * @return An <code>ASTStrictfpModifier</code>.
+     */
+    public ASTStrictfpModifier parseStrictfpModifier()
+    {
+        return parseOneOf(
+                Arrays.asList(STRICTFP),
+                "Expected strictfp.",
+                ASTStrictfpModifier::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTConstructorDeclarator</code>.
+     * @return An <code>ASTConstructorDeclarator</code>.
+     */
+    public ASTConstructorDeclarator parseConstructorDeclarator()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(2);
+        if (isCurr(LESS_THAN))
+        {
+            children.add(parseTypeParameters());
+        }
+        if (accept(CONSTRUCTOR) == null)
+        {
+            throw new CompileException("Expected \"constructor\".");
+        }
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!isCurr(CLOSE_PARENTHESIS))
+        {
+            children.add(parseFormalParameterList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+        ASTConstructorDeclarator node = new ASTConstructorDeclarator(loc, children);
+        node.setOperation(CONSTRUCTOR);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTFieldDeclaration</code>.
+     * @return An <code>ASTFieldDeclaration</code>.
+     */
+    public ASTFieldDeclaration parseFieldDeclaration()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(4);
+        if (isAcceptedOperator(Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE)) != null)
+        {
+            children.add(parseAccessModifier());
+        }
+        if (isAcceptedOperator(Arrays.asList(CONST, FINAL, SHARED, TRANSIENT, VOLATILE)) != null)
+        {
+            children.add(parseFieldModifierList());
+        }
+        children.add(parseDataType());
+        children.add(parseVariableDeclaratorList());
+        return new ASTFieldDeclaration(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTFieldModifierList</code>.
+     * @return An <code>ASTFieldModifierList</code>.
+     */
+    public ASTFieldModifierList parseFieldModifierList()
+    {
+        return parseGeneralModifierList()
+                .convertToSpecificList("Expected const, final, shared, transient, or volatile.",
+                        Arrays.asList(CONST, FINAL, SHARED, TRANSIENT, VOLATILE),
+                        ASTFieldModifierList::new);
+    }
+
+    /**
+     * Parses an <code>ASTMethodDeclaration</code>.
+     * @return An <code>ASTMethodDeclaration</code>.
+     */
+    public ASTMethodDeclaration parseMethodDeclaration()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(4);
+        if (isAcceptedOperator(Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE)) != null)
+        {
+            children.add(parseAccessModifier());
+        }
+        if (isAcceptedOperator(Arrays.asList(ABSTRACT, FINAL, OVERRIDE, SHARED, STRICTFP)) != null)
+        {
+            children.add(parseMethodModifierList());
+        }
+        children.add(parseMethodHeader());
+        children.add(parseMethodBody());
+        return new ASTMethodDeclaration(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTMethodBody</code>.
+     * @return An <code>ASTMethodBody</code>.
+     */
+    public ASTMethodBody parseMethodBody()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(1);
+        ASTMethodBody node = new ASTMethodBody(loc, children);
+        if (isCurr(SEMICOLON))
+        {
+            accept(SEMICOLON);
+            node.setOperation(SEMICOLON);
+        }
+        else if (isCurr(OPEN_BRACE))
+        {
+            children.add(parseBlock());
+        }
+        else
+        {
+            throw new CompileException("Expected block for method body.");
+        }
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTAccessModifier</code>.
+     * @return An <code>ASTAccessModifier</code>.
+     */
+    public ASTAccessModifier parseAccessModifier()
+    {
+        return parseOneOf(
+                Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE),
+                "Expected public, protected, internal, or private.",
+                ASTAccessModifier::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTMethodModifierList</code>.
+     * @return An <code>ASTMethodModifierList</code>.
+     */
+    public ASTMethodModifierList parseMethodModifierList()
+    {
+        return parseGeneralModifierList()
+                .convertToSpecificList("Expected abstract, final, override, shared, or strictfp.",
+                        Arrays.asList(ABSTRACT, FINAL, OVERRIDE, SHARED, STRICTFP),
+                        ASTMethodModifierList::new);
+    }
+
+    /**
+     * Parses an <code>ASTGeneralModifierList</code>.
+     * @return An <code>ASTGeneralModifierList</code>.
+     */
+    public ASTGeneralModifierList parseGeneralModifierList()
+    {
+        return parseMultiple(
+                t -> test(t, ABSTRACT, CONST, FINAL, OVERRIDE, SHARED, STRICTFP, TRANSIENT, VOLATILE),
+                "Expected a general modifier.",
+                this::parseGeneralModifier,
+                ASTGeneralModifierList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTGeneralModifier</code>.
+     * @return An <code>ASTGeneralModifier</code>.
+     */
+    public ASTGeneralModifier parseGeneralModifier()
+    {
+        return parseOneOf(
+                Arrays.asList(ABSTRACT, CONST, FINAL, OVERRIDE, SHARED, STRICTFP, TRANSIENT, VOLATILE),
+                "Expected abstract, const, final, override, shared, strictfp, transient, or volatile.",
+                ASTGeneralModifier::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTMethodHeader</code>.
+     * @return An <code>ASTMethodHeader</code>.
+     */
+    public ASTMethodHeader parseMethodHeader()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(3);
+        if (isCurr(LESS_THAN))
+        {
+            children.add(parseTypeParameters());
+        }
+        children.add(parseResult());
+        children.add(parseMethodDeclarator());
+        return new ASTMethodHeader(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTResult</code>.
+     * @return An <code>ASTResult</code>.
+     */
+    public ASTResult parseResult()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(2);
+        if (isCurr(VOID))
+        {
+            accept(VOID);
+            ASTResult node = new ASTResult(loc, children);
+            node.setOperation(VOID);
+            return node;
+        }
+        else if (isCurr(CONST))
+        {
+            children.add(parseConstModifier());
+        }
+        children.add(parseDataType());
+        return new ASTResult(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTMethodDeclarator</code>.
+     * @return An <code>ASTMethodDeclarator</code>.
+     */
+    public ASTMethodDeclarator parseMethodDeclarator()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(3);
+        children.add(parseIdentifier());
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!isCurr(CLOSE_PARENTHESIS))
+        {
+            children.add(parseFormalParameterList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+        if (isCurr(CONST))
+        {
+            children.add(parseConstModifier());
+        }
+        return new ASTMethodDeclarator(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTConstModifier</code>.
+     * @return An <code>ASTConstModifier</code>.
+     */
+    public ASTConstModifier parseConstModifier()
+    {
+        return parseOneOf(
+                Arrays.asList(CONST),
+                "Expected const.",
+                ASTConstModifier::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTFormalParameterList</code>.
+     * @return An <code>ASTFormalParameterList</code>.
+     */
+    public ASTFormalParameterList parseFormalParameterList()
+    {
+        ASTFormalParameterList node = parseList(
+                t -> test(t, IDENTIFIER, CONST, FINAL),
+                "Expected data type",
+                COMMA,
+                this::parseFormalParameter,
+                ASTFormalParameterList::new
+        );
+
+        // Enforce varargs parameter must be last.
+        List<ASTNode> children = node.getChildren();
+        boolean ellipsisSeen = false;
+        for (ASTNode child : children)
+        {
+            if (ellipsisSeen)
+            {
+                throw new CompileException("Varargs parameter must be last in the list.");
+            }
+            ASTFormalParameter formalParam = (ASTFormalParameter) child;
+            if (formalParam.getOperation() == ELLIPSIS)
+            {
+                ellipsisSeen = true;
+            }
+        }
+
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTFormalParameter</code>.
+     * @return An <code>ASTFormalParameter</code>.
      */
     public ASTFormalParameter parseFormalParameter()
     {
         Location loc = myScanner.getCurrToken().getLocation();
         List<ASTNode> children = new ArrayList<>(3);
+        ASTFormalParameter node = new ASTFormalParameter(loc, children);
         if (isAcceptedOperator(Arrays.asList(CONST, FINAL)) != null)
         {
             children.add(parseVariableModifierList());
         }
         children.add(parseDataType());
+        if (isCurr(ELLIPSIS))
+        {
+            accept(ELLIPSIS);
+            node.setOperation(ELLIPSIS);
+        }
         children.add(parseIdentifier());
-        return new ASTFormalParameter(loc, children);
+        return node;
     }
 
     //**************************************
@@ -380,7 +779,7 @@ public class Parser
     public ASTVariableModifierList parseVariableModifierList()
     {
         return parseMultiple(
-                t -> test(t, FINAL) || test(t, CONST),
+                t -> test(t, FINAL, CONST),
                 "Expected final or const.",
                 this::parseVariableModifier,
                 ASTVariableModifierList::new
@@ -393,14 +792,34 @@ public class Parser
      */
     public ASTVariableModifier parseVariableModifier()
     {
+        return parseOneOf(
+                Arrays.asList(FINAL, CONST),
+                "Expected final or const.",
+                ASTVariableModifier::new
+        );
+    }
+
+    /**
+     * Helper method to avoid duplicating code for parsing "one of" productions.
+     * @param initialErrorMessage If the initial token is not a valid token,
+     *      the <code>CompilerException</code> thrown has this message.
+     * @param acceptedTokens A <code>List</code> of accepted <code>TokenTypes</code>
+     *      that can serve as operators.
+     * @param nodeSupplier Creates the desired node, given a <code>Location</code>
+     *      and a <code>List</code> of child nodes.
+     * @param <T> The type of node to parse and create.
+     * @return A node of the desired type with no children.
+     */
+    private <T extends ASTParentNode> T parseOneOf(List<TokenType> acceptedTokens, String initialErrorMessage, BiFunction<Location, List<ASTNode>, T> nodeSupplier)
+    {
         Location loc = myScanner.getCurrToken().getLocation();
-        TokenType operation = isAcceptedOperator(Arrays.asList(FINAL, CONST));
+        TokenType operation = isAcceptedOperator(acceptedTokens);
         if (operation == null)
         {
-            throw new CompileException("Expected final or const.");
+            throw new CompileException(initialErrorMessage);
         }
         accept(operation);
-        ASTVariableModifier node = new ASTVariableModifier(loc, Collections.emptyList());
+        T node = nodeSupplier.apply(loc, Collections.emptyList());
         node.setOperation(operation);
         return node;
     }
@@ -588,7 +1007,7 @@ public class Parser
     public ASTSwitchCases parseSwitchCases()
     {
         return parseMultiple(
-                t -> test(t, DEFAULT) || test(t, CASE),
+                t -> test(t, DEFAULT, CASE),
                 "Expected case label or default.",
                 this::parseSwitchCase,
                 ASTSwitchCases::new
@@ -1427,7 +1846,7 @@ public class Parser
     public ASTStatementExpressionList parseStatementExpressionList()
     {
         return parseList(
-                t -> test(t, INCREMENT) || test(t, DECREMENT) || isPrimary(t),
+                t -> test(t, INCREMENT, DECREMENT) || isPrimary(t),
                 "Expected a statement expression.",
                 COMMA,
                 this::parseStatementExpression,
@@ -1526,13 +1945,90 @@ public class Parser
      */
     public ASTIntersectionType parseIntersectionType()
     {
-        return parseBinaryExpressionLeftAssociative(
+        return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
-                Collections.singletonList(BITWISE_AND),
+                BITWISE_AND,
                 this::parseDataType,
                 ASTIntersectionType::new
         );
+    }
+
+    /**
+     * Parses an <code>ASTTypeParameters</code>.  This sets the type context in
+     * the <code>Scanner</code> for the duration parsing this node.
+     * @return An <code>ASTTypeArguments</code>.
+     */
+    public ASTTypeParameters parseTypeParameters()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        // TODO: Move this higher up in the parsing, to prevent nested type
+        // arguments from turning this off too early.
+        myScanner.setInTypeContext(true);
+        if (accept(LESS_THAN) != null)
+        {
+            ASTTypeParameterList typeParamList = parseTypeParameterList();
+            if (accept(GREATER_THAN) == null)
+            {
+                throw new CompileException("Expected \">\".");
+            }
+            myScanner.setInTypeContext(false);
+            return new ASTTypeParameters(loc, Arrays.asList(typeParamList));
+        }
+        else
+        {
+            throw new CompileException("Expected \"<\".");
+        }
+    }
+
+    /**
+     * Parses an <code>ASTTypeParameterList</code>.
+     * @return An <code>ASTTypeParameterList</code>.
+     */
+    public ASTTypeParameterList parseTypeParameterList()
+    {
+        return parseList(
+            t -> test(t, IDENTIFIER),
+            "Expected an identifier.",
+            COMMA,
+            this::parseTypeParameter,
+            ASTTypeParameterList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTTypeParameter</code>.
+     * @return An <code>ASTTypeParameter</code>.
+     */
+    public ASTTypeParameter parseTypeParameter()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(2);
+        children.add(parseIdentifier());
+        if (isCurr(SUBTYPE))
+        {
+            children.add(parseTypeBound());
+        }
+        return new ASTTypeParameter(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTTypeBound</code>.
+     * @return An <code>ASTTypeBound</code>.
+     */
+    public ASTTypeBound parseTypeBound()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (accept(SUBTYPE) == null)
+        {
+            throw new CompileException("Expected \"<:\".");
+        }
+        else
+        {
+            ASTTypeBound node = new ASTTypeBound(loc, Arrays.asList(parseIntersectionType()));
+            node.setOperation(SUBTYPE);
+            return node;
+        }
     }
 
     /**
@@ -1561,8 +2057,6 @@ public class Parser
             throw new CompileException("Expected \"<\".");
         }
     }
-
-    // TODO: TypeParameter, TypeParameters, TypeParameterList
 
     /**
      * Parses an <code>ASTTypeArgumentList</code>.
@@ -1948,7 +2442,7 @@ public class Parser
             ASTRelationalExpression node = new ASTRelationalExpression(loc, children);
 
             TokenType curr;
-            while ( (curr = isAcceptedOperator(Arrays.asList(LESS_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, EQUAL, NOT_EQUAL, INSTANCEOF, IS)) ) != null)
+            while ( (curr = isAcceptedOperator(Arrays.asList(LESS_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, EQUAL, NOT_EQUAL, INSTANCEOF, IS, ISNT)) ) != null)
             {
                 accept(curr);
                 children = new ArrayList<>(2);
@@ -2304,7 +2798,31 @@ public class Parser
         children.add(primary);
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArguments());
+            // Keep the type arguments in case of:
+            // Primary . TypeArguments super (), a constructor invocation.
+
+            // We can get here from the parseConstructorInvocation method in
+            // the case of Primary . <    -- This could produce:
+            // MethodInvocation -> Primary . TypeArguments Identifier ( [ArgumentList] )
+            // OR
+            // ConstructorInvocation -> Primary . TypeArguments super ( [ArgumentList] )
+
+            // Currently there is no clean way of pushing the type arguments
+            // back on to the parser when we get a super.  The easiest (not
+            // best) way is to throw an (otherwise invisible) exception that
+            // contains the primary and type arguments for a constructor invocation.
+
+            // Get it working, then improve it later.
+            ASTTypeArguments typeArgs = parseTypeArguments();
+            if (isCurr(SUPER))
+            {
+                // Primary . TypeArguments super ( [ArgumentList] )
+                List<ASTNode> alreadyParsed = new ArrayList<>(2);
+                alreadyParsed.add(primary);
+                alreadyParsed.add(typeArgs);
+                throw new CompileException("Expected method name.", alreadyParsed);
+            }
+            children.add(typeArgs);
         }
         children.add(parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
@@ -2328,7 +2846,7 @@ public class Parser
     /**
      * <p>Parses an <code>ASTMethodInvocation</code>, given an <code>ASTExpressionName</code>
      * that has already been parsed.</p>
-     * <em>MethodInvocation: ExpressionName . Identifier ( [ArgumentList] )</em>
+     * <em>MethodInvocation: ExpressionName . [TypeArguments] Identifier ( [ArgumentList] )</em>
      * @param exprName An already parsed <code>ASTExpressionName</code>.
      * @return An <code>ASTMethodInvocation</code>.
      */
@@ -2342,7 +2860,31 @@ public class Parser
         }
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArguments());
+            // Keep the type arguments in case of:
+            // ExpressionName . TypeArguments super (), a constructor invocation.
+
+            // We can get here from the parseConstructorInvocation method in
+            // the case of ExpressionName . <    -- This could produce:
+            // MethodInvocation -> ExpressionName . TypeArguments Identifier ( [ArgumentList] )
+            // OR
+            // ConstructorInvocation -> ExpressionName . TypeArguments super ( [ArgumentList] )
+
+            // Currently there is no clean way of pushing the type arguments
+            // back on to the parser when we get a super.  The easiest (not
+            // best) way is to throw an (otherwise invisible) exception that
+            // contains the expression name and type arguments for a constructor invocation.
+
+            // Get it working, then improve it later.
+            ASTTypeArguments typeArgs = parseTypeArguments();
+            if (isCurr(SUPER))
+            {
+                // ExpressionName . TypeArguments super ( [ArgumentList] )
+                List<ASTNode> alreadyParsed = new ArrayList<>(2);
+                alreadyParsed.add(exprName);
+                alreadyParsed.add(typeArgs);
+                throw new CompileException("Expected method name.", alreadyParsed);
+            }
+            children.add(typeArgs);
         }
         children.add(parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
@@ -2638,10 +3180,17 @@ public class Parser
         else if (isCurr(DOT) && isNext(LESS_THAN))
         {
             // ExprName.<TypeArgs>methodName(args)
+            // NOT ExprName.<TypeArgs>super(args) -- Constructor invocation.
+            // TODO: Determine a way to parse Type Arguments, yet keep them in case
+            // "super" is encountered, which terminates the Primary at the given
+            // ExpressionName.  Consider storing unused type args in the Primary.
             primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocation(exprName)));
         }
-        else if (isCurr(DOT) && isNext(SUPER))
+        else if (isCurr(DOT) && isNext(SUPER) && !isPeek(OPEN_PARENTHESIS))
         {
+            // TypeName.super.methodInvocation()
+            // TypeName.super.fieldAccess
+            // NOT Expression.super() -- Constructor invocation.
             if (accept(DOT) == null)
             {
                 throw new CompileException("Expected '.'.");
@@ -2665,17 +3214,19 @@ public class Parser
             }
             else if (isCurr(DOT))
             {
-                // TypeName.super.<TypeArgs>methodName(args)
+
                 if (accept(DOT) == null)
                 {
                     throw new CompileException("Expected '.'.");
                 }
                 if (isCurr(LESS_THAN) || (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS)))
                 {
+                    // TypeName.super.<TypeArgs>methodName(args)
                     primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocationSuper(exprName, sooper)));
                 }
                 else
                 {
+                    // TypeName.super.<TypeArgs>fieldName
                     primary = new ASTPrimary(loc, Arrays.asList(parseFieldAccessSuper(exprName, sooper)));
                 }
             }

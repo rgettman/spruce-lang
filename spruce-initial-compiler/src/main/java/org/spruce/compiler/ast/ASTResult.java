@@ -5,22 +5,25 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTIntersectionType</code> is an "&" separated list of DataTypes.</p>
+ * <p>An <code>ASTResult</code> is "void", or an optional ConstModifier
+ * followed by a DataType.</p>
  *
  * <em>
- * IntersectionType:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;DataType {& DataType}
+ * Result:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ConstModifier DataType<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;DataType<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;void<br>
  * </em>
  */
-public class ASTIntersectionType extends ASTParentNode
+public class ASTResult extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTIntersectionType</code> at the given <code>Location</code>
+     * Constructs an <code>ASTResult</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTIntersectionType(Location location, List<ASTNode> children)
+    public ASTResult(Location location, List<ASTNode> children)
     {
         super(location, children);
     }
