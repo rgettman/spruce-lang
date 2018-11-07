@@ -26,6 +26,7 @@ public class Parser
 
     /**
      * Constructs a <code>Parser</code> using a <code>Scanner</code>.
+     *
      * @param scanner A <code>Scanner</code>.
      */
     public Parser(Scanner scanner)
@@ -38,6 +39,7 @@ public class Parser
      * If the current token's type is the given type, then advance to the next
      * token, returning the original token.  If it doesn't match, don't advance,
      * and return <code>null</code>.
+     *
      * @param tokenType The expected token type.
      * @return The token that matches, or <code>null</code> on mismatch.
      */
@@ -54,6 +56,7 @@ public class Parser
 
     /**
      * Returns the current <code>Token</code> from the <code>Scanner</code>.
+     *
      * @return The current <code>Token</code> from the <code>Scanner</code>.
      */
     private Token curr()
@@ -63,6 +66,7 @@ public class Parser
 
     /**
      * Returns the next <code>Token</code> from the <code>Scanner</code>.
+     *
      * @return The next <code>Token</code> from the <code>Scanner</code>.
      */
     private Token next()
@@ -72,6 +76,7 @@ public class Parser
 
     /**
      * Returns the peek <code>Token</code> (after "next") from the <code>Scanner</code>.
+     *
      * @return The peek <code>Token</code> (after "next") from the <code>Scanner</code>.
      */
     private Token peek()
@@ -81,7 +86,8 @@ public class Parser
 
     /**
      * Simple test if the given token's type matches the given type.
-     * @param t The <code>Token</code>.
+     *
+     * @param t         The <code>Token</code>.
      * @param tokenType The expected token type.
      * @return Whether the given token's type matches the given type.
      */
@@ -92,7 +98,8 @@ public class Parser
 
     /**
      * Simple test if the given token's type exists in a list of token types.
-     * @param t The <code>Token</code>.
+     *
+     * @param t          The <code>Token</code>.
      * @param tokenTypes The list of expected token types.
      * @return Whether the given token's type exists in a list of token types.
      */
@@ -103,6 +110,7 @@ public class Parser
 
     /**
      * Tests if the current token's type matches the given type.
+     *
      * @param tokenType The expected token type.
      * @return Whether the current token's type matches the given type.
      */
@@ -113,6 +121,7 @@ public class Parser
 
     /**
      * Tests if the next token's type matches the given type.
+     *
      * @param tokenType The expected token type.
      * @return Whether the next token's type matches the given type.
      */
@@ -123,6 +132,7 @@ public class Parser
 
     /**
      * Tests if the peek token's type matches the given type.
+     *
      * @param tokenType The expected token type.
      * @return Whether the peek token's type matches the given type.
      */
@@ -141,12 +151,13 @@ public class Parser
 
     /**
      * Determines whether the given token is a literal.
+     *
      * @param t A <code>Token</code>.
      * @return Whether the give token is a literal.
      */
     private static boolean isLiteral(Token t)
     {
-        switch(t.getType())
+        switch (t.getType())
         {
         case TRUE:
         case FALSE:
@@ -163,6 +174,7 @@ public class Parser
 
     /**
      * Determines whether the given token can start an expression.
+     *
      * @param t A <code>Token</code>.
      * @return Whether the given token can start an expression.
      */
@@ -173,6 +185,7 @@ public class Parser
 
     /**
      * Determines whether the given token can start a type argument.
+     *
      * @param t A <code>Token</code>.
      * @return Whether the given token can start a type argument.
      */
@@ -184,14 +197,15 @@ public class Parser
     /**
      * <p>Determines whether the given token can start a Primary.</p>
      * <ul>
-     *     <li>-</li>
-     *     <li>~</li>
-     *     <li>!</li>
-     *     <li>identifier</li>
-     *     <li><code>this</code></li>
-     *     <li><code>super</code></li>
-     *     <li>(</li>
+     * <li>-</li>
+     * <li>~</li>
+     * <li>!</li>
+     * <li>identifier</li>
+     * <li><code>this</code></li>
+     * <li><code>super</code></li>
+     * <li>(</li>
      * </ul>
+     *
      * @param t A <code>Token</code>.
      * @return Whether the given token can start a Primary.
      */
@@ -201,7 +215,7 @@ public class Parser
         {
             return true;
         }
-        switch(t.getType())
+        switch (t.getType())
         {
         case MINUS:
         case BITWISE_COMPLEMENT:
@@ -220,6 +234,508 @@ public class Parser
     //**************************************
     // CLASSES
     //**************************************
+
+    /**
+     * Parses an <code>ASTEnumDeclaration</code>.
+     * @return An <code>ASTEnumDeclaration</code>.
+     */
+    public ASTEnumDeclaration parseEnumDeclaration()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(5);
+        if (isAcceptedOperator(Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE)) != null)
+        {
+            children.add(parseAccessModifier());
+        }
+        if (isAcceptedOperator(Arrays.asList(ABSTRACT, FINAL, SHARED, STRICTFP)) != null)
+        {
+            children.add(parseClassModifierList());
+        }
+        if (accept(ENUM) == null)
+        {
+            throw new CompileException("Expected enum.");
+        }
+        children.add(parseIdentifier());
+        if (isCurr(IMPLEMENTS))
+        {
+            children.add(parseSuperinterfaces());
+        }
+        children.add(parseEnumBody());
+        ASTEnumDeclaration node = new ASTEnumDeclaration(loc, children);
+        node.setOperation(ENUM);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTEnumDeclaration</code>, given an already parsed
+     * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
+     * @param loc The <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @return An <code>ASTEnumDeclaration</code>.
+     */
+    public ASTEnumDeclaration parseEnumDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms)
+    {
+        List<ASTNode> children = new ArrayList<>(5);
+        if (am != null)
+        {
+            children.add(am);
+        }
+        if (gms != null)
+        {
+            children.add(gms.convertToSpecificList(
+                    "Unexpected enum modifier.",
+                    Arrays.asList(ABSTRACT, FINAL, SHARED, STRICTFP),
+                    ASTClassModifierList::new
+            ));
+        }
+        if (accept(ENUM) == null)
+        {
+            throw new CompileException("Expected enum.");
+        }
+        children.add(parseIdentifier());
+        if (isCurr(IMPLEMENTS))
+        {
+            children.add(parseSuperinterfaces());
+        }
+        children.add(parseEnumBody());
+        ASTEnumDeclaration node = new ASTEnumDeclaration(loc, children);
+        node.setOperation(ENUM);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTEnumConstantList</code>.
+     * @return An <code>ASTEnumConstantList</code>.
+     */
+    public ASTEnumBody parseEnumBody()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(2);
+        if (accept(OPEN_BRACE) == null)
+        {
+            throw new CompileException("Expected '{'.");
+        }
+        if (isAcceptedOperator(Arrays.asList(SEMICOLON, CLOSE_BRACE)) == null)
+        {
+            children.add(parseEnumConstantList());
+        }
+        if (!isCurr(CLOSE_BRACE))
+        {
+            children.add(parseEnumBodyDeclarations());
+        }
+        if (accept(CLOSE_BRACE) == null)
+        {
+            throw new CompileException("Expected '}'.");
+        }
+        return new ASTEnumBody(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTEnumBodyDeclarations</code>.
+     * @return An <code>ASTEnumBodyDeclarations</code>.
+     */
+    public ASTEnumBodyDeclarations parseEnumBodyDeclarations()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (accept(SEMICOLON) == null)
+        {
+            throw new CompileException("Expected semicolon.");
+        }
+        ASTEnumBodyDeclarations node = new ASTEnumBodyDeclarations(loc, Arrays.asList(parseClassPartList()));
+        node.setOperation(SEMICOLON);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTEnumConstantList</code>.
+     * @return An <code>ASTEnumConstantList</code>.
+     */
+    public ASTEnumConstantList parseEnumConstantList()
+    {
+        return parseList(
+                t -> test(t, IDENTIFIER),
+                "Expected enum constant identifier.",
+                COMMA,
+                this::parseEnumConstant,
+                ASTEnumConstantList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTEnumConstant</code>.
+     * @return An <code>ASTEnumConstant</code>.
+     */
+    public ASTEnumConstant parseEnumConstant()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(3);
+        children.add(parseIdentifier());
+        if (isCurr(OPEN_PARENTHESIS))
+        {
+            accept(OPEN_PARENTHESIS);
+            if (!isCurr(CLOSE_PARENTHESIS))
+            {
+                children.add(parseArgumentList());
+            }
+            if (accept(CLOSE_PARENTHESIS) == null)
+            {
+                throw new CompileException("Expected ')'.");
+            }
+        }
+        if (isCurr(OPEN_BRACE))
+        {
+            children.add(parseClassBody());
+        }
+        return new ASTEnumConstant(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTClassDeclaration</code>.
+     * @return An <code>ASTClassDeclaration</code>.
+     */
+    public ASTClassDeclaration parseClassDeclaration()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(7);
+        if (isAcceptedOperator(Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE)) != null)
+        {
+            children.add(parseAccessModifier());
+        }
+        if (isAcceptedOperator(Arrays.asList(ABSTRACT, FINAL, SHARED, STRICTFP)) != null)
+        {
+            children.add(parseClassModifierList());
+        }
+        if (accept(CLASS) == null)
+        {
+            throw new CompileException("Expected class.");
+        }
+        children.add(parseIdentifier());
+        if (isCurr(LESS_THAN))
+        {
+            children.add(parseTypeParameters());
+        }
+        if (isCurr(EXTENDS))
+        {
+            children.add(parseSuperclass());
+        }
+        if (isCurr(IMPLEMENTS))
+        {
+            children.add(parseSuperinterfaces());
+        }
+        children.add(parseClassBody());
+        ASTClassDeclaration node = new ASTClassDeclaration(loc, children);
+        node.setOperation(CLASS);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTClassDeclaration</code>, given an already parsed
+     * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
+     * @param loc The <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @return An <code>ASTClassDeclaration</code>.
+     */
+    public ASTClassDeclaration parseClassDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms)
+    {
+        List<ASTNode> children = new ArrayList<>(7);
+        if (am != null)
+        {
+            children.add(am);
+        }
+        if (gms != null)
+        {
+            children.add(gms.convertToSpecificList(
+                    "Unexpected class modifier.",
+                    Arrays.asList(ABSTRACT, FINAL, SHARED, STRICTFP),
+                    ASTClassModifierList::new
+            ));
+        }
+        if (accept(CLASS) == null)
+        {
+            throw new CompileException("Expected class.");
+        }
+        children.add(parseIdentifier());
+        if (isCurr(LESS_THAN))
+        {
+            children.add(parseTypeParameters());
+        }
+        if (isCurr(EXTENDS))
+        {
+            children.add(parseSuperclass());
+        }
+        if (isCurr(IMPLEMENTS))
+        {
+            children.add(parseSuperinterfaces());
+        }
+        children.add(parseClassBody());
+        ASTClassDeclaration node = new ASTClassDeclaration(loc, children);
+        node.setOperation(CLASS);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTSuperinterfaces</code>.
+     * @return An <code>ASTSuperinterfaces</code>.
+     */
+    public ASTSuperinterfaces parseSuperinterfaces()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (accept(IMPLEMENTS) == null)
+        {
+            throw new CompileException("Expected implements.");
+        }
+        ASTSuperinterfaces node = new ASTSuperinterfaces(loc, Arrays.asList(parseDataTypeNoArrayList()));
+        node.setOperation(IMPLEMENTS);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTDataTypeNoArrayList</code>.
+     * @return An <code>ASTDataTypeNoArrayList</code>.
+     */
+    public ASTDataTypeNoArrayList parseDataTypeNoArrayList()
+    {
+        return parseList(
+                t -> test(t, IDENTIFIER),
+                "Expected a data type (no array).",
+                COMMA,
+                this::parseDataTypeNoArray,
+                ASTDataTypeNoArrayList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTSuperclass</code>.
+     * @return An <code>ASTSuperclass</code>.
+     */
+    public ASTSuperclass parseSuperclass()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (accept(EXTENDS) == null)
+        {
+            throw new CompileException("Expected extends.");
+        }
+        ASTSuperclass node = new ASTSuperclass(loc, Arrays.asList(parseDataTypeNoArray()));
+        node.setOperation(EXTENDS);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTClassModifierList</code>.
+     * @return An <code>ASTClassModifierList</code>.
+     */
+    public ASTClassModifierList parseClassModifierList()
+    {
+        return parseGeneralModifierList()
+                .convertToSpecificList("Expected abstract, final, shared, or strictfp.",
+                        Arrays.asList(ABSTRACT, FINAL, SHARED, STRICTFP),
+                        ASTClassModifierList::new);
+    }
+
+    /**
+     * Parses an <code>ASTClassBody</code>.
+     * @return An <code>ASTClassBody</code>.
+     */
+    public ASTClassBody parseClassBody()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (accept(OPEN_BRACE) == null)
+        {
+            throw new CompileException("Expected '{'.");
+        }
+        List<ASTNode> children = new ArrayList<>(1);
+        if (!isCurr(CLOSE_BRACE))
+        {
+            children.add(parseClassPartList());
+        }
+        if (accept(CLOSE_BRACE) == null)
+        {
+            throw new CompileException("Expected '}'.");
+        }
+        ASTClassBody node = new ASTClassBody(loc, children);
+        node.setOperation(OPEN_BRACE);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTClassPartList</code>.
+     * @return An <code>ASTClassPartList</code>.
+     */
+    public ASTClassPartList parseClassPartList()
+    {
+        return parseMultiple(
+                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED, PRIVATE,
+                                   ABSTRACT, FINAL, OVERRIDE, SHARED, STRICTFP, TRANSIENT, VOLATILE,
+                                   CONSTRUCTOR, CONST, VOID, IDENTIFIER, LESS_THAN)
+                           .contains(t.getType()),
+                "Expected constructor, field, or method declaration.",
+                this::parseClassPart,
+                ASTClassPartList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTClassPart</code>.
+     * @return An <code>ASTClassPart</code>.
+     */
+    public ASTClassPart parseClassPart()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (isCurr(SHARED) && isNext(CONSTRUCTOR))
+        {
+            return new ASTClassPart(loc, Arrays.asList(parseSharedConstructor()));
+        }
+        ASTAccessModifier accessMod = null;
+        if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null)
+        {
+            accessMod = parseAccessModifier();
+        }
+        ASTGeneralModifierList genModList = null;
+        if (isAcceptedOperator(Arrays.asList(ABSTRACT, FINAL, OVERRIDE, SHARED, STRICTFP, TRANSIENT, VOLATILE)) != null)
+        {
+            genModList = parseGeneralModifierList();
+        }
+
+        // class/enum/interface/annotation
+        switch(curr().getType())
+        {
+        case CLASS:
+            return new ASTClassPart(loc, Arrays.asList(parseClassDeclaration(loc, accessMod, genModList)));
+        case ENUM:
+            return new ASTClassPart(loc, Arrays.asList(parseEnumDeclaration(loc, accessMod, genModList)));
+//        case INTERFACE:
+//        case ANNOTATION:
+        }
+
+        ASTTypeParameters typeParams = null;
+        if (isCurr(LESS_THAN))
+        {
+            typeParams = parseTypeParameters();
+        }
+
+        if (isAcceptedOperator(Arrays.asList(CONST, VOID)) != null)
+        {
+            return new ASTClassPart(loc, Arrays.asList(parseMethodDeclaration(loc, accessMod, genModList, typeParams)));
+        }
+        else if (isAcceptedOperator(Arrays.asList(CONSTRUCTOR)) != null)
+        {
+            return new ASTClassPart(loc, Arrays.asList(parseConstructorDeclaration(loc, accessMod, genModList, typeParams)));
+        }
+        else
+        {
+            ASTDataType dt = parseDataType();
+            if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS))
+            {
+                return new ASTClassPart(loc, Arrays.asList(parseMethodDeclaration(loc, accessMod, genModList, typeParams, dt)));
+            }
+            else
+            {
+                if (typeParams != null)
+                {
+                    throw new CompileException("Type parameters not allowed on field declaration.");
+                }
+                return new ASTClassPart(loc, Arrays.asList(parseFieldDeclaration(loc, accessMod, genModList, dt)));
+            }
+        }
+    }
+
+    /**
+     * Parses an <code>ASTSharedConstructor</code>.
+     *
+     * @return An <code>ASTSharedConstructor</code>.
+     */
+    public ASTSharedConstructor parseSharedConstructor()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        if (accept(SHARED) == null)
+        {
+            throw new CompileException("Expected shared.");
+        }
+        if (accept(CONSTRUCTOR) == null)
+        {
+            throw new CompileException("Expected constructor.");
+        }
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+        return new ASTSharedConstructor(loc, Arrays.asList(parseBlock()));
+    }
+
+    /**
+     * Parses an <code>ASTConstructorDeclaration</code>.
+     *
+     * @return An <code>ASTConstructorDeclaration</code>.
+     */
+    public ASTConstructorDeclaration parseConstructorDeclaration()
+    {
+        Location loc = myScanner.getCurrToken().getLocation();
+        List<ASTNode> children = new ArrayList<>(5);
+        if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null)
+        {
+            children.add(parseAccessModifier());
+        }
+        if (isCurr(STRICTFP))
+        {
+            children.add(parseStrictfpModifier());
+        }
+        children.add(parseConstructorDeclarator());
+        if (isCurr(COLON))
+        {
+            children.add(parseConstructorInvocation());
+        }
+        children.add(parseBlock());
+        return new ASTConstructorDeclaration(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTConstructorDeclaration</code>, given optionally already
+     * parsed productions: <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>,
+     * <code>ASTTypeParameters</code>.
+     *
+     * @param loc The starting <code>Location</code>.
+     * @param am  An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param tps An already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
+     * @return An <code>ASTMethodDeclaration</code>.
+     */
+    public ASTConstructorDeclaration parseConstructorDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTTypeParameters tps)
+    {
+        List<ASTNode> children = new ArrayList<>(5);
+        if (am != null)
+        {
+            children.add(am);
+        }
+        if (gms != null)
+        {
+            children.add(gms.convertToSpecificList(
+                    "Unexpected constructor modifier.",
+                    Collections.singletonList(STRICTFP),
+                    ASTStrictfpModifier::new
+            ));
+        }
+        if (tps != null)
+        {
+            children.add(parseConstructorDeclarator(tps));
+        }
+        else
+        {
+            children.add(parseConstructorDeclarator());
+        }
+        if (isCurr(COLON))
+        {
+            children.add(parseConstructorInvocation());
+        }
+        children.add(parseBlock());
+        return new ASTConstructorDeclaration(loc, children);
+    }
+
 
     /**
      * Parses an <code>ASTConstructorInvocation</code>.
@@ -359,6 +875,45 @@ public class Parser
     }
 
     /**
+     * Parses an <code>ASTConstructorDeclarator</code>, given an already parsed
+     * <code>ASTTypeParameters</code>.
+     * @param tps An already parsed <code>ASTTypeParameters</code>.
+     * @return An <code>ASTConstructorDeclarator</code>.
+     */
+    public ASTConstructorDeclarator parseConstructorDeclarator(ASTTypeParameters tps)
+    {
+        Location loc = tps != null ? tps.getLocation() : null;
+        List<ASTNode> children = new ArrayList<>(2);
+        if (tps != null)
+        {
+            children.add(tps);
+        }
+        if (loc == null)
+        {
+            loc = myScanner.getCurrToken().getLocation();
+        }
+        if (accept(CONSTRUCTOR) == null)
+        {
+            throw new CompileException("Expected \"constructor\".");
+        }
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('.");
+        }
+        if (!isCurr(CLOSE_PARENTHESIS))
+        {
+            children.add(parseFormalParameterList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+        ASTConstructorDeclarator node = new ASTConstructorDeclarator(loc, children);
+        node.setOperation(CONSTRUCTOR);
+        return node;
+    }
+
+    /**
      * Parses an <code>ASTFieldDeclaration</code>.
      * @return An <code>ASTFieldDeclaration</code>.
      */
@@ -376,6 +931,48 @@ public class Parser
         }
         children.add(parseDataType());
         children.add(parseVariableDeclaratorList());
+        if (accept(SEMICOLON) == null)
+        {
+            throw new CompileException("Expected semicolon.");
+        }
+        return new ASTFieldDeclaration(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTFieldDeclaration</code>, given an already parsed
+     * <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>, and
+     * <code>ASTDataType</code>.
+     * @param loc The given <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param dt An already parsed <code>ASTAccessModifier</code>, present.
+     * @return An <code>ASTFieldDeclaration</code>.
+     */
+    public ASTFieldDeclaration parseFieldDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTDataType dt)
+    {
+        List<ASTNode> children = new ArrayList<>(4);
+        if (am != null)
+        {
+            children.add(am);
+        }
+        if (gms != null)
+        {
+            ASTFieldModifierList mms = gms.convertToSpecificList(
+                    "Unexpected field modifier.",
+                    Arrays.asList(CONST, FINAL, SHARED, TRANSIENT, VOLATILE),
+                    ASTFieldModifierList::new
+            );
+            if (mms != null)
+            {
+                children.add(mms);
+            }
+        }
+        children.add(dt);
+        children.add(parseVariableDeclaratorList());
+        if (accept(SEMICOLON) == null)
+        {
+            throw new CompileException("Expected semicolon.");
+        }
         return new ASTFieldDeclaration(loc, children);
     }
 
@@ -408,6 +1005,83 @@ public class Parser
             children.add(parseMethodModifierList());
         }
         children.add(parseMethodHeader());
+        children.add(parseMethodBody());
+        return new ASTMethodDeclaration(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTMethodDeclaration</code>, given optionally already
+     * parsed productions: <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>,
+     * <code>ASTTypeParameters</code>.
+     * @param loc The starting <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param tps An already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
+     * @return An <code>ASTMethodDeclaration</code>.
+     */
+    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTTypeParameters tps)
+    {
+
+        List<ASTNode> children = new ArrayList<>(4);
+        if (am != null)
+        {
+            children.add(am);
+        }
+        if (gms != null)
+        {
+            ASTMethodModifierList mms = gms.convertToSpecificList(
+                    "Unexpected method modifier.",
+                    Arrays.asList(ABSTRACT, FINAL, OVERRIDE, SHARED, STRICTFP),
+                    ASTMethodModifierList::new
+            );
+            if (mms != null)
+            {
+                children.add(mms);
+            }
+        }
+        if (tps != null)
+        {
+            children.add(parseMethodHeader(tps));
+        }
+        else
+        {
+            children.add(parseMethodHeader());
+        }
+        children.add(parseMethodBody());
+        return new ASTMethodDeclaration(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTMethodDeclaration</code>, given optionally already
+     * parsed productions: <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>,
+     * <code>ASTTypeParameters</code>.
+     * @param loc The starting <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param tps An already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
+     * @param dt An already parsed <code>ASTDataType</code>, present.
+     * @return An <code>ASTMethodDeclaration</code>.
+     */
+    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTTypeParameters tps, ASTDataType dt)
+    {
+        List<ASTNode> children = new ArrayList<>(4);
+        if (am != null)
+        {
+            children.add(am);
+        }
+        if (gms != null)
+        {
+            ASTMethodModifierList mms = gms.convertToSpecificList(
+                    "Unexpected method modifier.",
+                    Arrays.asList(ABSTRACT, FINAL, OVERRIDE, SHARED, STRICTFP),
+                    ASTMethodModifierList::new
+            );
+            if (mms != null)
+            {
+                children.add(mms);
+            }
+        }
+        children.add(parseMethodHeader(tps, dt));
         children.add(parseMethodBody());
         return new ASTMethodDeclaration(loc, children);
     }
@@ -507,6 +1181,42 @@ public class Parser
     }
 
     /**
+     * Parses an <code>ASTMethodHeader</code>, given already parsed
+     * <code>ASTTypeParameters</code>.
+     * @param tps Already parsed <code>ASTTypeParameters/code>.
+     * @return An <code>ASTMethodHeader</code>.
+     */
+    public ASTMethodHeader parseMethodHeader(ASTTypeParameters tps)
+    {
+        List<ASTNode> children = new ArrayList<>(3);
+        children.add(tps);
+        children.add(parseResult());
+        children.add(parseMethodDeclarator());
+        return new ASTMethodHeader(tps.getLocation(), children);
+    }
+
+    /**
+     * Parses an <code>ASTMethodHeader</code>, given already parsed
+     * <code>ASTTypeParameters</code> (optional), and an already parsed
+     * <code>ASTDataType</code>.
+     * @param tps Already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
+     * @param dt Already parsed <code>ASTDataType</code>.
+     * @return An <code>ASTMethodHeader</code>.
+     */
+    public ASTMethodHeader parseMethodHeader(ASTTypeParameters tps, ASTDataType dt)
+    {
+        Location loc = tps != null ? tps.getLocation() : dt.getLocation();
+        List<ASTNode> children = new ArrayList<>(3);
+        if (tps != null)
+        {
+            children.add(tps);
+        }
+        children.add(parseResult(dt));
+        children.add(parseMethodDeclarator());
+        return new ASTMethodHeader(loc, children);
+    }
+
+    /**
      * Parses an <code>ASTResult</code>.
      * @return An <code>ASTResult</code>.
      */
@@ -527,6 +1237,16 @@ public class Parser
         }
         children.add(parseDataType());
         return new ASTResult(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTResult</code>, given an already parsed <code>ASTDataType</code>.
+     * @param dt An already parsed <code>ASTDataType</code>.
+     * @return An <code>ASTResult</code>.
+     */
+    public ASTResult parseResult(ASTDataType dt)
+    {
+        return new ASTResult(dt.getLocation(), Arrays.asList(dt));
     }
 
     /**

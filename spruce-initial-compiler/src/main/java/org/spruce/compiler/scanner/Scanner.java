@@ -463,6 +463,11 @@ public class Scanner
                 read();
                 return readUnescapedMultilineStringLiteral();
             }
+            else
+            {
+                // Empty string literal.
+                return createToken(TokenType.STRING_LITERAL, "");
+            }
         }
         StringBuilder buf = new StringBuilder();
         while (peek() != '"')

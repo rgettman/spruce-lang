@@ -11,9 +11,8 @@ import org.spruce.compiler.scanner.Location;
  * <em>
  * LeftHandSide:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionName<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
- * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess
+ * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess
  * </em>
  */
 public class ASTLeftHandSide extends ASTParentNode

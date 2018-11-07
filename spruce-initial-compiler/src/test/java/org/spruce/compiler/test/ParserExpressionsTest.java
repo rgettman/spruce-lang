@@ -372,6 +372,30 @@ public class ParserExpressionsTest
     }
 
     /**
+     * Tests left hand side of element access.
+     */
+    @Test
+    public void testLeftHandSideOfElementAccess()
+    {
+        Parser parser = new Parser(new Scanner("array[i]"));
+        ASTLeftHandSide node = parser.parseLeftHandSide();
+        checkSimple(node, ASTElementAccess.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests left hand side of field access.
+     */
+    @Test
+    public void testLeftHandSideOfFieldAccess()
+    {
+        Parser parser = new Parser(new Scanner("this.x"));
+        ASTLeftHandSide node = parser.parseLeftHandSide();
+        checkSimple(node, ASTFieldAccess.class);
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests conditional expression of logical or expression.
      */
     @Test

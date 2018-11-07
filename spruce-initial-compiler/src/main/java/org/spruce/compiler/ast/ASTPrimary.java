@@ -57,7 +57,7 @@ public class ASTPrimary extends ASTParentNode
      */
     public ASTLeftHandSide getLeftHandSide()
     {
-        return convertDescendant(Arrays.asList(ASTExpressionName.class, ASTElementAccess.class),
+        return convertDescendant(Arrays.asList(ASTExpressionName.class, ASTElementAccess.class, ASTFieldAccess.class),
                 ASTLeftHandSide::new,
                 "Expected variable or element access.");
     }

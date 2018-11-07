@@ -16,6 +16,447 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ParserClassesTest
 {
     /**
+     * Tests simple enum declaration.
+     */
+    @Test
+    public void testEnumDeclarationSimple()
+    {
+        Parser parser = new Parser(new Scanner("enum Dummy {DUMMY}"));
+        ASTEnumDeclaration node = parser.parseEnumDeclaration();
+        checkBinary(node, ENUM, ASTIdentifier.class, ASTEnumBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests full enum declaration.
+     */
+    @Test
+    public void testEnumDeclarationFull()
+    {
+        Parser parser = new Parser(new Scanner("public shared enum FullEnumTest implements Serializable {QUIZ, TEST, FINAL}"));
+        ASTEnumDeclaration node = parser.parseEnumDeclaration();
+        checkNary(node, ENUM, ASTAccessModifier.class, ASTClassModifierList.class, ASTIdentifier.class,
+                ASTSuperinterfaces.class, ASTEnumBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests simple enum body.
+     */
+    @Test
+    public void testEnumBodySimple()
+    {
+        Parser parser = new Parser(new Scanner("{\nRED, YELLOW, GREEN\n}"));
+        ASTEnumBody node = parser.parseEnumBody();
+        checkSimple(node, ASTEnumConstantList.class);
+    }
+
+    /**
+     * Tests enum body of nothing.
+     */
+    @Test
+    public void testEnumBodyOfNothing()
+    {
+        Parser parser = new Parser(new Scanner("{}"));
+        ASTEnumBody node = parser.parseEnumBody();
+        checkEmpty(node, null);
+    }
+
+    /**
+     * Tests enum body of utility methods.
+     */
+    @Test
+    public void testEnumBodyOfUtility()
+    {
+        Parser parser = new Parser(new Scanner("{\n;    shared void utility() {\n    out.println(\"Utility!\");\n}\n}"));
+        ASTEnumBody node = parser.parseEnumBody();
+        checkSimple(node, ASTEnumBodyDeclarations.class);
+    }
+
+    /**
+     * Tests enum body of constants and class part list.
+     */
+    @Test
+    public void testEnumBodyOfConstantsClassPartList()
+    {
+        Parser parser = new Parser(new Scanner("{\nRED, YELLOW, GREEN;\nshared void utility() {\n    out.println(\"Utility!\");\n}\n}"));
+        ASTEnumBody node = parser.parseEnumBody();
+        checkBinary(node, ASTEnumConstantList.class, ASTEnumBodyDeclarations.class);
+    }
+
+    /**
+     * Tests enum body declarations.
+     */
+    @Test
+    public void testEnumBodyDeclarations()
+    {
+        Parser parser = new Parser(new Scanner(";\nconstructor() {}"));
+        ASTEnumBodyDeclarations node = parser.parseEnumBodyDeclarations();
+        checkSimple(node, ASTClassPartList.class, SEMICOLON);
+    }
+
+    /**
+     * Tests enum constant list of enum constant.
+     */
+    @Test
+    public void testEnumConstantListOfEnumConstant()
+    {
+        Parser parser = new Parser(new Scanner("SINGLETON"));
+        ASTEnumConstantList node = parser.parseEnumConstantList();
+        checkSimple(node, ASTEnumConstant.class, COMMA);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests enum constant list.
+     */
+    @Test
+    public void testEnumConstantList()
+    {
+        Parser parser = new Parser(new Scanner("RED, YELLOW, GREEN"));
+        ASTEnumConstantList node = parser.parseEnumConstantList();
+        checkList(node, COMMA, ASTEnumConstant.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests simple enum constant.
+     */
+    @Test
+    public void testEnumConstantSimple()
+    {
+        Parser parser = new Parser(new Scanner("RED"));
+        ASTEnumConstant node = parser.parseEnumConstant();
+        checkSimple(node, ASTIdentifier.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests full enum constant.
+     */
+    @Test
+    public void testEnumConstantOfArgumentListClassBody()
+    {
+        Parser parser = new Parser(new Scanner("RED(\"#F9152F\") { override String toString() { return \"Red Light\"; } }"));
+        ASTEnumConstant node = parser.parseEnumConstant();
+        checkTrinary(node, null, ASTIdentifier.class, ASTArgumentList.class, ASTClassBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests simple class declaration.
+     */
+    @Test
+    public void testClassDeclarationSimple()
+    {
+        Parser parser = new Parser(new Scanner("class Dummy {}"));
+        ASTClassDeclaration node = parser.parseClassDeclaration();
+        checkBinary(node, CLASS, ASTIdentifier.class, ASTClassBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests full class declaration.
+     */
+    @Test
+    public void testClassDeclarationFull()
+    {
+        Parser parser = new Parser(new Scanner("public shared class FullTest<T> extends Test<T> implements Serializable, List<T> {}"));
+        ASTClassDeclaration node = parser.parseClassDeclaration();
+        checkNary(node, CLASS, ASTAccessModifier.class, ASTClassModifierList.class, ASTIdentifier.class,
+                ASTTypeParameters.class, ASTSuperclass.class, ASTSuperinterfaces.class, ASTClassBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests superinterfaces (implements clause).
+     */
+    @Test
+    public void testSuperinterfaces()
+    {
+        Parser parser = new Parser(new Scanner("implements Copyable"));
+        ASTSuperinterfaces node = parser.parseSuperinterfaces();
+        checkSimple(node, ASTDataTypeNoArrayList.class, IMPLEMENTS);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests data type no array of data type no array.
+     */
+    @Test
+    public void testDataTypeNoArrayListOfClassPart()
+    {
+        Parser parser = new Parser(new Scanner("Serializable"));
+        ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
+        checkSimple(node, ASTDataTypeNoArray.class, COMMA);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests data type no array list.
+     */
+    @Test
+    public void testDataTypeNoArrayList()
+    {
+        Parser parser = new Parser(new Scanner("Serializable, Comparable<T>"));
+        ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
+        checkList(node, COMMA, ASTDataTypeNoArray.class, 2);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests nested data type no array lists.
+     */
+    @Test
+    public void testDataTypeNoArrayListNested()
+    {
+        Parser parser = new Parser(new Scanner("Serializable, Comparable<T>, RandomAccess"));
+        ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
+        checkList(node, COMMA, ASTDataTypeNoArray.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests superclass (extends clause).
+     */
+    @Test
+    public void testSuperclass()
+    {
+        Parser parser = new Parser(new Scanner("extends Thread"));
+        ASTSuperclass node = parser.parseSuperclass();
+        checkSimple(node, ASTDataTypeNoArray.class, EXTENDS);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class modifier list.
+     */
+    @Test
+    public void testClassModifierList()
+    {
+        Parser parser = new Parser(new Scanner("abstract final shared strictfp"));
+        ASTClassModifierList node = parser.parseClassModifierList();
+        checkList(node, null, ASTGeneralModifier.class, 4);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests empty class body.
+     */
+    @Test
+    public void testClassBodyEmpty()
+    {
+        Parser parser = new Parser(new Scanner("{}"));
+        ASTClassBody node = parser.parseClassBody();
+        checkEmpty(node, OPEN_BRACE);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class body.
+     */
+    @Test
+    public void testClassBody()
+    {
+        Parser parser = new Parser(new Scanner("{\nprivate Integer i := 1;\nconstructor(Integer i) { this.i := i; }\nInteger getI() {\n    return i;\n}\n}"));
+        ASTClassBody node = parser.parseClassBody();
+        checkSimple(node, ASTClassPartList.class, OPEN_BRACE);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part list of class part.
+     */
+    @Test
+    public void testClassPartListOfClassPart()
+    {
+        Parser parser = new Parser(new Scanner("private Integer i := 1;"));
+        ASTClassPartList node = parser.parseClassPartList();
+        checkSimple(node, ASTClassPart.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part list.
+     */
+    @Test
+    public void testClassPartList()
+    {
+        Parser parser = new Parser(new Scanner("private Integer i := 1;\nconstructor(Integer i) { this.i := i; }"));
+        ASTClassPartList node = parser.parseClassPartList();
+        checkList(node, null, ASTClassPart.class, 2);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests nested class part lists.
+     */
+    @Test
+    public void testClassPartListNested()
+    {
+        Parser parser = new Parser(new Scanner("private Integer i := 1;\nconstructor(Integer i) { this.i := i; }\nInteger getI() {\n    return i;\n}"));
+        ASTClassPartList node = parser.parseClassPartList();
+        checkList(node, null, ASTClassPart.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of shared constructor.
+     */
+    @Test
+    public void testClassPartOfSharedConstructor()
+    {
+        Parser parser = new Parser(new Scanner("shared constructor() { sharedVar := reallyComplicatedLogic(); }"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTSharedConstructor.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of method declaration with void result.
+     */
+    @Test
+    public void testClassPartOfMethodDeclarationVoidResult()
+    {
+        Parser parser = new Parser(new Scanner("public abstract void method();"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of method declaration with void result and type parameters.
+     */
+    @Test
+    public void testClassPartOfMethodDeclarationVoidResultTypeParameters()
+    {
+        Parser parser = new Parser(new Scanner("public abstract <T> void method(T param);"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of method declaration data type void result.
+     */
+    @Test
+    public void testClassPartOfMethodDeclarationDataTypeResult()
+    {
+        Parser parser = new Parser(new Scanner("public abstract String method();"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of method declaration with data type result and type parameters.
+     */
+    @Test
+    public void testClassPartOfMethodDeclarationDataTypeResultTypeParameters()
+    {
+        Parser parser = new Parser(new Scanner("public abstract <T> T method(T param);"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of method declaration with const result.
+     */
+    @Test
+    public void testClassPartOfMethodDeclarationConstResult()
+    {
+        Parser parser = new Parser(new Scanner("const String method(String param);"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of field declaration.
+     */
+    @Test
+    public void testClassPartOfFieldDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("private Int myVar := 1, myVar2 := 2;"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTFieldDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of constructor declaration.
+     */
+    @Test
+    public void testClassPartOfConstructorDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("constructor(String s) : constructor(s) {}"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTConstructorDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of class declaration.
+     */
+    @Test
+    public void testClassPartOfClassDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("public shared class Nested {}"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTClassDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of enum declaration.
+     */
+    @Test
+    public void testClassPartOfEnumDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("private enum Light {RED, YELLOW, GREEN}"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTEnumDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests shared constructor.
+     */
+    @Test
+    public void testSharedConstructor()
+    {
+        Parser parser = new Parser(new Scanner("shared constructor() { sharedVar := reallyComplicatedLogic(); }"));
+        ASTSharedConstructor node = parser.parseSharedConstructor();
+        checkSimple(node, ASTBlock.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests constructor declaration of access modifier, strictfp, and constructor invocation.
+     */
+    @Test
+    public void testConstructorDeclarationOfAccessStrictfpConstructorInvocation()
+    {
+        Parser parser = new Parser(new Scanner("private strictfp constructor(String s) : super(s) { this.s := s; }"));
+        ASTConstructorDeclaration node = parser.parseConstructorDeclaration();
+        checkNary(node, null, ASTAccessModifier.class, ASTStrictfpModifier.class, ASTConstructorDeclarator.class, ASTConstructorInvocation.class, ASTBlock.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests simple constructor declaration.
+     */
+    @Test
+    public void testConstructorDeclarationSimple()
+    {
+        Parser parser = new Parser(new Scanner("constructor(String s) { this.s := s; }"));
+        ASTConstructorDeclaration node = parser.parseConstructorDeclaration();
+        checkBinary(node, ASTConstructorDeclarator.class, ASTBlock.class);
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests constructor invocation of primary, type arguments, and super.
      */
     @Test
@@ -141,7 +582,7 @@ public class ParserClassesTest
     @Test
     public void testFieldDeclaration()
     {
-        Parser parser = new Parser(new Scanner("public const final String constant = \"CONSTANT\";"));
+        Parser parser = new Parser(new Scanner("public const final String aConstant := \"CONSTANT\";"));
         ASTFieldDeclaration node = parser.parseFieldDeclaration();
         checkNary(node, null, ASTAccessModifier.class, ASTFieldModifierList.class, ASTDataType.class, ASTVariableDeclaratorList.class);
         node.collapseThenPrint();
@@ -153,7 +594,7 @@ public class ParserClassesTest
     @Test
     public void testFieldDeclarationSimple()
     {
-        Parser parser = new Parser(new Scanner("String name = \"spruce\";"));
+        Parser parser = new Parser(new Scanner("String name := \"spruce\";"));
         ASTFieldDeclaration node = parser.parseFieldDeclaration();
         checkBinary(node, ASTDataType.class, ASTVariableDeclaratorList.class);
         node.collapseThenPrint();

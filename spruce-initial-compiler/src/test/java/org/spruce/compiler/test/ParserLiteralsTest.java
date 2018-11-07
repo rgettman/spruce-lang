@@ -70,6 +70,20 @@ public class ParserLiteralsTest
     }
 
     /**
+     * Tests an empty string literal.
+     */
+    @Test
+    public void testLiteralOfStringEmpty()
+    {
+        Parser parser = new Parser(new Scanner("\"\""));
+        ASTLiteral node = parser.parseLiteral();
+        checkSimple(node, ASTStringLiteral.class);
+        ASTStringLiteral strLiteral = (ASTStringLiteral) node.getChildren().get(0);
+        assertEquals("", strLiteral.getStringValue());
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests a raw string literal.
      */
     @Test
