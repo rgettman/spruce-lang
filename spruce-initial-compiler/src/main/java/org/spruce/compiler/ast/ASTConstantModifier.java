@@ -5,23 +5,22 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTEnumBody</code> is a "{", optionally a list of enum constants,
- * followed by an optional enum body declaration, then a "}".</p>
+ * <p>An <code>ASTConstantModifier</code> is "constant".</p>
  *
  * <em>
- * ClassBody:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;{ [EnumConstantList] [EnumBodyDeclaration] }
+ * ConstantModifier:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;constant
  * </em>
  */
-public class ASTEnumBody extends ASTParentNode
+public class ASTConstantModifier extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTEnumBody</code> at the given <code>Location</code>
+     * Constructs an <code>ASTConstantModifier</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTEnumBody(Location location, List<ASTNode> children)
+    public ASTConstantModifier(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

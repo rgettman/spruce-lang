@@ -440,6 +440,10 @@ public enum TokenType
      * Contents are immutable.
      */
     CONST,
+    /**
+     * Both final and const.
+     */
+    CONSTANT,
     // LOGIC
     /**
      * if, else, else if.

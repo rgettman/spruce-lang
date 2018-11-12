@@ -5,12 +5,11 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTClassPartList</code> is a comma-separated list of
- * class parts.</p>
+ * <p>An <code>ASTClassPartList</code> is a list of class parts.</p>
  *
  * <em>
  * ClassPartList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ClassPart {, ClassPart}
+ * &nbsp;&nbsp;&nbsp;&nbsp;ClassPart {ClassPart}
  * </em>
  */
 public class ASTClassPartList extends ASTParentNode

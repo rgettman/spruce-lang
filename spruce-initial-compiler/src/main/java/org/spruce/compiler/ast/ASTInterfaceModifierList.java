@@ -5,22 +5,21 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTClassModifierList</code> is a list of general modifiers,
+ * <p>An <code>ASTInterfaceModifierList</code> is a list of general modifiers,
  * restricted to the following modifiers:</p>
  *
  * <ul>
  *     <li>abstract</li>
- *     <li>final</li>
  *     <li>shared</li>
  *     <li>strictfp</li>
  * </ul>
  *
  * <em>
- * ClassModifierList:<br>
+ * InterfaceModifierList:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;GeneralModifier {GeneralModifier}
  * </em>
  */
-public class ASTClassModifierList extends ASTParentNode
+public class ASTInterfaceModifierList extends ASTParentNode
 {
     /**
      * Constructs an <code>ASTClassModifierList</code> at the given <code>Location</code>
@@ -28,7 +27,7 @@ public class ASTClassModifierList extends ASTParentNode
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTClassModifierList(Location location, List<ASTNode> children)
+    public ASTInterfaceModifierList(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

@@ -199,7 +199,7 @@ public class ScannerTest
     @Test
     public void testConstructorAndOtherModifiers()
     {
-        String line = "constructor(final const int[] nbrs, List<String> words) { super(); } ";  // Ends with a tab
+        String line = "constructor(final const int[] nbrs, constant List<String> words) { super(); } ";  // Ends with a tab
         Scanner scanner = new Scanner(line);
 
         List<Token> expectedTokens = Arrays.asList(
@@ -209,7 +209,7 @@ public class ScannerTest
                 new Token(INT, "int"),
                 new Token(OPEN_CLOSE_BRACKET, "[]"),
                 new Token(IDENTIFIER, "nbrs"), new Token(COMMA, ","),
-                new Token(IDENTIFIER, "List"),
+                new Token(CONSTANT, "constant"), new Token(IDENTIFIER, "List"),
                 new Token(LESS_THAN, "<"), new Token(IDENTIFIER, "String"), new Token(GREATER_THAN, ">"),
                 new Token(IDENTIFIER, "words"),
                 new Token(CLOSE_PARENTHESIS, ")"), new Token(OPEN_BRACE, "{"),

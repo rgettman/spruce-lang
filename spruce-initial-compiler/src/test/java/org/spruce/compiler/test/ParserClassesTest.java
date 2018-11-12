@@ -16,6 +16,305 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ParserClassesTest
 {
     /**
+     * Tests simple interface declaration.
+     */
+    @Test
+    public void testInterfaceDeclarationSimple()
+    {
+        Parser parser = new Parser(new Scanner("interface Dummy {}"));
+        ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration();
+        checkBinary(node, INTERFACE, ASTIdentifier.class, ASTInterfaceBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests full interface declaration.
+     */
+    @Test
+    public void testInterfaceDeclarationFull()
+    {
+        Parser parser = new Parser(new Scanner("public shared interface IFullTest<T> extends ITest<T>, Serializable, List<T> {}"));
+        ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration();
+        checkNary(node, INTERFACE, ASTAccessModifier.class, ASTInterfaceModifierList.class, ASTIdentifier.class,
+                ASTTypeParameters.class, ASTExtendsInterfaces.class, ASTInterfaceBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface modifier list.
+     */
+    @Test
+    public void testInterfaceModifierList()
+    {
+        Parser parser = new Parser(new Scanner("abstract shared strictfp"));
+        ASTInterfaceModifierList node = parser.parseInterfaceModifierList();
+        checkList(node, null, ASTGeneralModifier.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests extends interfaces (extends clause on interface).
+     */
+    @Test
+    public void testExtendsInterfaces()
+    {
+        Parser parser = new Parser(new Scanner("extends Copyable, Serializable"));
+        ASTExtendsInterfaces node = parser.parseExtendsInterfaces();
+        checkSimple(node, ASTDataTypeNoArrayList.class, EXTENDS);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests empty interface body.
+     */
+    @Test
+    public void testInterfaceBodyEmpty()
+    {
+        Parser parser = new Parser(new Scanner("{}"));
+        ASTInterfaceBody node = parser.parseInterfaceBody();
+        checkEmpty(node, OPEN_BRACE);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface body.
+     */
+    @Test
+    public void testInterfaceBody()
+    {
+        Parser parser = new Parser(new Scanner("{\nconstant Integer i := 1;\nclass Inner{}\ndefault Integer getI() {\n    return i;\n}\n}"));
+        ASTInterfaceBody node = parser.parseInterfaceBody();
+        checkSimple(node, ASTInterfacePartList.class, OPEN_BRACE);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part list of interface part.
+     */
+    @Test
+    public void testInterfacePartListOfInterfacePart()
+    {
+        Parser parser = new Parser(new Scanner("constant Integer i := 1;"));
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        checkSimple(node, ASTInterfacePart.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part list.
+     */
+    @Test
+    public void testInterfacePartList()
+    {
+        Parser parser = new Parser(new Scanner("constant Integer i := 1;\nclass Inner {}"));
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        checkList(node, null, ASTInterfacePart.class, 2);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests nested interface part lists.
+     */
+    @Test
+    public void testInterfacePartListNested()
+    {
+        Parser parser = new Parser(new Scanner("constant Integer i := 1;\nclass Inner {}\nInteger getI();"));
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        checkList(node, null, ASTInterfacePart.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of method declaration with void result.
+     */
+    @Test
+    public void testInterfacePartOfMethodDeclarationVoidResult()
+    {
+        Parser parser = new Parser(new Scanner("public void method();"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of method declaration with void result and type parameters.
+     */
+    @Test
+    public void testInterfacePartOfMethodDeclarationVoidResultTypeParameters()
+    {
+        Parser parser = new Parser(new Scanner("public <T> void method(T param);"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of method declaration data type void result.
+     */
+    @Test
+    public void testInterfacePartOfMethodDeclarationDataTypeResult()
+    {
+        Parser parser = new Parser(new Scanner("public String method();"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of method declaration with data type result and type parameters.
+     */
+    @Test
+    public void testInterfacePartOfMethodDeclarationDataTypeResultTypeParameters()
+    {
+        Parser parser = new Parser(new Scanner("public <T> T method(T param);"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of method declaration with const result.
+     */
+    @Test
+    public void testInterfacePartOfMethodDeclarationConstResult()
+    {
+        Parser parser = new Parser(new Scanner("const String method(String param);"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of constant declaration.
+     */
+    @Test
+    public void testInterfacePartOfConstantDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("constant String LANGUAGE := \"Spruce\";"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTConstantDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of class declaration.
+     */
+    @Test
+    public void testInterfacePartOfClassDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("public shared class Nested {}"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTClassDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of enum declaration.
+     */
+    @Test
+    public void testInterfacePartOfEnumDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("private enum Light {RED, YELLOW, GREEN}"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTEnumDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of interface declaration.
+     */
+    @Test
+    public void testInterfacePartOfInterfaceDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTInterfaceDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests simple interface method declaration.
+     */
+    @Test
+    public void testInterfaceMethodDeclarationSimple()
+    {
+        Parser parser = new Parser(new Scanner("Boolean add(T element);"));
+        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration();
+        checkBinary(node, ASTMethodHeader.class, ASTMethodBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface method declaration with access modifier and method modifier.
+     */
+    @Test
+    public void testInterfaceMethodDeclarationAccessModifierMethodModifier()
+    {
+        Parser parser = new Parser(new Scanner("private default void addAll(Collection<T> other) {\n    for (T element : other) {\n    add(other);\n}\n}"));
+        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration();
+        checkNary(node, null, ASTAccessModifier.class, ASTInterfaceMethodModifierList.class, ASTMethodHeader.class, ASTMethodBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface method modifier list.
+     */
+    @Test
+    public void testInterfaceMethodModifierList()
+    {
+        Parser parser = new Parser(new Scanner("abstract default override shared strictfp"));
+        ASTInterfaceMethodModifierList node = parser.parseInterfaceMethodModifierList();
+        checkList(node, null, ASTGeneralModifier.class, 5);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests bad interface method modifier list.
+     */
+    @Test
+    public void testErrorInterfaceMethodModifierListOfConst()
+    {
+        Parser parser = new Parser(new Scanner("final"));
+        assertThrows(CompileException.class, parser::parseInterfaceMethodModifierList);
+    }
+
+    /**
+     * Tests constant declaration, no "constant".
+     */
+    @Test
+    public void testConstantDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("String test := \"Test\";"));
+        ASTConstantDeclaration node = parser.parseConstantDeclaration();
+        checkBinary(node, ASTDataType.class, ASTVariableDeclaratorList.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests constant declaration with "constant".
+     */
+    @Test
+    public void testConstantDeclarationOfConstant()
+    {
+        Parser parser = new Parser(new Scanner("constant String test := \"Test\";"));
+        ASTConstantDeclaration node = parser.parseConstantDeclaration();
+        checkTrinary(node, null, ASTConstantModifier.class, ASTDataType.class, ASTVariableDeclaratorList.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests constant modifier by itself.
+     */
+    @Test
+    public void testConstantModifier()
+    {
+        Parser parser = new Parser(new Scanner("constant"));
+        ASTConstantModifier node = parser.parseConstantModifier();
+        checkEmpty(node, CONSTANT);
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests simple enum declaration.
      */
     @Test
@@ -421,6 +720,18 @@ public class ParserClassesTest
     }
 
     /**
+     * Tests class part of interface declaration.
+     */
+    @Test
+    public void testClassPartOfInterfaceDeclaration()
+    {
+        Parser parser = new Parser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTInterfaceDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests shared constructor.
      */
     @Test
@@ -583,6 +894,18 @@ public class ParserClassesTest
     public void testFieldDeclaration()
     {
         Parser parser = new Parser(new Scanner("public const final String aConstant := \"CONSTANT\";"));
+        ASTFieldDeclaration node = parser.parseFieldDeclaration();
+        checkNary(node, null, ASTAccessModifier.class, ASTFieldModifierList.class, ASTDataType.class, ASTVariableDeclaratorList.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests constant field declaration.
+     */
+    @Test
+    public void testFieldDeclarationOfConstant()
+    {
+        Parser parser = new Parser(new Scanner("public constant String aConstant := \"CONSTANT\";"));
         ASTFieldDeclaration node = parser.parseFieldDeclaration();
         checkNary(node, null, ASTAccessModifier.class, ASTFieldModifierList.class, ASTDataType.class, ASTVariableDeclaratorList.class);
         node.collapseThenPrint();
@@ -769,9 +1092,9 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierListOfMethodModifiers()
     {
-        Parser parser = new Parser(new Scanner("abstract const final override shared strictfp transient volatile"));
+        Parser parser = new Parser(new Scanner("abstract const constant final override shared strictfp transient volatile"));
         ASTGeneralModifierList node = parser.parseGeneralModifierList();
-        checkList(node, null, ASTGeneralModifier.class, 8);
+        checkList(node, null, ASTGeneralModifier.class, 9);
         node.collapseThenPrint();
     }
 

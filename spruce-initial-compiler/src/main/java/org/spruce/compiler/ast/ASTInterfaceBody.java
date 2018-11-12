@@ -5,23 +5,24 @@ import java.util.List;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTEnumBody</code> is a "{", optionally a list of enum constants,
- * followed by an optional enum body declaration, then a "}".</p>
+ * <p>An <code>ASTInterfaceBody</code> is a "{", optionally a list of interface parts,
+ * followed by a "}".</p>
  *
  * <em>
- * ClassBody:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;{ [EnumConstantList] [EnumBodyDeclaration] }
+ * InterfaceBody:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{ }<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;{ InterfacePartList }
  * </em>
  */
-public class ASTEnumBody extends ASTParentNode
+public class ASTInterfaceBody extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTEnumBody</code> at the given <code>Location</code>
+     * Constructs an <code>ASTInterfaceBody</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTEnumBody(Location location, List<ASTNode> children)
+    public ASTInterfaceBody(Location location, List<ASTNode> children)
     {
         super(location, children);
     }

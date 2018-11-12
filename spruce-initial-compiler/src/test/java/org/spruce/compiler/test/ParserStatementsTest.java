@@ -189,6 +189,17 @@ public class ParserStatementsTest
     }
 
     /**
+     * Tests variable modifier of "constant".
+     */
+    @Test
+    public void testVariableModifierOfConstant()
+    {
+        Parser parser = new Parser(new Scanner("constant"));
+        ASTVariableModifier node = parser.parseVariableModifier();
+        checkEmpty(node, CONSTANT);
+    }
+
+    /**
      * Tests variable declarator list of variable declarator.
      */
     @Test
@@ -1173,7 +1184,7 @@ public class ParserStatementsTest
      * Tests statement expression of class instance creation expression.
      */
     @Test
-    public void testStatementExpressioOfnClassInstanceCreationExpression()
+    public void testStatementExpressionOfClassInstanceCreationExpression()
     {
         Parser parser = new Parser(new Scanner("new SideEffect()"));
         ASTStatementExpression node = parser.parseStatementExpression();
