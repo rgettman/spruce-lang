@@ -4,6 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.ast.*;
+import org.spruce.compiler.ast.expressions.ASTAssignment;
+import org.spruce.compiler.ast.expressions.ASTAssignmentExpression;
+import org.spruce.compiler.ast.expressions.ASTLeftHandSide;
 import org.spruce.compiler.scanner.TokenType;
 
 import static org.junit.jupiter.api.Assertions.*;

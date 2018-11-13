@@ -1,8 +1,12 @@
 package org.spruce.compiler.test;
 
-import org.spruce.compiler.ast.*;
+import org.spruce.compiler.ast.classes.*;
+import org.spruce.compiler.ast.expressions.*;
+import org.spruce.compiler.ast.names.*;
+import org.spruce.compiler.ast.statements.*;
+import org.spruce.compiler.ast.types.*;
 import org.spruce.compiler.exception.CompileException;
-import org.spruce.compiler.parser.Parser;
+import org.spruce.compiler.parser.ClassesParser;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
@@ -21,7 +25,7 @@ public class ParserClassesTest
     @Test
     public void testInterfaceDeclarationSimple()
     {
-        Parser parser = new Parser(new Scanner("interface Dummy {}"));
+        ClassesParser parser = new ClassesParser(new Scanner("interface Dummy {}"));
         ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration();
         checkBinary(node, INTERFACE, ASTIdentifier.class, ASTInterfaceBody.class);
         node.collapseThenPrint();
@@ -33,7 +37,7 @@ public class ParserClassesTest
     @Test
     public void testInterfaceDeclarationFull()
     {
-        Parser parser = new Parser(new Scanner("public shared interface IFullTest<T> extends ITest<T>, Serializable, List<T> {}"));
+        ClassesParser parser = new ClassesParser(new Scanner("public shared interface IFullTest<T> extends ITest<T>, Serializable, List<T> {}"));
         ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration();
         checkNary(node, INTERFACE, ASTAccessModifier.class, ASTInterfaceModifierList.class, ASTIdentifier.class,
                 ASTTypeParameters.class, ASTExtendsInterfaces.class, ASTInterfaceBody.class);
@@ -46,7 +50,7 @@ public class ParserClassesTest
     @Test
     public void testInterfaceModifierList()
     {
-        Parser parser = new Parser(new Scanner("abstract shared strictfp"));
+        ClassesParser parser = new ClassesParser(new Scanner("abstract shared strictfp"));
         ASTInterfaceModifierList node = parser.parseInterfaceModifierList();
         checkList(node, null, ASTGeneralModifier.class, 3);
         node.collapseThenPrint();
@@ -58,7 +62,7 @@ public class ParserClassesTest
     @Test
     public void testExtendsInterfaces()
     {
-        Parser parser = new Parser(new Scanner("extends Copyable, Serializable"));
+        ClassesParser parser = new ClassesParser(new Scanner("extends Copyable, Serializable"));
         ASTExtendsInterfaces node = parser.parseExtendsInterfaces();
         checkSimple(node, ASTDataTypeNoArrayList.class, EXTENDS);
         node.collapseThenPrint();
@@ -70,7 +74,7 @@ public class ParserClassesTest
     @Test
     public void testInterfaceBodyEmpty()
     {
-        Parser parser = new Parser(new Scanner("{}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{}"));
         ASTInterfaceBody node = parser.parseInterfaceBody();
         checkEmpty(node, OPEN_BRACE);
         node.collapseThenPrint();
@@ -82,7 +86,7 @@ public class ParserClassesTest
     @Test
     public void testInterfaceBody()
     {
-        Parser parser = new Parser(new Scanner("{\nconstant Integer i := 1;\nclass Inner{}\ndefault Integer getI() {\n    return i;\n}\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{\nconstant Integer i := 1;\nclass Inner{}\ndefault Integer getI() {\n    return i;\n}\n}"));
         ASTInterfaceBody node = parser.parseInterfaceBody();
         checkSimple(node, ASTInterfacePartList.class, OPEN_BRACE);
         node.collapseThenPrint();
@@ -94,7 +98,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartListOfInterfacePart()
     {
-        Parser parser = new Parser(new Scanner("constant Integer i := 1;"));
+        ClassesParser parser = new ClassesParser(new Scanner("constant Integer i := 1;"));
         ASTInterfacePartList node = parser.parseInterfacePartList();
         checkSimple(node, ASTInterfacePart.class);
         node.collapseThenPrint();
@@ -106,7 +110,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartList()
     {
-        Parser parser = new Parser(new Scanner("constant Integer i := 1;\nclass Inner {}"));
+        ClassesParser parser = new ClassesParser(new Scanner("constant Integer i := 1;\nclass Inner {}"));
         ASTInterfacePartList node = parser.parseInterfacePartList();
         checkList(node, null, ASTInterfacePart.class, 2);
         node.collapseThenPrint();
@@ -118,7 +122,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartListNested()
     {
-        Parser parser = new Parser(new Scanner("constant Integer i := 1;\nclass Inner {}\nInteger getI();"));
+        ClassesParser parser = new ClassesParser(new Scanner("constant Integer i := 1;\nclass Inner {}\nInteger getI();"));
         ASTInterfacePartList node = parser.parseInterfacePartList();
         checkList(node, null, ASTInterfacePart.class, 3);
         node.collapseThenPrint();
@@ -130,7 +134,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfMethodDeclarationVoidResult()
     {
-        Parser parser = new Parser(new Scanner("public void method();"));
+        ClassesParser parser = new ClassesParser(new Scanner("public void method();"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTInterfaceMethodDeclaration.class);
         node.collapseThenPrint();
@@ -142,7 +146,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfMethodDeclarationVoidResultTypeParameters()
     {
-        Parser parser = new Parser(new Scanner("public <T> void method(T param);"));
+        ClassesParser parser = new ClassesParser(new Scanner("public <T> void method(T param);"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTInterfaceMethodDeclaration.class);
         node.collapseThenPrint();
@@ -154,7 +158,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfMethodDeclarationDataTypeResult()
     {
-        Parser parser = new Parser(new Scanner("public String method();"));
+        ClassesParser parser = new ClassesParser(new Scanner("public String method();"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTInterfaceMethodDeclaration.class);
         node.collapseThenPrint();
@@ -166,7 +170,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfMethodDeclarationDataTypeResultTypeParameters()
     {
-        Parser parser = new Parser(new Scanner("public <T> T method(T param);"));
+        ClassesParser parser = new ClassesParser(new Scanner("public <T> T method(T param);"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTInterfaceMethodDeclaration.class);
         node.collapseThenPrint();
@@ -178,7 +182,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfMethodDeclarationConstResult()
     {
-        Parser parser = new Parser(new Scanner("const String method(String param);"));
+        ClassesParser parser = new ClassesParser(new Scanner("const String method(String param);"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTInterfaceMethodDeclaration.class);
         node.collapseThenPrint();
@@ -190,7 +194,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfConstantDeclaration()
     {
-        Parser parser = new Parser(new Scanner("constant String LANGUAGE := \"Spruce\";"));
+        ClassesParser parser = new ClassesParser(new Scanner("constant String LANGUAGE := \"Spruce\";"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTConstantDeclaration.class);
         node.collapseThenPrint();
@@ -202,7 +206,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfClassDeclaration()
     {
-        Parser parser = new Parser(new Scanner("public shared class Nested {}"));
+        ClassesParser parser = new ClassesParser(new Scanner("public shared class Nested {}"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTClassDeclaration.class);
         node.collapseThenPrint();
@@ -214,7 +218,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfEnumDeclaration()
     {
-        Parser parser = new Parser(new Scanner("private enum Light {RED, YELLOW, GREEN}"));
+        ClassesParser parser = new ClassesParser(new Scanner("private enum Light {RED, YELLOW, GREEN}"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTEnumDeclaration.class);
         node.collapseThenPrint();
@@ -226,7 +230,7 @@ public class ParserClassesTest
     @Test
     public void testInterfacePartOfInterfaceDeclaration()
     {
-        Parser parser = new Parser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
+        ClassesParser parser = new ClassesParser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTInterfaceDeclaration.class);
         node.collapseThenPrint();
@@ -238,7 +242,7 @@ public class ParserClassesTest
     @Test
     public void testInterfaceMethodDeclarationSimple()
     {
-        Parser parser = new Parser(new Scanner("Boolean add(T element);"));
+        ClassesParser parser = new ClassesParser(new Scanner("Boolean add(T element);"));
         ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration();
         checkBinary(node, ASTMethodHeader.class, ASTMethodBody.class);
         node.collapseThenPrint();
@@ -250,7 +254,7 @@ public class ParserClassesTest
     @Test
     public void testInterfaceMethodDeclarationAccessModifierMethodModifier()
     {
-        Parser parser = new Parser(new Scanner("private default void addAll(Collection<T> other) {\n    for (T element : other) {\n    add(other);\n}\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("private default void addAll(Collection<T> other) {\n    for (T element : other) {\n    add(other);\n}\n}"));
         ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration();
         checkNary(node, null, ASTAccessModifier.class, ASTInterfaceMethodModifierList.class, ASTMethodHeader.class, ASTMethodBody.class);
         node.collapseThenPrint();
@@ -262,7 +266,7 @@ public class ParserClassesTest
     @Test
     public void testInterfaceMethodModifierList()
     {
-        Parser parser = new Parser(new Scanner("abstract default override shared strictfp"));
+        ClassesParser parser = new ClassesParser(new Scanner("abstract default override shared strictfp"));
         ASTInterfaceMethodModifierList node = parser.parseInterfaceMethodModifierList();
         checkList(node, null, ASTGeneralModifier.class, 5);
         node.collapseThenPrint();
@@ -274,7 +278,7 @@ public class ParserClassesTest
     @Test
     public void testErrorInterfaceMethodModifierListOfConst()
     {
-        Parser parser = new Parser(new Scanner("final"));
+        ClassesParser parser = new ClassesParser(new Scanner("final"));
         assertThrows(CompileException.class, parser::parseInterfaceMethodModifierList);
     }
 
@@ -284,7 +288,7 @@ public class ParserClassesTest
     @Test
     public void testConstantDeclaration()
     {
-        Parser parser = new Parser(new Scanner("String test := \"Test\";"));
+        ClassesParser parser = new ClassesParser(new Scanner("String test := \"Test\";"));
         ASTConstantDeclaration node = parser.parseConstantDeclaration();
         checkBinary(node, ASTDataType.class, ASTVariableDeclaratorList.class);
         node.collapseThenPrint();
@@ -296,7 +300,7 @@ public class ParserClassesTest
     @Test
     public void testConstantDeclarationOfConstant()
     {
-        Parser parser = new Parser(new Scanner("constant String test := \"Test\";"));
+        ClassesParser parser = new ClassesParser(new Scanner("constant String test := \"Test\";"));
         ASTConstantDeclaration node = parser.parseConstantDeclaration();
         checkTrinary(node, null, ASTConstantModifier.class, ASTDataType.class, ASTVariableDeclaratorList.class);
         node.collapseThenPrint();
@@ -308,7 +312,7 @@ public class ParserClassesTest
     @Test
     public void testConstantModifier()
     {
-        Parser parser = new Parser(new Scanner("constant"));
+        ClassesParser parser = new ClassesParser(new Scanner("constant"));
         ASTConstantModifier node = parser.parseConstantModifier();
         checkEmpty(node, CONSTANT);
         node.collapseThenPrint();
@@ -320,7 +324,7 @@ public class ParserClassesTest
     @Test
     public void testEnumDeclarationSimple()
     {
-        Parser parser = new Parser(new Scanner("enum Dummy {DUMMY}"));
+        ClassesParser parser = new ClassesParser(new Scanner("enum Dummy {DUMMY}"));
         ASTEnumDeclaration node = parser.parseEnumDeclaration();
         checkBinary(node, ENUM, ASTIdentifier.class, ASTEnumBody.class);
         node.collapseThenPrint();
@@ -332,7 +336,7 @@ public class ParserClassesTest
     @Test
     public void testEnumDeclarationFull()
     {
-        Parser parser = new Parser(new Scanner("public shared enum FullEnumTest implements Serializable {QUIZ, TEST, FINAL}"));
+        ClassesParser parser = new ClassesParser(new Scanner("public shared enum FullEnumTest implements Serializable {QUIZ, TEST, FINAL}"));
         ASTEnumDeclaration node = parser.parseEnumDeclaration();
         checkNary(node, ENUM, ASTAccessModifier.class, ASTClassModifierList.class, ASTIdentifier.class,
                 ASTSuperinterfaces.class, ASTEnumBody.class);
@@ -345,7 +349,7 @@ public class ParserClassesTest
     @Test
     public void testEnumBodySimple()
     {
-        Parser parser = new Parser(new Scanner("{\nRED, YELLOW, GREEN\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{\nRED, YELLOW, GREEN\n}"));
         ASTEnumBody node = parser.parseEnumBody();
         checkSimple(node, ASTEnumConstantList.class);
     }
@@ -356,7 +360,7 @@ public class ParserClassesTest
     @Test
     public void testEnumBodyOfNothing()
     {
-        Parser parser = new Parser(new Scanner("{}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{}"));
         ASTEnumBody node = parser.parseEnumBody();
         checkEmpty(node, null);
     }
@@ -367,7 +371,7 @@ public class ParserClassesTest
     @Test
     public void testEnumBodyOfUtility()
     {
-        Parser parser = new Parser(new Scanner("{\n;    shared void utility() {\n    out.println(\"Utility!\");\n}\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{\n;    shared void utility() {\n    out.println(\"Utility!\");\n}\n}"));
         ASTEnumBody node = parser.parseEnumBody();
         checkSimple(node, ASTEnumBodyDeclarations.class);
     }
@@ -378,7 +382,7 @@ public class ParserClassesTest
     @Test
     public void testEnumBodyOfConstantsClassPartList()
     {
-        Parser parser = new Parser(new Scanner("{\nRED, YELLOW, GREEN;\nshared void utility() {\n    out.println(\"Utility!\");\n}\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{\nRED, YELLOW, GREEN;\nshared void utility() {\n    out.println(\"Utility!\");\n}\n}"));
         ASTEnumBody node = parser.parseEnumBody();
         checkBinary(node, ASTEnumConstantList.class, ASTEnumBodyDeclarations.class);
     }
@@ -389,7 +393,7 @@ public class ParserClassesTest
     @Test
     public void testEnumBodyDeclarations()
     {
-        Parser parser = new Parser(new Scanner(";\nconstructor() {}"));
+        ClassesParser parser = new ClassesParser(new Scanner(";\nconstructor() {}"));
         ASTEnumBodyDeclarations node = parser.parseEnumBodyDeclarations();
         checkSimple(node, ASTClassPartList.class, SEMICOLON);
     }
@@ -400,7 +404,7 @@ public class ParserClassesTest
     @Test
     public void testEnumConstantListOfEnumConstant()
     {
-        Parser parser = new Parser(new Scanner("SINGLETON"));
+        ClassesParser parser = new ClassesParser(new Scanner("SINGLETON"));
         ASTEnumConstantList node = parser.parseEnumConstantList();
         checkSimple(node, ASTEnumConstant.class, COMMA);
         node.collapseThenPrint();
@@ -412,7 +416,7 @@ public class ParserClassesTest
     @Test
     public void testEnumConstantList()
     {
-        Parser parser = new Parser(new Scanner("RED, YELLOW, GREEN"));
+        ClassesParser parser = new ClassesParser(new Scanner("RED, YELLOW, GREEN"));
         ASTEnumConstantList node = parser.parseEnumConstantList();
         checkList(node, COMMA, ASTEnumConstant.class, 3);
         node.collapseThenPrint();
@@ -424,7 +428,7 @@ public class ParserClassesTest
     @Test
     public void testEnumConstantSimple()
     {
-        Parser parser = new Parser(new Scanner("RED"));
+        ClassesParser parser = new ClassesParser(new Scanner("RED"));
         ASTEnumConstant node = parser.parseEnumConstant();
         checkSimple(node, ASTIdentifier.class);
         node.collapseThenPrint();
@@ -436,7 +440,7 @@ public class ParserClassesTest
     @Test
     public void testEnumConstantOfArgumentListClassBody()
     {
-        Parser parser = new Parser(new Scanner("RED(\"#F9152F\") { override String toString() { return \"Red Light\"; } }"));
+        ClassesParser parser = new ClassesParser(new Scanner("RED(\"#F9152F\") { override String toString() { return \"Red Light\"; } }"));
         ASTEnumConstant node = parser.parseEnumConstant();
         checkTrinary(node, null, ASTIdentifier.class, ASTArgumentList.class, ASTClassBody.class);
         node.collapseThenPrint();
@@ -448,7 +452,7 @@ public class ParserClassesTest
     @Test
     public void testClassDeclarationSimple()
     {
-        Parser parser = new Parser(new Scanner("class Dummy {}"));
+        ClassesParser parser = new ClassesParser(new Scanner("class Dummy {}"));
         ASTClassDeclaration node = parser.parseClassDeclaration();
         checkBinary(node, CLASS, ASTIdentifier.class, ASTClassBody.class);
         node.collapseThenPrint();
@@ -460,7 +464,7 @@ public class ParserClassesTest
     @Test
     public void testClassDeclarationFull()
     {
-        Parser parser = new Parser(new Scanner("public shared class FullTest<T> extends Test<T> implements Serializable, List<T> {}"));
+        ClassesParser parser = new ClassesParser(new Scanner("public shared class FullTest<T> extends Test<T> implements Serializable, List<T> {}"));
         ASTClassDeclaration node = parser.parseClassDeclaration();
         checkNary(node, CLASS, ASTAccessModifier.class, ASTClassModifierList.class, ASTIdentifier.class,
                 ASTTypeParameters.class, ASTSuperclass.class, ASTSuperinterfaces.class, ASTClassBody.class);
@@ -473,7 +477,7 @@ public class ParserClassesTest
     @Test
     public void testSuperinterfaces()
     {
-        Parser parser = new Parser(new Scanner("implements Copyable"));
+        ClassesParser parser = new ClassesParser(new Scanner("implements Copyable"));
         ASTSuperinterfaces node = parser.parseSuperinterfaces();
         checkSimple(node, ASTDataTypeNoArrayList.class, IMPLEMENTS);
         node.collapseThenPrint();
@@ -485,7 +489,7 @@ public class ParserClassesTest
     @Test
     public void testDataTypeNoArrayListOfClassPart()
     {
-        Parser parser = new Parser(new Scanner("Serializable"));
+        ClassesParser parser = new ClassesParser(new Scanner("Serializable"));
         ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
         checkSimple(node, ASTDataTypeNoArray.class, COMMA);
         node.collapseThenPrint();
@@ -497,7 +501,7 @@ public class ParserClassesTest
     @Test
     public void testDataTypeNoArrayList()
     {
-        Parser parser = new Parser(new Scanner("Serializable, Comparable<T>"));
+        ClassesParser parser = new ClassesParser(new Scanner("Serializable, Comparable<T>"));
         ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
         checkList(node, COMMA, ASTDataTypeNoArray.class, 2);
         node.collapseThenPrint();
@@ -509,7 +513,7 @@ public class ParserClassesTest
     @Test
     public void testDataTypeNoArrayListNested()
     {
-        Parser parser = new Parser(new Scanner("Serializable, Comparable<T>, RandomAccess"));
+        ClassesParser parser = new ClassesParser(new Scanner("Serializable, Comparable<T>, RandomAccess"));
         ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
         checkList(node, COMMA, ASTDataTypeNoArray.class, 3);
         node.collapseThenPrint();
@@ -521,7 +525,7 @@ public class ParserClassesTest
     @Test
     public void testSuperclass()
     {
-        Parser parser = new Parser(new Scanner("extends Thread"));
+        ClassesParser parser = new ClassesParser(new Scanner("extends Thread"));
         ASTSuperclass node = parser.parseSuperclass();
         checkSimple(node, ASTDataTypeNoArray.class, EXTENDS);
         node.collapseThenPrint();
@@ -533,7 +537,7 @@ public class ParserClassesTest
     @Test
     public void testClassModifierList()
     {
-        Parser parser = new Parser(new Scanner("abstract final shared strictfp"));
+        ClassesParser parser = new ClassesParser(new Scanner("abstract final shared strictfp"));
         ASTClassModifierList node = parser.parseClassModifierList();
         checkList(node, null, ASTGeneralModifier.class, 4);
         node.collapseThenPrint();
@@ -545,7 +549,7 @@ public class ParserClassesTest
     @Test
     public void testClassBodyEmpty()
     {
-        Parser parser = new Parser(new Scanner("{}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{}"));
         ASTClassBody node = parser.parseClassBody();
         checkEmpty(node, OPEN_BRACE);
         node.collapseThenPrint();
@@ -557,7 +561,7 @@ public class ParserClassesTest
     @Test
     public void testClassBody()
     {
-        Parser parser = new Parser(new Scanner("{\nprivate Integer i := 1;\nconstructor(Integer i) { this.i := i; }\nInteger getI() {\n    return i;\n}\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{\nprivate Integer i := 1;\nconstructor(Integer i) { this.i := i; }\nInteger getI() {\n    return i;\n}\n}"));
         ASTClassBody node = parser.parseClassBody();
         checkSimple(node, ASTClassPartList.class, OPEN_BRACE);
         node.collapseThenPrint();
@@ -569,7 +573,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartListOfClassPart()
     {
-        Parser parser = new Parser(new Scanner("private Integer i := 1;"));
+        ClassesParser parser = new ClassesParser(new Scanner("private Integer i := 1;"));
         ASTClassPartList node = parser.parseClassPartList();
         checkSimple(node, ASTClassPart.class);
         node.collapseThenPrint();
@@ -581,7 +585,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartList()
     {
-        Parser parser = new Parser(new Scanner("private Integer i := 1;\nconstructor(Integer i) { this.i := i; }"));
+        ClassesParser parser = new ClassesParser(new Scanner("private Integer i := 1;\nconstructor(Integer i) { this.i := i; }"));
         ASTClassPartList node = parser.parseClassPartList();
         checkList(node, null, ASTClassPart.class, 2);
         node.collapseThenPrint();
@@ -593,7 +597,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartListNested()
     {
-        Parser parser = new Parser(new Scanner("private Integer i := 1;\nconstructor(Integer i) { this.i := i; }\nInteger getI() {\n    return i;\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("private Integer i := 1;\nconstructor(Integer i) { this.i := i; }\nInteger getI() {\n    return i;\n}"));
         ASTClassPartList node = parser.parseClassPartList();
         checkList(node, null, ASTClassPart.class, 3);
         node.collapseThenPrint();
@@ -605,7 +609,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfSharedConstructor()
     {
-        Parser parser = new Parser(new Scanner("shared constructor() { sharedVar := reallyComplicatedLogic(); }"));
+        ClassesParser parser = new ClassesParser(new Scanner("shared constructor() { sharedVar := reallyComplicatedLogic(); }"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTSharedConstructor.class);
         node.collapseThenPrint();
@@ -617,7 +621,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfMethodDeclarationVoidResult()
     {
-        Parser parser = new Parser(new Scanner("public abstract void method();"));
+        ClassesParser parser = new ClassesParser(new Scanner("public abstract void method();"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTMethodDeclaration.class);
         node.collapseThenPrint();
@@ -629,7 +633,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfMethodDeclarationVoidResultTypeParameters()
     {
-        Parser parser = new Parser(new Scanner("public abstract <T> void method(T param);"));
+        ClassesParser parser = new ClassesParser(new Scanner("public abstract <T> void method(T param);"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTMethodDeclaration.class);
         node.collapseThenPrint();
@@ -641,7 +645,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfMethodDeclarationDataTypeResult()
     {
-        Parser parser = new Parser(new Scanner("public abstract String method();"));
+        ClassesParser parser = new ClassesParser(new Scanner("public abstract String method();"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTMethodDeclaration.class);
         node.collapseThenPrint();
@@ -653,7 +657,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfMethodDeclarationDataTypeResultTypeParameters()
     {
-        Parser parser = new Parser(new Scanner("public abstract <T> T method(T param);"));
+        ClassesParser parser = new ClassesParser(new Scanner("public abstract <T> T method(T param);"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTMethodDeclaration.class);
         node.collapseThenPrint();
@@ -665,7 +669,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfMethodDeclarationConstResult()
     {
-        Parser parser = new Parser(new Scanner("const String method(String param);"));
+        ClassesParser parser = new ClassesParser(new Scanner("const String method(String param);"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTMethodDeclaration.class);
         node.collapseThenPrint();
@@ -677,7 +681,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfFieldDeclaration()
     {
-        Parser parser = new Parser(new Scanner("private Int myVar := 1, myVar2 := 2;"));
+        ClassesParser parser = new ClassesParser(new Scanner("private Int myVar := 1, myVar2 := 2;"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTFieldDeclaration.class);
         node.collapseThenPrint();
@@ -689,7 +693,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfConstructorDeclaration()
     {
-        Parser parser = new Parser(new Scanner("constructor(String s) : constructor(s) {}"));
+        ClassesParser parser = new ClassesParser(new Scanner("constructor(String s) : constructor(s) {}"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTConstructorDeclaration.class);
         node.collapseThenPrint();
@@ -701,7 +705,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfClassDeclaration()
     {
-        Parser parser = new Parser(new Scanner("public shared class Nested {}"));
+        ClassesParser parser = new ClassesParser(new Scanner("public shared class Nested {}"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTClassDeclaration.class);
         node.collapseThenPrint();
@@ -713,7 +717,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfEnumDeclaration()
     {
-        Parser parser = new Parser(new Scanner("private enum Light {RED, YELLOW, GREEN}"));
+        ClassesParser parser = new ClassesParser(new Scanner("private enum Light {RED, YELLOW, GREEN}"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTEnumDeclaration.class);
         node.collapseThenPrint();
@@ -725,7 +729,7 @@ public class ParserClassesTest
     @Test
     public void testClassPartOfInterfaceDeclaration()
     {
-        Parser parser = new Parser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
+        ClassesParser parser = new ClassesParser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTInterfaceDeclaration.class);
         node.collapseThenPrint();
@@ -737,7 +741,7 @@ public class ParserClassesTest
     @Test
     public void testSharedConstructor()
     {
-        Parser parser = new Parser(new Scanner("shared constructor() { sharedVar := reallyComplicatedLogic(); }"));
+        ClassesParser parser = new ClassesParser(new Scanner("shared constructor() { sharedVar := reallyComplicatedLogic(); }"));
         ASTSharedConstructor node = parser.parseSharedConstructor();
         checkSimple(node, ASTBlock.class);
         node.collapseThenPrint();
@@ -749,7 +753,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorDeclarationOfAccessStrictfpConstructorInvocation()
     {
-        Parser parser = new Parser(new Scanner("private strictfp constructor(String s) : super(s) { this.s := s; }"));
+        ClassesParser parser = new ClassesParser(new Scanner("private strictfp constructor(String s) : super(s) { this.s := s; }"));
         ASTConstructorDeclaration node = parser.parseConstructorDeclaration();
         checkNary(node, null, ASTAccessModifier.class, ASTStrictfpModifier.class, ASTConstructorDeclarator.class, ASTConstructorInvocation.class, ASTBlock.class);
         node.collapseThenPrint();
@@ -761,7 +765,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorDeclarationSimple()
     {
-        Parser parser = new Parser(new Scanner("constructor(String s) { this.s := s; }"));
+        ClassesParser parser = new ClassesParser(new Scanner("constructor(String s) { this.s := s; }"));
         ASTConstructorDeclaration node = parser.parseConstructorDeclaration();
         checkBinary(node, ASTConstructorDeclarator.class, ASTBlock.class);
         node.collapseThenPrint();
@@ -773,7 +777,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorInvocationOfPrimaryTypeArgumentsSuper()
     {
-        Parser parser = new Parser(new Scanner(": (primary).<T>super()"));
+        ClassesParser parser = new ClassesParser(new Scanner(": (primary).<T>super()"));
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
         checkBinary(node, SUPER, ASTPrimary.class, ASTTypeArguments.class);
         node.collapseThenPrint();
@@ -785,7 +789,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorInvocationOfPrimarySuper()
     {
-        Parser parser = new Parser(new Scanner(": (primary).super()"));
+        ClassesParser parser = new ClassesParser(new Scanner(": (primary).super()"));
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
         checkSimple(node, ASTPrimary.class, SUPER);
         node.collapseThenPrint();
@@ -797,7 +801,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorInvocationOfExpressionNameTypeArgumentsSuper()
     {
-        Parser parser = new Parser(new Scanner(": expr.name.<String>super()"));
+        ClassesParser parser = new ClassesParser(new Scanner(": expr.name.<String>super()"));
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
         checkBinary(node, SUPER, ASTExpressionName.class, ASTTypeArguments.class);
         node.collapseThenPrint();
@@ -809,7 +813,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorInvocationOfExpressionNameSuper()
     {
-        Parser parser = new Parser(new Scanner(": expr.name.super()"));
+        ClassesParser parser = new ClassesParser(new Scanner(": expr.name.super()"));
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
         checkSimple(node, ASTExpressionName.class, SUPER);
         node.collapseThenPrint();
@@ -821,7 +825,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorInvocationOfSuperTypeArguments()
     {
-        Parser parser = new Parser(new Scanner(": <Integer>super(5)"));
+        ClassesParser parser = new ClassesParser(new Scanner(": <Integer>super(5)"));
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
         checkBinary(node, SUPER, ASTTypeArguments.class, ASTArgumentList.class);
         node.collapseThenPrint();
@@ -833,7 +837,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorInvocationOfConstructorTypeArguments()
     {
-        Parser parser = new Parser(new Scanner(": <Integer>constructor()"));
+        ClassesParser parser = new ClassesParser(new Scanner(": <Integer>constructor()"));
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
         checkSimple(node, ASTTypeArguments.class, CONSTRUCTOR);
         node.collapseThenPrint();
@@ -845,7 +849,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorInvocationOfConstructorSimple()
     {
-        Parser parser = new Parser(new Scanner(": constructor()"));
+        ClassesParser parser = new ClassesParser(new Scanner(": constructor()"));
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
         checkEmpty(node, CONSTRUCTOR);
         node.collapseThenPrint();
@@ -857,7 +861,7 @@ public class ParserClassesTest
     @Test
     public void testStrictfpModifier()
     {
-        Parser parser = new Parser(new Scanner("strictfp"));
+        ClassesParser parser = new ClassesParser(new Scanner("strictfp"));
         ASTStrictfpModifier node = parser.parseStrictfpModifier();
         checkEmpty(node, STRICTFP);
         node.collapseThenPrint();
@@ -869,7 +873,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorDeclaratorSimple()
     {
-        Parser parser = new Parser(new Scanner("constructor()"));
+        ClassesParser parser = new ClassesParser(new Scanner("constructor()"));
         ASTConstructorDeclarator node = parser.parseConstructorDeclarator();
         checkEmpty(node, CONSTRUCTOR);
         node.collapseThenPrint();
@@ -881,7 +885,7 @@ public class ParserClassesTest
     @Test
     public void testConstructorDeclaratorFull()
     {
-        Parser parser = new Parser(new Scanner("<T> constructor(T param)"));
+        ClassesParser parser = new ClassesParser(new Scanner("<T> constructor(T param)"));
         ASTConstructorDeclarator node = parser.parseConstructorDeclarator();
         checkBinary(node, CONSTRUCTOR, ASTTypeParameters.class, ASTFormalParameterList.class);
         node.collapseThenPrint();
@@ -893,7 +897,7 @@ public class ParserClassesTest
     @Test
     public void testFieldDeclaration()
     {
-        Parser parser = new Parser(new Scanner("public const final String aConstant := \"CONSTANT\";"));
+        ClassesParser parser = new ClassesParser(new Scanner("public const final String aConstant := \"CONSTANT\";"));
         ASTFieldDeclaration node = parser.parseFieldDeclaration();
         checkNary(node, null, ASTAccessModifier.class, ASTFieldModifierList.class, ASTDataType.class, ASTVariableDeclaratorList.class);
         node.collapseThenPrint();
@@ -905,7 +909,7 @@ public class ParserClassesTest
     @Test
     public void testFieldDeclarationOfConstant()
     {
-        Parser parser = new Parser(new Scanner("public constant String aConstant := \"CONSTANT\";"));
+        ClassesParser parser = new ClassesParser(new Scanner("public constant String aConstant := \"CONSTANT\";"));
         ASTFieldDeclaration node = parser.parseFieldDeclaration();
         checkNary(node, null, ASTAccessModifier.class, ASTFieldModifierList.class, ASTDataType.class, ASTVariableDeclaratorList.class);
         node.collapseThenPrint();
@@ -917,7 +921,7 @@ public class ParserClassesTest
     @Test
     public void testFieldDeclarationSimple()
     {
-        Parser parser = new Parser(new Scanner("String name := \"spruce\";"));
+        ClassesParser parser = new ClassesParser(new Scanner("String name := \"spruce\";"));
         ASTFieldDeclaration node = parser.parseFieldDeclaration();
         checkBinary(node, ASTDataType.class, ASTVariableDeclaratorList.class);
         node.collapseThenPrint();
@@ -929,7 +933,7 @@ public class ParserClassesTest
     @Test
     public void testFieldModifierList()
     {
-        Parser parser = new Parser(new Scanner("const final shared transient volatile"));
+        ClassesParser parser = new ClassesParser(new Scanner("const final shared transient volatile"));
         ASTFieldModifierList node = parser.parseFieldModifierList();
         checkList(node, null, ASTGeneralModifier.class, 5);
         node.collapseThenPrint();
@@ -941,7 +945,7 @@ public class ParserClassesTest
     @Test
     public void testErrorFieldModifierListOfOverride()
     {
-        Parser parser = new Parser(new Scanner("override"));
+        ClassesParser parser = new ClassesParser(new Scanner("override"));
         assertThrows(CompileException.class, parser::parseFieldModifierList);
     }
 
@@ -951,7 +955,7 @@ public class ParserClassesTest
     @Test
     public void testMethodDeclarationSimple()
     {
-        Parser parser = new Parser(new Scanner("String toString() {\n    return this;\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("String toString() {\n    return this;\n}"));
         ASTMethodDeclaration node = parser.parseMethodDeclaration();
         checkBinary(node, ASTMethodHeader.class, ASTMethodBody.class);
         node.collapseThenPrint();
@@ -963,7 +967,7 @@ public class ParserClassesTest
     @Test
     public void testMethodDeclarationAccessModifierMethodModifier()
     {
-        Parser parser = new Parser(new Scanner("public abstract Foo abstractMethod();"));
+        ClassesParser parser = new ClassesParser(new Scanner("public abstract Foo abstractMethod();"));
         ASTMethodDeclaration node = parser.parseMethodDeclaration();
         checkNary(node, null, ASTAccessModifier.class, ASTMethodModifierList.class, ASTMethodHeader.class, ASTMethodBody.class);
         node.collapseThenPrint();
@@ -975,7 +979,7 @@ public class ParserClassesTest
     @Test
     public void testMethodBodyOfSemicolon()
     {
-        Parser parser = new Parser(new Scanner(";"));
+        ClassesParser parser = new ClassesParser(new Scanner(";"));
         ASTMethodBody node = parser.parseMethodBody();
         checkEmpty(node, SEMICOLON);
         node.collapseThenPrint();
@@ -987,7 +991,7 @@ public class ParserClassesTest
     @Test
     public void testMethodBodyOfBlock()
     {
-        Parser parser = new Parser(new Scanner("{\n    out.println(\"Body!\");\n}"));
+        ClassesParser parser = new ClassesParser(new Scanner("{\n    out.println(\"Body!\");\n}"));
         ASTMethodBody node = parser.parseMethodBody();
         checkSimple(node, ASTBlock.class);
         node.collapseThenPrint();
@@ -999,7 +1003,7 @@ public class ParserClassesTest
     @Test
     public void testAccessModifierListOfAccessModifier()
     {
-        Parser parser = new Parser(new Scanner("final"));
+        ClassesParser parser = new ClassesParser(new Scanner("final"));
         ASTMethodModifierList node = parser.parseMethodModifierList();
         checkSimple(node, ASTGeneralModifier.class);
         node.collapseThenPrint();
@@ -1010,7 +1014,7 @@ public class ParserClassesTest
     @Test
     public void testAccessModifierListOfAccessModifiers()
     {
-        Parser parser = new Parser(new Scanner("final abstract shared strictfp"));
+        ClassesParser parser = new ClassesParser(new Scanner("final abstract shared strictfp"));
         ASTMethodModifierList node = parser.parseMethodModifierList();
         checkList(node, null, ASTGeneralModifier.class, 4);
         node.collapseThenPrint();
@@ -1022,7 +1026,7 @@ public class ParserClassesTest
     @Test
     public void testAccessModifierOfPublic()
     {
-        Parser parser = new Parser(new Scanner("public"));
+        ClassesParser parser = new ClassesParser(new Scanner("public"));
         ASTAccessModifier node = parser.parseAccessModifier();
         checkEmpty(node, PUBLIC);
         node.collapseThenPrint();
@@ -1034,7 +1038,7 @@ public class ParserClassesTest
     @Test
     public void testAccessModifierOfProtected()
     {
-        Parser parser = new Parser(new Scanner("protected"));
+        ClassesParser parser = new ClassesParser(new Scanner("protected"));
         ASTAccessModifier node = parser.parseAccessModifier();
         checkEmpty(node, PROTECTED);
         node.collapseThenPrint();
@@ -1046,7 +1050,7 @@ public class ParserClassesTest
     @Test
     public void testAccessModifierOfInternal()
     {
-        Parser parser = new Parser(new Scanner("internal"));
+        ClassesParser parser = new ClassesParser(new Scanner("internal"));
         ASTAccessModifier node = parser.parseAccessModifier();
         checkEmpty(node, INTERNAL);
         node.collapseThenPrint();
@@ -1058,7 +1062,7 @@ public class ParserClassesTest
     @Test
     public void testAccessModifierOfPrivate()
     {
-        Parser parser = new Parser(new Scanner("private"));
+        ClassesParser parser = new ClassesParser(new Scanner("private"));
         ASTAccessModifier node = parser.parseAccessModifier();
         checkEmpty(node, PRIVATE);
         node.collapseThenPrint();
@@ -1070,7 +1074,7 @@ public class ParserClassesTest
     @Test
     public void testMethodModifierList()
     {
-        Parser parser = new Parser(new Scanner("abstract final override shared strictfp"));
+        ClassesParser parser = new ClassesParser(new Scanner("abstract final override shared strictfp"));
         ASTMethodModifierList node = parser.parseMethodModifierList();
         checkList(node, null, ASTGeneralModifier.class, 5);
         node.collapseThenPrint();
@@ -1082,7 +1086,7 @@ public class ParserClassesTest
     @Test
     public void testErrorMethodModifierListOfConst()
     {
-        Parser parser = new Parser(new Scanner("const"));
+        ClassesParser parser = new ClassesParser(new Scanner("const"));
         assertThrows(CompileException.class, parser::parseMethodModifierList);
     }
 
@@ -1092,7 +1096,7 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierListOfMethodModifiers()
     {
-        Parser parser = new Parser(new Scanner("abstract const constant final override shared strictfp transient volatile"));
+        ClassesParser parser = new ClassesParser(new Scanner("abstract const constant final override shared strictfp transient volatile"));
         ASTGeneralModifierList node = parser.parseGeneralModifierList();
         checkList(node, null, ASTGeneralModifier.class, 9);
         node.collapseThenPrint();
@@ -1104,7 +1108,7 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierOfAbstract()
     {
-        Parser parser = new Parser(new Scanner("abstract"));
+        ClassesParser parser = new ClassesParser(new Scanner("abstract"));
         ASTGeneralModifier node = parser.parseGeneralModifier();
         checkEmpty(node, ABSTRACT);
         node.collapseThenPrint();
@@ -1116,7 +1120,7 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierOfConst()
     {
-        Parser parser = new Parser(new Scanner("const"));
+        ClassesParser parser = new ClassesParser(new Scanner("const"));
         ASTGeneralModifier node = parser.parseGeneralModifier();
         checkEmpty(node, CONST);
         node.collapseThenPrint();
@@ -1128,7 +1132,7 @@ public class ParserClassesTest
     @Test
     public void testMethodModifierOfFinal()
     {
-        Parser parser = new Parser(new Scanner("final"));
+        ClassesParser parser = new ClassesParser(new Scanner("final"));
         ASTGeneralModifier node = parser.parseGeneralModifier();
         checkEmpty(node, FINAL);
         node.collapseThenPrint();
@@ -1140,7 +1144,7 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierOfOverride()
     {
-        Parser parser = new Parser(new Scanner("override"));
+        ClassesParser parser = new ClassesParser(new Scanner("override"));
         ASTGeneralModifier node = parser.parseGeneralModifier();
         checkEmpty(node, OVERRIDE);
         node.collapseThenPrint();
@@ -1152,7 +1156,7 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierOfShared()
     {
-        Parser parser = new Parser(new Scanner("shared"));
+        ClassesParser parser = new ClassesParser(new Scanner("shared"));
         ASTGeneralModifier node = parser.parseGeneralModifier();
         checkEmpty(node, SHARED);
         node.collapseThenPrint();
@@ -1164,7 +1168,7 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierOfStrictfp()
     {
-        Parser parser = new Parser(new Scanner("strictfp"));
+        ClassesParser parser = new ClassesParser(new Scanner("strictfp"));
         ASTGeneralModifier node = parser.parseGeneralModifier();
         checkEmpty(node, STRICTFP);
         node.collapseThenPrint();
@@ -1176,7 +1180,7 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierOfTransient()
     {
-        Parser parser = new Parser(new Scanner("transient"));
+        ClassesParser parser = new ClassesParser(new Scanner("transient"));
         ASTGeneralModifier node = parser.parseGeneralModifier();
         checkEmpty(node, TRANSIENT);
         node.collapseThenPrint();
@@ -1188,7 +1192,7 @@ public class ParserClassesTest
     @Test
     public void testGeneralModifierOfVolatile()
     {
-        Parser parser = new Parser(new Scanner("volatile"));
+        ClassesParser parser = new ClassesParser(new Scanner("volatile"));
         ASTGeneralModifier node = parser.parseGeneralModifier();
         checkEmpty(node, VOLATILE);
         node.collapseThenPrint();
@@ -1200,7 +1204,7 @@ public class ParserClassesTest
     @Test
     public void testMethodHeaderSimple()
     {
-        Parser parser = new Parser(new Scanner("void toString() const"));
+        ClassesParser parser = new ClassesParser(new Scanner("void toString() const"));
         ASTMethodHeader node = parser.parseMethodHeader();
         checkBinary(node, ASTResult.class, ASTMethodDeclarator.class);
         node.collapseThenPrint();
@@ -1212,7 +1216,7 @@ public class ParserClassesTest
     @Test
     public void testMethodHeaderOfTypeParameters()
     {
-        Parser parser = new Parser(new Scanner("<T> T getItem() const"));
+        ClassesParser parser = new ClassesParser(new Scanner("<T> T getItem() const"));
         ASTMethodHeader node = parser.parseMethodHeader();
         checkTrinary(node, null, ASTTypeParameters.class, ASTResult.class, ASTMethodDeclarator.class);
         node.collapseThenPrint();
@@ -1224,7 +1228,7 @@ public class ParserClassesTest
     @Test
     public void testResultOfVoid()
     {
-        Parser parser = new Parser(new Scanner("void"));
+        ClassesParser parser = new ClassesParser(new Scanner("void"));
         ASTResult node = parser.parseResult();
         checkEmpty(node, VOID);
         node.collapseThenPrint();
@@ -1236,7 +1240,7 @@ public class ParserClassesTest
     @Test
     public void testResultOfDataType()
     {
-        Parser parser = new Parser(new Scanner("Map<String, Integer>"));
+        ClassesParser parser = new ClassesParser(new Scanner("Map<String, Integer>"));
         ASTResult node = parser.parseResult();
         checkSimple(node, ASTDataType.class);
         node.collapseThenPrint();
@@ -1248,7 +1252,7 @@ public class ParserClassesTest
     @Test
     public void testResultOfConstModifierDataType()
     {
-        Parser parser = new Parser(new Scanner("const Map<String, Integer>"));
+        ClassesParser parser = new ClassesParser(new Scanner("const Map<String, Integer>"));
         ASTResult node = parser.parseResult();
         checkBinary(node, ASTConstModifier.class, ASTDataType.class);
         node.collapseThenPrint();
@@ -1260,7 +1264,7 @@ public class ParserClassesTest
     @Test
     public void testMethodDeclaratorSimple()
     {
-        Parser parser = new Parser(new Scanner("update()"));
+        ClassesParser parser = new ClassesParser(new Scanner("update()"));
         ASTMethodDeclarator node = parser.parseMethodDeclarator();
         checkSimple(node, ASTIdentifier.class, OPEN_PARENTHESIS);
         node.collapseThenPrint();
@@ -1272,7 +1276,7 @@ public class ParserClassesTest
     @Test
     public void testMethodDeclaratorOfParameterListConstModifier()
     {
-        Parser parser = new Parser(new Scanner("join(String sep) const)"));
+        ClassesParser parser = new ClassesParser(new Scanner("join(String sep) const)"));
         ASTMethodDeclarator node = parser.parseMethodDeclarator();
         checkTrinary(node, OPEN_PARENTHESIS, ASTIdentifier.class, ASTFormalParameterList.class, ASTConstModifier.class);
         node.collapseThenPrint();
@@ -1284,7 +1288,7 @@ public class ParserClassesTest
     @Test
     public void testConstModifier()
     {
-        Parser parser = new Parser(new Scanner("const"));
+        ClassesParser parser = new ClassesParser(new Scanner("const"));
         ASTConstModifier node = parser.parseConstModifier();
         checkEmpty(node, CONST);
         node.collapseThenPrint();
@@ -1296,7 +1300,7 @@ public class ParserClassesTest
     @Test
     public void testFormalParameterListOfFormalParameter()
     {
-        Parser parser = new Parser(new Scanner("const Int a"));
+        ClassesParser parser = new ClassesParser(new Scanner("const Int a"));
         ASTFormalParameterList node = parser.parseFormalParameterList();
         checkSimple(node, ASTFormalParameter.class, COMMA);
         node.collapseThenPrint();
@@ -1308,7 +1312,7 @@ public class ParserClassesTest
     @Test
     public void testFormalParameterList()
     {
-        Parser parser = new Parser(new Scanner("String msg, Foo f, Bar b"));
+        ClassesParser parser = new ClassesParser(new Scanner("String msg, Foo f, Bar b"));
         ASTFormalParameterList node = parser.parseFormalParameterList();
         checkList(node, COMMA, ASTFormalParameter.class, 3);
         node.collapseThenPrint();
@@ -1320,7 +1324,7 @@ public class ParserClassesTest
     @Test
     public void testFormalParameterListOfLastVarargs()
     {
-        Parser parser = new Parser(new Scanner("Point pt, Double... coordinates"));
+        ClassesParser parser = new ClassesParser(new Scanner("Point pt, Double... coordinates"));
         ASTFormalParameterList node = parser.parseFormalParameterList();
         checkList(node, COMMA, ASTFormalParameter.class, 2);
         node.collapseThenPrint();
@@ -1332,7 +1336,7 @@ public class ParserClassesTest
     @Test
     public void testFormalParameterListVarargsNotLastError()
     {
-        Parser parser = new Parser(new Scanner("Double... coordinates, Point pt"));
+        ClassesParser parser = new ClassesParser(new Scanner("Double... coordinates, Point pt"));
         assertThrows(CompileException.class, parser::parseFormalParameterList);
     }
 
@@ -1342,7 +1346,7 @@ public class ParserClassesTest
     @Test
     public void testFormalParameterNoVMLEllipsis()
     {
-        Parser parser = new Parser(new Scanner("String... args"));
+        ClassesParser parser = new ClassesParser(new Scanner("String... args"));
         ASTFormalParameter node = parser.parseFormalParameter();
         checkBinary(node, ELLIPSIS, ASTDataType.class, ASTIdentifier.class);
         node.collapseThenPrint();
@@ -1354,7 +1358,7 @@ public class ParserClassesTest
     @Test
     public void testFormalParameterOfVMLEllipsis()
     {
-        Parser parser = new Parser(new Scanner("final String... args"));
+        ClassesParser parser = new ClassesParser(new Scanner("final String... args"));
         ASTFormalParameter node = parser.parseFormalParameter();
         checkTrinary(node, ELLIPSIS, ASTVariableModifierList.class, ASTDataType.class, ASTIdentifier.class);
         node.collapseThenPrint();
@@ -1366,7 +1370,7 @@ public class ParserClassesTest
     @Test
     public void testFormalParameterNoVMLNoEllipsis()
     {
-        Parser parser = new Parser(new Scanner("String[] args"));
+        ClassesParser parser = new ClassesParser(new Scanner("String[] args"));
         ASTFormalParameter node = parser.parseFormalParameter();
         checkBinary(node, ASTDataType.class, ASTIdentifier.class);
         node.collapseThenPrint();
@@ -1378,7 +1382,7 @@ public class ParserClassesTest
     @Test
     public void testFormalParameterOfVMLNoEllipsis()
     {
-        Parser parser = new Parser(new Scanner("final String[] args"));
+        ClassesParser parser = new ClassesParser(new Scanner("final String[] args"));
         ASTFormalParameter node = parser.parseFormalParameter();
         checkTrinary(node, null, ASTVariableModifierList.class, ASTDataType.class, ASTIdentifier.class);
         node.collapseThenPrint();

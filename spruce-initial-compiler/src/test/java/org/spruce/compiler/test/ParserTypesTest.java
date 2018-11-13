@@ -2,8 +2,9 @@ package org.spruce.compiler.test;
 
 import java.util.Arrays;
 
-import org.spruce.compiler.ast.*;
-import org.spruce.compiler.parser.Parser;
+import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.types.*;
+import org.spruce.compiler.parser.TypesParser;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
@@ -22,7 +23,7 @@ public class ParserTypesTest
     @Test
     public void testDataTypeOfDataTypeNoArray()
     {
-        Parser parser = new Parser(new Scanner("spruce.lang.String"));
+        TypesParser parser = new TypesParser(new Scanner("spruce.lang.String"));
         ASTDataType node = parser.parseDataType();
         checkSimple(node, ASTDataTypeNoArray.class);
         node.collapseThenPrint();
@@ -34,7 +35,7 @@ public class ParserTypesTest
     @Test
     public void testDataTypeOfArrayType()
     {
-        Parser parser = new Parser(new Scanner("spruce.lang.String[]"));
+        TypesParser parser = new TypesParser(new Scanner("spruce.lang.String[]"));
         ASTDataType node = parser.parseDataType();
         checkSimple(node, ASTArrayType.class);
         node.collapseThenPrint();
@@ -46,7 +47,7 @@ public class ParserTypesTest
     @Test
     public void testArrayType()
     {
-        Parser parser = new Parser(new Scanner("spruce.lang.String[][]"));
+        TypesParser parser = new TypesParser(new Scanner("spruce.lang.String[][]"));
         ASTArrayType node = parser.parseArrayType();
         checkBinary(node, ASTDataTypeNoArray.class, ASTDims.class);
         node.collapseThenPrint();
@@ -58,7 +59,7 @@ public class ParserTypesTest
     @Test
     public void testDims()
     {
-        Parser parser = new Parser(new Scanner("[][][]"));
+        TypesParser parser = new TypesParser(new Scanner("[][][]"));
         ASTDims node = parser.parseDims();
         checkSimple(node, ASTDims.class, OPEN_CLOSE_BRACKET);
 
@@ -76,7 +77,7 @@ public class ParserTypesTest
     @Test
     public void testDataTypeNoArrayOfSimpleType()
     {
-        Parser parser = new Parser(new Scanner("List<?>"));
+        TypesParser parser = new TypesParser(new Scanner("List<?>"));
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         checkSimple(node, ASTSimpleType.class);
         node.collapseThenPrint();
@@ -88,7 +89,7 @@ public class ParserTypesTest
     @Test
     public void testDataTypeNoArray()
     {
-        Parser parser = new Parser(new Scanner("A<?>.B<?>"));
+        TypesParser parser = new TypesParser(new Scanner("A<?>.B<?>"));
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT), ASTDataTypeNoArray.class, ASTSimpleType.class);
         node.collapseThenPrint();
@@ -100,7 +101,7 @@ public class ParserTypesTest
     @Test
     public void testDataTypeNoArrayNested()
     {
-        Parser parser = new Parser(new Scanner("spruce.collections.List<?>"));
+        TypesParser parser = new TypesParser(new Scanner("spruce.collections.List<?>"));
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), ASTDataTypeNoArray.class, ASTSimpleType.class);
         node.collapseThenPrint();
@@ -112,7 +113,7 @@ public class ParserTypesTest
     @Test
     public void testSimpleTypeIdentifier()
     {
-        Parser parser = new Parser(new Scanner("Simple"));
+        TypesParser parser = new TypesParser(new Scanner("Simple"));
         ASTSimpleType node = parser.parseSimpleType();
         checkSimple(node, ASTIdentifier.class);
         ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
@@ -126,7 +127,7 @@ public class ParserTypesTest
     @Test
     public void testSimpleTypeOfIdentifierTypeArguments()
     {
-        Parser parser = new Parser(new Scanner("Map<?, ?>"));
+        TypesParser parser = new TypesParser(new Scanner("Map<?, ?>"));
         ASTSimpleType node = parser.parseSimpleType();
         checkBinary(node, ASTIdentifier.class, ASTTypeArguments.class);
         ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
@@ -140,7 +141,7 @@ public class ParserTypesTest
     @Test
     public void testTypeParametersOfTypeParameterList()
     {
-        Parser parser = new Parser(new Scanner("<K, V>"));
+        TypesParser parser = new TypesParser(new Scanner("<K, V>"));
         ASTTypeParameters node = parser.parseTypeParameters();
         checkSimple(node, ASTTypeParameterList.class, LESS_THAN);
         node.collapseThenPrint();
@@ -152,7 +153,7 @@ public class ParserTypesTest
     @Test
     public void testTypeParameterListOfTypeParameter()
     {
-        Parser parser = new Parser(new Scanner("E"));
+        TypesParser parser = new TypesParser(new Scanner("E"));
         ASTTypeParameterList node = parser.parseTypeParameterList();
         checkSimple(node, ASTTypeParameter.class, COMMA);
         node.collapseThenPrint();
@@ -164,7 +165,7 @@ public class ParserTypesTest
     @Test
     public void testTypeParameterListNested()
     {
-        Parser parser = new Parser(new Scanner("K, V, T <: Map<K, V>"));
+        TypesParser parser = new TypesParser(new Scanner("K, V, T <: Map<K, V>"));
         ASTTypeParameterList node = parser.parseTypeParameterList();
         checkList(node, COMMA, ASTTypeParameter.class, 3);
         node.collapseThenPrint();
@@ -176,7 +177,7 @@ public class ParserTypesTest
     @Test
     public void testTypeParameterSimple()
     {
-        Parser parser = new Parser(new Scanner("T"));
+        TypesParser parser = new TypesParser(new Scanner("T"));
         ASTTypeParameter node = parser.parseTypeParameter();
         checkSimple(node, ASTIdentifier.class);
         ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
@@ -190,7 +191,7 @@ public class ParserTypesTest
     @Test
     public void testTypeParameterOfBounds()
     {
-        Parser parser = new Parser(new Scanner("N <: Number"));
+        TypesParser parser = new TypesParser(new Scanner("N <: Number"));
         ASTTypeParameter node = parser.parseTypeParameter();
         checkBinary(node, ASTIdentifier.class, ASTTypeBound.class);
         ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
@@ -204,7 +205,7 @@ public class ParserTypesTest
     @Test
     public void testTypeBoundOfIntersectionType()
     {
-        Parser parser = new Parser(new Scanner("<: Student & Serializable"));
+        TypesParser parser = new TypesParser(new Scanner("<: Student & Serializable"));
         ASTTypeBound node = parser.parseTypeBound();
         checkSimple(node, ASTIntersectionType.class, SUBTYPE);
     }
@@ -215,7 +216,7 @@ public class ParserTypesTest
     @Test
     public void testIntersectionTypeOfDataType()
     {
-        Parser parser = new Parser(new Scanner("Student"));
+        TypesParser parser = new TypesParser(new Scanner("Student"));
         ASTIntersectionType node = parser.parseIntersectionType();
         checkSimple(node, ASTDataType.class, BITWISE_AND);
         node.collapseThenPrint();
@@ -227,7 +228,7 @@ public class ParserTypesTest
     @Test
     public void testIntersectionType()
     {
-        Parser parser = new Parser(new Scanner("Student & Person"));
+        TypesParser parser = new TypesParser(new Scanner("Student & Person"));
         ASTIntersectionType node = parser.parseIntersectionType();
         checkList(node, BITWISE_AND, ASTDataType.class, 2);
         node.collapseThenPrint();
@@ -239,7 +240,7 @@ public class ParserTypesTest
     @Test
     public void testIntersectionTypeNested()
     {
-        Parser parser = new Parser(new Scanner("Student & Person & Learner"));
+        TypesParser parser = new TypesParser(new Scanner("Student & Person & Learner"));
         ASTIntersectionType node = parser.parseIntersectionType();
         checkList(node, BITWISE_AND, ASTDataType.class, 3);
         node.collapseThenPrint();
@@ -251,7 +252,7 @@ public class ParserTypesTest
     @Test
     public void testTypeArgumentsOfTypeArgumentList()
     {
-        Parser parser = new Parser(new Scanner("<?>"));
+        TypesParser parser = new TypesParser(new Scanner("<?>"));
         ASTTypeArguments node = parser.parseTypeArguments();
         checkSimple(node, ASTTypeArgumentList.class, LESS_THAN);
         node.collapseThenPrint();
@@ -263,7 +264,7 @@ public class ParserTypesTest
     @Test
     public void testTypeArgumentListOfTypeArgument()
     {
-        Parser parser = new Parser(new Scanner("?"));
+        TypesParser parser = new TypesParser(new Scanner("?"));
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
         checkSimple(node, ASTTypeArgument.class, COMMA);
         node.collapseThenPrint();
@@ -275,7 +276,7 @@ public class ParserTypesTest
     @Test
     public void testTypeArgumentListNested()
     {
-        Parser parser = new Parser(new Scanner("Employee, ?, ? <: Number"));
+        TypesParser parser = new TypesParser(new Scanner("Employee, ?, ? <: Number"));
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
         checkList(node, COMMA, ASTTypeArgument.class, 3);
         node.collapseThenPrint();
@@ -287,7 +288,7 @@ public class ParserTypesTest
     @Test
     public void testTypeArgumentOfWildcard()
     {
-        Parser parser = new Parser(new Scanner("?"));
+        TypesParser parser = new TypesParser(new Scanner("?"));
         ASTTypeArgument node = parser.parseTypeArgument();
         checkSimple(node, ASTWildcard.class);
         node.collapseThenPrint();
@@ -299,7 +300,7 @@ public class ParserTypesTest
     @Test
     public void testTypeArgumentOfDataType()
     {
-        Parser parser = new Parser(new Scanner("Employee"));
+        TypesParser parser = new TypesParser(new Scanner("Employee"));
         ASTTypeArgument node = parser.parseTypeArgument();
         checkSimple(node, ASTDataType.class);
         node.collapseThenPrint();
@@ -311,7 +312,7 @@ public class ParserTypesTest
     @Test
     public void testWildcard()
     {
-        Parser parser = new Parser(new Scanner("?"));
+        TypesParser parser = new TypesParser(new Scanner("?"));
         ASTWildcard node = parser.parseWildcard();
         checkEmpty(node, QUESTION_MARK);
         node.collapseThenPrint();
@@ -323,7 +324,7 @@ public class ParserTypesTest
     @Test
     public void testWildcardBounds()
     {
-        Parser parser = new Parser(new Scanner("? <: Employee"));
+        TypesParser parser = new TypesParser(new Scanner("? <: Employee"));
         ASTWildcard node = parser.parseWildcard();
         checkSimple(node, ASTWildcardBounds.class, QUESTION_MARK);
         node.collapseThenPrint();
@@ -335,7 +336,7 @@ public class ParserTypesTest
     @Test
     public void testWildcardBoundsOfSubtype()
     {
-        Parser parser = new Parser(new Scanner("<: Employee"));
+        TypesParser parser = new TypesParser(new Scanner("<: Employee"));
         ASTWildcardBounds node = parser.parseWildcardBounds();
         checkSimple(node, ASTDataType.class, SUBTYPE);
         node.collapseThenPrint();
@@ -347,7 +348,7 @@ public class ParserTypesTest
     @Test
     public void testWildcardBoundsOfSupertype()
     {
-        Parser parser = new Parser(new Scanner(":> Employee"));
+        TypesParser parser = new TypesParser(new Scanner(":> Employee"));
         ASTWildcardBounds node = parser.parseWildcardBounds();
         checkSimple(node, ASTDataType.class, SUPERTYPE);
         node.collapseThenPrint();

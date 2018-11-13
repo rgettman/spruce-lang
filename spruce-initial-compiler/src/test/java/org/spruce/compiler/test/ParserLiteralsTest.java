@@ -1,7 +1,7 @@
 package org.spruce.compiler.test;
 
-import org.spruce.compiler.ast.*;
-import org.spruce.compiler.parser.Parser;
+import org.spruce.compiler.ast.literals.*;
+import org.spruce.compiler.parser.LiteralsParser;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.test.ParserTestUtility.*;
 
@@ -19,7 +19,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfInteger()
     {
-        Parser parser = new Parser(new Scanner("1234"));
+        LiteralsParser parser = new LiteralsParser(new Scanner("1234"));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTIntegerLiteral.class);
         ASTIntegerLiteral integerLiteral = (ASTIntegerLiteral) node.getChildren().get(0);
@@ -33,7 +33,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfFloatingPoint()
     {
-        Parser parser = new Parser(new Scanner("1234.5"));
+        LiteralsParser parser = new LiteralsParser(new Scanner("1234.5"));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTFloatingPointLiteral.class);
         ASTFloatingPointLiteral floatingPointLiteral = (ASTFloatingPointLiteral) node.getChildren().get(0);
@@ -47,7 +47,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfCharacter()
     {
-        Parser parser = new Parser(new Scanner("'c'"));
+        LiteralsParser parser = new LiteralsParser(new Scanner("'c'"));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTCharacterLiteral.class);
         ASTCharacterLiteral charLiteral = (ASTCharacterLiteral) node.getChildren().get(0);
@@ -61,7 +61,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfStringNormal()
     {
-        Parser parser = new Parser(new Scanner("\"s\\tring\""));
+        LiteralsParser parser = new LiteralsParser(new Scanner("\"s\\tring\""));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTStringLiteral.class);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node.getChildren().get(0);
@@ -75,7 +75,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfStringEmpty()
     {
-        Parser parser = new Parser(new Scanner("\"\""));
+        LiteralsParser parser = new LiteralsParser(new Scanner("\"\""));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTStringLiteral.class);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node.getChildren().get(0);
@@ -89,7 +89,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfStringRaw()
     {
-        Parser parser = new Parser(new Scanner("\"\"\"\"stri\\ng\"\"\"\""));
+        LiteralsParser parser = new LiteralsParser(new Scanner("\"\"\"\"stri\\ng\"\"\"\""));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTStringLiteral.class);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node.getChildren().get(0);
@@ -103,7 +103,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfBooleanTrue()
     {
-        Parser parser = new Parser(new Scanner("true"));
+        LiteralsParser parser = new LiteralsParser(new Scanner("true"));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTBooleanLiteral.class);
         ASTBooleanLiteral boolLiteral = (ASTBooleanLiteral) node.getChildren().get(0);
@@ -117,7 +117,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfBooleanFalse()
     {
-        Parser parser = new Parser(new Scanner("false"));
+        LiteralsParser parser = new LiteralsParser(new Scanner("false"));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTBooleanLiteral.class);
         ASTBooleanLiteral boolLiteral = (ASTBooleanLiteral) node.getChildren().get(0);
@@ -131,7 +131,7 @@ public class ParserLiteralsTest
     @Test
     public void testLiteralOfNull()
     {
-        Parser parser = new Parser(new Scanner("null"));
+        LiteralsParser parser = new LiteralsParser(new Scanner("null"));
         ASTLiteral node = parser.parseLiteral();
         checkSimple(node, ASTNullLiteral.class);
         ASTNullLiteral nullLiteral = (ASTNullLiteral) node.getChildren().get(0);

@@ -1,7 +1,10 @@
 package org.spruce.compiler.test;
 
-import org.spruce.compiler.ast.*;
-import org.spruce.compiler.parser.Parser;
+import org.spruce.compiler.ast.expressions.*;
+import org.spruce.compiler.ast.names.*;
+import org.spruce.compiler.ast.statements.*;
+import org.spruce.compiler.ast.types.*;
+import org.spruce.compiler.parser.StatementsParser;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
@@ -19,7 +22,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockOfNothing()
     {
-        Parser parser = new Parser(new Scanner("{}"));
+        StatementsParser parser = new StatementsParser(new Scanner("{}"));
         ASTBlock node = parser.parseBlock();
         checkEmpty(node, OPEN_BRACE);
     }
@@ -30,7 +33,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockOfBlockStatements()
     {
-        Parser parser = new Parser(new Scanner("{Integer a := 1;\nInteger b := 2;\nreturn a + b;}"));
+        StatementsParser parser = new StatementsParser(new Scanner("{Integer a := 1;\nInteger b := 2;\nreturn a + b;}"));
         ASTBlock node = parser.parseBlock();
         checkSimple(node, ASTBlockStatements.class, OPEN_BRACE);
     }
@@ -41,7 +44,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockStatements()
     {
-        Parser parser = new Parser(new Scanner("final String stmt := \"Statement one!\";\nconst Integer stmt2Nbr := 2;\ni++;}"));
+        StatementsParser parser = new StatementsParser(new Scanner("final String stmt := \"Statement one!\";\nconst Integer stmt2Nbr := 2;\ni++;}"));
         ASTBlockStatements node = parser.parseBlockStatements();
         checkList(node, null, ASTBlockStatement.class, 3);
     }
@@ -52,7 +55,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockStatementOfModifierDeclaration()
     {
-        Parser parser = new Parser(new Scanner("final Integer i := 1;"));
+        StatementsParser parser = new StatementsParser(new Scanner("final Integer i := 1;"));
         ASTBlockStatement node = parser.parseBlockStatement();
         checkSimple(node, ASTLocalVariableDeclarationStatement.class);
     }
@@ -63,7 +66,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockStatementOfDeclaration()
     {
-        Parser parser = new Parser(new Scanner("Integer i := 1;"));
+        StatementsParser parser = new StatementsParser(new Scanner("Integer i := 1;"));
         ASTBlockStatement node = parser.parseBlockStatement();
         checkSimple(node, ASTLocalVariableDeclarationStatement.class);
     }
@@ -74,7 +77,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockStatementOfAssignment()
     {
-        Parser parser = new Parser(new Scanner("i := 1;"));
+        StatementsParser parser = new StatementsParser(new Scanner("i := 1;"));
         ASTBlockStatement node = parser.parseBlockStatement();
         checkSimple(node, ASTStatement.class);
     }
@@ -85,7 +88,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockStatementOfMethodInvocation()
     {
-        Parser parser = new Parser(new Scanner("i(j);"));
+        StatementsParser parser = new StatementsParser(new Scanner("i(j);"));
         ASTBlockStatement node = parser.parseBlockStatement();
         checkSimple(node, ASTStatement.class);
     }
@@ -96,7 +99,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockStatementOfCICE()
     {
-        Parser parser = new Parser(new Scanner("i.new J();"));
+        StatementsParser parser = new StatementsParser(new Scanner("i.new J();"));
         ASTBlockStatement node = parser.parseBlockStatement();
         checkSimple(node, ASTStatement.class);
     }
@@ -107,7 +110,7 @@ public class ParserStatementsTest
     @Test
     public void testBlockStatementOfReturn()
     {
-        Parser parser = new Parser(new Scanner("return true;"));
+        StatementsParser parser = new StatementsParser(new Scanner("return true;"));
         ASTBlockStatement node = parser.parseBlockStatement();
         checkSimple(node, ASTStatement.class);
     }
@@ -118,7 +121,7 @@ public class ParserStatementsTest
     @Test
     public void testLocalVariableDeclarationStatement()
     {
-        Parser parser = new Parser(new Scanner("Integer[] values := {1, 2, 3};"));
+        StatementsParser parser = new StatementsParser(new Scanner("Integer[] values := {1, 2, 3};"));
         ASTLocalVariableDeclarationStatement node = parser.parseLocalVariableDeclarationStatement();
         checkSimple(node, ASTLocalVariableDeclaration.class, SEMICOLON);
     }
@@ -129,7 +132,7 @@ public class ParserStatementsTest
     @Test
     public void testLocalVariableDeclaration()
     {
-        Parser parser = new Parser(new Scanner("Boolean result := true, done := false"));
+        StatementsParser parser = new StatementsParser(new Scanner("Boolean result := true, done := false"));
         ASTLocalVariableDeclaration node = parser.parseLocalVariableDeclaration();
         checkBinary(node, ASTLocalVariableType.class, ASTVariableDeclaratorList.class);
     }
@@ -140,7 +143,7 @@ public class ParserStatementsTest
     @Test
     public void testLocalVariableDeclarationOfModifiers()
     {
-        Parser parser = new Parser(new Scanner("final const Boolean result := true, done := false"));
+        StatementsParser parser = new StatementsParser(new Scanner("final const Boolean result := true, done := false"));
         ASTLocalVariableDeclaration node = parser.parseLocalVariableDeclaration();
         checkTrinary(node, null, ASTVariableModifierList.class, ASTLocalVariableType.class, ASTVariableDeclaratorList.class);
     }
@@ -151,7 +154,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableModifierListOfVariableModifier()
     {
-        Parser parser = new Parser(new Scanner("const"));
+        StatementsParser parser = new StatementsParser(new Scanner("const"));
         ASTVariableModifierList node = parser.parseVariableModifierList();
         checkSimple(node, ASTVariableModifier.class);
     }
@@ -161,7 +164,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableModifierListOfVariableModifiers()
     {
-        Parser parser = new Parser(new Scanner("final const"));
+        StatementsParser parser = new StatementsParser(new Scanner("final const"));
         ASTVariableModifierList node = parser.parseVariableModifierList();
         checkList(node, null, ASTVariableModifier.class, 2);
     }
@@ -172,7 +175,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableModifierOfConst()
     {
-        Parser parser = new Parser(new Scanner("const"));
+        StatementsParser parser = new StatementsParser(new Scanner("const"));
         ASTVariableModifier node = parser.parseVariableModifier();
         checkEmpty(node, CONST);
     }
@@ -183,7 +186,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableModifierOfFinal()
     {
-        Parser parser = new Parser(new Scanner("final"));
+        StatementsParser parser = new StatementsParser(new Scanner("final"));
         ASTVariableModifier node = parser.parseVariableModifier();
         checkEmpty(node, FINAL);
     }
@@ -194,7 +197,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableModifierOfConstant()
     {
-        Parser parser = new Parser(new Scanner("constant"));
+        StatementsParser parser = new StatementsParser(new Scanner("constant"));
         ASTVariableModifier node = parser.parseVariableModifier();
         checkEmpty(node, CONSTANT);
     }
@@ -205,7 +208,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableDeclaratorListOfVariableDeclarator()
     {
-        Parser parser = new Parser(new Scanner("a := b"));
+        StatementsParser parser = new StatementsParser(new Scanner("a := b"));
         ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
         checkSimple(node, ASTVariableDeclarator.class, COMMA);
     }
@@ -216,7 +219,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableDeclaratorList()
     {
-        Parser parser = new Parser(new Scanner("x := 1, y := x"));
+        StatementsParser parser = new StatementsParser(new Scanner("x := 1, y := x"));
         ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
         checkList(node, COMMA, ASTVariableDeclarator.class, 2);
     }
@@ -227,7 +230,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableDeclaratorListNested()
     {
-        Parser parser = new Parser(new Scanner("a := 1, b := a + 1, c := 2 * b"));
+        StatementsParser parser = new StatementsParser(new Scanner("a := 1, b := a + 1, c := 2 * b"));
         ASTVariableDeclaratorList node = parser.parseVariableDeclaratorList();
         checkList(node, COMMA, ASTVariableDeclarator.class, 3);
     }
@@ -238,7 +241,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableDeclaratorOfIdentifier()
     {
-        Parser parser = new Parser(new Scanner("varName"));
+        StatementsParser parser = new StatementsParser(new Scanner("varName"));
         ASTVariableDeclarator node = parser.parseVariableDeclarator();
         checkSimple(node, ASTIdentifier.class);
     }
@@ -249,7 +252,7 @@ public class ParserStatementsTest
     @Test
     public void testVariableDeclaratorOfIdentifierVariableInitializer()
     {
-        Parser parser = new Parser(new Scanner("count := 2"));
+        StatementsParser parser = new StatementsParser(new Scanner("count := 2"));
         ASTVariableDeclarator node = parser.parseVariableDeclarator();
         checkBinary(node, ASSIGNMENT, ASTIdentifier.class, ASTVariableInitializer.class);
     }
@@ -260,7 +263,7 @@ public class ParserStatementsTest
     @Test
     public void testLocalVariableTypeOfDataType()
     {
-        Parser parser = new Parser(new Scanner("spruce.lang.String[][])"));
+        StatementsParser parser = new StatementsParser(new Scanner("spruce.lang.String[][])"));
         ASTLocalVariableType node = parser.parseLocalVariableType();
         checkSimple(node, ASTDataType.class);
     }
@@ -271,7 +274,7 @@ public class ParserStatementsTest
     @Test
     public void testLocalVariableTypeOfAuto()
     {
-        Parser parser = new Parser(new Scanner("auto"));
+        StatementsParser parser = new StatementsParser(new Scanner("auto"));
         ASTLocalVariableType node = parser.parseLocalVariableType();
         checkEmpty(node, AUTO);
     }
@@ -282,7 +285,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfBlock()
     {
-        Parser parser = new Parser(new Scanner("{x := x + 1;}"));
+        StatementsParser parser = new StatementsParser(new Scanner("{x := x + 1;}"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTBlock.class);
     }
@@ -293,7 +296,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfExpressionStatement()
     {
-        Parser parser = new Parser(new Scanner("x := x + 1;"));
+        StatementsParser parser = new StatementsParser(new Scanner("x := x + 1;"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTExpressionStatement.class);
     }
@@ -304,7 +307,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfReturnStatement()
     {
-        Parser parser = new Parser(new Scanner("return true;"));
+        StatementsParser parser = new StatementsParser(new Scanner("return true;"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTReturnStatement.class);
     }
@@ -315,7 +318,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfThrowStatement()
     {
-        Parser parser = new Parser(new Scanner("throw new CompileException(\"Error message\");"));
+        StatementsParser parser = new StatementsParser(new Scanner("throw new CompileException(\"Error message\");"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTThrowStatement.class);
     }
@@ -326,7 +329,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfBreakStatement()
     {
-        Parser parser = new Parser(new Scanner("break;"));
+        StatementsParser parser = new StatementsParser(new Scanner("break;"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTBreakStatement.class);
     }
@@ -337,7 +340,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfContinueStatement()
     {
-        Parser parser = new Parser(new Scanner("continue;"));
+        StatementsParser parser = new StatementsParser(new Scanner("continue;"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTContinueStatement.class);
     }
@@ -348,7 +351,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfFallthroughStatement()
     {
-        Parser parser = new Parser(new Scanner("fallthrough;"));
+        StatementsParser parser = new StatementsParser(new Scanner("fallthrough;"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTFallthroughStatement.class);
     }
@@ -359,7 +362,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfAssertStatement()
     {
-        Parser parser = new Parser(new Scanner("assert status = true;"));
+        StatementsParser parser = new StatementsParser(new Scanner("assert status = true;"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTAssertStatement.class);
     }
@@ -370,7 +373,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfIfStatement()
     {
-        Parser parser = new Parser(new Scanner("if (success) { return true; }"));
+        StatementsParser parser = new StatementsParser(new Scanner("if (success) { return true; }"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTIfStatement.class);
     }
@@ -381,7 +384,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfWhileStatement()
     {
-        Parser parser = new Parser(new Scanner("while (shouldContinue) doWork();"));
+        StatementsParser parser = new StatementsParser(new Scanner("while (shouldContinue) doWork();"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTWhileStatement.class);
     }
@@ -392,7 +395,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfDoStatement()
     {
-        Parser parser = new Parser(new Scanner("do { work(); } while (shouldContinue);"));
+        StatementsParser parser = new StatementsParser(new Scanner("do { work(); } while (shouldContinue);"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTDoStatement.class);
     }
@@ -403,7 +406,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfSynchronizedStatement()
     {
-        Parser parser = new Parser(new Scanner("synchronized (myLock) {\n    myLock.wait();\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("synchronized (myLock) {\n    myLock.wait();\n}"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTSynchronizedStatement.class);
     }
@@ -414,7 +417,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfForStatement()
     {
-        Parser parser = new Parser(new Scanner("for (;;) doWork();"));
+        StatementsParser parser = new StatementsParser(new Scanner("for (;;) doWork();"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTForStatement.class);
     }
@@ -425,7 +428,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfTryStatement()
     {
-        Parser parser = new Parser(new Scanner("try {\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("try {\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n}"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTTryStatement.class);
     }
@@ -436,7 +439,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementOfSwitchStatement()
     {
-        Parser parser = new Parser(new Scanner("switch (code) {\ncase 1: out.println(\"One\");\ncase 2: out.println(\"Two\");\ndefault: out.println(\"Unexpected\");\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("switch (code) {\ncase 1: out.println(\"One\");\ncase 2: out.println(\"Two\");\ndefault: out.println(\"Unexpected\");\n}"));
         ASTStatement node = parser.parseStatement();
         checkSimple(node, ASTSwitchStatement.class);
     }
@@ -447,7 +450,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchStatement()
     {
-        Parser parser = new Parser(new Scanner("switch (code) {\ncase 1: out.println(\"One\");\ncase 2: out.println(\"Two\");\ndefault: out.println(\"Unexpected\");\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("switch (code) {\ncase 1: out.println(\"One\");\ncase 2: out.println(\"Two\");\ndefault: out.println(\"Unexpected\");\n}"));
         ASTSwitchStatement node = parser.parseSwitchStatement();
         checkBinary(node, SWITCH, ASTExpression.class, ASTSwitchBlock.class);
     }
@@ -458,7 +461,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchBlockEmpty()
     {
-        Parser parser = new Parser(new Scanner("{}"));
+        StatementsParser parser = new StatementsParser(new Scanner("{}"));
         ASTSwitchBlock node = parser.parseSwitchBlock();
         checkEmpty(node, OPEN_BRACE);
     }
@@ -469,7 +472,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchBlockOfSwitchCases()
     {
-        Parser parser = new Parser(new Scanner("{case 1: out.println(\"Success\");}"));
+        StatementsParser parser = new StatementsParser(new Scanner("{case 1: out.println(\"Success\");}"));
         ASTSwitchBlock node = parser.parseSwitchBlock();
         checkSimple(node, ASTSwitchCases.class, OPEN_BRACE);
     }
@@ -480,7 +483,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchCasesOfSwitchCase()
     {
-        Parser parser = new Parser(new Scanner("case 1: out.println(\"Success\");}"));
+        StatementsParser parser = new StatementsParser(new Scanner("case 1: out.println(\"Success\");}"));
         ASTSwitchCases node = parser.parseSwitchCases();
         checkSimple(node, ASTSwitchCase.class);
     }
@@ -491,7 +494,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchCasesNested()
     {
-        Parser parser = new Parser(new Scanner("case 1: out.println(\"Success\");\ncase 2: out.println(\"Pass\");}"));
+        StatementsParser parser = new StatementsParser(new Scanner("case 1: out.println(\"Success\");\ncase 2: out.println(\"Pass\");}"));
         ASTSwitchCases node = parser.parseSwitchCases();
         checkList(node, null, ASTSwitchCase.class, 2);
     }
@@ -502,7 +505,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchCaseOfBlockStatements()
     {
-        Parser parser = new Parser(new Scanner("case 1, 2, 3:\n    out.println(\"Case found!\");\n    fallthrough;\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("case 1, 2, 3:\n    out.println(\"Case found!\");\n    fallthrough;\n}"));
         ASTSwitchCase node = parser.parseSwitchCase();
         checkBinary(node, ASTSwitchLabel.class, ASTBlockStatements.class);
     }
@@ -513,7 +516,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchCaseOfEmpty()
     {
-        Parser parser = new Parser(new Scanner("case 1, 2, 3:}"));
+        StatementsParser parser = new StatementsParser(new Scanner("case 1, 2, 3:}"));
         ASTSwitchCase node = parser.parseSwitchCase();
         checkSimple(node, ASTSwitchLabel.class);
     }
@@ -524,7 +527,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchLabelOfCase()
     {
-        Parser parser = new Parser(new Scanner("case 1, 2, 3:"));
+        StatementsParser parser = new StatementsParser(new Scanner("case 1, 2, 3:"));
         ASTSwitchLabel node = parser.parseSwitchLabel();
         checkSimple(node, ASTSwitchValues.class, CASE);
     }
@@ -535,7 +538,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchLabelOfDefault()
     {
-        Parser parser = new Parser(new Scanner("default:"));
+        StatementsParser parser = new StatementsParser(new Scanner("default:"));
         ASTSwitchLabel node = parser.parseSwitchLabel();
         checkEmpty(node, DEFAULT);
     }
@@ -546,7 +549,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchValuesOfExpressionNoIncrDecr()
     {
-        Parser parser = new Parser(new Scanner("1"));
+        StatementsParser parser = new StatementsParser(new Scanner("1"));
         ASTSwitchValues node = parser.parseSwitchValues();
         checkSimple(node, ASTSwitchValue.class, COMMA);
     }
@@ -557,7 +560,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchValuesNested()
     {
-        Parser parser = new Parser(new Scanner("1, 2, 3"));
+        StatementsParser parser = new StatementsParser(new Scanner("1, 2, 3"));
         ASTSwitchValues node = parser.parseSwitchValues();
         checkList(node, COMMA, ASTSwitchValue.class, 3);
     }
@@ -568,7 +571,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchValueOfIdentifier()
     {
-        Parser parser = new Parser(new Scanner("BLUE:"));
+        StatementsParser parser = new StatementsParser(new Scanner("BLUE:"));
         ASTSwitchValue node = parser.parseSwitchValue();
         checkSimple(node, ASTIdentifier.class);
     }
@@ -579,7 +582,7 @@ public class ParserStatementsTest
     @Test
     public void testSwitchValueOfExpressionNoIncrDecr()
     {
-        Parser parser = new Parser(new Scanner("1 + 2"));
+        StatementsParser parser = new StatementsParser(new Scanner("1 + 2"));
         ASTSwitchValue node = parser.parseSwitchValue();
         checkSimple(node, ASTExpressionNoIncrDecr.class);
     }
@@ -590,7 +593,7 @@ public class ParserStatementsTest
     @Test
     public void testTryStatementOfCatch()
     {
-        Parser parser = new Parser(new Scanner("try {\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("try {\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n}"));
         ASTTryStatement node = parser.parseTryStatement();
         checkBinary(node, TRY, ASTBlock.class, ASTCatches.class);
     }
@@ -601,7 +604,7 @@ public class ParserStatementsTest
     @Test
     public void testTryStatementOfFinally()
     {
-        Parser parser = new Parser(new Scanner("try {\n    br.readLine();\n} finally {\n    br.close();\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("try {\n    br.readLine();\n} finally {\n    br.close();\n}"));
         ASTTryStatement node = parser.parseTryStatement();
         checkBinary(node, TRY, ASTBlock.class, ASTFinally.class);
     }
@@ -612,7 +615,7 @@ public class ParserStatementsTest
     @Test
     public void testTryStatementOfResourceSpecification()
     {
-        Parser parser = new Parser(new Scanner("try (BufferedReader br := new BufferedReader()){\n    br.readLine();\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("try (BufferedReader br := new BufferedReader()){\n    br.readLine();\n}"));
         ASTTryStatement node = parser.parseTryStatement();
         checkBinary(node, TRY, ASTResourceSpecification.class, ASTBlock.class);
     }
@@ -623,7 +626,7 @@ public class ParserStatementsTest
     @Test
     public void testTryStatementOfAll()
     {
-        Parser parser = new Parser(new Scanner("try (BufferedReader br := new BufferedReader()){\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n} finally {\n    br.close();\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("try (BufferedReader br := new BufferedReader()){\n    br.readLine();\n} catch (IOException e) {\n    out.println(e.getMessage());\n} finally {\n    br.close();\n}"));
         ASTTryStatement node = parser.parseTryStatement();
         checkNary(node, TRY, ASTResourceSpecification.class, ASTBlock.class, ASTCatches.class, ASTFinally.class);
         node.collapseThenPrint();
@@ -635,7 +638,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceSpecification()
     {
-        Parser parser = new Parser(new Scanner("(fr; BufferedReader br := new BufferedReader(fr))"));
+        StatementsParser parser = new StatementsParser(new Scanner("(fr; BufferedReader br := new BufferedReader(fr))"));
         ASTResourceSpecification node = parser.parseResourceSpecification();
         checkSimple(node, ASTResourceList.class);
     }
@@ -646,7 +649,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceSpecificationSemicolon()
     {
-        Parser parser = new Parser(new Scanner("(fr; BufferedReader br := new BufferedReader(fr);)"));
+        StatementsParser parser = new StatementsParser(new Scanner("(fr; BufferedReader br := new BufferedReader(fr);)"));
         ASTResourceSpecification node = parser.parseResourceSpecification();
         checkSimple(node, ASTResourceList.class);
     }
@@ -657,7 +660,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceListOfResource()
     {
-        Parser parser = new Parser(new Scanner("BufferedReader br := new BufferedReader()"));
+        StatementsParser parser = new StatementsParser(new Scanner("BufferedReader br := new BufferedReader()"));
         ASTResourceList node = parser.parseResourceList();
         checkSimple(node, ASTResource.class, SEMICOLON);
     }
@@ -668,7 +671,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceListNested()
     {
-        Parser parser = new Parser(new Scanner("fr; BufferedReader br := new BufferedReader(fr)"));
+        StatementsParser parser = new StatementsParser(new Scanner("fr; BufferedReader br := new BufferedReader(fr)"));
         ASTResourceList node = parser.parseResourceList();
         checkList(node, SEMICOLON, ASTResource.class, 2);
     }
@@ -679,7 +682,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceOfResourceDeclaration()
     {
-        Parser parser = new Parser(new Scanner("BufferedReader br := new BufferedReader()"));
+        StatementsParser parser = new StatementsParser(new Scanner("BufferedReader br := new BufferedReader()"));
         ASTResource node = parser.parseResource();
         checkSimple(node, ASTResourceDeclaration.class);
     }
@@ -690,7 +693,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceOfExpressionName()
     {
-        Parser parser = new Parser(new Scanner("br"));
+        StatementsParser parser = new StatementsParser(new Scanner("br"));
         ASTResource node = parser.parseResource();
         checkSimple(node, ASTExpressionName.class);
     }
@@ -701,7 +704,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceOfFieldAccess()
     {
-        Parser parser = new Parser(new Scanner("super.br"));
+        StatementsParser parser = new StatementsParser(new Scanner("super.br"));
         ASTResource node = parser.parseResource();
         checkSimple(node, ASTFieldAccess.class);
     }
@@ -712,7 +715,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceDeclaration()
     {
-        Parser parser = new Parser(new Scanner("BufferedReader br := new BufferedReader()"));
+        StatementsParser parser = new StatementsParser(new Scanner("BufferedReader br := new BufferedReader()"));
         ASTResourceDeclaration node = parser.parseResourceDeclaration();
         checkTrinary(node, ASSIGNMENT, ASTLocalVariableType.class, ASTIdentifier.class, ASTExpressionNoIncrDecr.class);
     }
@@ -723,7 +726,7 @@ public class ParserStatementsTest
     @Test
     public void testResourceDeclarationOfVariableModifier()
     {
-        Parser parser = new Parser(new Scanner("final BufferedReader br := new BufferedReader()"));
+        StatementsParser parser = new StatementsParser(new Scanner("final BufferedReader br := new BufferedReader()"));
         ASTResourceDeclaration node = parser.parseResourceDeclaration();
         checkNary(node, ASSIGNMENT, ASTVariableModifierList.class, ASTLocalVariableType.class, ASTIdentifier.class, ASTExpressionNoIncrDecr.class);
         node.collapseThenPrint();
@@ -735,7 +738,7 @@ public class ParserStatementsTest
     @Test
     public void testCatches()
     {
-        Parser parser = new Parser(new Scanner("catch (FileNotFoundException e) { err.println(e.getMessage()); }\ncatch (IOException e) {out.println(e.getMessage()); }"));
+        StatementsParser parser = new StatementsParser(new Scanner("catch (FileNotFoundException e) { err.println(e.getMessage()); }\ncatch (IOException e) {out.println(e.getMessage()); }"));
         ASTCatches node = parser.parseCatches();
         checkList(node, null, ASTCatchClause.class, 2);
     }
@@ -746,7 +749,7 @@ public class ParserStatementsTest
     @Test
     public void testCatchClause()
     {
-        Parser parser = new Parser(new Scanner("catch (CompileException ce) { out.println(ce.getMessage()); }"));
+        StatementsParser parser = new StatementsParser(new Scanner("catch (CompileException ce) { out.println(ce.getMessage()); }"));
         ASTCatchClause node = parser.parseCatchClause();
         checkBinary(node, CATCH, ASTCatchFormalParameter.class, ASTBlock.class);
     }
@@ -757,7 +760,7 @@ public class ParserStatementsTest
     @Test
     public void testCatchTypeOfDataType()
     {
-        Parser parser = new Parser(new Scanner("Exception"));
+        StatementsParser parser = new StatementsParser(new Scanner("Exception"));
         ASTCatchType node = parser.parseCatchType();
         checkSimple(node, ASTDataType.class, BITWISE_OR);
     }
@@ -768,7 +771,7 @@ public class ParserStatementsTest
     @Test
     public void testCatchFormalParameter()
     {
-        Parser parser = new Parser(new Scanner("Exception e"));
+        StatementsParser parser = new StatementsParser(new Scanner("Exception e"));
         ASTCatchFormalParameter node = parser.parseCatchFormalParameter();
         checkBinary(node, ASTCatchType.class, ASTIdentifier.class);
     }
@@ -779,7 +782,7 @@ public class ParserStatementsTest
     @Test
     public void testCatchFormalParameterOfModifiers()
     {
-        Parser parser = new Parser(new Scanner("final CustomException ce"));
+        StatementsParser parser = new StatementsParser(new Scanner("final CustomException ce"));
         ASTCatchFormalParameter node = parser.parseCatchFormalParameter();
         checkTrinary(node, null, ASTVariableModifierList.class, ASTCatchType.class, ASTIdentifier.class);
     }
@@ -790,7 +793,7 @@ public class ParserStatementsTest
     @Test
     public void testCatchType()
     {
-        Parser parser = new Parser(new Scanner("IOException | SQLException"));
+        StatementsParser parser = new StatementsParser(new Scanner("IOException | SQLException"));
         ASTCatchType node = parser.parseCatchType();
         checkList(node, BITWISE_OR, ASTDataType.class, 2);
     }
@@ -801,7 +804,7 @@ public class ParserStatementsTest
     @Test
     public void testCatchTypeNested()
     {
-        Parser parser = new Parser(new Scanner("ArrayIndexOutOfBoundsException | NullPointerException | IllegalArgumentException"));
+        StatementsParser parser = new StatementsParser(new Scanner("ArrayIndexOutOfBoundsException | NullPointerException | IllegalArgumentException"));
         ASTCatchType node = parser.parseCatchType();
         checkList(node, BITWISE_OR, ASTDataType.class, 3);
     }
@@ -812,7 +815,7 @@ public class ParserStatementsTest
     @Test
     public void testFinally()
     {
-        Parser parser = new Parser(new Scanner("finally { out.println(\"Always executed!\"); }"));
+        StatementsParser parser = new StatementsParser(new Scanner("finally { out.println(\"Always executed!\"); }"));
         ASTFinally node = parser.parseFinally();
         checkSimple(node, ASTBlock.class, FINALLY);
     }
@@ -823,7 +826,7 @@ public class ParserStatementsTest
     @Test
     public void testIfStatementOfSimple()
     {
-        Parser parser = new Parser(new Scanner("if (success) { return true; }"));
+        StatementsParser parser = new StatementsParser(new Scanner("if (success) { return true; }"));
         ASTIfStatement node = parser.parseIfStatement();
         checkBinary(node, IF, ASTExpressionNoIncrDecr.class, ASTStatement.class);
         node.collapseThenPrint();
@@ -835,7 +838,7 @@ public class ParserStatementsTest
     @Test
     public void testIfStatementOfInit()
     {
-        Parser parser = new Parser(new Scanner("if {String line := br.readLine()} (line != null) out.println(line);"));
+        StatementsParser parser = new StatementsParser(new Scanner("if {String line := br.readLine()} (line != null) out.println(line);"));
         ASTIfStatement node = parser.parseIfStatement();
         checkTrinary(node, IF, ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
     }
@@ -846,7 +849,7 @@ public class ParserStatementsTest
     @Test
     public void testIfStatementOfElse()
     {
-        Parser parser = new Parser(new Scanner("if (result) {\n    out.println(\"Test passed.\");\n} else {\n    out.println(\"Test FAILED!\");\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("if (result) {\n    out.println(\"Test passed.\");\n} else {\n    out.println(\"Test FAILED!\");\n}"));
         ASTIfStatement node = parser.parseIfStatement();
         checkTrinary(node, IF, ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
     }
@@ -857,7 +860,7 @@ public class ParserStatementsTest
     @Test
     public void testIfStatementNested()
     {
-        Parser parser = new Parser(new Scanner("if (result) {\n    out.println(\"Test passed.\");\n} else if (DEBUG) {\n    out.println(\"Test failed in debug mode!\");\n} else {\n    out.println(\"Test FAILED!\");\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("if (result) {\n    out.println(\"Test passed.\");\n} else if (DEBUG) {\n    out.println(\"Test failed in debug mode!\");\n} else {\n    out.println(\"Test FAILED!\");\n}"));
         ASTIfStatement node = parser.parseIfStatement();
         checkTrinary(node, IF, ASTExpressionNoIncrDecr.class, ASTStatement.class, ASTStatement.class);
 
@@ -875,7 +878,7 @@ public class ParserStatementsTest
     @Test
     public void testWhileStatementOfSimple()
     {
-        Parser parser = new Parser(new Scanner("while (shouldContinue) { doWork(); }"));
+        StatementsParser parser = new StatementsParser(new Scanner("while (shouldContinue) { doWork(); }"));
         ASTWhileStatement node = parser.parseWhileStatement();
         checkBinary(node, WHILE, ASTExpressionNoIncrDecr.class, ASTStatement.class);
         node.collapseThenPrint();
@@ -887,7 +890,7 @@ public class ParserStatementsTest
     @Test
     public void testWhileStatementOfInit()
     {
-        Parser parser = new Parser(new Scanner("while {String line := br.readLine()} (line != null) out.println(line);"));
+        StatementsParser parser = new StatementsParser(new Scanner("while {String line := br.readLine()} (line != null) out.println(line);"));
         ASTWhileStatement node = parser.parseWhileStatement();
         checkTrinary(node, WHILE, ASTInit.class, ASTExpressionNoIncrDecr.class, ASTStatement.class);
         node.collapseThenPrint();
@@ -899,7 +902,7 @@ public class ParserStatementsTest
     @Test
     public void testDoStatement()
     {
-        Parser parser = new Parser(new Scanner("do { work(); } while (shouldContinue);"));
+        StatementsParser parser = new StatementsParser(new Scanner("do { work(); } while (shouldContinue);"));
         ASTDoStatement node = parser.parseDoStatement();
         checkBinary(node, DO, ASTStatement.class, ASTExpressionNoIncrDecr.class);
         node.collapseThenPrint();
@@ -911,7 +914,7 @@ public class ParserStatementsTest
     @Test
     public void testSynchronizedStatement()
     {
-        Parser parser = new Parser(new Scanner("synchronized (lock) { lock.notifyAll(); }"));
+        StatementsParser parser = new StatementsParser(new Scanner("synchronized (lock) { lock.notifyAll(); }"));
         ASTSynchronizedStatement node = parser.parseSynchronizedStatement();
         checkBinary(node, SYNCHRONIZED, ASTExpressionNoIncrDecr.class, ASTBlock.class);
         node.collapseThenPrint();
@@ -923,7 +926,7 @@ public class ParserStatementsTest
     @Test
     public void testForStatementOfBasicForStatementAll3()
     {
-        Parser parser = new Parser(new Scanner("for (Int i := 0; i < 10; i++) {\n    out.println(i);\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("for (Int i := 0; i < 10; i++) {\n    out.println(i);\n}"));
         ASTForStatement node = parser.parseForStatement();
         checkSimple(node, ASTBasicForStatement.class, FOR);
         ASTBasicForStatement basicForStmt = (ASTBasicForStatement) node.getChildren().get(0);
@@ -937,7 +940,7 @@ public class ParserStatementsTest
     @Test
     public void testForStatementOfBasicForStatementInfiniteLoop()
     {
-        Parser parser = new Parser(new Scanner("for (;;) {\n    out.println(\"Hello world!\");\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("for (;;) {\n    out.println(\"Hello world!\");\n}"));
         ASTForStatement node = parser.parseForStatement();
         checkSimple(node, ASTBasicForStatement.class, FOR);
         ASTBasicForStatement basicForStmt = (ASTBasicForStatement) node.getChildren().get(0);
@@ -951,7 +954,7 @@ public class ParserStatementsTest
     @Test
     public void testForStatementOfEnhancedForStatement()
     {
-        Parser parser = new Parser(new Scanner("for (Int i : array) {\n    sum += i;\n}"));
+        StatementsParser parser = new StatementsParser(new Scanner("for (Int i : array) {\n    sum += i;\n}"));
         ASTForStatement node = parser.parseForStatement();
         checkSimple(node, ASTEnhancedForStatement.class, FOR);
         ASTEnhancedForStatement enhForStmt = (ASTEnhancedForStatement) node.getChildren().get(0);
@@ -965,7 +968,7 @@ public class ParserStatementsTest
     @Test
     public void testReturnStatement()
     {
-        Parser parser = new Parser(new Scanner("return;"));
+        StatementsParser parser = new StatementsParser(new Scanner("return;"));
         ASTReturnStatement node = parser.parseReturnStatement();
         checkEmpty(node, RETURN);
         node.collapseThenPrint();
@@ -977,7 +980,7 @@ public class ParserStatementsTest
     @Test
     public void testReturnStatementOfExpression()
     {
-        Parser parser = new Parser(new Scanner("return x.y + 2;"));
+        StatementsParser parser = new StatementsParser(new Scanner("return x.y + 2;"));
         ASTReturnStatement node = parser.parseReturnStatement();
         checkSimple(node, ASTExpression.class, RETURN);
         node.collapseThenPrint();
@@ -989,7 +992,7 @@ public class ParserStatementsTest
     @Test
     public void testThrowStatementOfExpression()
     {
-        Parser parser = new Parser(new Scanner("throw new Exception();"));
+        StatementsParser parser = new StatementsParser(new Scanner("throw new Exception();"));
         ASTThrowStatement node = parser.parseThrowStatement();
         checkSimple(node, ASTExpression.class, THROW);
         node.collapseThenPrint();
@@ -1001,7 +1004,7 @@ public class ParserStatementsTest
     @Test
     public void testBreakStatement()
     {
-        Parser parser = new Parser(new Scanner("break;"));
+        StatementsParser parser = new StatementsParser(new Scanner("break;"));
         ASTBreakStatement node = parser.parseBreakStatement();
         checkEmpty(node, BREAK);
         node.collapseThenPrint();
@@ -1013,7 +1016,7 @@ public class ParserStatementsTest
     @Test
     public void testContinueStatement()
     {
-        Parser parser = new Parser(new Scanner("continue;"));
+        StatementsParser parser = new StatementsParser(new Scanner("continue;"));
         ASTContinueStatement node = parser.parseContinueStatement();
         checkEmpty(node, CONTINUE);
         node.collapseThenPrint();
@@ -1025,7 +1028,7 @@ public class ParserStatementsTest
     @Test
     public void testFallthroughStatement()
     {
-        Parser parser = new Parser(new Scanner("fallthrough;"));
+        StatementsParser parser = new StatementsParser(new Scanner("fallthrough;"));
         ASTFallthroughStatement node = parser.parseFallthroughStatement();
         checkEmpty(node, FALLTHROUGH);
         node.collapseThenPrint();
@@ -1037,7 +1040,7 @@ public class ParserStatementsTest
     @Test
     public void testAssertStatementOfExpression()
     {
-        Parser parser = new Parser(new Scanner("assert result = true;"));
+        StatementsParser parser = new StatementsParser(new Scanner("assert result = true;"));
         ASTAssertStatement node = parser.parseAssertStatement();
         checkSimple(node, ASTExpression.class, ASSERT);
         node.collapseThenPrint();
@@ -1049,7 +1052,7 @@ public class ParserStatementsTest
     @Test
     public void testAssertStatementOfTwoExpressions()
     {
-        Parser parser = new Parser(new Scanner("assert result = true : \"Assertion failed!\";"));
+        StatementsParser parser = new StatementsParser(new Scanner("assert result = true : \"Assertion failed!\";"));
         ASTAssertStatement node = parser.parseAssertStatement();
         checkBinary(node, ASSERT, ASTExpression.class, ASTExpression.class);
         node.collapseThenPrint();
@@ -1061,7 +1064,7 @@ public class ParserStatementsTest
     @Test
     public void testExpressionStatementOfStatementExpression()
     {
-        Parser parser = new Parser(new Scanner("x++;"));
+        StatementsParser parser = new StatementsParser(new Scanner("x++;"));
         ASTExpressionStatement node = parser.parseExpressionStatement();
         checkSimple(node, ASTStatementExpression.class, SEMICOLON);
         node.collapseThenPrint();
@@ -1073,7 +1076,7 @@ public class ParserStatementsTest
     @Test
     public void testInitOfLocalVariableDeclaration()
     {
-        Parser parser = new Parser(new Scanner("Int i := 0, j := 0"));
+        StatementsParser parser = new StatementsParser(new Scanner("Int i := 0, j := 0"));
         ASTInit node = parser.parseInit();
         checkSimple(node, ASTLocalVariableDeclaration.class);
         node.collapseThenPrint();
@@ -1085,7 +1088,7 @@ public class ParserStatementsTest
     @Test
     public void testInitOfStatementExpression()
     {
-        Parser parser = new Parser(new Scanner("i := 0"));
+        StatementsParser parser = new StatementsParser(new Scanner("i := 0"));
         ASTInit node = parser.parseInit();
         checkSimple(node, ASTStatementExpressionList.class);
         ASTStatementExpressionList list = (ASTStatementExpressionList) node.getChildren().get(0);
@@ -1099,7 +1102,7 @@ public class ParserStatementsTest
     @Test
     public void testInitOfStatementExpressionList()
     {
-        Parser parser = new Parser(new Scanner("i := 0, j := 0, k := 1"));
+        StatementsParser parser = new StatementsParser(new Scanner("i := 0, j := 0, k := 1"));
         ASTInit node = parser.parseInit();
         checkSimple(node, ASTStatementExpressionList.class);
         ASTStatementExpressionList list = (ASTStatementExpressionList) node.getChildren().get(0);
@@ -1113,7 +1116,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementExpressionListOfStatementExpression()
     {
-        Parser parser = new Parser(new Scanner("i := 0"));
+        StatementsParser parser = new StatementsParser(new Scanner("i := 0"));
         ASTStatementExpressionList node = parser.parseStatementExpressionList();
         checkSimple(node, ASTStatementExpression.class, COMMA);
         node.collapseThenPrint();
@@ -1126,7 +1129,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementExpressionListNested()
     {
-        Parser parser = new Parser(new Scanner("i := 0, j := 0, k := 1"));
+        StatementsParser parser = new StatementsParser(new Scanner("i := 0, j := 0, k := 1"));
         ASTStatementExpressionList node = parser.parseStatementExpressionList();
         checkList(node, COMMA, ASTStatementExpression.class, 3);
         node.collapseThenPrint();
@@ -1138,7 +1141,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementExpressionOfAssignment()
     {
-        Parser parser = new Parser(new Scanner("x := 0"));
+        StatementsParser parser = new StatementsParser(new Scanner("x := 0"));
         ASTStatementExpression node = parser.parseStatementExpression();
         checkSimple(node, ASTAssignment.class);
         node.collapseThenPrint();
@@ -1150,7 +1153,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementExpressionOfPostfixExpression()
     {
-        Parser parser = new Parser(new Scanner("x.y++"));
+        StatementsParser parser = new StatementsParser(new Scanner("x.y++"));
         ASTStatementExpression node = parser.parseStatementExpression();
         checkSimple(node, ASTPostfixExpression.class);
         node.collapseThenPrint();
@@ -1162,7 +1165,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementExpressionOfPrefixExpression()
     {
-        Parser parser = new Parser(new Scanner("--x.y"));
+        StatementsParser parser = new StatementsParser(new Scanner("--x.y"));
         ASTStatementExpression node = parser.parseStatementExpression();
         checkSimple(node, ASTPrefixExpression.class);
         node.collapseThenPrint();
@@ -1174,7 +1177,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementExpressionOfMethodInvocation()
     {
-        Parser parser = new Parser(new Scanner("x.y(2)"));
+        StatementsParser parser = new StatementsParser(new Scanner("x.y(2)"));
         ASTStatementExpression node = parser.parseStatementExpression();
         checkSimple(node, ASTMethodInvocation.class);
         node.collapseThenPrint();
@@ -1186,7 +1189,7 @@ public class ParserStatementsTest
     @Test
     public void testStatementExpressionOfClassInstanceCreationExpression()
     {
-        Parser parser = new Parser(new Scanner("new SideEffect()"));
+        StatementsParser parser = new StatementsParser(new Scanner("new SideEffect()"));
         ASTStatementExpression node = parser.parseStatementExpression();
         checkSimple(node, ASTClassInstanceCreationExpression.class);
         node.collapseThenPrint();
