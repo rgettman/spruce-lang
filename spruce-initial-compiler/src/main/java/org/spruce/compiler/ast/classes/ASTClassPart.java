@@ -19,7 +19,6 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
  * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration
  * </em>

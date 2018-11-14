@@ -20,6 +20,378 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ParserClassesTest
 {
     /**
+     * Tests simple annotation declaration.
+     */
+    @Test
+    public void testAnnotationDeclarationSimple()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("annotation Dummy {}"));
+        ASTAnnotationDeclaration node = parser.parseAnnotationDeclaration();
+        checkBinary(node, ANNOTATION, ASTIdentifier.class, ASTAnnotationBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests full annotation declaration.
+     */
+    @Test
+    public void testAnnotationDeclarationFull()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("public shared annotation AFullTest {String prop();}"));
+        ASTAnnotationDeclaration node = parser.parseAnnotationDeclaration();
+        checkNary(node, ANNOTATION, ASTAccessModifier.class, ASTInterfaceModifierList.class, ASTIdentifier.class, ASTAnnotationBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests empty annotation body.
+     */
+    @Test
+    public void testAnnotationBodyEmpty()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("{}"));
+        ASTAnnotationBody node = parser.parseAnnotationBody();
+        checkEmpty(node, OPEN_BRACE);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation body.
+     */
+    @Test
+    public void testAnnotationBody()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("{\nconstant Integer i := 1;\nclass Inner{}\nInteger getI() default 1;}\n}"));
+        ASTAnnotationBody node = parser.parseAnnotationBody();
+        checkSimple(node, ASTAnnotationPartList.class, OPEN_BRACE);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part list of annotation part.
+     */
+    @Test
+    public void testAnnotationPartListOfAnnotationPart()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("constant Integer i := 1;"));
+        ASTAnnotationPartList node = parser.parseAnnotationPartList();
+        checkSimple(node, ASTAnnotationPart.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part list.
+     */
+    @Test
+    public void testAnnotationPartList()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("constant Integer i := 1;\nclass Inner {}"));
+        ASTAnnotationPartList node = parser.parseAnnotationPartList();
+        checkList(node, null, ASTAnnotationPart.class, 2);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests nested annotation part lists.
+     */
+    @Test
+    public void testAnnotationPartListNested()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("constant Integer i := 1;\nclass Inner {}\nInteger getI() default 1;"));
+        ASTAnnotationPartList node = parser.parseAnnotationPartList();
+        checkList(node, null, ASTAnnotationPart.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part of annotation type element declaration.
+     */
+    @Test
+    public void testAnnotationPartOfATED()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("String element() default \"Test\";"));
+        ASTAnnotationPart node = parser.parseAnnotationPart();
+        checkSimple(node, ASTAnnotationTypeElementDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part of constant declaration.
+     */
+    @Test
+    public void testAnnotationPartOfConstantDeclaration()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("constant String LANGUAGE := \"Spruce\";"));
+        ASTAnnotationPart node = parser.parseAnnotationPart();
+        checkSimple(node, ASTConstantDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part of class declaration.
+     */
+    @Test
+    public void testAnnotationPartOfClassDeclaration()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("public shared class Nested {}"));
+        ASTAnnotationPart node = parser.parseAnnotationPart();
+        checkSimple(node, ASTClassDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part of enum declaration.
+     */
+    @Test
+    public void testAnnotationPartOfEnumDeclaration()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("private enum Light {RED, YELLOW, GREEN}"));
+        ASTAnnotationPart node = parser.parseAnnotationPart();
+        checkSimple(node, ASTEnumDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part of interface declaration.
+     */
+    @Test
+    public void testAnnotationPartOfInterfaceDeclaration()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
+        ASTAnnotationPart node = parser.parseAnnotationPart();
+        checkSimple(node, ASTInterfaceDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part of annotation declaration.
+     */
+    @Test
+    public void testAnnotationPartOfAnnotationDeclaration()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("public annotation Test { String getStatus() default \"SUCCESS\"; }"));
+        ASTAnnotationPart node = parser.parseAnnotationPart();
+        checkSimple(node, ASTAnnotationDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation type element declaration.
+     */
+    @Test
+    public void testATED()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("String element();"));
+        ASTAnnotationTypeElementDeclaration node = parser.parseAnnotationTypeElementDeclaration();
+        checkBinary(node, OPEN_PARENTHESIS, ASTDataType.class, ASTIdentifier.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation type element declaration with default value.
+     */
+    @Test
+    public void testATEDDefaultValue()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("String element() default \"DNE\";"));
+        ASTAnnotationTypeElementDeclaration node = parser.parseAnnotationTypeElementDeclaration();
+        checkTrinary(node, OPEN_PARENTHESIS, ASTDataType.class, ASTIdentifier.class, ASTDefaultValue.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests default value.
+     */
+    @Test
+    public void testDefaultValue()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("default {\"default\", \"value\"}"));
+        ASTDefaultValue node = parser.parseDefaultValue();
+        checkSimple(node, ASTElementValue.class, DEFAULT);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation of marker annotation.
+     */
+    @Test
+    public void testAnnotationOfMarkerAnnotation()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("@Test"));
+        ASTAnnotation node = parser.parseAnnotation();
+        checkSimple(node, ASTMarkerAnnotation.class, AT_SIGN);
+
+        ASTMarkerAnnotation ma = (ASTMarkerAnnotation) node.getChildren().get(0);
+        checkSimple(ma, ASTTypeName.class, AT_SIGN);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation of single element annotation.
+     */
+    @Test
+    public void testAnnotationOfSingleElementAnnotation()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("@Test(\"Test\")"));
+        ASTAnnotation node = parser.parseAnnotation();
+        checkSimple(node, ASTSingleElementAnnotation.class, AT_SIGN);
+
+        ASTSingleElementAnnotation sea = (ASTSingleElementAnnotation) node.getChildren().get(0);
+        checkBinary(sea, AT_SIGN, ASTTypeName.class, ASTElementValue.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation of normal annotation, empty.
+     */
+    @Test
+    public void testAnnotationOfNormalAnnotationEmpty()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("@Empty()"));
+        ASTAnnotation node = parser.parseAnnotation();
+        checkSimple(node, ASTNormalAnnotation.class, AT_SIGN);
+
+        ASTNormalAnnotation na = (ASTNormalAnnotation) node.getChildren().get(0);
+        checkSimple(na, ASTTypeName.class, AT_SIGN);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation of normal annotation of element pair value list.
+     */
+    @Test
+    public void testAnnotationOfNormalAnnotationOfEVPL()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("@Many(one := 1, two := \"two\", three := '3')"));
+        ASTAnnotation node = parser.parseAnnotation();
+        checkSimple(node, ASTNormalAnnotation.class, AT_SIGN);
+
+        ASTNormalAnnotation na = (ASTNormalAnnotation) node.getChildren().get(0);
+        checkBinary(na, AT_SIGN, ASTTypeName.class, ASTElementValuePairList.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value pair list of element value pair.
+     */
+    @Test
+    public void testEVPListOfEVP()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("test := \"Test\""));
+        ASTElementValuePairList node = parser.parseElementValuePairList();
+        checkSimple(node, ASTElementValuePair.class, COMMA);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value pair list.
+     */
+    @Test
+    public void testEVPList()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("one := 1, two := \"two\", three := '3'"));
+        ASTElementValuePairList node = parser.parseElementValuePairList();
+        checkList(node, COMMA, ASTElementValuePair.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value pair of element value.
+     */
+    @Test
+    public void testElementValuePairOfElementValue()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("prop := \"Conditional Expression\""));
+        ASTElementValuePair node = parser.parseElementValuePair();
+        checkBinary(node, ASSIGNMENT, ASTIdentifier.class, ASTElementValue.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests empty element value array initializer.
+     */
+    @Test
+    public void testEVAIEmpty()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("{}"));
+        ASTElementValueArrayInitializer node = parser.parseElementValueArrayInitializer();
+        checkEmpty(node, OPEN_BRACE);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value array initializer of element value list.
+     */
+    @Test
+    public void testEVAIOfEVList()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("{1, \"Two\", '3'}"));
+        ASTElementValueArrayInitializer node = parser.parseElementValueArrayInitializer();
+        checkSimple(node, ASTElementValueList.class, OPEN_BRACE);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value list of element value.
+     */
+    @Test
+    public void testEVListOfEV()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("\"Test\""));
+        ASTElementValueList node = parser.parseElementValueList();
+        checkSimple(node, ASTElementValue.class, COMMA);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value list.
+     */
+    @Test
+    public void testEVList()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("1, \"two\", '3'"));
+        ASTElementValueList node = parser.parseElementValueList();
+        checkList(node, COMMA, ASTElementValue.class, 3);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value of conditional expression.
+     */
+    @Test
+    public void testElementValueOfConditionalExpression()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("\"Conditional Expression\""));
+        ASTElementValue node = parser.parseElementValue();
+        checkSimple(node, ASTConditionalExpression.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value of element value array initializer.
+     */
+    @Test
+    public void testElementValueOfEVAI()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("{\"Conditional Expression\"}"));
+        ASTElementValue node = parser.parseElementValue();
+        checkSimple(node, ASTElementValueArrayInitializer.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests element value of annotation.
+     */
+    @Test
+    public void testElementValueOfAnnotation()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("@Foo"));
+        ASTElementValue node = parser.parseElementValue();
+        checkSimple(node, ASTAnnotation.class);
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests simple interface declaration.
      */
     @Test
@@ -233,6 +605,18 @@ public class ParserClassesTest
         ClassesParser parser = new ClassesParser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
         ASTInterfacePart node = parser.parseInterfacePart();
         checkSimple(node, ASTInterfaceDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests interface part of annotation declaration.
+     */
+    @Test
+    public void testInterfacePartOfAnnotationDeclaration()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("public annotation Test { String getStatus() default \"SUCCESS\"; }"));
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTAnnotationDeclaration.class);
         node.collapseThenPrint();
     }
 
@@ -732,6 +1116,18 @@ public class ParserClassesTest
         ClassesParser parser = new ClassesParser(new Scanner("private interface TrafficLight { Light getStatus(); }"));
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTInterfaceDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of annotation declaration.
+     */
+    @Test
+    public void testClassPartOfAnnotationDeclaration()
+    {
+        ClassesParser parser = new ClassesParser(new Scanner("public annotation Test { String getStatus() default \"SUCCESS\"; }"));
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTAnnotationDeclaration.class);
         node.collapseThenPrint();
     }
 

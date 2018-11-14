@@ -6,49 +6,10 @@ import java.util.Collections;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.classes.ASTAccessModifier;
-import org.spruce.compiler.ast.classes.ASTClassBody;
-import org.spruce.compiler.ast.classes.ASTClassDeclaration;
-import org.spruce.compiler.ast.classes.ASTClassModifierList;
-import org.spruce.compiler.ast.classes.ASTClassPart;
-import org.spruce.compiler.ast.classes.ASTClassPartList;
-import org.spruce.compiler.ast.classes.ASTConstModifier;
-import org.spruce.compiler.ast.classes.ASTConstantDeclaration;
-import org.spruce.compiler.ast.classes.ASTConstantModifier;
-import org.spruce.compiler.ast.classes.ASTConstructorDeclaration;
-import org.spruce.compiler.ast.classes.ASTConstructorDeclarator;
-import org.spruce.compiler.ast.classes.ASTConstructorInvocation;
-import org.spruce.compiler.ast.classes.ASTEnumBody;
-import org.spruce.compiler.ast.classes.ASTEnumBodyDeclarations;
-import org.spruce.compiler.ast.classes.ASTEnumConstant;
-import org.spruce.compiler.ast.classes.ASTEnumConstantList;
-import org.spruce.compiler.ast.classes.ASTEnumDeclaration;
-import org.spruce.compiler.ast.classes.ASTExtendsInterfaces;
-import org.spruce.compiler.ast.classes.ASTFieldDeclaration;
-import org.spruce.compiler.ast.classes.ASTFieldModifierList;
-import org.spruce.compiler.ast.classes.ASTFormalParameter;
-import org.spruce.compiler.ast.classes.ASTFormalParameterList;
-import org.spruce.compiler.ast.classes.ASTGeneralModifier;
-import org.spruce.compiler.ast.classes.ASTGeneralModifierList;
-import org.spruce.compiler.ast.classes.ASTInterfaceBody;
-import org.spruce.compiler.ast.classes.ASTInterfaceDeclaration;
-import org.spruce.compiler.ast.classes.ASTInterfaceMethodDeclaration;
-import org.spruce.compiler.ast.classes.ASTInterfaceMethodModifierList;
-import org.spruce.compiler.ast.classes.ASTInterfaceModifierList;
-import org.spruce.compiler.ast.classes.ASTInterfacePart;
-import org.spruce.compiler.ast.classes.ASTInterfacePartList;
-import org.spruce.compiler.ast.classes.ASTMethodBody;
-import org.spruce.compiler.ast.classes.ASTMethodDeclaration;
-import org.spruce.compiler.ast.classes.ASTMethodDeclarator;
-import org.spruce.compiler.ast.classes.ASTMethodHeader;
-import org.spruce.compiler.ast.classes.ASTMethodModifierList;
-import org.spruce.compiler.ast.classes.ASTResult;
-import org.spruce.compiler.ast.classes.ASTSharedConstructor;
-import org.spruce.compiler.ast.classes.ASTStrictfpModifier;
-import org.spruce.compiler.ast.classes.ASTSuperclass;
-import org.spruce.compiler.ast.classes.ASTSuperinterfaces;
+import org.spruce.compiler.ast.classes.*;
 import org.spruce.compiler.ast.expressions.ASTPrimary;
 import org.spruce.compiler.ast.names.ASTExpressionName;
+import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.ast.types.ASTTypeParameters;
@@ -58,13 +19,6 @@ import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.TokenType;
 
 import static org.spruce.compiler.scanner.TokenType.*;
-import static org.spruce.compiler.scanner.TokenType.CLOSE_PARENTHESIS;
-import static org.spruce.compiler.scanner.TokenType.COMMA;
-import static org.spruce.compiler.scanner.TokenType.CONST;
-import static org.spruce.compiler.scanner.TokenType.CONSTANT;
-import static org.spruce.compiler.scanner.TokenType.ELLIPSIS;
-import static org.spruce.compiler.scanner.TokenType.FINAL;
-import static org.spruce.compiler.scanner.TokenType.IDENTIFIER;
 
 /**
  * A <code>ClassesParser</code> is a <code>StatementsParser</code> that also parses
@@ -72,6 +26,67 @@ import static org.spruce.compiler.scanner.TokenType.IDENTIFIER;
  */
 public class ClassesParser extends StatementsParser
 {
+    /**
+     * Parses an <code>ASTAnnotationDeclaration</code>.
+     * @return An <code>ASTAnnotationDeclaration</code>.
+     */
+    public ASTAnnotationDeclaration parseAnnotationDeclaration()
+    {
+        Location loc = curr().getLocation();
+        List<ASTNode> children = new ArrayList<>(4);
+        if (isAcceptedOperator(Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE)) != null)
+        {
+            children.add(parseAccessModifier());
+        }
+        if (isAcceptedOperator(Arrays.asList(ABSTRACT, SHARED, STRICTFP)) != null)
+        {
+            children.add(parseInterfaceModifierList());
+        }
+        if (accept(ANNOTATION) == null)
+        {
+            throw new CompileException("Expected annotation.");
+        }
+        children.add(parseIdentifier());
+        children.add(parseAnnotationBody());
+        ASTAnnotationDeclaration node = new ASTAnnotationDeclaration(loc, children);
+        node.setOperation(ANNOTATION);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTAnnotationDeclaration</code>, given an already parsed
+     * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
+     * @param loc The <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @return An <code>ASTAnnotationDeclaration</code>.
+     */
+    public ASTAnnotationDeclaration parseAnnotationDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms)
+    {
+        List<ASTNode> children = new ArrayList<>(4);
+        if (am != null)
+        {
+            children.add(am);
+        }
+        if (gms != null)
+        {
+            children.add(gms.convertToSpecificList(
+                    "Unexpected interface modifier.",
+                    Arrays.asList(ABSTRACT, SHARED, STRICTFP),
+                    ASTInterfaceModifierList::new
+            ));
+        }
+        if (accept(ANNOTATION) == null)
+        {
+            throw new CompileException("Expected annotation.");
+        }
+        children.add(parseIdentifier());
+        children.add(parseAnnotationBody());
+        ASTAnnotationDeclaration node = new ASTAnnotationDeclaration(loc, children);
+        node.setOperation(ANNOTATION);
+        return node;
+    }
+
     /**
      * Constructs a <code>ClassesParser</code> using a <code>Scanner</code>.
      *
@@ -82,6 +97,395 @@ public class ClassesParser extends StatementsParser
         super(scanner);
     }
 
+    /**
+     * Parses an <code>ASTAnnotationBody</code>.
+     * @return An <code>ASTAnnotationBody</code>.
+     */
+    public ASTAnnotationBody parseAnnotationBody()
+    {
+        Location loc = curr().getLocation();
+        if (accept(OPEN_BRACE) == null)
+        {
+            throw new CompileException("Expected '{'.");
+        }
+        List<ASTNode> children = new ArrayList<>(1);
+        if (!isCurr(CLOSE_BRACE))
+        {
+            children.add(parseAnnotationPartList());
+        }
+        if (accept(CLOSE_BRACE) == null)
+        {
+            throw new CompileException("Expected '}'.");
+        }
+        ASTAnnotationBody node = new ASTAnnotationBody(loc, children);
+        node.setOperation(OPEN_BRACE);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTAnnotationPartList</code>.
+     * @return An <code>ASTAnnotationPartList</code>.
+     */
+    public ASTAnnotationPartList parseAnnotationPartList()
+    {
+        return parseMultiple(
+                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
+                        ABSTRACT, FINAL, SHARED, STRICTFP, CLASS, INTERFACE,
+                        CONSTANT, IDENTIFIER)
+                        .contains(t.getType()),
+                "Expected constant or element declaration.",
+                this::parseAnnotationPart,
+                ASTAnnotationPartList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTAnnotationPart</code>.
+     * @return An <code>ASTAnnotationPart</code>.
+     */
+    public ASTAnnotationPart parseAnnotationPart()
+    {
+        Location loc = curr().getLocation();
+        ASTAccessModifier accessMod = null;
+        if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null)
+        {
+            accessMod = parseAccessModifier();
+        }
+        ASTGeneralModifierList genModList = null;
+        if (isAcceptedOperator(Arrays.asList(ABSTRACT, CONSTANT, DEFAULT, FINAL, OVERRIDE, SHARED, STRICTFP)) != null)
+        {
+            genModList = parseGeneralModifierList();
+        }
+
+        // class/enum/interface/annotation
+        switch (curr().getType())
+        {
+        case CLASS:
+            return new ASTAnnotationPart(loc, Arrays.asList(parseClassDeclaration(loc, accessMod, genModList)));
+        case ENUM:
+            return new ASTAnnotationPart(loc, Arrays.asList(parseEnumDeclaration(loc, accessMod, genModList)));
+        case INTERFACE:
+            return new ASTAnnotationPart(loc, Arrays.asList(parseInterfaceDeclaration(loc, accessMod, genModList)));
+        case ANNOTATION:
+            return new ASTAnnotationPart(loc, Arrays.asList(parseAnnotationDeclaration(loc, accessMod, genModList)));
+        }
+
+        ASTTypeParameters typeParams = null;
+        if (isCurr(LESS_THAN))
+        {
+            typeParams = parseTypeParameters();
+        }
+
+        ASTDataType dt = parseDataType();
+        if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS))
+        {
+            if (typeParams != null)
+            {
+                throw new CompileException("Type parameters not allowed on annotation element declaration.");
+            }
+            if (genModList != null)
+            {
+                throw new CompileException("Method modifiers not allowed on annotation element declaration.");
+            }
+            if (accessMod != null)
+            {
+                throw new CompileException("Access modifiers not allowed on annotation element declaration.");
+            }
+            return new ASTAnnotationPart(loc, Arrays.asList(parseAnnotationTypeElementDeclaration(loc, dt)));
+        }
+        else
+        {
+            if (typeParams != null)
+            {
+                throw new CompileException("Type parameters not allowed on constant declaration.");
+            }
+            return new ASTAnnotationPart(loc, Arrays.asList(parseConstantDeclaration(loc, accessMod, genModList, dt)));
+        }
+    }
+
+    /**
+     * Parses an <code>ASTAnnotationTypeElementDeclaration</code>.
+     * @return An <code>ASTAnnotationTypeElementDeclaration</code>.
+     */
+    public ASTAnnotationTypeElementDeclaration parseAnnotationTypeElementDeclaration()
+    {
+        Location loc = curr().getLocation();
+        List<ASTNode> children = new ArrayList<>(3);
+        children.add(parseDataType());
+        children.add(parseIdentifier());
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('");
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'");
+        }
+        if (isCurr(DEFAULT))
+        {
+            children.add(parseDefaultValue());
+        }
+        if (accept(SEMICOLON) == null)
+        {
+            throw new CompileException("Missing semicolon.");
+        }
+        ASTAnnotationTypeElementDeclaration node = new ASTAnnotationTypeElementDeclaration(loc, children);
+        node.setOperation(OPEN_PARENTHESIS);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTAnnotationTypeElementDeclaration</code>, given an
+     * already parsed <code>ASTDataType</code>.
+     * @param loc The <code>Location</code>.
+     * @param dt The <code>ASTDataType</code>.
+     * @return An <code>ASTAnnotationTypeElementDeclaration</code>.
+     */
+    public ASTAnnotationTypeElementDeclaration parseAnnotationTypeElementDeclaration(Location loc, ASTDataType dt)
+    {
+        List<ASTNode> children = new ArrayList<>(3);
+        children.add(dt);
+        children.add(parseIdentifier());
+        if (accept(OPEN_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected '('");
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'");
+        }
+        if (isCurr(DEFAULT))
+        {
+            children.add(parseDefaultValue());
+        }
+        if (accept(SEMICOLON) == null)
+        {
+            throw new CompileException("Missing semicolon.");
+        }
+        ASTAnnotationTypeElementDeclaration node = new ASTAnnotationTypeElementDeclaration(loc, children);
+        node.setOperation(OPEN_PARENTHESIS);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTDefaultValue</code>.
+     * @return An <code>ASTDefaultValue</code>.
+     */
+    public ASTDefaultValue parseDefaultValue()
+    {
+        Location loc = curr().getLocation();
+        List<ASTNode> children = new ArrayList<>(1);
+        if (accept(DEFAULT) == null)
+        {
+            throw new CompileException("Expected default.");
+        }
+        children.add(parseElementValue());
+        ASTDefaultValue node = new ASTDefaultValue(loc, children);
+        node.setOperation(DEFAULT);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTAnnotation</code>.
+     * @return An <code>ASTAnnotation</code>.
+     */
+    public ASTAnnotation parseAnnotation()
+    {
+        Location loc = curr().getLocation();
+        List<ASTNode> children = new ArrayList<>(1);
+        if (accept(AT_SIGN) == null)
+        {
+            throw new CompileException("Expected '@'.");
+        }
+        ASTTypeName tn = parseTypeName();
+        if (isCurr(OPEN_PARENTHESIS))
+        {
+            accept(OPEN_PARENTHESIS);
+            if (isCurr(CLOSE_PARENTHESIS))
+            {
+                children.add(parseNormalAnnotation(loc, tn));
+            }
+            else if (isCurr(OPEN_BRACE))
+            {
+                children.add(parseSingleElementAnnotation(loc, tn));
+            }
+            else if (isCurr(IDENTIFIER) && isNext(ASSIGNMENT))
+            {
+                children.add(parseNormalAnnotation(loc, tn));
+            }
+            else
+            {
+                // Conditional Expression.
+                children.add(parseSingleElementAnnotation(loc, tn));
+            }
+        }
+        else
+        {
+            children.add(parseMarkerAnnotation(loc, tn));
+        }
+        ASTAnnotation node = new ASTAnnotation(loc, children);
+        node.setOperation(AT_SIGN);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTMarkerAnnotation</code>, given an already parsed
+     * <code>ASTTypeName</code>.
+     * @param loc The <code>Location</code>.
+     * @param tn An already parsed <code>ASTTypeName</code>.
+     * @return An <code>ASTMarkerAnnotation</code>.
+     */
+    public ASTMarkerAnnotation parseMarkerAnnotation(Location loc, ASTTypeName tn)
+    {
+        List<ASTNode> children = new ArrayList<>(1);
+        children.add(tn);
+        ASTMarkerAnnotation node = new ASTMarkerAnnotation(loc, children);
+        node.setOperation(AT_SIGN);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTSingleElementAnnotation</code>, given an already parsed
+     * <code>ASTTypeName</code>.  An open parenthesis ('(') has already been consumed.
+     * @param loc The <code>Location</code>.
+     * @param tn An already parsed <code>ASTTypeName</code>.
+     * @return An <code>ASTSingleElementAnnotation</code>.
+     */
+    public ASTSingleElementAnnotation parseSingleElementAnnotation(Location loc, ASTTypeName tn)
+    {
+        List<ASTNode> children = new ArrayList<>(2);
+        children.add(tn);
+        children.add(parseElementValue());
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+        ASTSingleElementAnnotation node = new ASTSingleElementAnnotation(loc, children);
+        node.setOperation(AT_SIGN);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTNormalAnnotation</code>, given an already parsed
+     * <code>ASTTypeName</code>.  An open parenthesis ('(') has already been consumed.
+     * @param loc The <code>Location</code>.
+     * @param tn An already parsed <code>ASTTypeName</code>.
+     * @return An <code>ASTNormalAnnotation</code>.
+     */
+    public ASTNormalAnnotation parseNormalAnnotation(Location loc, ASTTypeName tn)
+    {
+        List<ASTNode> children = new ArrayList<>(2);
+        children.add(tn);
+        if (!isCurr(CLOSE_PARENTHESIS))
+        {
+            children.add(parseElementValuePairList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null)
+        {
+            throw new CompileException("Expected ')'.");
+        }
+        ASTNormalAnnotation node = new ASTNormalAnnotation(loc, children);
+        node.setOperation(AT_SIGN);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTElementValuePairList</code>.
+     * @return An <code>ASTElementValuePairList</code>.
+     */
+    public ASTElementValuePairList parseElementValuePairList()
+    {
+        return parseList(
+                t -> test(t, IDENTIFIER),
+                "Expected identifier.",
+                COMMA,
+                this::parseElementValuePair,
+                ASTElementValuePairList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTElementValuePair</code>.
+     * @return An <code>ASTElementValuePair</code>.
+     */
+    public ASTElementValuePair parseElementValuePair()
+    {
+        Location loc = curr().getLocation();
+        List<ASTNode> children = new ArrayList<>(2);
+        children.add(parseIdentifier());
+        if (accept(ASSIGNMENT) == null)
+        {
+            throw new CompileException("Expected assignment operator ':='.");
+        }
+        children.add(parseElementValue());
+        ASTElementValuePair node = new ASTElementValuePair(loc, children);
+        node.setOperation(ASSIGNMENT);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTElementValueArrayInitializer</code>.
+     * @return An <code>ASTElementValueArrayInitializer</code>.
+     */
+    public ASTElementValueArrayInitializer parseElementValueArrayInitializer()
+    {
+        Location loc = curr().getLocation();
+        List<ASTNode> children = new ArrayList<>(1);
+        if (accept(OPEN_BRACE) == null)
+        {
+            throw new CompileException("Expected '{'.");
+        }
+        if (!isCurr(CLOSE_BRACE))
+        {
+            children.add(parseElementValueList());
+        }
+        if (accept(CLOSE_BRACE) == null)
+        {
+            throw new CompileException("Expected '}'.");
+        }
+        ASTElementValueArrayInitializer node = new ASTElementValueArrayInitializer(loc, children);
+        node.setOperation(OPEN_BRACE);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTElementValueList</code>.
+     * @return An <code>ASTElementValueList</code>.
+     */
+    public ASTElementValueList parseElementValueList()
+    {
+        return parseList(
+                ExpressionsParser::isPrimary,
+                "Expected value.",
+                COMMA,
+                this::parseElementValue,
+                ASTElementValueList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTElementValue</code>.
+     * @return An <code>ASTElementValue</code>.
+     */
+    public ASTElementValue parseElementValue()
+    {
+        Location loc = curr().getLocation();
+        List<ASTNode> children = new ArrayList<>(1);
+        // Could also be Annotation.
+        if (isCurr(OPEN_BRACE))
+        {
+            children.add(parseElementValueArrayInitializer());
+        }
+        else if (isCurr(AT_SIGN))
+        {
+            children.add(parseAnnotation());
+        }
+        else
+        {
+            children.add(parseConditionalExpression());
+        }
+        return new ASTElementValue(loc, children);
+    }
 
     /**
      * Parses an <code>ASTInterfaceDeclaration</code>.
@@ -90,7 +494,7 @@ public class ClassesParser extends StatementsParser
     public ASTInterfaceDeclaration parseInterfaceDeclaration()
     {
         Location loc = curr().getLocation();
-        List<ASTNode> children = new ArrayList<>(7);
+        List<ASTNode> children = new ArrayList<>(6);
         if (isAcceptedOperator(Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE)) != null)
         {
             children.add(parseAccessModifier());
@@ -257,7 +661,8 @@ public class ClassesParser extends StatementsParser
             return new ASTInterfacePart(loc, Arrays.asList(parseEnumDeclaration(loc, accessMod, genModList)));
         case INTERFACE:
             return new ASTInterfacePart(loc, Arrays.asList(parseInterfaceDeclaration(loc, accessMod, genModList)));
-//        case ANNOTATION:
+        case ANNOTATION:
+            return new ASTInterfacePart(loc, Arrays.asList(parseAnnotationDeclaration(loc, accessMod, genModList)));
         }
 
         ASTTypeParameters typeParams = null;
@@ -842,7 +1247,8 @@ public class ClassesParser extends StatementsParser
             return new ASTClassPart(loc, Arrays.asList(parseEnumDeclaration(loc, accessMod, genModList)));
         case INTERFACE:
             return new ASTClassPart(loc, Arrays.asList(parseInterfaceDeclaration(loc, accessMod, genModList)));
-//        case ANNOTATION:
+        case ANNOTATION:
+            return new ASTClassPart(loc, Arrays.asList(parseAnnotationDeclaration(loc, accessMod, genModList)));
         }
 
         ASTTypeParameters typeParams = null;

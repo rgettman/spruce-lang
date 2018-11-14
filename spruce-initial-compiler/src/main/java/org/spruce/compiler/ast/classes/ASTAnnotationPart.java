@@ -7,28 +7,28 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTInterfacePart</code> is a constant declaration, an interface
- * method declaration, a class declaration, an enum declaration, an annotation
- * declaration, or an interface declaration.</p>
+ * <p>An <code>ASTAnnotationPart</code> is an annotation type
+ * member declaration, a constant declaration, a class declaration, or an
+ * interface declaration.</p>
  *
  * <em>
- * InterfacePart:<br>
+ * AnnotationPart:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationTypeElementDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ConstantDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceMethodDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration
  * </em>
  */
-public class ASTInterfacePart extends ASTParentNode
+public class ASTAnnotationPart extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTInterfacePart</code> at the given <code>Location</code>
+     * Constructs an <code>ASTAnnotationPart</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTInterfacePart(Location location, List<ASTNode> children)
+    public ASTAnnotationPart(Location location, List<ASTNode> children)
     {
         super(location, children);
     }
