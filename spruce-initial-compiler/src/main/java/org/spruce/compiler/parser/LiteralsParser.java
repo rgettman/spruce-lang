@@ -14,7 +14,7 @@ import org.spruce.compiler.scanner.Token;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
- * A <code>LiteralsParser</code> is a <code>BasicParser</code> that also parses
+ * A <code>LiteralsParser</code> is a <code>BasicParser</code> that parses
  * literals.
  */
 public class LiteralsParser extends BasicParser
@@ -23,10 +23,11 @@ public class LiteralsParser extends BasicParser
      * Constructs a <code>LiteralsParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
+     * @param parser The <code>Parser</code> that is creating this object.
      */
-    public LiteralsParser(Scanner scanner)
+    public LiteralsParser(Scanner scanner, Parser parser)
     {
-        super(scanner);
+        super(scanner, parser);
     }
 
     /**
@@ -173,29 +174,6 @@ public class LiteralsParser extends BasicParser
         else
         {
             throw new CompileException("Expected null.");
-        }
-    }
-
-    /**
-     * Determines whether the given token is a literal.
-     *
-     * @param t A <code>Token</code>.
-     * @return Whether the give token is a literal.
-     */
-    protected static boolean isLiteral(Token t)
-    {
-        switch (t.getType())
-        {
-        case TRUE:
-        case FALSE:
-        case NULL:
-        case INT_LITERAL:
-        case FLOATING_POINT_LITERAL:
-        case STRING_LITERAL:
-        case CHARACTER_LITERAL:
-            return true;
-        default:
-            return false;
         }
     }
 }

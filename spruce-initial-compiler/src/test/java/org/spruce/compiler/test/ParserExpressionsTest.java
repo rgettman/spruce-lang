@@ -8,6 +8,7 @@ import org.spruce.compiler.ast.names.*;
 import org.spruce.compiler.ast.types.*;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.parser.ExpressionsParser;
+import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
@@ -26,7 +27,7 @@ public class ParserExpressionsTest
     @Test
     public void testExpressionOfExpressionNoIncrDecr()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("count := 1"));
+        ExpressionsParser parser = new Parser(new Scanner("count := 1")).getExpressionsParser();
         ASTExpression node = parser.parseExpression();
         checkSimple(node, ASTExpressionNoIncrDecr.class);
         node.collapseThenPrint();
@@ -38,7 +39,7 @@ public class ParserExpressionsTest
     @Test
     public void testExpressionOfPostIncrementExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("i.j++"));
+        ExpressionsParser parser = new Parser(new Scanner("i.j++")).getExpressionsParser();
         ASTExpression node = parser.parseExpression();
         checkSimple(node, ASTPostfixExpression.class);
         ASTPostfixExpression childNode = (ASTPostfixExpression) node.getChildren().get(0);
@@ -52,7 +53,7 @@ public class ParserExpressionsTest
     @Test
     public void testExpressionOfPostDecrementExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("i.j--"));
+        ExpressionsParser parser = new Parser(new Scanner("i.j--")).getExpressionsParser();
         ASTExpression node = parser.parseExpression();
         checkSimple(node, ASTPostfixExpression.class);
         ASTPostfixExpression childNode = (ASTPostfixExpression) node.getChildren().get(0);
@@ -66,7 +67,7 @@ public class ParserExpressionsTest
     @Test
     public void testExpressionOfPreIncrementExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("++i.j"));
+        ExpressionsParser parser = new Parser(new Scanner("++i.j")).getExpressionsParser();
         ASTExpression node = parser.parseExpression();
         checkSimple(node, ASTPrefixExpression.class);
         ASTPrefixExpression childNode = (ASTPrefixExpression) node.getChildren().get(0);
@@ -80,7 +81,7 @@ public class ParserExpressionsTest
     @Test
     public void testExpressionOfPreDecrementExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("--i.j"));
+        ExpressionsParser parser = new Parser(new Scanner("--i.j")).getExpressionsParser();
         ASTExpression node = parser.parseExpression();
         checkSimple(node, ASTPrefixExpression.class);
         ASTPrefixExpression childNode = (ASTPrefixExpression) node.getChildren().get(0);
@@ -94,7 +95,7 @@ public class ParserExpressionsTest
     @Test
     public void testExpressionNoIncrDecrOfAssignmentExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("x := 1"));
+        ExpressionsParser parser = new Parser(new Scanner("x := 1")).getExpressionsParser();
         ASTExpressionNoIncrDecr node = parser.parseExpressionNoIncrDecr();
         checkSimple(node, ASTAssignmentExpression.class);
         node.collapseThenPrint();
@@ -106,7 +107,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfConditionalExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a ? b : c"));
+        ExpressionsParser parser = new Parser(new Scanner("a ? b : c")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkSimple(node, ASTConditionalExpression.class);
         node.collapseThenPrint();
@@ -119,7 +120,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfAssignment()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a := 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a := 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, ASSIGNMENT);
         node.collapseThenPrint();
@@ -132,7 +133,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfPlusEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a += 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a += 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, PLUS_EQUALS);
         node.collapseThenPrint();
@@ -145,7 +146,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfMinusEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a -= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a -= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, MINUS_EQUALS);
         node.collapseThenPrint();
@@ -158,7 +159,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfStarEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a *= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a *= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, STAR_EQUALS);
         node.collapseThenPrint();
@@ -171,7 +172,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfSlashEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a /= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a /= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, SLASH_EQUALS);
         node.collapseThenPrint();
@@ -184,7 +185,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfPercentEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a %= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a %= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, PERCENT_EQUALS);
         node.collapseThenPrint();
@@ -197,7 +198,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfShiftLeftEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a <<= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a <<= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, SHIFT_LEFT_EQUALS);
         node.collapseThenPrint();
@@ -210,7 +211,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfShiftRightEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a >>= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a >>= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, SHIFT_RIGHT_EQUALS);
         node.collapseThenPrint();
@@ -223,7 +224,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfOrEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a |= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a |= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, OR_EQUALS);
         node.collapseThenPrint();
@@ -236,7 +237,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfAndEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a &= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a &= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, AND_EQUALS);
         node.collapseThenPrint();
@@ -249,7 +250,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfXorEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a ^= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a ^= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, XOR_EQUALS);
         node.collapseThenPrint();
@@ -262,7 +263,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionOfUnsignedRightShiftEquals()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a >>>= 1"));
+        ExpressionsParser parser = new Parser(new Scanner("a >>>= 1")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkAssignmentExpressionLeftAssociative(node, UNSIGNED_SHIFT_RIGHT_EQUALS);
         node.collapseThenPrint();
@@ -274,7 +275,7 @@ public class ParserExpressionsTest
     @Test
     public void testAssignmentExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a := b += c -= d"));
+        ExpressionsParser parser = new Parser(new Scanner("a := b += c -= d")).getExpressionsParser();
         ASTAssignmentExpression node = parser.parseAssignmentExpression();
         checkSimple(node, ASTAssignment.class);
         ASTAssignment assignment = (ASTAssignment) node.getChildren().get(0);
@@ -304,7 +305,7 @@ public class ParserExpressionsTest
     {
         for (String code : Arrays.asList("1", "this"))
         {
-            ExpressionsParser parser = new ExpressionsParser(new Scanner(code));
+            ExpressionsParser parser = new Parser(new Scanner(code)).getExpressionsParser();
             ASTConditionalExpression condExpr = parser.parseConditionalExpression();
             assertThrows(CompileException.class, condExpr::getLeftHandSide, "Error at code \"" + code + "\".");
         }
@@ -317,7 +318,7 @@ public class ParserExpressionsTest
     @Test
     public void testConditionalToLeftHandSideOfExpressionName()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("expr.name"));
+        ExpressionsParser parser = new Parser(new Scanner("expr.name")).getExpressionsParser();
         ASTConditionalExpression condExpr = parser.parseConditionalExpression();
         ASTLeftHandSide lhs = condExpr.getLeftHandSide();
         checkSimple(lhs, ASTExpressionName.class);
@@ -331,7 +332,7 @@ public class ParserExpressionsTest
     @Test
     public void testConditionalToLeftHandSideOfElementAccess()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("getArray()[1]"));
+        ExpressionsParser parser = new Parser(new Scanner("getArray()[1]")).getExpressionsParser();
         ASTConditionalExpression condExpr = parser.parseConditionalExpression();
         ASTLeftHandSide lhs = condExpr.getLeftHandSide();
         checkSimple(lhs, ASTElementAccess.class);
@@ -344,7 +345,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrefixExpressionOfDecrement()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("--i"));
+        ExpressionsParser parser = new Parser(new Scanner("--i")).getExpressionsParser();
         ASTPrefixExpression node = parser.parsePrefixExpression();
         checkSimple(node, ASTLeftHandSide.class, DECREMENT);
         node.collapseThenPrint();
@@ -356,7 +357,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrefixExpressionOfIncrement()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("++i"));
+        ExpressionsParser parser = new Parser(new Scanner("++i")).getExpressionsParser();
         ASTPrefixExpression node = parser.parsePrefixExpression();
         checkSimple(node, ASTLeftHandSide.class, INCREMENT);
         node.collapseThenPrint();
@@ -368,7 +369,7 @@ public class ParserExpressionsTest
     @Test
     public void testLeftHandSideOfExpressionName()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("expr.name"));
+        ExpressionsParser parser = new Parser(new Scanner("expr.name")).getExpressionsParser();
         ASTLeftHandSide node = parser.parseLeftHandSide();
         checkSimple(node, ASTExpressionName.class);
         node.collapseThenPrint();
@@ -380,7 +381,7 @@ public class ParserExpressionsTest
     @Test
     public void testLeftHandSideOfElementAccess()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("array[i]"));
+        ExpressionsParser parser = new Parser(new Scanner("array[i]")).getExpressionsParser();
         ASTLeftHandSide node = parser.parseLeftHandSide();
         checkSimple(node, ASTElementAccess.class);
         node.collapseThenPrint();
@@ -392,7 +393,7 @@ public class ParserExpressionsTest
     @Test
     public void testLeftHandSideOfFieldAccess()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("this.x"));
+        ExpressionsParser parser = new Parser(new Scanner("this.x")).getExpressionsParser();
         ASTLeftHandSide node = parser.parseLeftHandSide();
         checkSimple(node, ASTFieldAccess.class);
         node.collapseThenPrint();
@@ -404,7 +405,7 @@ public class ParserExpressionsTest
     @Test
     public void testConditionalExpressionOfLogicalOrExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a || b"));
+        ExpressionsParser parser = new Parser(new Scanner("a || b")).getExpressionsParser();
         ASTConditionalExpression node = parser.parseConditionalExpression();
         checkSimple(node, ASTLogicalOrExpression.class);
         node.collapseThenPrint();
@@ -416,7 +417,7 @@ public class ParserExpressionsTest
     @Test
     public void testConditionalExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("condition ? valueIfTrue : valueIfFalse"));
+        ExpressionsParser parser = new Parser(new Scanner("condition ? valueIfTrue : valueIfFalse")).getExpressionsParser();
         ASTConditionalExpression node = parser.parseConditionalExpression();
         checkTrinary(node, QUESTION_MARK, ASTLogicalOrExpression.class, ASTLogicalOrExpression.class, ASTConditionalExpression.class);
         node.collapseThenPrint();
@@ -428,7 +429,7 @@ public class ParserExpressionsTest
     @Test
     public void testConditionalExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a || b ? \"one\" : c || d ? \"two\" : e || f ? \"three\" : \"four\""));
+        ExpressionsParser parser = new Parser(new Scanner("a || b ? \"one\" : c || d ? \"two\" : e || f ? \"three\" : \"four\"")).getExpressionsParser();
         ASTConditionalExpression node = parser.parseConditionalExpression();
         checkTrinary(node, QUESTION_MARK, ASTLogicalOrExpression.class, ASTLogicalOrExpression.class, ASTConditionalExpression.class);
         ASTConditionalExpression childNode = (ASTConditionalExpression) node.getChildren().get(2);
@@ -446,7 +447,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalOrExpressionOfLogicalAndExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a ^: b"));
+        ExpressionsParser parser = new Parser(new Scanner("a ^: b")).getExpressionsParser();
         ASTLogicalOrExpression node = parser.parseLogicalOrExpression();
         checkSimple(node, ASTLogicalXorExpression.class);
         node.collapseThenPrint();
@@ -458,7 +459,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalOrExpressionOfEager()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("test |: elseThis"));
+        ExpressionsParser parser = new Parser(new Scanner("test |: elseThis")).getExpressionsParser();
         ASTLogicalOrExpression node = parser.parseLogicalOrExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(LOGICAL_OR), ASTLogicalOrExpression.class, ASTLogicalXorExpression.class);
         node.collapseThenPrint();
@@ -470,7 +471,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalOrExpressionOfConditional()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("alreadyDone || test"));
+        ExpressionsParser parser = new Parser(new Scanner("alreadyDone || test")).getExpressionsParser();
         ASTLogicalOrExpression node = parser.parseLogicalOrExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(CONDITIONAL_OR), ASTLogicalOrExpression.class, ASTLogicalXorExpression.class);
         node.collapseThenPrint();
@@ -482,7 +483,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalOrExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a && b |: c ^: d || e &: f"));
+        ExpressionsParser parser = new Parser(new Scanner("a && b |: c ^: d || e &: f")).getExpressionsParser();
         ASTLogicalOrExpression node = parser.parseLogicalOrExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(CONDITIONAL_OR, LOGICAL_OR), ASTLogicalOrExpression.class, ASTLogicalXorExpression.class);
         node.collapseThenPrint();
@@ -494,7 +495,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalXorExpressionOfLogicalAndExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a && b"));
+        ExpressionsParser parser = new Parser(new Scanner("a && b")).getExpressionsParser();
         ASTLogicalXorExpression node = parser.parseLogicalXorExpression();
         checkSimple(node, ASTLogicalAndExpression.class);
         node.collapseThenPrint();
@@ -506,7 +507,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalXorExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("test ^: thisAlso"));
+        ExpressionsParser parser = new Parser(new Scanner("test ^: thisAlso")).getExpressionsParser();
         ASTLogicalXorExpression node = parser.parseLogicalXorExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(LOGICAL_XOR), ASTLogicalXorExpression.class, ASTLogicalAndExpression.class);
         node.collapseThenPrint();
@@ -518,7 +519,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalXorExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a && b ^: c &: d ^: e && f"));
+        ExpressionsParser parser = new Parser(new Scanner("a && b ^: c &: d ^: e && f")).getExpressionsParser();
         ASTLogicalXorExpression node = parser.parseLogicalXorExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(LOGICAL_XOR, LOGICAL_XOR), ASTLogicalXorExpression.class, ASTLogicalAndExpression.class);
         node.collapseThenPrint();
@@ -530,7 +531,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalAndExpressionOfRelationalExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a = b"));
+        ExpressionsParser parser = new Parser(new Scanner("a = b")).getExpressionsParser();
         ASTLogicalAndExpression node = parser.parseLogicalAndExpression();
         checkSimple(node, ASTRelationalExpression.class);
         node.collapseThenPrint();
@@ -542,7 +543,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalAndExpressionOfConditional()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("test && notDone"));
+        ExpressionsParser parser = new Parser(new Scanner("test && notDone")).getExpressionsParser();
         ASTLogicalAndExpression node = parser.parseLogicalAndExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(CONDITIONAL_AND), ASTLogicalAndExpression.class, ASTRelationalExpression.class);
         node.collapseThenPrint();
@@ -554,7 +555,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalAndExpressionOfEager()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("test &: thisAlso"));
+        ExpressionsParser parser = new Parser(new Scanner("test &: thisAlso")).getExpressionsParser();
         ASTLogicalAndExpression node = parser.parseLogicalAndExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(LOGICAL_AND), ASTLogicalAndExpression.class, ASTRelationalExpression.class);
         node.collapseThenPrint();
@@ -566,7 +567,7 @@ public class ParserExpressionsTest
     @Test
     public void testLogicalAndExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a < b &: c <= d && e > f"));
+        ExpressionsParser parser = new Parser(new Scanner("a < b &: c <= d && e > f")).getExpressionsParser();
         ASTLogicalAndExpression node = parser.parseLogicalAndExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(CONDITIONAL_AND, LOGICAL_AND), ASTLogicalAndExpression.class, ASTRelationalExpression.class);
         node.collapseThenPrint();
@@ -578,7 +579,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfCompareExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a <=> b"));
+        ExpressionsParser parser = new Parser(new Scanner("a <=> b")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkSimple(node, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -590,7 +591,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfLessThan()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a.value < b.value"));
+        ExpressionsParser parser = new Parser(new Scanner("a.value < b.value")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(LESS_THAN), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -602,7 +603,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfLessThanOrEqual()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("2 <= 2"));
+        ExpressionsParser parser = new Parser(new Scanner("2 <= 2")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(LESS_THAN_OR_EQUAL), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -614,7 +615,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfGreaterThan()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a.value > b.value"));
+        ExpressionsParser parser = new Parser(new Scanner("a.value > b.value")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(GREATER_THAN), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -626,7 +627,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfGreaterThanOrEqual()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("2 >= 2"));
+        ExpressionsParser parser = new Parser(new Scanner("2 >= 2")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(GREATER_THAN_OR_EQUAL), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -638,7 +639,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfEqual()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("test = SUCCESS"));
+        ExpressionsParser parser = new Parser(new Scanner("test = SUCCESS")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(EQUAL), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -650,7 +651,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfNotEqual()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("test != FAILURE"));
+        ExpressionsParser parser = new Parser(new Scanner("test != FAILURE")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(NOT_EQUAL), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -662,7 +663,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfInstanceof()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("node instanceof ASTRelationalExpression"));
+        ExpressionsParser parser = new Parser(new Scanner("node instanceof ASTRelationalExpression")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinary(node, INSTANCEOF, ASTRelationalExpression.class, ASTDataType.class);
         ASTRelationalExpression child = (ASTRelationalExpression) node.getChildren().get(0);
@@ -676,7 +677,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfIs()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("obj is other"));
+        ExpressionsParser parser = new Parser(new Scanner("obj is other")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(IS), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -688,7 +689,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionOfIsnt()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("obj isnt null"));
+        ExpressionsParser parser = new Parser(new Scanner("obj isnt null")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(ISNT), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -700,7 +701,7 @@ public class ParserExpressionsTest
     @Test
     public void testRelationalExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a < b <=> c <= d"));
+        ExpressionsParser parser = new Parser(new Scanner("a < b <=> c <= d")).getExpressionsParser();
         ASTRelationalExpression node = parser.parseRelationalExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(LESS_THAN_OR_EQUAL, LESS_THAN), ASTRelationalExpression.class, ASTCompareExpression.class);
         node.collapseThenPrint();
@@ -712,7 +713,7 @@ public class ParserExpressionsTest
     @Test
     public void testCompareExpressionOfBitwiseOrExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a | b"));
+        ExpressionsParser parser = new Parser(new Scanner("a | b")).getExpressionsParser();
         ASTCompareExpression node = parser.parseCompareExpression();
         checkSimple(node, ASTBitwiseOrExpression.class);
         node.collapseThenPrint();
@@ -724,7 +725,7 @@ public class ParserExpressionsTest
     @Test
     public void testCompareExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a.value <=> b.value"));
+        ExpressionsParser parser = new Parser(new Scanner("a.value <=> b.value")).getExpressionsParser();
         ASTCompareExpression node = parser.parseCompareExpression();
         checkBinary(node, COMPARISON, ASTBitwiseOrExpression.class, ASTBitwiseOrExpression.class);
         node.collapseThenPrint();
@@ -736,7 +737,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseOrExpressionOfBitwiseXorExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a ^ b"));
+        ExpressionsParser parser = new Parser(new Scanner("a ^ b")).getExpressionsParser();
         ASTBitwiseOrExpression node = parser.parseBitwiseOrExpression();
         checkSimple(node, ASTBitwiseXorExpression.class);
         node.collapseThenPrint();
@@ -748,7 +749,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseOrExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("color | blueMask"));
+        ExpressionsParser parser = new Parser(new Scanner("color | blueMask")).getExpressionsParser();
         ASTBitwiseOrExpression node = parser.parseBitwiseOrExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_OR), ASTBitwiseOrExpression.class, ASTBitwiseXorExpression.class);
         node.collapseThenPrint();
@@ -760,7 +761,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseOrExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("red | blue | yellow ^ green"));
+        ExpressionsParser parser = new Parser(new Scanner("red | blue | yellow ^ green")).getExpressionsParser();
         ASTBitwiseOrExpression node = parser.parseBitwiseOrExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_OR, BITWISE_OR), ASTBitwiseOrExpression.class, ASTBitwiseXorExpression.class);
         node.collapseThenPrint();
@@ -772,7 +773,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseXorExpressionOfBitwiseAndExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a & b"));
+        ExpressionsParser parser = new Parser(new Scanner("a & b")).getExpressionsParser();
         ASTBitwiseXorExpression node = parser.parseBitwiseXorExpression();
         checkSimple(node, ASTBitwiseAndExpression.class);
         node.collapseThenPrint();
@@ -784,7 +785,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseXorExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("color ^ blueMask"));
+        ExpressionsParser parser = new Parser(new Scanner("color ^ blueMask")).getExpressionsParser();
         ASTBitwiseXorExpression node = parser.parseBitwiseXorExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_XOR), ASTBitwiseXorExpression.class, ASTBitwiseAndExpression.class);
         node.collapseThenPrint();
@@ -796,7 +797,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseXorExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("red ^ blue & yellow ^ green"));
+        ExpressionsParser parser = new Parser(new Scanner("red ^ blue & yellow ^ green")).getExpressionsParser();
         ASTBitwiseXorExpression node = parser.parseBitwiseXorExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_XOR, BITWISE_XOR), ASTBitwiseXorExpression.class, ASTBitwiseAndExpression.class);
         node.collapseThenPrint();
@@ -808,7 +809,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseAndExpressionOfShiftExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a << b"));
+        ExpressionsParser parser = new Parser(new Scanner("a << b")).getExpressionsParser();
         ASTBitwiseAndExpression node = parser.parseBitwiseAndExpression();
         checkSimple(node, ASTShiftExpression.class);
         node.collapseThenPrint();
@@ -820,7 +821,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseAndExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("color & blueMask"));
+        ExpressionsParser parser = new Parser(new Scanner("color & blueMask")).getExpressionsParser();
         ASTBitwiseAndExpression node = parser.parseBitwiseAndExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_AND), ASTBitwiseAndExpression.class, ASTShiftExpression.class);
         node.collapseThenPrint();
@@ -832,7 +833,7 @@ public class ParserExpressionsTest
     @Test
     public void testBitwiseAndExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("red + blue & blueGreenMask & greenRedMask"));
+        ExpressionsParser parser = new Parser(new Scanner("red + blue & blueGreenMask & greenRedMask")).getExpressionsParser();
         ASTBitwiseAndExpression node = parser.parseBitwiseAndExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(BITWISE_AND, BITWISE_AND), ASTBitwiseAndExpression.class, ASTShiftExpression.class);
         node.collapseThenPrint();
@@ -844,7 +845,7 @@ public class ParserExpressionsTest
     @Test
     public void testShiftExpressionOfAdditiveExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a + b"));
+        ExpressionsParser parser = new Parser(new Scanner("a + b")).getExpressionsParser();
         ASTShiftExpression node = parser.parseShiftExpression();
         checkSimple(node, ASTAdditiveExpression.class);
         node.collapseThenPrint();
@@ -856,7 +857,7 @@ public class ParserExpressionsTest
     @Test
     public void testShiftExpressionOfLeftShift()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("1 << 2"));
+        ExpressionsParser parser = new Parser(new Scanner("1 << 2")).getExpressionsParser();
         ASTShiftExpression node = parser.parseShiftExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(SHIFT_LEFT), ASTShiftExpression.class, ASTAdditiveExpression.class);
         node.collapseThenPrint();
@@ -868,7 +869,7 @@ public class ParserExpressionsTest
     @Test
     public void testShiftExpressionOfRightShift()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("2048 >> 2"));
+        ExpressionsParser parser = new Parser(new Scanner("2048 >> 2")).getExpressionsParser();
         ASTShiftExpression node = parser.parseShiftExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(SHIFT_RIGHT), ASTShiftExpression.class, ASTAdditiveExpression.class);
         node.collapseThenPrint();
@@ -880,7 +881,7 @@ public class ParserExpressionsTest
     @Test
     public void testShiftExpressionOfUnsignedRightShift()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("unsigned >>> amount"));
+        ExpressionsParser parser = new Parser(new Scanner("unsigned >>> amount")).getExpressionsParser();
         ASTShiftExpression node = parser.parseShiftExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(UNSIGNED_SHIFT_RIGHT), ASTShiftExpression.class, ASTAdditiveExpression.class);
         node.collapseThenPrint();
@@ -892,7 +893,7 @@ public class ParserExpressionsTest
     @Test
     public void testShiftExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("-2 << 3 + 4 >> 5 >>> 1"));
+        ExpressionsParser parser = new Parser(new Scanner("-2 << 3 + 4 >> 5 >>> 1")).getExpressionsParser();
         ASTShiftExpression node = parser.parseShiftExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(UNSIGNED_SHIFT_RIGHT, SHIFT_RIGHT, SHIFT_LEFT), ASTShiftExpression.class, ASTAdditiveExpression.class);
         node.collapseThenPrint();
@@ -904,7 +905,7 @@ public class ParserExpressionsTest
     @Test
     public void testAdditiveExpressionOfMultiplicativeExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a * b"));
+        ExpressionsParser parser = new Parser(new Scanner("a * b")).getExpressionsParser();
         ASTAdditiveExpression node = parser.parseAdditiveExpression();
         checkSimple(node, ASTMultiplicativeExpression.class);
         node.collapseThenPrint();
@@ -916,7 +917,7 @@ public class ParserExpressionsTest
     @Test
     public void testAdditiveExpressionOfPlus()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("-1 + 2"));
+        ExpressionsParser parser = new Parser(new Scanner("-1 + 2")).getExpressionsParser();
         ASTAdditiveExpression node = parser.parseAdditiveExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(PLUS), ASTAdditiveExpression.class, ASTMultiplicativeExpression.class);
         node.collapseThenPrint();
@@ -928,7 +929,7 @@ public class ParserExpressionsTest
     @Test
     public void testAdditiveExpressionOfMinus()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("finish - start"));
+        ExpressionsParser parser = new Parser(new Scanner("finish - start")).getExpressionsParser();
         ASTAdditiveExpression node = parser.parseAdditiveExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(MINUS), ASTAdditiveExpression.class, ASTMultiplicativeExpression.class);
         node.collapseThenPrint();
@@ -940,7 +941,7 @@ public class ParserExpressionsTest
     @Test
     public void testAdditiveExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("-2 + 3 * 4 - 5"));
+        ExpressionsParser parser = new Parser(new Scanner("-2 + 3 * 4 - 5")).getExpressionsParser();
         ASTAdditiveExpression node = parser.parseAdditiveExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(MINUS, PLUS), ASTAdditiveExpression.class, ASTMultiplicativeExpression.class);
         node.collapseThenPrint();
@@ -952,7 +953,7 @@ public class ParserExpressionsTest
     @Test
     public void testMultiplicativeExpressionOfUnaryExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("varName"));
+        ExpressionsParser parser = new Parser(new Scanner("varName")).getExpressionsParser();
         ASTMultiplicativeExpression node = parser.parseMultiplicativeExpression();
         checkSimple(node, ASTCastExpression.class);
         node.collapseThenPrint();
@@ -964,7 +965,7 @@ public class ParserExpressionsTest
     @Test
     public void testMultiplicativeExpressionOfTimes()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a * b"));
+        ExpressionsParser parser = new Parser(new Scanner("a * b")).getExpressionsParser();
         ASTMultiplicativeExpression node = parser.parseMultiplicativeExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(STAR), ASTMultiplicativeExpression.class, ASTCastExpression.class);
         node.collapseThenPrint();
@@ -976,7 +977,7 @@ public class ParserExpressionsTest
     @Test
     public void testMultiplicativeExpressionOfDivide()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("i / -1"));
+        ExpressionsParser parser = new Parser(new Scanner("i / -1")).getExpressionsParser();
         ASTMultiplicativeExpression node = parser.parseMultiplicativeExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(SLASH), ASTMultiplicativeExpression.class, ASTCastExpression.class);
         node.collapseThenPrint();
@@ -988,7 +989,7 @@ public class ParserExpressionsTest
     @Test
     public void testMultiplicativeExpressionOfModulus()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("index % len"));
+        ExpressionsParser parser = new Parser(new Scanner("index % len")).getExpressionsParser();
         ASTMultiplicativeExpression node = parser.parseMultiplicativeExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(PERCENT), ASTMultiplicativeExpression.class, ASTCastExpression.class);
         node.collapseThenPrint();
@@ -1000,7 +1001,7 @@ public class ParserExpressionsTest
     @Test
     public void testMultiplicativeExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("5 * 6 / 3 % 7"));
+        ExpressionsParser parser = new Parser(new Scanner("5 * 6 / 3 % 7")).getExpressionsParser();
         ASTMultiplicativeExpression node = parser.parseMultiplicativeExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(PERCENT, SLASH, STAR), ASTMultiplicativeExpression.class, ASTCastExpression.class);
         node.collapseThenPrint();
@@ -1012,7 +1013,7 @@ public class ParserExpressionsTest
     @Test
     public void testMultiplicativeExpressionOfParenthesizedExpressions()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("(x + 1)*(x - 1)"));
+        ExpressionsParser parser = new Parser(new Scanner("(x + 1)*(x - 1)")).getExpressionsParser();
         ASTMultiplicativeExpression node = parser.parseMultiplicativeExpression();
         checkBinaryLeftAssociative(node, Arrays.asList(STAR), ASTMultiplicativeExpression.class, ASTCastExpression.class);
         node.collapseThenPrint();
@@ -1024,7 +1025,7 @@ public class ParserExpressionsTest
     @Test
     public void testCastExpressionOfUnaryExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("varName"));
+        ExpressionsParser parser = new Parser(new Scanner("varName")).getExpressionsParser();
         ASTCastExpression node = parser.parseCastExpression();
         checkSimple(node, ASTUnaryExpression.class);
         node.collapseThenPrint();
@@ -1037,7 +1038,7 @@ public class ParserExpressionsTest
     @Test
     public void testCastExpressionOfIntersectionType()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("d as Double"));
+        ExpressionsParser parser = new Parser(new Scanner("d as Double")).getExpressionsParser();
         ASTCastExpression node = parser.parseCastExpression();
         checkBinary(node, AS, ASTUnaryExpression.class, ASTIntersectionType.class);
         node.collapseThenPrint();
@@ -1049,7 +1050,7 @@ public class ParserExpressionsTest
     @Test
     public void testCastExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("\"2\" as Object as String & Serializable"));
+        ExpressionsParser parser = new Parser(new Scanner("\"2\" as Object as String & Serializable")).getExpressionsParser();
         ASTCastExpression node = parser.parseCastExpression();
         checkBinary(node, AS, ASTCastExpression.class, ASTIntersectionType.class);
         ASTCastExpression childNode = (ASTCastExpression) node.getChildren().get(0);
@@ -1063,7 +1064,7 @@ public class ParserExpressionsTest
     @Test
     public void testUnaryExpressionOfPrimary()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("varName"));
+        ExpressionsParser parser = new Parser(new Scanner("varName")).getExpressionsParser();
         ASTUnaryExpression node = parser.parseUnaryExpression();
         checkSimple(node, ASTPrimary.class);
         node.collapseThenPrint();
@@ -1075,7 +1076,7 @@ public class ParserExpressionsTest
     @Test
     public void testUnaryExpressionOfMinusUnary()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("-1"));
+        ExpressionsParser parser = new Parser(new Scanner("-1")).getExpressionsParser();
         ASTUnaryExpression node = parser.parseUnaryExpression();
         checkUnary(node, MINUS, ASTUnaryExpression.class, ASTPrimary.class);
         node.collapseThenPrint();
@@ -1087,7 +1088,7 @@ public class ParserExpressionsTest
     @Test
     public void testUnaryExpressionOfComplementUnary()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("~bits"));
+        ExpressionsParser parser = new Parser(new Scanner("~bits")).getExpressionsParser();
         ASTUnaryExpression node = parser.parseUnaryExpression();
         checkUnary(node, BITWISE_COMPLEMENT, ASTUnaryExpression.class, ASTPrimary.class);
         node.collapseThenPrint();
@@ -1099,7 +1100,7 @@ public class ParserExpressionsTest
     @Test
     public void testUnaryExpressionOfLogicalComplementUnary()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("!false"));
+        ExpressionsParser parser = new Parser(new Scanner("!false")).getExpressionsParser();
         ASTUnaryExpression node = parser.parseUnaryExpression();
         checkUnary(node, LOGICAL_COMPLEMENT, ASTUnaryExpression.class, ASTPrimary.class);
         node.collapseThenPrint();
@@ -1111,7 +1112,7 @@ public class ParserExpressionsTest
     @Test
     public void testUnaryExpressionNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("~ - ~ - bits"));
+        ExpressionsParser parser = new Parser(new Scanner("~ - ~ - bits")).getExpressionsParser();
         ASTUnaryExpression node = parser.parseUnaryExpression();
         checkSimple(node, ASTUnaryExpression.class, BITWISE_COMPLEMENT);
 
@@ -1132,7 +1133,7 @@ public class ParserExpressionsTest
     @Test
     public void testArgumentListOfExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("i++"));
+        ExpressionsParser parser = new Parser(new Scanner("i++")).getExpressionsParser();
         ASTArgumentList node = parser.parseArgumentList();
         checkSimple(node, ASTExpression.class, COMMA);
         node.collapseThenPrint();
@@ -1144,7 +1145,7 @@ public class ParserExpressionsTest
     @Test
     public void testArgumentListNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a, 1, b + c"));
+        ExpressionsParser parser = new Parser(new Scanner("a, 1, b + c")).getExpressionsParser();
         ASTArgumentList node = parser.parseArgumentList();
         checkList(node, COMMA, ASTExpression.class, 3);
         node.collapseThenPrint();
@@ -1156,7 +1157,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfExpressionName()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a.b"));
+        ExpressionsParser parser = new Parser(new Scanner("a.b")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTExpressionName.class);
         node.collapseThenPrint();
@@ -1168,7 +1169,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfLiteral()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("3.14"));
+        ExpressionsParser parser = new Parser(new Scanner("3.14")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTLiteral.class);
         node.collapseThenPrint();
@@ -1180,7 +1181,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfClassLiteralOfDataType()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("spruce.lang.Comparable<String>[][].class"));
+        ExpressionsParser parser = new Parser(new Scanner("spruce.lang.Comparable<String>[][].class")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTClassLiteral.class);
         ASTClassLiteral classLiteral = (ASTClassLiteral) node.getChildren().get(0);
@@ -1194,7 +1195,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfThis()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("this"));
+        ExpressionsParser parser = new Parser(new Scanner("this")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTThis.class);
         node.collapseThenPrint();
@@ -1206,7 +1207,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfParenthesizedExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("(a + b)"));
+        ExpressionsParser parser = new Parser(new Scanner("(a + b)")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTExpressionNoIncrDecr.class, OPEN_PARENTHESIS);
         node.collapseThenPrint();
@@ -1218,7 +1219,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfElementAccess()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a[1][2][3]"));
+        ExpressionsParser parser = new Parser(new Scanner("a[1][2][3]")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTElementAccess.class);
 
@@ -1240,7 +1241,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfFieldAccessOfSuper()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("super.superclassField"));
+        ExpressionsParser parser = new Parser(new Scanner("super.superclassField")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTFieldAccess.class);
         ASTFieldAccess fa = (ASTFieldAccess) node.getChildren().get(0);
@@ -1254,7 +1255,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfFieldAccessOfTypeNameSuper()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("EnclosingClass.super.superclassField"));
+        ExpressionsParser parser = new Parser(new Scanner("EnclosingClass.super.superclassField")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTFieldAccess.class);
         ASTFieldAccess fa = (ASTFieldAccess) node.getChildren().get(0);
@@ -1268,7 +1269,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfFieldAccessOfPrimary()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("method().field"));
+        ExpressionsParser parser = new Parser(new Scanner("method().field")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTFieldAccess.class);
         ASTFieldAccess fa = (ASTFieldAccess) node.getChildren().get(0);
@@ -1282,7 +1283,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodInvocationOfExpressionName()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("expr.name.methodName()"));
+        ExpressionsParser parser = new Parser(new Scanner("expr.name.methodName()")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodInvocation.class);
         ASTMethodInvocation mi = (ASTMethodInvocation) node.getChildren().get(0);
@@ -1296,7 +1297,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodInvocationOfExpressionNameTypeArguments()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("expr.name.<T>methodName(one)"));
+        ExpressionsParser parser = new Parser(new Scanner("expr.name.<T>methodName(one)")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodInvocation.class);
         ASTMethodInvocation mi = (ASTMethodInvocation) node.getChildren().get(0);
@@ -1312,7 +1313,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodInvocationOfSimpleName()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("methodName(helperMethod(i), (a + b), ++j)"));
+        ExpressionsParser parser = new Parser(new Scanner("methodName(helperMethod(i), (a + b), ++j)")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodInvocation.class);
         ASTMethodInvocation mi = (ASTMethodInvocation) node.getChildren().get(0);
@@ -1326,7 +1327,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodInvocationOfSuper()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("super.<T>inheritedMethod(\"super\")"));
+        ExpressionsParser parser = new Parser(new Scanner("super.<T>inheritedMethod(\"super\")")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodInvocation.class);
         ASTMethodInvocation mi = (ASTMethodInvocation) node.getChildren().get(0);
@@ -1342,7 +1343,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodInvocationOfTypeNameSuper()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("org.test.EnclosingClass.super.<T>inheritedMethod(\"super\")"));
+        ExpressionsParser parser = new Parser(new Scanner("org.test.EnclosingClass.super.<T>inheritedMethod(\"super\")")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodInvocation.class);
         ASTMethodInvocation mi = (ASTMethodInvocation) node.getChildren().get(0);
@@ -1358,7 +1359,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfArrayCreationExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new spruce.lang.String[23]"));
+        ExpressionsParser parser = new Parser(new Scanner("new spruce.lang.String[23]")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTArrayCreationExpression.class);
         node.collapseThenPrint();
@@ -1370,7 +1371,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfClassInstanceCreationExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new Team(25, \"Dodgers\")"));
+        ExpressionsParser parser = new Parser(new Scanner("new Team(25, \"Dodgers\")")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTClassInstanceCreationExpression.class);
         node.collapseThenPrint();
@@ -1382,7 +1383,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfClassInstanceCreationExpressionQualified()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("league.new Team(25, \"Dodgers\")"));
+        ExpressionsParser parser = new Parser(new Scanner("league.new Team(25, \"Dodgers\")")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTClassInstanceCreationExpression.class);
         node.collapseThenPrint();
@@ -1394,7 +1395,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfTypeNameDotThis()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("qualified.type.this"));
+        ExpressionsParser parser = new Parser(new Scanner("qualified.type.this")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkBinary(node, DOT, ASTTypeName.class, ASTThis.class);
         node.collapseThenPrint();
@@ -1406,7 +1407,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodReferenceSuper()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("super::<String>methodName"));
+        ExpressionsParser parser = new Parser(new Scanner("super::<String>methodName")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodReference.class);
         ASTMethodReference mRef = (ASTMethodReference) node.getChildren().get(0);
@@ -1420,7 +1421,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfConstructorReference()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("spruce.lang.String::new"));
+        ExpressionsParser parser = new Parser(new Scanner("spruce.lang.String::new")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodReference.class);
         ASTMethodReference mRef = (ASTMethodReference) node.getChildren().get(0);
@@ -1434,7 +1435,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodReferenceOfExpressionName()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("spruce.lang.String::size"));
+        ExpressionsParser parser = new Parser(new Scanner("spruce.lang.String::size")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodReference.class);
         ASTMethodReference mRef = (ASTMethodReference) node.getChildren().get(0);
@@ -1448,7 +1449,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodReferenceOfDataType()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("Comparator<String>::compare;"));
+        ExpressionsParser parser = new Parser(new Scanner("Comparator<String>::compare;")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodReference.class);
         ASTMethodReference mRef = (ASTMethodReference) node.getChildren().get(0);
@@ -1462,7 +1463,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodReferenceOfPrimary()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("(\"a\" + \"b\")::length;"));
+        ExpressionsParser parser = new Parser(new Scanner("(\"a\" + \"b\")::length;")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodReference.class);
         ASTMethodReference mRef = (ASTMethodReference) node.getChildren().get(0);
@@ -1476,7 +1477,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfMethodReferenceOfTypeNameSuper()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("type.Name.super::length;"));
+        ExpressionsParser parser = new Parser(new Scanner("type.Name.super::length;")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTMethodReference.class);
         ASTMethodReference mRef = (ASTMethodReference) node.getChildren().get(0);
@@ -1491,7 +1492,7 @@ public class ParserExpressionsTest
     @Test
     public void testPrimaryOfNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new Foo()[i].field1.method1()[j].field2.<T>method2(1).new Bar()"));
+        ExpressionsParser parser = new Parser(new Scanner("new Foo()[i].field1.method1()[j].field2.<T>method2(1).new Bar()")).getExpressionsParser();
         ASTPrimary node = parser.parsePrimary();
         checkSimple(node, ASTClassInstanceCreationExpression.class);
         ASTClassInstanceCreationExpression outerCice = (ASTClassInstanceCreationExpression) node.getChildren().get(0);
@@ -1546,7 +1547,7 @@ public class ParserExpressionsTest
     @Test
     public void testUnqualifiedClassInstanceCreationExpressionOfTypeArguments()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new <String> MyClass()"));
+        ExpressionsParser parser = new Parser(new Scanner("new <String> MyClass()")).getExpressionsParser();
         ASTUnqualifiedClassInstanceCreationExpression node = parser.parseUnqualifiedClassInstanceCreationExpression();
         checkBinary(node, NEW, ASTTypeArguments.class, ASTTypeToInstantiate.class);
         node.collapseThenPrint();
@@ -1558,7 +1559,7 @@ public class ParserExpressionsTest
     @Test
     public void testClassInstanceCreationExpressionOfUCICE()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new MyClass(1, \"one\")"));
+        ExpressionsParser parser = new Parser(new Scanner("new MyClass(1, \"one\")")).getExpressionsParser();
         ASTClassInstanceCreationExpression node = parser.parseClassInstanceCreationExpression();
         checkSimple(node, ASTUnqualifiedClassInstanceCreationExpression.class);
         node.collapseThenPrint();
@@ -1570,7 +1571,7 @@ public class ParserExpressionsTest
     @Test
     public void testUnqualifiedClassInstanceCreationExpressionOfArgumentList()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new MyClass(1, \"one\")"));
+        ExpressionsParser parser = new Parser(new Scanner("new MyClass(1, \"one\")")).getExpressionsParser();
         ASTUnqualifiedClassInstanceCreationExpression node = parser.parseUnqualifiedClassInstanceCreationExpression();
         checkBinary(node, NEW, ASTTypeToInstantiate.class, ASTArgumentList.class);
         node.collapseThenPrint();
@@ -1582,7 +1583,7 @@ public class ParserExpressionsTest
     @Test
     public void testTypeToInstantiateOfTypeName()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("MyClass"));
+        ExpressionsParser parser = new Parser(new Scanner("MyClass")).getExpressionsParser();
         ASTTypeToInstantiate node = parser.parseTypeToInstantiate();
         checkSimple(node, ASTTypeName.class);
         node.collapseThenPrint();
@@ -1594,33 +1595,9 @@ public class ParserExpressionsTest
     @Test
     public void testTypeToInstantiateTypeNameOfTypeArgumentsOrDiamond()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("MyClass<T>"));
+        ExpressionsParser parser = new Parser(new Scanner("MyClass<T>")).getExpressionsParser();
         ASTTypeToInstantiate node = parser.parseTypeToInstantiate();
         checkBinary(node, ASTTypeName.class, ASTTypeArgumentsOrDiamond.class);
-        node.collapseThenPrint();
-    }
-
-    /**
-     * Tests type arguments or diamond of type arguments.
-     */
-    @Test
-    public void testTypeArgumentsOrDiamondOfTypeArguments()
-    {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("<T, U>"));
-        ASTTypeArgumentsOrDiamond node = parser.parseTypeArgumentsOrDiamond();
-        checkSimple(node, ASTTypeArguments.class);
-        node.collapseThenPrint();
-    }
-
-    /**
-     * Tests type arguments or diamond of diamond.
-     */
-    @Test
-    public void testTypeArgumentsOrDiamondOfDiamond()
-    {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("<>"));
-        ASTTypeArgumentsOrDiamond node = parser.parseTypeArgumentsOrDiamond();
-        checkEmpty(node, LESS_THAN);
         node.collapseThenPrint();
     }
 
@@ -1630,7 +1607,7 @@ public class ParserExpressionsTest
     @Test
     public void testArrayCreationExpressionOfDimExprs()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new String[10]"));
+        ExpressionsParser parser = new Parser(new Scanner("new String[10]")).getExpressionsParser();
         ASTArrayCreationExpression node = parser.parseArrayCreationExpression();
         checkBinary(node, NEW, ASTTypeToInstantiate.class, ASTDimExprs.class);
         node.collapseThenPrint();
@@ -1642,7 +1619,7 @@ public class ParserExpressionsTest
     @Test
     public void testArrayCreationExpressionOfDimExprsDims()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new String[10][]"));
+        ExpressionsParser parser = new Parser(new Scanner("new String[10][]")).getExpressionsParser();
         ASTArrayCreationExpression node = parser.parseArrayCreationExpression();
         checkTrinary(node, NEW, ASTTypeToInstantiate.class, ASTDimExprs.class, ASTDims.class);
         node.collapseThenPrint();
@@ -1654,7 +1631,7 @@ public class ParserExpressionsTest
     @Test
     public void testArrayCreationExpressionOfDimsArrayInitializer()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("new String[] {\"one\", \"two\", \"three\"}"));
+        ExpressionsParser parser = new Parser(new Scanner("new String[] {\"one\", \"two\", \"three\"}")).getExpressionsParser();
         ASTArrayCreationExpression node = parser.parseArrayCreationExpression();
         checkTrinary(node, NEW, ASTTypeToInstantiate.class, ASTDims.class, ASTArrayInitializer.class);
         node.collapseThenPrint();
@@ -1666,7 +1643,7 @@ public class ParserExpressionsTest
     @Test
     public void testDimExprsDimExpr()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("[1][2][3]"));
+        ExpressionsParser parser = new Parser(new Scanner("[1][2][3]")).getExpressionsParser();
         ASTDimExprs node = parser.parseDimExprs();
         checkList(node, null, ASTDimExpr.class, 3);
         node.collapseThenPrint();
@@ -1678,7 +1655,7 @@ public class ParserExpressionsTest
     @Test
     public void testDimExprOfExpression()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("[x++]"));
+        ExpressionsParser parser = new Parser(new Scanner("[x++]")).getExpressionsParser();
         ASTDimExpr node = parser.parseDimExpr();
         checkSimple(node, ASTExpression.class, OPEN_BRACKET);
         node.collapseThenPrint();
@@ -1690,7 +1667,7 @@ public class ParserExpressionsTest
     @Test
     public void testArrayInitializerEmpty()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("{}"));
+        ExpressionsParser parser = new Parser(new Scanner("{}")).getExpressionsParser();
         ASTArrayInitializer node = parser.parseArrayInitializer();
         checkEmpty(node, OPEN_BRACE);
         node.collapseThenPrint();
@@ -1702,7 +1679,7 @@ public class ParserExpressionsTest
     @Test
     public void testArrayInitializerOfVariableInitializerList()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("{x + 1, y - 2}"));
+        ExpressionsParser parser = new Parser(new Scanner("{x + 1, y - 2}")).getExpressionsParser();
         ASTArrayInitializer node = parser.parseArrayInitializer();
         checkSimple(node, ASTVariableInitializerList.class, OPEN_BRACE);
         node.collapseThenPrint();
@@ -1714,7 +1691,7 @@ public class ParserExpressionsTest
     @Test
     public void testVariableInitializerListOfVariableInitializer()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("i + 1"));
+        ExpressionsParser parser = new Parser(new Scanner("i + 1")).getExpressionsParser();
         ASTVariableInitializerList node = parser.parseVariableInitializerList();
         checkSimple(node, ASTVariableInitializer.class, COMMA);
         node.collapseThenPrint();
@@ -1726,7 +1703,7 @@ public class ParserExpressionsTest
     @Test
     public void testVariableInitializerListOfComma()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("x + 1, y - 1"));
+        ExpressionsParser parser = new Parser(new Scanner("x + 1, y - 1")).getExpressionsParser();
         ASTVariableInitializerList node = parser.parseVariableInitializerList();
         checkList(node, COMMA, ASTVariableInitializer.class, 2);
         node.collapseThenPrint();
@@ -1738,7 +1715,7 @@ public class ParserExpressionsTest
     @Test
     public void testVariableInitializerListNested()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("this, count + 1, sumSoFar + value"));
+        ExpressionsParser parser = new Parser(new Scanner("this, count + 1, sumSoFar + value")).getExpressionsParser();
         ASTVariableInitializerList node = parser.parseVariableInitializerList();
         checkList(node, COMMA, ASTVariableInitializer.class, 3);
         node.collapseThenPrint();
@@ -1750,7 +1727,7 @@ public class ParserExpressionsTest
     @Test
     public void testVariableInitializerOfExpressionNoIncrDecr()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("a + b"));
+        ExpressionsParser parser = new Parser(new Scanner("a + b")).getExpressionsParser();
         ASTVariableInitializer node = parser.parseVariableInitializer();
         checkSimple(node, ASTExpressionNoIncrDecr.class);
         node.collapseThenPrint();
@@ -1762,7 +1739,7 @@ public class ParserExpressionsTest
     @Test
     public void testVariableInitializerOfArrayInitializer()
     {
-        ExpressionsParser parser = new ExpressionsParser(new Scanner("{1, 2, 3}"));
+        ExpressionsParser parser = new Parser(new Scanner("{1, 2, 3}")).getExpressionsParser();
         ASTVariableInitializer node = parser.parseVariableInitializer();
         checkSimple(node, ASTArrayInitializer.class);
         node.collapseThenPrint();

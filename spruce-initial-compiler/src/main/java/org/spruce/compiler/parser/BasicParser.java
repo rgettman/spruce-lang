@@ -16,24 +16,84 @@ import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 import org.spruce.compiler.scanner.TokenType;
 
+import static org.spruce.compiler.scanner.TokenType.*;
+
 /**
  * A <code>BasicParser</code> provides basic parser functionality -- access to
  * a <code>Scanner</code>, token test/advance methods, and general methods for
- * lists, multiples, and binary/left-associative.
+ * lists, multiples, and binary/left-associative.  Subclasses represent parsers
+ * of various categories of productions and can obtain references to each other
+ * for parsing productions outside of their category, using the Parser class.
  */
 public class BasicParser
 {
     private Scanner myScanner;
+    private Parser myParser;
 
     /**
      * Constructs a <code>BasicParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
+     * @param parser The <code>Parser</code> that is creating this object.
      */
-    public BasicParser(Scanner scanner)
+    public BasicParser(Scanner scanner, Parser parser)
     {
         myScanner = scanner;
-        advance();
+        myParser = parser;
+    }
+
+    /**
+     * Returns the <code>LiteralsParser</code>.
+     * @return The <code>LiteralsParser</code>.
+     */
+    public LiteralsParser getLiteralsParser()
+    {
+        return myParser.getLiteralsParser();
+    }
+
+    /**
+     * Returns the <code>NamesParser</code>.
+     * @return The <code>NamesParser</code>.
+     */
+    public NamesParser getNamesParser()
+    {
+        return myParser.getNamesParser();
+    }
+
+    /**
+     * Returns the <code>TypesParser</code>.
+     * @return The <code>TypesParser</code>.
+     */
+    public TypesParser getTypesParser()
+    {
+        return myParser.getTypesParser();
+    }
+
+    /**
+     * Returns the <code>ExpressionsParser</code>.
+     * @return The <code>ExpressionsParser</code>.
+     */
+    public ExpressionsParser getExpressionsParser()
+    {
+        return myParser.getExpressionsParser();
+    }
+
+    /**
+     * Returns the <code>StatementsParser</code>.
+     * @return The <code>StatementsParser</code>.
+     */
+    public StatementsParser getStatementsParser()
+    {
+        return myParser.getStatementsParser();
+    }
+
+    /**
+     * Returns the <code>ClassesParser</code>.
+     * @return The <code>ClassesParser</code>.
+     */
+    public ClassesParser getClassesParser()
+    {
+        return myParser.getClassesParser();
     }
 
     /**
@@ -48,7 +108,7 @@ public class BasicParser
     {
         if (isCurr(tokenType))
         {
-            Token t = myScanner.getCurrToken();
+            Token t = curr();
             advance();
             return t;
         }
@@ -158,7 +218,7 @@ public class BasicParser
      */
     protected TokenType isAcceptedOperator(List<TokenType> acceptedTokens)
     {
-        TokenType type = myScanner.getCurrToken().getType();
+        TokenType type = curr().getType();
         if (acceptedTokens.indexOf(type) >= 0)
         {
             return type;
@@ -202,7 +262,7 @@ public class BasicParser
     {
         if (isOnInitialToken.test(curr()))
         {
-            Location loc = myScanner.getCurrToken().getLocation();
+            Location loc = curr().getLocation();
             List<ASTNode> children = new ArrayList<>(2);
             children.add(childParser.get());
             T node = nodeSupplier.apply(loc, children);
@@ -248,7 +308,7 @@ public class BasicParser
     {
         if (isOnInitialToken.test(curr()))
         {
-            Location loc = myScanner.getCurrToken().getLocation();
+            Location loc = curr().getLocation();
             List<ASTNode> children = new ArrayList<>();
             children.add(childParser.get());
             T node = nodeSupplier.apply(loc, children);
@@ -292,7 +352,7 @@ public class BasicParser
         {
             throw new CompileException(initialErrorMessage);
         }
-        Location loc = myScanner.getCurrToken().getLocation();
+        Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>();
         children.add(childParser.get());
         T node = nodeSupplier.apply(loc, children);
@@ -326,5 +386,76 @@ public class BasicParser
         T node = nodeSupplier.apply(loc, Collections.emptyList());
         node.setOperation(operation);
         return node;
+    }
+
+    /**
+     * Determines whether the given token is a literal.
+     *
+     * @param t A <code>Token</code>.
+     * @return Whether the give token is a literal.
+     */
+    protected static boolean isLiteral(Token t)
+    {
+        switch (t.getType())
+        {
+        case TRUE:
+        case FALSE:
+        case NULL:
+        case INT_LITERAL:
+        case FLOATING_POINT_LITERAL:
+        case STRING_LITERAL:
+        case CHARACTER_LITERAL:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    /**
+     * Determines whether the given token can start an expression.
+     *
+     * @param t A <code>Token</code>.
+     * @return Whether the given token can start an expression.
+     */
+    protected static boolean isExpression(Token t)
+    {
+        return (test(t, INCREMENT, DECREMENT) || isPrimary(t));
+    }
+
+    /**
+     * <p>Determines whether the given token can start a Primary.</p>
+     * <ul>
+     * <li>-</li>
+     * <li>~</li>
+     * <li>!</li>
+     * <li>identifier</li>
+     * <li><code>this</code></li>
+     * <li><code>super</code></li>
+     * <li>(</li>
+     * </ul>
+     *
+     * @param t A <code>Token</code>.
+     * @return Whether the given token can start a Primary.
+     */
+    protected static boolean isPrimary(Token t)
+    {
+        if (isLiteral(t))
+        {
+            return true;
+        }
+        switch (t.getType())
+        {
+        case MINUS:
+        case BITWISE_COMPLEMENT:
+        case LOGICAL_COMPLEMENT:
+        case IDENTIFIER:
+        case THIS:
+        case OPEN_PARENTHESIS:
+        case NEW:
+        case SUPER:
+            return true;
+        default:
+            return false;
+        }
     }
 }

@@ -3,6 +3,8 @@ package org.spruce.compiler.exception;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.parser.ClassesParser;
+import org.spruce.compiler.parser.ExpressionsParser;
 
 /**
  * A <code>CompileException</code> is thrown when an unrecoverable error occurs
@@ -65,14 +67,14 @@ public class CompileException extends RuntimeException
      * Only exists due to a parsing difficulty regarding a qualified
      * constructor invocation: ExpressionName|Primary . TypeArguments super ( [ArgumentList] ).
      * Normally parsing a primary would throw a CompileException on "super", an
-     * invalid method name.  In this case the Parser must back up and produce
+     * invalid method name.  In this case the ClassesParser must back up and produce
      * and ExpressionName/Primary so the production for a constructor invocation can
      * proceed.  However, at this point, TypeArguments have already been
      * parsed.  Store them here so parseConstructorInvocation can use them.
      * @return A List of already parsed ASTNodes.
-     * @see org.spruce.compiler.parser.Parser#parseMethodInvocation(org.spruce.compiler.ast.ASTExpressionName).
-     * @see org.spruce.compiler.parser.Parser#parseMethodInvocation(org.spruce.compiler.ast.ASTPrimary)
-     * @see org.spruce.compiler.parser.Parser#parseConstructorInvocation
+     * @see ExpressionsParser#parseMethodInvocation(org.spruce.compiler.ast.names.ASTExpressionName).
+     * @see ExpressionsParser#parseMethodInvocation(org.spruce.compiler.ast.expressions.ASTPrimary)
+     * @see ClassesParser#parseConstructorInvocation
      */
     public List<ASTNode> getAlreadyParsed()
     {

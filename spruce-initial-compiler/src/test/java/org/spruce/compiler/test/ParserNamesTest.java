@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.spruce.compiler.ast.names.*;
 import org.spruce.compiler.parser.NamesParser;
+import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
@@ -22,7 +23,7 @@ public class ParserNamesTest
     @Test
     public void testTypeNameOfIdentifier()
     {
-        NamesParser parser = new NamesParser(new Scanner("simple"));
+        NamesParser parser = new Parser(new Scanner("simple")).getNamesParser();
         ASTTypeName node = parser.parseTypeName();
         checkSimple(node, ASTIdentifier.class);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
@@ -36,7 +37,7 @@ public class ParserNamesTest
     @Test
     public void testTypeNameOfTwoIdentifiers()
     {
-        NamesParser parser = new NamesParser(new Scanner("one.two"));
+        NamesParser parser = new Parser(new Scanner("one.two")).getNamesParser();
         ASTTypeName node = parser.parseTypeName();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
                 ASTPackageOrTypeName.class, ASTIdentifier.class);
@@ -49,7 +50,7 @@ public class ParserNamesTest
     @Test
     public void testTypeNameOfThreeIdentifiers()
     {
-        NamesParser parser = new NamesParser(new Scanner("one.two.three"));
+        NamesParser parser = new Parser(new Scanner("one.two.three")).getNamesParser();
         ASTTypeName node = parser.parseTypeName();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
                 ASTPackageOrTypeName.class, ASTIdentifier.class);
@@ -62,7 +63,7 @@ public class ParserNamesTest
     @Test
     public void testPackageOrTypeNameOfIdentifier()
     {
-        NamesParser parser = new NamesParser(new Scanner("simple"));
+        NamesParser parser = new Parser(new Scanner("simple")).getNamesParser();
         ASTPackageOrTypeName node = parser.parsePackageOrTypeName();
         checkSimple(node, ASTIdentifier.class);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
@@ -76,7 +77,7 @@ public class ParserNamesTest
     @Test
     public void testPackageOrTypeNameOfTwoIdentifiers()
     {
-        NamesParser parser = new NamesParser(new Scanner("one.two"));
+        NamesParser parser = new Parser(new Scanner("one.two")).getNamesParser();
         ASTPackageOrTypeName node = parser.parsePackageOrTypeName();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
                 ASTPackageOrTypeName.class, ASTIdentifier.class);
@@ -89,7 +90,7 @@ public class ParserNamesTest
     @Test
     public void testPackageOrTypeNameOfThreeIdentifiers()
     {
-        NamesParser parser = new NamesParser(new Scanner("one.two.three"));
+        NamesParser parser = new Parser(new Scanner("one.two.three")).getNamesParser();
         ASTPackageOrTypeName node = parser.parsePackageOrTypeName();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
                 ASTPackageOrTypeName.class, ASTIdentifier.class);
@@ -102,7 +103,7 @@ public class ParserNamesTest
     @Test
     public void testExpressionNameOfIdentifier()
     {
-        NamesParser parser = new NamesParser(new Scanner("simple"));
+        NamesParser parser = new Parser(new Scanner("simple")).getNamesParser();
         ASTExpressionName node = parser.parseExpressionName();
         checkSimple(node, ASTIdentifier.class);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
@@ -116,7 +117,7 @@ public class ParserNamesTest
     @Test
     public void testExpressionNameOfTwoIdentifiers()
     {
-        NamesParser parser = new NamesParser(new Scanner("one.two"));
+        NamesParser parser = new Parser(new Scanner("one.two")).getNamesParser();
         ASTExpressionName node = parser.parseExpressionName();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
                 ASTAmbiguousName.class, ASTIdentifier.class);
@@ -129,7 +130,7 @@ public class ParserNamesTest
     @Test
     public void testExpressionNameOfThreeIdentifiers()
     {
-        NamesParser parser = new NamesParser(new Scanner("one.two.three"));
+        NamesParser parser = new Parser(new Scanner("one.two.three")).getNamesParser();
         ASTExpressionName node = parser.parseExpressionName();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
                 ASTAmbiguousName.class, ASTIdentifier.class);
@@ -142,7 +143,7 @@ public class ParserNamesTest
     @Test
     public void testAmbiguousNameOfIdentifier()
     {
-        NamesParser parser = new NamesParser(new Scanner("simple"));
+        NamesParser parser = new Parser(new Scanner("simple")).getNamesParser();
         ASTAmbiguousName node = parser.parseAmbiguousName();
         checkSimple(node, ASTIdentifier.class);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
@@ -156,7 +157,7 @@ public class ParserNamesTest
     @Test
     public void testAmbiguousNameOfTwoIdentifiers()
     {
-        NamesParser parser = new NamesParser(new Scanner("one.two"));
+        NamesParser parser = new Parser(new Scanner("one.two")).getNamesParser();
         ASTAmbiguousName node = parser.parseAmbiguousName();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
                 ASTAmbiguousName.class, ASTIdentifier.class);
@@ -169,7 +170,7 @@ public class ParserNamesTest
     @Test
     public void testAmbiguousNameOfThreeIdentifiers()
     {
-        NamesParser parser = new NamesParser(new Scanner("one.two.three"));
+        NamesParser parser = new Parser(new Scanner("one.two.three")).getNamesParser();
         ASTAmbiguousName node = parser.parseAmbiguousName();
         checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
                 ASTAmbiguousName.class, ASTIdentifier.class);

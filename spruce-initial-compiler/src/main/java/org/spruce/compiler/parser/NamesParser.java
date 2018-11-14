@@ -14,19 +14,19 @@ import org.spruce.compiler.scanner.Token;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
- * A <code>NamesParser</code> is a <code>LiteralsParser</code> that also parses
- * names.
+ * A <code>NamesParser</code> is a <code>BasicParser</code> that parses names.
  */
-public class NamesParser extends LiteralsParser
+public class NamesParser extends BasicParser
 {
     /**
      * Constructs a <code>NamesParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
+     * @param parser The <code>Parser</code> that is creating this object.
      */
-    public NamesParser(Scanner scanner)
+    public NamesParser(Scanner scanner, Parser parser)
     {
-        super(scanner);
+        super(scanner, parser);
     }
 
     /**

@@ -16,19 +16,19 @@ import org.spruce.compiler.scanner.TokenType;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
- * A <code>TypesParser</code> is a <code>NamesParser</code> that also parses
- * types.
+ * A <code>TypesParser</code> is a <code>BasicParser</code> that parses types.
  */
-public class TypesParser extends NamesParser
+public class TypesParser extends BasicParser
 {
     /**
      * Constructs a <code>TypesParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
+     * @param parser The <code>Parser</code> that is creating this object.
      */
-    public TypesParser(Scanner scanner)
+    public TypesParser(Scanner scanner, Parser parser)
     {
-        super(scanner);
+        super(scanner, parser);
     }
 
     /**
@@ -97,7 +97,7 @@ public class TypesParser extends NamesParser
     {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (isCurr(SUBTYPE))
         {
             children.add(parseTypeBound());
@@ -242,7 +242,7 @@ public class TypesParser extends NamesParser
     {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         // TypeArguments cases:
         //   exprName < identifier <
         //   exprName < identifier ,

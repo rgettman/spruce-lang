@@ -21,11 +21,22 @@ import org.spruce.compiler.scanner.TokenType;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
- * A <code>ClassesParser</code> is a <code>StatementsParser</code> that also parses
+ * A <code>ClassesParser</code> is a <code>BasicParser</code> that parses
  * classes.
  */
-public class ClassesParser extends StatementsParser
+public class ClassesParser extends BasicParser
 {
+    /**
+     * Constructs a <code>ClassesParser</code> using a <code>Scanner</code>.
+     *
+     * @param scanner A <code>Scanner</code>.
+     * @param parser The <code>Parser</code> that is creating this object.
+     */
+    public ClassesParser(Scanner scanner, Parser parser)
+    {
+        super(scanner, parser);
+    }
+
     /**
      * Parses an <code>ASTAnnotationDeclaration</code>.
      * @return An <code>ASTAnnotationDeclaration</code>.
@@ -46,7 +57,7 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected annotation.");
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         children.add(parseAnnotationBody());
         ASTAnnotationDeclaration node = new ASTAnnotationDeclaration(loc, children);
         node.setOperation(ANNOTATION);
@@ -80,21 +91,11 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected annotation.");
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         children.add(parseAnnotationBody());
         ASTAnnotationDeclaration node = new ASTAnnotationDeclaration(loc, children);
         node.setOperation(ANNOTATION);
         return node;
-    }
-
-    /**
-     * Constructs a <code>ClassesParser</code> using a <code>Scanner</code>.
-     *
-     * @param scanner A <code>Scanner</code>.
-     */
-    public ClassesParser(Scanner scanner)
-    {
-        super(scanner);
     }
 
     /**
@@ -173,10 +174,10 @@ public class ClassesParser extends StatementsParser
         ASTTypeParameters typeParams = null;
         if (isCurr(LESS_THAN))
         {
-            typeParams = parseTypeParameters();
+            typeParams = getTypesParser().parseTypeParameters();
         }
 
-        ASTDataType dt = parseDataType();
+        ASTDataType dt = getTypesParser().parseDataType();
         if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS))
         {
             if (typeParams != null)
@@ -211,8 +212,8 @@ public class ClassesParser extends StatementsParser
     {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(3);
-        children.add(parseDataType());
-        children.add(parseIdentifier());
+        children.add(getTypesParser().parseDataType());
+        children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
         {
             throw new CompileException("Expected '('");
@@ -245,7 +246,7 @@ public class ClassesParser extends StatementsParser
     {
         List<ASTNode> children = new ArrayList<>(3);
         children.add(dt);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
         {
             throw new CompileException("Expected '('");
@@ -297,7 +298,7 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected '@'.");
         }
-        ASTTypeName tn = parseTypeName();
+        ASTTypeName tn = getNamesParser().parseTypeName();
         if (isCurr(OPEN_PARENTHESIS))
         {
             accept(OPEN_PARENTHESIS);
@@ -412,7 +413,7 @@ public class ClassesParser extends StatementsParser
     {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (accept(ASSIGNMENT) == null)
         {
             throw new CompileException("Expected assignment operator ':='.");
@@ -482,7 +483,7 @@ public class ClassesParser extends StatementsParser
         }
         else
         {
-            children.add(parseConditionalExpression());
+            children.add(getExpressionsParser().parseConditionalExpression());
         }
         return new ASTElementValue(loc, children);
     }
@@ -507,10 +508,10 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected interface.");
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeParameters());
+            children.add(getTypesParser().parseTypeParameters());
         }
         if (isCurr(EXTENDS))
         {
@@ -549,10 +550,10 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected interface.");
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeParameters());
+            children.add(getTypesParser().parseTypeParameters());
         }
         if (isCurr(EXTENDS))
         {
@@ -668,7 +669,7 @@ public class ClassesParser extends StatementsParser
         ASTTypeParameters typeParams = null;
         if (isCurr(LESS_THAN))
         {
-            typeParams = parseTypeParameters();
+            typeParams = getTypesParser().parseTypeParameters();
         }
 
         if (isAcceptedOperator(Arrays.asList(CONST, VOID)) != null)
@@ -677,7 +678,7 @@ public class ClassesParser extends StatementsParser
         }
         else
         {
-            ASTDataType dt = parseDataType();
+            ASTDataType dt = getTypesParser().parseDataType();
             if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS))
             {
                 return new ASTInterfacePart(loc, Arrays.asList(parseInterfaceMethodDeclaration(loc, accessMod, genModList, typeParams, dt)));
@@ -815,8 +816,8 @@ public class ClassesParser extends StatementsParser
         {
             children.add(parseConstantModifier());
         }
-        children.add(parseDataType());
-        children.add(parseVariableDeclaratorList());
+        children.add(getTypesParser().parseDataType());
+        children.add(getStatementsParser().parseVariableDeclaratorList());
         if (accept(SEMICOLON) == null)
         {
             throw new CompileException("Expected semicolon.");
@@ -854,7 +855,7 @@ public class ClassesParser extends StatementsParser
             }
         }
         children.add(dt);
-        children.add(parseVariableDeclaratorList());
+        children.add(getStatementsParser().parseVariableDeclaratorList());
         if (accept(SEMICOLON) == null)
         {
             throw new CompileException("Expected semicolon.");
@@ -895,7 +896,7 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected enum.");
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (isCurr(IMPLEMENTS))
         {
             children.add(parseSuperinterfaces());
@@ -933,7 +934,7 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected enum.");
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (isCurr(IMPLEMENTS))
         {
             children.add(parseSuperinterfaces());
@@ -1010,13 +1011,13 @@ public class ClassesParser extends StatementsParser
     {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(3);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (isCurr(OPEN_PARENTHESIS))
         {
             accept(OPEN_PARENTHESIS);
             if (!isCurr(CLOSE_PARENTHESIS))
             {
-                children.add(parseArgumentList());
+                children.add(getExpressionsParser().parseArgumentList());
             }
             if (accept(CLOSE_PARENTHESIS) == null)
             {
@@ -1050,10 +1051,10 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected class.");
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeParameters());
+            children.add(getTypesParser().parseTypeParameters());
         }
         if (isCurr(EXTENDS))
         {
@@ -1096,10 +1097,10 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected class.");
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeParameters());
+            children.add(getTypesParser().parseTypeParameters());
         }
         if (isCurr(EXTENDS))
         {
@@ -1141,7 +1142,7 @@ public class ClassesParser extends StatementsParser
                 t -> test(t, IDENTIFIER),
                 "Expected a data type (no array).",
                 COMMA,
-                this::parseDataTypeNoArray,
+                getTypesParser()::parseDataTypeNoArray,
                 ASTDataTypeNoArrayList::new
         );
     }
@@ -1157,7 +1158,7 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected extends.");
         }
-        ASTSuperclass node = new ASTSuperclass(loc, Arrays.asList(parseDataTypeNoArray()));
+        ASTSuperclass node = new ASTSuperclass(loc, Arrays.asList(getTypesParser().parseDataTypeNoArray()));
         node.setOperation(EXTENDS);
         return node;
     }
@@ -1254,7 +1255,7 @@ public class ClassesParser extends StatementsParser
         ASTTypeParameters typeParams = null;
         if (isCurr(LESS_THAN))
         {
-            typeParams = parseTypeParameters();
+            typeParams = getTypesParser().parseTypeParameters();
         }
 
         if (isAcceptedOperator(Arrays.asList(CONST, VOID)) != null)
@@ -1267,7 +1268,7 @@ public class ClassesParser extends StatementsParser
         }
         else
         {
-            ASTDataType dt = parseDataType();
+            ASTDataType dt = getTypesParser().parseDataType();
             if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS))
             {
                 return new ASTClassPart(loc, Arrays.asList(parseMethodDeclaration(loc, accessMod, genModList, typeParams, dt)));
@@ -1307,7 +1308,7 @@ public class ClassesParser extends StatementsParser
         {
             throw new CompileException("Expected ')'.");
         }
-        return new ASTSharedConstructor(loc, Arrays.asList(parseBlock()));
+        return new ASTSharedConstructor(loc, Arrays.asList(getStatementsParser().parseBlock()));
     }
 
     /**
@@ -1332,7 +1333,7 @@ public class ClassesParser extends StatementsParser
         {
             children.add(parseConstructorInvocation());
         }
-        children.add(parseBlock());
+        children.add(getStatementsParser().parseBlock());
         return new ASTConstructorDeclaration(loc, children);
     }
 
@@ -1374,7 +1375,7 @@ public class ClassesParser extends StatementsParser
         {
             children.add(parseConstructorInvocation());
         }
-        children.add(parseBlock());
+        children.add(getStatementsParser().parseBlock());
         return new ASTConstructorDeclaration(loc, children);
     }
 
@@ -1398,7 +1399,7 @@ public class ClassesParser extends StatementsParser
             // ExpressionName . [TypeArguments] super
             try
             {
-                primary = parsePrimary();
+                primary = getExpressionsParser().parsePrimary();
 
                 // Must be an expression name or a primary.
                 List<ASTNode> pChildren = primary.getChildren();
@@ -1416,7 +1417,7 @@ public class ClassesParser extends StatementsParser
                 }
                 if (isCurr(LESS_THAN))
                 {
-                    children.add(parseTypeArguments());
+                    children.add(getTypesParser().parseTypeArguments());
                 }
             }
             catch (CompileException containsAlreadyParsed)
@@ -1432,7 +1433,7 @@ public class ClassesParser extends StatementsParser
         }
         else if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArguments());
+            children.add(getTypesParser().parseTypeArguments());
         }
 
         ASTConstructorInvocation node = new ASTConstructorInvocation(loc, children);
@@ -1461,7 +1462,7 @@ public class ClassesParser extends StatementsParser
         }
         if (!isCurr(CLOSE_PARENTHESIS))
         {
-            children.add(parseArgumentList());
+            children.add(getExpressionsParser().parseArgumentList());
         }
         if (accept(CLOSE_PARENTHESIS) == null)
         {
@@ -1493,7 +1494,7 @@ public class ClassesParser extends StatementsParser
         List<ASTNode> children = new ArrayList<>(2);
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeParameters());
+            children.add(getTypesParser().parseTypeParameters());
         }
         if (accept(CONSTRUCTOR) == null)
         {
@@ -1571,8 +1572,8 @@ public class ClassesParser extends StatementsParser
         {
             children.add(parseFieldModifierList());
         }
-        children.add(parseDataType());
-        children.add(parseVariableDeclaratorList());
+        children.add(getTypesParser().parseDataType());
+        children.add(getStatementsParser().parseVariableDeclaratorList());
         if (accept(SEMICOLON) == null)
         {
             throw new CompileException("Expected semicolon.");
@@ -1610,7 +1611,7 @@ public class ClassesParser extends StatementsParser
             }
         }
         children.add(dt);
-        children.add(parseVariableDeclaratorList());
+        children.add(getStatementsParser().parseVariableDeclaratorList());
         if (accept(SEMICOLON) == null)
         {
             throw new CompileException("Expected semicolon.");
@@ -1744,7 +1745,7 @@ public class ClassesParser extends StatementsParser
         }
         else if (isCurr(OPEN_BRACE))
         {
-            children.add(parseBlock());
+            children.add(getStatementsParser().parseBlock());
         }
         else
         {
@@ -1815,7 +1816,7 @@ public class ClassesParser extends StatementsParser
         List<ASTNode> children = new ArrayList<>(3);
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeParameters());
+            children.add(getTypesParser().parseTypeParameters());
         }
         children.add(parseResult());
         children.add(parseMethodDeclarator());
@@ -1877,7 +1878,7 @@ public class ClassesParser extends StatementsParser
         {
             children.add(parseConstModifier());
         }
-        children.add(parseDataType());
+        children.add(getTypesParser().parseDataType());
         return new ASTResult(loc, children);
     }
 
@@ -1899,7 +1900,7 @@ public class ClassesParser extends StatementsParser
     {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(3);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
         {
             throw new CompileException("Expected '('.");
@@ -1976,16 +1977,15 @@ public class ClassesParser extends StatementsParser
         ASTFormalParameter node = new ASTFormalParameter(loc, children);
         if (isAcceptedOperator(Arrays.asList(CONST, FINAL, CONSTANT)) != null)
         {
-            children.add(parseVariableModifierList());
+            children.add(getStatementsParser().parseVariableModifierList());
         }
-        children.add(parseDataType());
+        children.add(getTypesParser().parseDataType());
         if (isCurr(ELLIPSIS))
         {
             accept(ELLIPSIS);
             node.setOperation(ELLIPSIS);
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         return node;
     }
-
 }

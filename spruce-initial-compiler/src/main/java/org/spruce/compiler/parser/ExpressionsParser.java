@@ -23,19 +23,20 @@ import org.spruce.compiler.scanner.TokenType;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
- * A <code>ExpressionsParser</code> is a <code>TypesParser</code> that also parses
+ * A <code>ExpressionsParser</code> is a <code>BasicParser</code> that parses
  * expressions.
  */
-public class ExpressionsParser extends TypesParser
+public class ExpressionsParser extends BasicParser
 {
     /**
      * Constructs a <code>ExpressionsParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
+     * @param parser The <code>Parser</code> that is creating this object.
      */
-    public ExpressionsParser(Scanner scanner)
+    public ExpressionsParser(Scanner scanner, Parser parser)
     {
-        super(scanner);
+        super(scanner, parser);
     }
 
     /**
@@ -341,7 +342,7 @@ public class ExpressionsParser extends TypesParser
                 children.add(node);
                 if (curr == INSTANCEOF)
                 {
-                    children.add(parseDataType());
+                    children.add(getTypesParser().parseDataType());
                 }
                 else
                 {
@@ -501,14 +502,14 @@ public class ExpressionsParser extends TypesParser
                 accept(AS);
                 if (children.size() == 1)
                 {
-                    children.add(parseIntersectionType());
+                    children.add(getTypesParser().parseIntersectionType());
                     node.setOperation(AS);
                 }
                 else
                 {
                     List<ASTNode> siblings = new ArrayList<>(2);
                     siblings.add(node);
-                    siblings.add(parseIntersectionType());
+                    siblings.add(getTypesParser().parseIntersectionType());
                     node = new ASTCastExpression(loc, siblings);
                     node.setOperation(AS);
                 }
@@ -561,7 +562,7 @@ public class ExpressionsParser extends TypesParser
         ASTPrimary primary;
         if (isLiteral(curr()))
         {
-            ASTLiteral literal = parseLiteral();
+            ASTLiteral literal = getLiteralsParser().parseLiteral();
             primary = new ASTPrimary(loc, Arrays.asList(literal));
         }
         else if (isCurr(IDENTIFIER))
@@ -569,12 +570,12 @@ public class ExpressionsParser extends TypesParser
             if (isNext(OPEN_PARENTHESIS))
             {
                 // id(args)
-                ASTIdentifier methodName = parseIdentifier();
+                ASTIdentifier methodName = getNamesParser().parseIdentifier();
                 primary = new ASTPrimary(loc, Arrays.asList(parseMethodInvocation(methodName)));
             }
             else
             {
-                ASTDataType dataType = parseDataType();
+                ASTDataType dataType = getTypesParser().parseDataType();
                 if (isCurr(DOUBLE_COLON))
                 {
                     return new ASTPrimary(loc, Arrays.asList(parseMethodReference(dataType)));
@@ -726,9 +727,9 @@ public class ExpressionsParser extends TypesParser
                 mrChildren.add(sooper);
                 if (isCurr(LESS_THAN))
                 {
-                    mrChildren.add(parseTypeArguments());
+                    mrChildren.add(getTypesParser().parseTypeArguments());
                 }
-                mrChildren.add(parseIdentifier());
+                mrChildren.add(getNamesParser().parseIdentifier());
                 ASTMethodReference methodReference = new ASTMethodReference(loc, mrChildren);
                 methodReference.setOperation(DOUBLE_COLON);
                 return new ASTPrimary(loc, Arrays.asList(methodReference));
@@ -795,9 +796,9 @@ public class ExpressionsParser extends TypesParser
             children.add(primary);
             if (isCurr(LESS_THAN))
             {
-                children.add(parseTypeArguments());
+                children.add(getTypesParser().parseTypeArguments());
             }
-            children.add(parseIdentifier());
+            children.add(getNamesParser().parseIdentifier());
             ASTMethodReference methodReference = new ASTMethodReference(loc, children);
             methodReference.setOperation(DOUBLE_COLON);
             return new ASTPrimary(loc, Arrays.asList(methodReference));
@@ -883,9 +884,9 @@ public class ExpressionsParser extends TypesParser
         children.add(sooper);
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArguments());
+            children.add(getTypesParser().parseTypeArguments());
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
         {
             throw new CompileException("Expected '('.");
@@ -922,9 +923,9 @@ public class ExpressionsParser extends TypesParser
         children.add(sooper);
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArguments());
+            children.add(getTypesParser().parseTypeArguments());
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
         {
             throw new CompileException("Expected '('.");
@@ -971,7 +972,7 @@ public class ExpressionsParser extends TypesParser
             // contains the primary and type arguments for a constructor invocation.
 
             // Get it working, then improve it later.
-            ASTTypeArguments typeArgs = parseTypeArguments();
+            ASTTypeArguments typeArgs = getTypesParser().parseTypeArguments();
             if (isCurr(SUPER))
             {
                 // Primary . TypeArguments super ( [ArgumentList] )
@@ -982,7 +983,7 @@ public class ExpressionsParser extends TypesParser
             }
             children.add(typeArgs);
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
         {
             throw new CompileException("Expected '('.");
@@ -1033,7 +1034,7 @@ public class ExpressionsParser extends TypesParser
             // contains the expression name and type arguments for a constructor invocation.
 
             // Get it working, then improve it later.
-            ASTTypeArguments typeArgs = parseTypeArguments();
+            ASTTypeArguments typeArgs = getTypesParser().parseTypeArguments();
             if (isCurr(SUPER))
             {
                 // ExpressionName . TypeArguments super ( [ArgumentList] )
@@ -1044,7 +1045,7 @@ public class ExpressionsParser extends TypesParser
             }
             children.add(typeArgs);
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null)
         {
             throw new CompileException("Expected '('.");
@@ -1110,7 +1111,7 @@ public class ExpressionsParser extends TypesParser
         }
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArguments());
+            children.add(getTypesParser().parseTypeArguments());
         }
         if (isCurr(NEW))
         {
@@ -1122,7 +1123,7 @@ public class ExpressionsParser extends TypesParser
         }
         else if (isCurr(IDENTIFIER))
         {
-            children.add(parseIdentifier());
+            children.add(getNamesParser().parseIdentifier());
             try
             {
                 // ExpressionName :: [TypeArguments] Identifier
@@ -1162,9 +1163,9 @@ public class ExpressionsParser extends TypesParser
         }
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArguments());
+            children.add(getTypesParser().parseTypeArguments());
         }
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         ASTMethodReference node = new ASTMethodReference(loc, children);
         node.setOperation(DOUBLE_COLON);
         return node;
@@ -1243,7 +1244,7 @@ public class ExpressionsParser extends TypesParser
         List<ASTNode> children = new ArrayList<>(4);
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArguments());
+            children.add(getTypesParser().parseTypeArguments());
         }
         children.add(parseTypeToInstantiate());
         if (accept(OPEN_PARENTHESIS) == null)
@@ -1301,7 +1302,7 @@ public class ExpressionsParser extends TypesParser
         if (isExpression(curr()))
         {
             return parseList(
-                    ExpressionsParser::isExpression,
+                    t -> isExpression(t),
                     "Expected an expression.",
                     COMMA,
                     this::parseExpression,
@@ -1348,7 +1349,7 @@ public class ExpressionsParser extends TypesParser
         }
         if (isCurr(OPEN_CLOSE_BRACKET))
         {
-            children.add(parseDims());
+            children.add(getTypesParser().parseDims());
         }
         if (children.size() == 0)
         {
@@ -1477,10 +1478,10 @@ public class ExpressionsParser extends TypesParser
     {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
-        children.add(parseTypeName());
+        children.add(getNamesParser().parseTypeName());
         if (isCurr(LESS_THAN))
         {
-            children.add(parseTypeArgumentsOrDiamond());
+            children.add(getTypesParser().parseTypeArgumentsOrDiamond());
         }
         return new ASTTypeToInstantiate(loc, children);
     }
@@ -1534,7 +1535,7 @@ public class ExpressionsParser extends TypesParser
         Location loc = sooper.getLocation();
         List<ASTNode> children = new ArrayList<>(2);
         children.add(sooper);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         ASTFieldAccess node = new ASTFieldAccess(loc, children);
         node.setOperation(DOT);
         return node;
@@ -1555,7 +1556,7 @@ public class ExpressionsParser extends TypesParser
         List<ASTNode> children = new ArrayList<>(3);
         children.add(exprName.convertToTypeName());
         children.add(sooper);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         ASTFieldAccess node = new ASTFieldAccess(loc, children);
         node.setOperation(DOT);
         return node;
@@ -1573,7 +1574,7 @@ public class ExpressionsParser extends TypesParser
         Location loc = primary.getLocation();
         List<ASTNode> children = new ArrayList<>(2);
         children.add(primary);
-        children.add(parseIdentifier());
+        children.add(getNamesParser().parseIdentifier());
         ASTFieldAccess node = new ASTFieldAccess(loc, children);
         node.setOperation(DOT);
         return node;
@@ -1630,54 +1631,6 @@ public class ExpressionsParser extends TypesParser
         else
         {
             throw new CompileException("Expected 'super'.");
-        }
-    }
-
-    /**
-     * Determines whether the given token can start an expression.
-     *
-     * @param t A <code>Token</code>.
-     * @return Whether the given token can start an expression.
-     */
-    protected static boolean isExpression(Token t)
-    {
-        return (test(t, INCREMENT, DECREMENT) || isPrimary(t));
-    }
-
-    /**
-     * <p>Determines whether the given token can start a Primary.</p>
-     * <ul>
-     * <li>-</li>
-     * <li>~</li>
-     * <li>!</li>
-     * <li>identifier</li>
-     * <li><code>this</code></li>
-     * <li><code>super</code></li>
-     * <li>(</li>
-     * </ul>
-     *
-     * @param t A <code>Token</code>.
-     * @return Whether the given token can start a Primary.
-     */
-    protected static boolean isPrimary(Token t)
-    {
-        if (isLiteral(t))
-        {
-            return true;
-        }
-        switch (t.getType())
-        {
-        case MINUS:
-        case BITWISE_COMPLEMENT:
-        case LOGICAL_COMPLEMENT:
-        case IDENTIFIER:
-        case THIS:
-        case OPEN_PARENTHESIS:
-        case NEW:
-        case SUPER:
-            return true;
-        default:
-            return false;
         }
     }
 }
