@@ -1143,7 +1143,6 @@ public class ExpressionsParser extends BasicParser
         {
             throw new CompileException("Expected identifier or new.");
         }
-
     }
 
     /**
@@ -1302,7 +1301,7 @@ public class ExpressionsParser extends BasicParser
         if (isExpression(curr()))
         {
             return parseList(
-                    t -> isExpression(t),
+                    BasicParser::isExpression,
                     "Expected an expression.",
                     COMMA,
                     this::parseExpression,

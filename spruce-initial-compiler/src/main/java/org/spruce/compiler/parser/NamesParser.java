@@ -2,11 +2,7 @@ package org.spruce.compiler.parser;
 
 import java.util.Collections;
 
-import org.spruce.compiler.ast.names.ASTAmbiguousName;
-import org.spruce.compiler.ast.names.ASTExpressionName;
-import org.spruce.compiler.ast.names.ASTIdentifier;
-import org.spruce.compiler.ast.names.ASTPackageOrTypeName;
-import org.spruce.compiler.ast.names.ASTTypeName;
+import org.spruce.compiler.ast.names.*;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
@@ -30,31 +26,47 @@ public class NamesParser extends BasicParser
     }
 
     /**
-     * Parses an <code>ASTTypeName</code>; they are left-associative
+     * Parses an <code>ASTNamespaceName</code>; they are left-associative
      * with each other.
-     * @return An <code>ASTTypeName</code>.
+     * @return An <code>ASTNamespaceName</code>.
      */
-    public ASTTypeName parseTypeName()
-    {
-        ASTPackageOrTypeName ptName = parsePackageOrTypeName();
-        ASTTypeName node = new ASTTypeName(ptName.getLocation(), ptName.getChildren());
-        node.setOperation(ptName.getOperation());
-        return node;
-    }
-
-    /**
-     * Parses an <code>ASTPackageOrTypeName</code>; they are left-associative
-     * with each other.
-     * @return An <code>ASTPackageOrTypeName</code>.
-     */
-    public ASTPackageOrTypeName parsePackageOrTypeName()
+    public ASTNamespaceName parseNamespaceName()
     {
         return parseBinaryExpressionLeftAssociative(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
                 Collections.singletonList(DOT),
                 this::parseIdentifier,
-                ASTPackageOrTypeName::new
+                ASTNamespaceName::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTTypeName</code>; they are left-associative
+     * with each other.
+     * @return An <code>ASTTypeName</code>.
+     */
+    public ASTTypeName parseTypeName()
+    {
+        ASTNamespaceOrTypeName ptName = parseNamespaceOrTypeName();
+        ASTTypeName node = new ASTTypeName(ptName.getLocation(), ptName.getChildren());
+        node.setOperation(ptName.getOperation());
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTNamespaceOrTypeName</code>; they are left-associative
+     * with each other.
+     * @return An <code>ASTNamespaceOrTypeName</code>.
+     */
+    public ASTNamespaceOrTypeName parseNamespaceOrTypeName()
+    {
+        return parseBinaryExpressionLeftAssociative(
+                t -> test(t, IDENTIFIER),
+                "Expected an identifier.",
+                Collections.singletonList(DOT),
+                this::parseIdentifier,
+                ASTNamespaceOrTypeName::new
         );
     }
 
@@ -84,6 +96,21 @@ public class NamesParser extends BasicParser
                 Collections.singletonList(DOT),
                 this::parseIdentifier,
                 ASTAmbiguousName::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTIdentifierList</code>.
+     * @return An <code>ASTIdentifierList</code>.
+     */
+    public ASTIdentifierList parseIdentifierList()
+    {
+        return parseList(
+                t -> test(t, IDENTIFIER),
+                "Expected identifier",
+                COMMA,
+                this::parseIdentifier,
+                ASTIdentifierList::new
         );
     }
 

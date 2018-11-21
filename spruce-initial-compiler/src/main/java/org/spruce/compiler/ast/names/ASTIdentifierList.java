@@ -7,24 +7,22 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTPackageOrTypeName</code> is a node representing part of a
- * qualified name that could be a package name or a type name.</p>
+ * <p>An <code>ASTIdentifierList</code> is a comma-separated list of identifiers.</p>
  *
  * <em>
- * PackageOrTypeName:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;PackageOrTypeName . Identifier<br>
+ * IdentifierList:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;Identifier {, Identifier}
  * </em>
  */
-public class ASTPackageOrTypeName extends ASTParentNode
+public class ASTIdentifierList extends ASTParentNode
 {
     /**
-     * Constructs an <code>ASTPackageOrTypeName</code> at the given <code>Location</code>
+     * Constructs an <code>ASTIdentifierList</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTPackageOrTypeName(Location location, List<ASTNode> children)
+    public ASTIdentifierList(Location location, List<ASTNode> children)
     {
         super(location, children);
     }
@@ -36,6 +34,6 @@ public class ASTPackageOrTypeName extends ASTParentNode
     @Override
     public boolean isCollapsible()
     {
-        return false;
+        return true;
     }
 }

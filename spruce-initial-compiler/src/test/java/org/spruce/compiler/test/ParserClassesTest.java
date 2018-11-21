@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ParserClassesTest
 {
+
+
     /**
      * Tests simple annotation declaration.
      */

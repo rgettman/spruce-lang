@@ -38,4 +38,15 @@ public class ASTTypeName extends ASTParentNode
     {
         return false;
     }
+
+    /**
+     * Converts this type name to a package or type name.
+     * @return A package or type name.
+     */
+    public ASTNamespaceOrTypeName convertToNamespaceOrTypeName()
+    {
+        ASTNamespaceOrTypeName potn = new ASTNamespaceOrTypeName(getLocation(), getChildren());
+        potn.setOperation(getOperation());
+        return potn;
+    }
 }

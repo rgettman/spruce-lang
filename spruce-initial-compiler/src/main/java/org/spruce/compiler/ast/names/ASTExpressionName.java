@@ -46,7 +46,7 @@ public class ASTExpressionName extends ASTParentNode
      * <code>ASTAmbiguousName</code> to an <code>ASTPackageOrTypeName</code>.
      * @return An <code>ASTTypeName</code> with the same structure as this
      *     <code>ASTExpressionName</code>.
-     * @see ASTAmbiguousName#convertToPackageOrTypeName
+     * @see ASTAmbiguousName#convertToNamespaceOrTypeName
      */
     public ASTTypeName convertToTypeName()
     {
@@ -54,7 +54,7 @@ public class ASTExpressionName extends ASTParentNode
         if (children.size() >= 1 && children.get(0) instanceof ASTAmbiguousName)
         {
             ASTAmbiguousName ambName = (ASTAmbiguousName) children.get(0);
-            ASTPackageOrTypeName portName = ambName.convertToPackageOrTypeName();
+            ASTNamespaceOrTypeName portName = ambName.convertToNamespaceOrTypeName();
             children.set(0, portName);
         }
         ASTTypeName typeName = new ASTTypeName(getLocation(), children);

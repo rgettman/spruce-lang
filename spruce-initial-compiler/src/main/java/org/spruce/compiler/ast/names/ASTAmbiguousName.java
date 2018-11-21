@@ -41,22 +41,22 @@ public class ASTAmbiguousName extends ASTParentNode
     }
 
     /**
-     * Converts this to an <code>ASTPackageOrTypeName</code>.  Converts any child
-     * <code>ASTAmbiguousName</code> to an <code>ASTPackageOrTypeName</code>.
-     * @return An <code>ASTTypeName</code> with the same structure as this
-     *     <code>ASTPackageOrTypeName</code>.
+     * Converts this to an <code>ASTNamespaceOrTypeName</code>.  Converts any child
+     * <code>ASTAmbiguousName</code> to an <code>ASTNamespaceOrTypeName</code>.
+     * @return An <code>ASTNamespaceOrTypeName</code> with the same structure as this
+     *     <code>ASTAmbiguousName</code>.
      * @see ASTExpressionName#convertToTypeName
      */
-    public ASTPackageOrTypeName convertToPackageOrTypeName()
+    public ASTNamespaceOrTypeName convertToNamespaceOrTypeName()
     {
         List<ASTNode> children = getChildren();
         if (children.size() >= 1 && children.get(0) instanceof ASTAmbiguousName)
         {
             ASTAmbiguousName ambName = (ASTAmbiguousName) children.get(0);
-            ASTPackageOrTypeName portName = ambName.convertToPackageOrTypeName();
+            ASTNamespaceOrTypeName portName = ambName.convertToNamespaceOrTypeName();
             children.set(0, portName);
         }
-        ASTPackageOrTypeName portName = new ASTPackageOrTypeName(getLocation(), children);
+        ASTNamespaceOrTypeName portName = new ASTNamespaceOrTypeName(getLocation(), children);
         portName.setOperation(getOperation());
         return portName;
     }

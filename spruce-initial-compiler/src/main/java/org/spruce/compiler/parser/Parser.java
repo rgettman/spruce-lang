@@ -17,6 +17,7 @@ public class Parser
     private ExpressionsParser myExpressionsParser;
     private StatementsParser myStatementsParser;
     private ClassesParser myClassesParser;
+    private TopLevelParser myTopLevelParser;
 
     /**
      * Constructs a <code>Parser</code> given a <code>Scanner</code>.
@@ -30,6 +31,7 @@ public class Parser
         myExpressionsParser = new ExpressionsParser(scanner, this);
         myStatementsParser = new StatementsParser(scanner, this);
         myClassesParser = new ClassesParser(scanner, this);
+        myTopLevelParser = new TopLevelParser(scanner, this);
         scanner.next();
     }
 
@@ -85,5 +87,14 @@ public class Parser
     public ClassesParser getClassesParser()
     {
         return myClassesParser;
+    }
+
+    /**
+     * Returns the <code>TopLevelParser</code>.
+     * @return The <code>TopLevelParser</code>.
+     */
+    public TopLevelParser getTopLevelParser()
+    {
+        return myTopLevelParser;
     }
 }
