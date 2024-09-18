@@ -11,20 +11,19 @@ import org.spruce.compiler.scanner.Scanner;
  */
 public class Parser
 {
-    private LiteralsParser myLiteralsParser;
-    private NamesParser myNamesParser;
-    private TypesParser myTypesParser;
-    private ExpressionsParser myExpressionsParser;
-    private StatementsParser myStatementsParser;
-    private ClassesParser myClassesParser;
-    private TopLevelParser myTopLevelParser;
+    private final LiteralsParser myLiteralsParser;
+    private final NamesParser myNamesParser;
+    private final TypesParser myTypesParser;
+    private final ExpressionsParser myExpressionsParser;
+    private final StatementsParser myStatementsParser;
+    private final ClassesParser myClassesParser;
+    private final TopLevelParser myTopLevelParser;
 
     /**
      * Constructs a <code>Parser</code> given a <code>Scanner</code>.
      * @param scanner A <code>Scanner</code>.
      */
-    public Parser(Scanner scanner)
-    {
+    public Parser(Scanner scanner) {
         myLiteralsParser = new LiteralsParser(scanner, this);
         myNamesParser = new NamesParser(scanner, this);
         myTypesParser = new TypesParser(scanner, this);
@@ -39,8 +38,7 @@ public class Parser
      * Returns the <code>LiteralsParser</code>.
      * @return The <code>LiteralsParser</code>.
      */
-    public LiteralsParser getLiteralsParser()
-    {
+    public LiteralsParser getLiteralsParser() {
         return myLiteralsParser;
     }
 
@@ -48,8 +46,7 @@ public class Parser
      * Returns the <code>NamesParser</code>.
      * @return The <code>NamesParser</code>.
      */
-    public NamesParser getNamesParser()
-    {
+    public NamesParser getNamesParser() {
         return myNamesParser;
     }
 
@@ -57,8 +54,7 @@ public class Parser
      * Returns the <code>TypesParser</code>.
      * @return The <code>TypesParser</code>.
      */
-    public TypesParser getTypesParser()
-    {
+    public TypesParser getTypesParser() {
         return myTypesParser;
     }
 
@@ -66,8 +62,7 @@ public class Parser
      * Returns the <code>ExpressionsParser</code>.
      * @return The <code>ExpressionsParser</code>.
      */
-    public ExpressionsParser getExpressionsParser()
-    {
+    public ExpressionsParser getExpressionsParser() {
         return myExpressionsParser;
     }
 
@@ -75,8 +70,7 @@ public class Parser
      * Returns the <code>StatementsParser</code>.
      * @return The <code>StatementsParser</code>.
      */
-    public StatementsParser getStatementsParser()
-    {
+    public StatementsParser getStatementsParser() {
         return myStatementsParser;
     }
 
@@ -84,8 +78,7 @@ public class Parser
      * Returns the <code>ClassesParser</code>.
      * @return The <code>ClassesParser</code>.
      */
-    public ClassesParser getClassesParser()
-    {
+    public ClassesParser getClassesParser() {
         return myClassesParser;
     }
 
@@ -93,8 +86,7 @@ public class Parser
      * Returns the <code>TopLevelParser</code>.
      * @return The <code>TopLevelParser</code>.
      */
-    public TopLevelParser getTopLevelParser()
-    {
+    public TopLevelParser getTopLevelParser() {
         return myTopLevelParser;
     }
 }

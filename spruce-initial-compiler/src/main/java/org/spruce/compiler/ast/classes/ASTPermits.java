@@ -7,23 +7,21 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTFormalParameters</code> is comma-separated list of formal parameter instances.</p>
+ * <p>An <code>ASTPermits</code> is "permits" followed by a Data Type No Array List.</p>
  *
  * <em>
- * FormalParameters:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;FormalParameter {, FormalParameter}
+ * Permits:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;permits DataTypeNoArrayList
  * </em>
  */
-public class ASTFormalParameters extends ASTParentNode
-{
+public class ASTPermits extends ASTParentNode {
     /**
-     * Constructs an <code>ASTFormalParameters</code> at the given <code>Location</code>
+     * Constructs an <code>ASTPermits</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTFormalParameters(Location location, List<ASTNode> children)
-    {
+    public ASTPermits(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTFormalParameters extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

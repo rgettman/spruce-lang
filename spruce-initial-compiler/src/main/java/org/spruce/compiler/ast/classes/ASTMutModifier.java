@@ -1,4 +1,4 @@
-package org.spruce.compiler.ast.statements;
+package org.spruce.compiler.ast.classes;
 
 import java.util.List;
 
@@ -7,25 +7,21 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTSwitchBlock</code> is a "{", optionally a list of switch cases,
- * followed by a "}".</p>
+ * <p>An <code>ASTMutModifier</code> is "mut".</p>
  *
  * <em>
- * SwitchBlock:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;{ }<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;{ SwitchCases }
+ * MutModifier:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;mut
  * </em>
  */
-public class ASTSwitchBlock extends ASTParentNode
-{
+public class ASTMutModifier extends ASTParentNode {
     /**
-     * Constructs an <code>ASTSwitchBlock</code> at the given <code>Location</code>
+     * Constructs an <code>ASTMutModifier</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTSwitchBlock(Location location, List<ASTNode> children)
-    {
+    public ASTMutModifier(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +30,7 @@ public class ASTSwitchBlock extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

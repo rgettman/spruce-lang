@@ -11,15 +11,13 @@ import org.spruce.compiler.parser.ExpressionsParser;
  * while scanning or parsing the Spruce source code.  Compilation stops with this
  * error message.
  */
-public class CompileException extends RuntimeException
-{
+public class CompileException extends RuntimeException {
     private List<ASTNode> myAlreadyParsed;
 
     /**
      * Create a <code>CompileException</code>.
      */
-    public CompileException()
-    {
+    public CompileException() {
         super();
     }
 
@@ -27,8 +25,7 @@ public class CompileException extends RuntimeException
      * Create a <code>CompileException</code> with the given message.
      * @param message The message.
      */
-    public CompileException(String message)
-    {
+    public CompileException(String message) {
         super(message);
     }
 
@@ -38,8 +35,7 @@ public class CompileException extends RuntimeException
      * @param message The message.
      * @param alreadyParsed Already parsed <code>ASTNodes</code>.
      */
-    public CompileException(String message, List<ASTNode> alreadyParsed)
-    {
+    public CompileException(String message, List<ASTNode> alreadyParsed) {
         super(message);
         myAlreadyParsed = alreadyParsed;
     }
@@ -48,8 +44,7 @@ public class CompileException extends RuntimeException
      * Create a <code>CompileException</code>.
      * @param cause The cause.
      */
-    public CompileException(Throwable cause)
-    {
+    public CompileException(Throwable cause) {
         super(cause);
     }
 
@@ -58,8 +53,7 @@ public class CompileException extends RuntimeException
      * @param message The message.
      * @param cause The cause.
      */
-    public CompileException(String message, Throwable cause)
-    {
+    public CompileException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -76,8 +70,7 @@ public class CompileException extends RuntimeException
      * @see ExpressionsParser#parseMethodInvocation(org.spruce.compiler.ast.expressions.ASTPrimary)
      * @see ClassesParser#parseConstructorInvocation
      */
-    public List<ASTNode> getAlreadyParsed()
-    {
+    public List<ASTNode> getAlreadyParsed() {
         return myAlreadyParsed;
     }
 }

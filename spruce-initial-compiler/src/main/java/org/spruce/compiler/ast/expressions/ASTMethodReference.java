@@ -23,15 +23,13 @@ import org.spruce.compiler.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . super :: [TypeArguments] Identifier
  * </em>
  */
-public class ASTMethodReference extends ASTParentNode
-{
+public class ASTMethodReference extends ASTParentNode {
     /**
      * Constructs an <code>ASTMethodReference</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTMethodReference(Location location, List<ASTNode> children)
-    {
+    public ASTMethodReference(Location location, List<ASTNode> children) {
         super(location, children, TokenType.OPEN_PARENTHESIS);
     }
 
@@ -40,8 +38,7 @@ public class ASTMethodReference extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

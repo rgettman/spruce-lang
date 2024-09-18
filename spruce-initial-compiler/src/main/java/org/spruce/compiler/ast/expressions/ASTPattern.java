@@ -1,4 +1,4 @@
-package org.spruce.compiler.ast.classes;
+package org.spruce.compiler.ast.expressions;
 
 import java.util.List;
 
@@ -7,23 +7,23 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTConstModifier</code> is "const".</p>
+ * <p>An <code>ASTPattern</code> is either a <code>TypePattern</code>
+ * or a <code>RecordPattern</code>.</p>
  *
  * <em>
- * ConstModifier:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;const
+ * Pattern:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;TypePattern<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;RecordPattern
  * </em>
  */
-public class ASTConstModifier extends ASTParentNode
-{
+public class ASTPattern extends ASTParentNode {
     /**
-     * Constructs an <code>ASTConstModifier</code> at the given <code>Location</code>
+     * Constructs an <code>ASTPattern</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTConstModifier(Location location, List<ASTNode> children)
-    {
+    public ASTPattern(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +32,7 @@ public class ASTConstModifier extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

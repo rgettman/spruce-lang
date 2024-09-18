@@ -5,9 +5,8 @@ import org.spruce.compiler.scanner.Location;
 /**
  * An <code>ASTValueNode</code> is a leaf <code>ASTNode</code> with a value.
  */
-public /*abstract*/ class ASTValueNode extends ASTNode
-{
-    private String myValue;
+public /*abstract*/ class ASTValueNode extends ASTNode {
+    private final String myValue;
 
     /**
      * Constructs an <code>ASTValueNode</code> with the given <code>Location</code>
@@ -15,8 +14,7 @@ public /*abstract*/ class ASTValueNode extends ASTNode
      * @param location The <code>Location</code>.
      * @param value The string value.
      */
-    public ASTValueNode(Location location, String value)
-    {
+    public ASTValueNode(Location location, String value) {
         super(location);
         myValue = value;
     }
@@ -25,8 +23,7 @@ public /*abstract*/ class ASTValueNode extends ASTNode
      * Returns the string value.
      * @return The string value.
      */
-    public String getValue()
-    {
+    public String getValue() {
         return myValue;
     }
 
@@ -36,8 +33,7 @@ public /*abstract*/ class ASTValueNode extends ASTNode
      * @param isTail Whether this node is last in its siblings (or the only child).
      */
     @Override
-    protected void print(String prefix, boolean isTail)
-    {
+    protected void print(String prefix, boolean isTail) {
         System.out.println(prefix + (isTail ? "└── " : "├── ") + toString());
     }
 
@@ -46,8 +42,7 @@ public /*abstract*/ class ASTValueNode extends ASTNode
      * @return A string representation of this node.
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         return getClass().getSimpleName() + "(" + getValue() + ") at " + getLocation();
     }
 }

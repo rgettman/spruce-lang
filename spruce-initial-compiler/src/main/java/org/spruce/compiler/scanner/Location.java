@@ -5,12 +5,11 @@ package org.spruce.compiler.scanner;
  * source code.  It consists of a filename, a line number (1-based), a
  * character position (1-based), and the line on which the token starts.
  */
-public class Location
-{
-    private String myFilename;
-    private int myLineNbr;
-    private int myCharPos;
-    private String myLine;
+public class Location {
+    private final String myFilename;
+    private final int myLineNbr;
+    private final int myCharPos;
+    private final String myLine;
 
     /**
      * Constructs a <code>Location</code> based on the given attributes.
@@ -19,8 +18,13 @@ public class Location
      * @param zeroBasedCharPos The 0-based character position (0 is far left).
      * @param line The line on which the token starts.
      */
-    public Location(String filename, int zeroBasedLineNbr, int zeroBasedCharPos, String line)
-    {
+    public Location(String filename, int zeroBasedLineNbr, int zeroBasedCharPos, String line) {
+        if (zeroBasedLineNbr < 0) {
+            throw new IllegalArgumentException("Line number must not be negative: " + zeroBasedLineNbr);
+        }
+        if (zeroBasedCharPos < 0) {
+            throw new IllegalArgumentException("Char position must not be negative: " + zeroBasedCharPos);
+        }
         myFilename = filename;
         myLineNbr = zeroBasedLineNbr + 1;
         myCharPos = zeroBasedCharPos + 1;
@@ -31,8 +35,7 @@ public class Location
      * Returns the filename.
      * @return The filename.
      */
-    public String getFilename()
-    {
+    public String getFilename() {
         return myFilename;
     }
 
@@ -40,8 +43,7 @@ public class Location
      * Returns the one-based line number (1 is top).
      * @return The one-based line number (1 is top).
      */
-    public int getLineNbr()
-    {
+    public int getLineNbr() {
         return myLineNbr;
     }
 
@@ -49,8 +51,7 @@ public class Location
      * Returns the one-based character position (1 is far left).
      * @return The one-based character position (1 is far left).
      */
-    public int getCharPos()
-    {
+    public int getCharPos() {
         return myCharPos;
     }
 
@@ -58,8 +59,7 @@ public class Location
      * Returns the line on which the token starts.
      * @return The line on which the token starts.
      */
-    public String getLine()
-    {
+    public String getLine() {
         return myLine;
     }
 
@@ -68,8 +68,7 @@ public class Location
      * @return A string representation of this <code>Location</code>.
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Location{" + myFilename + ":" + myLineNbr + ", pos " + myCharPos + ", line \"" + myLine + "\"}";
     }
 
@@ -77,8 +76,7 @@ public class Location
      * Returns a string of the format "filename:lineNbr".
      * @return A string of the format "filename:lineNbr".
      */
-    public String getFileAndLineNbr()
-    {
+    public String getFileAndLineNbr() {
         return myFilename + ":" + myLineNbr;
     }
 
@@ -88,17 +86,10 @@ public class Location
      * assuming it's printed in the line above.
      * <code>String test;</code>
      * <code>       ^</code>
-     * @return A a string of <code>pos - 1</code> spaces followed by a caret
+     * @return A string of <code>pos - 1</code> spaces followed by a caret
      *     <code>^</code>.
      */
-    public String getPosIndicator()
-    {
-        StringBuilder buf = new StringBuilder();
-        for (int i = 0; i < myCharPos - 1; i++)
-        {
-            buf.append(' ');
-        }
-        buf.append('^');
-        return buf.toString();
+    public String getPosIndicator() {
+        return " ".repeat(myCharPos - 1) + "^";
     }
 }

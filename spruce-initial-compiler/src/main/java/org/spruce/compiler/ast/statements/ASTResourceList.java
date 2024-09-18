@@ -14,15 +14,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;Resource {; Resource}
  * </em>
  */
-public class ASTResourceList extends ASTParentNode
-{
+public class ASTResourceList extends ASTParentNode {
     /**
      * Constructs an <code>ASTResourceList</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTResourceList(Location location, List<ASTNode> children)
-    {
+    public ASTResourceList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -31,8 +29,7 @@ public class ASTResourceList extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

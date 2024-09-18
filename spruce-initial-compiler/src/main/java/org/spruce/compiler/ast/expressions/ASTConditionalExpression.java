@@ -24,16 +24,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression ? Expression : ConditionalExpression
  * </em>
  */
-public class ASTConditionalExpression extends ASTParentNode
-{
+public class ASTConditionalExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTConditionalExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTConditionalExpression(Location location, List<ASTNode> children)
-    {
+    public ASTConditionalExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -44,8 +42,7 @@ public class ASTConditionalExpression extends ASTParentNode
      * @throws CompileException If no descendant node can be a child of an
      *     <code>ASTLeftHandSide</code>.
      */
-    public ASTLeftHandSide getLeftHandSide()
-    {
+    public ASTLeftHandSide getLeftHandSide() {
         return convertDescendant(Arrays.asList(ASTExpressionName.class, ASTElementAccess.class),
                 ASTLeftHandSide::new,
                 "Expected variable or element access.");
@@ -56,8 +53,7 @@ public class ASTConditionalExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

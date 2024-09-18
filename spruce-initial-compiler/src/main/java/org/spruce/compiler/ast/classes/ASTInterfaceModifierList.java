@@ -13,7 +13,7 @@ import org.spruce.compiler.scanner.Location;
  * <ul>
  *     <li>abstract</li>
  *     <li>shared</li>
- *     <li>strictfp</li>
+ *     <li>sealed</li>
  * </ul>
  *
  * <em>
@@ -21,16 +21,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;GeneralModifier {GeneralModifier}
  * </em>
  */
-public class ASTInterfaceModifierList extends ASTParentNode
-{
+public class ASTInterfaceModifierList extends ASTParentNode {
     /**
      * Constructs an <code>ASTClassModifierList</code> at the given <code>Location</code>
      * and with possibly a node as its child.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTInterfaceModifierList(Location location, List<ASTNode> children)
-    {
+    public ASTInterfaceModifierList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -39,8 +37,7 @@ public class ASTInterfaceModifierList extends ASTParentNode
      * @return <code>false</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return false;
     }
 }

@@ -11,19 +11,17 @@ import org.spruce.compiler.scanner.Location;
  * an optional InterfaceMethodModifierList, then a MethodHeader and a MethodBody.</p>
  *
  * <em>
- * MethodDeclaration:<br>
+ * InterfaceMethodDeclaration:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
  * </em>
  */
-public class ASTInterfaceMethodDeclaration extends ASTParentNode
-{
+public class ASTInterfaceMethodDeclaration extends ASTParentNode {
     /**
      * Constructs an <code>ASTInterfaceMethodDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTInterfaceMethodDeclaration(Location location, List<ASTNode> children)
-    {
+    public ASTInterfaceMethodDeclaration(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTInterfaceMethodDeclaration extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

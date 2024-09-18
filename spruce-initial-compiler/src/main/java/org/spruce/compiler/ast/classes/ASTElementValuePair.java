@@ -12,19 +12,17 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * ElementValuePair:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Identifier := ElementValue
+ * &nbsp;&nbsp;&nbsp;&nbsp;Identifier = ElementValue
  * </em>
  */
-public class ASTElementValuePair extends ASTParentNode
-{
+public class ASTElementValuePair extends ASTParentNode {
     /**
      * Constructs an <code>ASTElementValuePair</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTElementValuePair(Location location, List<ASTNode> children)
-    {
+    public ASTElementValuePair(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTElementValuePair extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

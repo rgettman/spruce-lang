@@ -18,16 +18,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataType ... Identifier
  * </em>
  */
-public class ASTFormalParameter extends ASTParentNode
-{
+public class ASTFormalParameter extends ASTParentNode {
     /**
      * Constructs an <code>ASTFormalParameter</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTFormalParameter(Location location, List<ASTNode> children)
-    {
+    public ASTFormalParameter(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -36,8 +34,7 @@ public class ASTFormalParameter extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

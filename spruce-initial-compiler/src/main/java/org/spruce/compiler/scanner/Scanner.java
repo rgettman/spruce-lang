@@ -14,12 +14,11 @@ import org.spruce.compiler.exception.CompileException;
  * Reads input from a Reader representing a compilation unit.
  * Scans tokens from the text read from the Reader.
  */
-public class Scanner
-{
+public class Scanner {
     private boolean amInTypeContext;
-    private List<String> myLines;
+    private final List<String> myLines;
 
-    private String myFilename;
+    private final String myFilename;
     private int myLineNbr;
     private int myCharPos;
 
@@ -34,8 +33,7 @@ public class Scanner
      * Constructs a <code>Scanner</code> based on a <code>String</code>.
      * @param contents The contents of the code to scan.
      */
-    public Scanner(String contents)
-    {
+    public Scanner(String contents) {
         Objects.requireNonNull(contents);
 
         myFilename = "<no file>";
@@ -44,13 +42,12 @@ public class Scanner
     }
 
     /**
-     * Construcs a <code>Scanner</code> that will scan the contents of the
+     * Constructs a <code>Scanner</code> that will scan the contents of the
      * file specified by the given filename, in the default character set.
      * @param path The path of the file to read.
      * @throws IOException If there is a problem reading the file.
      */
-    public Scanner(Path path) throws IOException
-    {
+    public Scanner(Path path) throws IOException {
         this(path, Charset.defaultCharset());
     }
 
@@ -61,8 +58,7 @@ public class Scanner
      * @param charset The <code>Charset</code> of the file.
      * @throws IOException If there is a problem reading the file.
      */
-    public Scanner(Path path, Charset charset) throws IOException
-    {
+    public Scanner(Path path, Charset charset) throws IOException {
         Objects.requireNonNull(path);
         Objects.requireNonNull(charset);
 
@@ -75,8 +71,7 @@ public class Scanner
      * Sets the line number and char pos to 0, with the current token being
      * unknown.
      */
-    private void init()
-    {
+    private void init() {
         myLineNbr = 0;
         myCharPos = 0;
         amInTypeContext = false;
@@ -86,8 +81,7 @@ public class Scanner
      * Returns whether a type context is active.
      * @return Whether a type context is active.
      */
-    public boolean isInTypeContext()
-    {
+    public boolean isInTypeContext() {
         return amInTypeContext;
     }
 
@@ -95,8 +89,7 @@ public class Scanner
      * Sets whether a type context is active.
      * @param inTypeContext Whether a type context is active.
      */
-    public void setInTypeContext(boolean inTypeContext)
-    {
+    public void setInTypeContext(boolean inTypeContext) {
         amInTypeContext = inTypeContext;
     }
 
@@ -106,8 +99,7 @@ public class Scanner
      * @return The current <code>Token</code>, or <code>null</code> if there
      * isn't one yet.
      */
-    public Token getCurrToken()
-    {
+    public Token getCurrToken() {
         return myCurrToken;
     }
 
@@ -118,8 +110,7 @@ public class Scanner
      * @return The next <code>Token</code>, or <code>null</code> if there
      * isn't one yet.
      */
-    public Token getNextToken()
-    {
+    public Token getNextToken() {
         return myNextToken;
     }
 
@@ -130,8 +121,7 @@ public class Scanner
      * @return The peek <code>Token</code>, or <code>null</code> if there
      * isn't one yet.
      */
-    public Token getPeekToken()
-    {
+    public Token getPeekToken() {
         return myPeekToken;
     }
 
@@ -141,8 +131,7 @@ public class Scanner
      * @param value The string value.
      * @return A new <code>Token</code>.
      */
-    private Token createToken(TokenType t, String value)
-    {
+    private Token createToken(TokenType t, String value) {
         Location loc = new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr));
         return new Token(loc, t, value);
     }
@@ -151,27 +140,22 @@ public class Scanner
      * Advances to the next token.  Skips whitespace and comments.
      * @return Whether there is another token before EOF to be read.
      */
-    public boolean next()
-    {
-        if (myCurrToken == null)
-        {
+    public boolean next() {
+        if (myCurrToken == null) {
             myCurrToken = advanceSkippingWhitespaceComments();
             myNextToken = advanceSkippingWhitespaceComments();
             myPeekToken = advanceSkippingWhitespaceComments();
         }
-        else if (myPeekToken.getType() != TokenType.EOF)
-        {
+        else if (myPeekToken.getType() != TokenType.EOF) {
             myCurrToken = myNextToken;
             myNextToken = myPeekToken;
             myPeekToken = advanceSkippingWhitespaceComments();
         }
-        else if (myNextToken.getType() != TokenType.EOF)
-        {
+        else if (myNextToken.getType() != TokenType.EOF) {
             myCurrToken = myNextToken;
             myNextToken = myPeekToken;
         }
-        else if (myCurrToken.getType() != TokenType.EOF)
-        {
+        else if (myCurrToken.getType() != TokenType.EOF) {
             myCurrToken = myNextToken;
         }
 
@@ -182,11 +166,9 @@ public class Scanner
      * Helper method to scan for the next token, skipping whitespace and comments.
      * @return The next non-whitespace, non-comment token.
      */
-    private Token advanceSkippingWhitespaceComments()
-    {
+    private Token advanceSkippingWhitespaceComments() {
         Token t;
-        do
-        {
+        do {
             t = advance();
         }
         while (t.getType() == TokenType.WHITESPACE || t.getType() == TokenType.COMMENT);
@@ -197,8 +179,7 @@ public class Scanner
      * Advances to the next token.
      * @return The next token.
      */
-    private Token advance()
-    {
+    private Token advance() {
         // Note down start of token position.
         myTokenLineNbr = myLineNbr;
         myTokenCharPos = myCharPos;
@@ -206,112 +187,52 @@ public class Scanner
         Token t;
 
         char first = peek();
-        if (first == (char) -1)
-        {
+        if (first == (char) -1) {
             t = createToken(TokenType.EOF, null);
         }
-        else if (Character.isWhitespace(first))
-        {
+        else if (Character.isWhitespace(first)) {
             readWhitespace();
             t = createToken(TokenType.WHITESPACE, null);
         }
         // numeric literal: int/long/float/double/BigInteger/BigDecimal
-        else if (Character.isDigit(first))
-        {
+        else if (Character.isDigit(first)) {
             t = readNumericLiteral();
         }
-        else if (Character.isJavaIdentifierStart(first))
-        {
+        else if (Character.isJavaIdentifierStart(first)) {
             t = readIdentifierOrKeyword();
         }
-        else
-        {
-            switch(first)
-            {
-            case '"':
-                t = readStringLiteral();
-                break;
-            case '\'':
-                t = readCharacterLiteral();
-                break;
-            case '@':
-                t = createToken(TokenType.AT_SIGN, String.valueOf(read()));
-                break;
-            case '{':
-                t = createToken(TokenType.OPEN_BRACE, String.valueOf(read()));
-                break;
-            case '}':
-                t = createToken(TokenType.CLOSE_BRACE, String.valueOf(read()));
-                break;
-            case '[':
-                t = readStartingWithOpenBracket();
-                break;
-            case ']':
-                t = createToken(TokenType.CLOSE_BRACKET, String.valueOf(read()));
-                break;
-            case '(':
-                t = createToken(TokenType.OPEN_PARENTHESIS, String.valueOf(read()));
-                break;
-            case ')':
-                t = createToken(TokenType.CLOSE_PARENTHESIS, String.valueOf(read()));
-                break;
-            case ',':
-                t = createToken(TokenType.COMMA, String.valueOf(read()));
-                break;
-            case ':':
-                t = readStartingWithColon();
-                break;
-            case ';':
-                t = createToken(TokenType.SEMICOLON, String.valueOf(read()));
-                break;
-            case '?':
-                t = createToken(TokenType.QUESTION_MARK, String.valueOf(read()));
-                break;
-            case '=':
-                t = readStartingWithEquals();
-                break;
-            case '.':
-                t = readStartingWithDot();
-                break;
-            case '!':
-                t = readStartingWithExclamation();
-                break;
-            case '<':
-                t = readStartingWithLessThan();
-                break;
-            case '>':
-                t = readStartingWithGreaterThan();
-                break;
-            case '+':
-                t = readStartingWithPlus();
-                break;
-            case '-':
-                t = readStartingWithMinus();
-                break;
-            case '*':
-                t = readStartingWithStar();
-                break;
-            case '/':
-                t = readStartingWithSlash();
-                break;
-            case '%':
-                t = readStartingWithPercent();
-                break;
-            case '&':
-                t = readStartingWithAmpersand();
-                break;
-            case '|':
-                t = readStartingWithPipe();
-                break;
-            case '^':
-                t = readStartingWithCaret();
-                break;
-            case '~':
-                t = createToken(TokenType.BITWISE_COMPLEMENT, String.valueOf(read()));
-                break;
-            default:
-                t = createToken(TokenType.UNKNOWN, String.valueOf(read()));
-            }
+        else {
+            t = switch (first) {
+                case '"' -> readStringLiteral();
+                case '\'' -> readCharacterLiteral();
+                case '@' -> createToken(TokenType.AT_SIGN, String.valueOf(read()));
+                case '#' -> createToken(TokenType.HASHTAG, String.valueOf(read()));
+                case '{' -> createToken(TokenType.OPEN_BRACE, String.valueOf(read()));
+                case '}' -> createToken(TokenType.CLOSE_BRACE, String.valueOf(read()));
+                case '[' -> readStartingWithOpenBracket();
+                case ']' -> createToken(TokenType.CLOSE_BRACKET, String.valueOf(read()));
+                case '(' -> createToken(TokenType.OPEN_PARENTHESIS, String.valueOf(read()));
+                case ')' -> createToken(TokenType.CLOSE_PARENTHESIS, String.valueOf(read()));
+                case ',' -> createToken(TokenType.COMMA, String.valueOf(read()));
+                case ':' -> readStartingWithColon();
+                case ';' -> createToken(TokenType.SEMICOLON, String.valueOf(read()));
+                case '?' -> createToken(TokenType.QUESTION_MARK, String.valueOf(read()));
+                case '=' -> readStartingWithEquals();
+                case '.' -> readStartingWithDot();
+                case '!' -> readStartingWithExclamation();
+                case '<' -> readStartingWithLessThan();
+                case '>' -> readStartingWithGreaterThan();
+                case '+' -> readStartingWithPlus();
+                case '-' -> readStartingWithMinus();
+                case '*' -> readStartingWithStar();
+                case '/' -> readStartingWithSlash();
+                case '%' -> readStartingWithPercent();
+                case '&' -> readStartingWithAmpersand();
+                case '|' -> readStartingWithPipe();
+                case '^' -> readStartingWithCaret();
+                case '~' -> createToken(TokenType.TILDE, String.valueOf(read()));
+                default -> createToken(TokenType.UNKNOWN, String.valueOf(read()));
+            };
         }
         return t;
     }
@@ -319,10 +240,8 @@ public class Scanner
     /**
      * Scans whitespace until we encounter a non-whitespace character.
      */
-    private void readWhitespace()
-    {
-        while (Character.isWhitespace(peek()))
-        {
+    private void readWhitespace() {
+        while (Character.isWhitespace(peek())) {
             read();
         }
     }
@@ -331,22 +250,18 @@ public class Scanner
      * Reads an identifier or keyword.
      * @return The <code>Token</code> associated with the identifier or keyword.
      */
-    private Token readIdentifierOrKeyword()
-    {
+    private Token readIdentifierOrKeyword() {
         StringBuilder buf = new StringBuilder();
         buf.append(read());
-        while (Character.isJavaIdentifierPart(peek()))
-        {
+        while (Character.isJavaIdentifierPart(peek())) {
             buf.append(read());
         }
         String result = buf.toString();
         TokenType keyword = TokenType.forRepresentation(result);
-        if (keyword != null)
-        {
+        if (keyword != null) {
             return createToken(keyword, result);
         }
-        else
-        {
+        else {
             return createToken(TokenType.IDENTIFIER, result);
         }
     }
@@ -357,17 +272,13 @@ public class Scanner
      * @throws CompileException If the end of the file was reached before the
      *     end of the traditional comment.
      */
-    private String readCommentUntilEndComment()
-    {
+    private String readCommentUntilEndComment() {
         StringBuilder buf = new StringBuilder();
         char c;
         boolean endCommentReached = false;
-        while ( (c = read()) != (char) -1)
-        {
-            if (c == '*')
-            {
-                if (peek() == '/')
-                {
+        while ( (c = read()) != (char) -1) {
+            if (c == '*') {
+                if (peek() == '/') {
                     read();
                     endCommentReached = true;
                     break;
@@ -375,8 +286,7 @@ public class Scanner
             }
             buf.append(c);
         }
-        if (!endCommentReached)
-        {
+        if (!endCommentReached) {
             throw new CompileException("End of file reached before end of traditional comment!");
         }
         return buf.toString();
@@ -388,21 +298,17 @@ public class Scanner
      * @throws CompileException If the end of the file was reached before the
      *     end of the traditional comment.
      */
-    private String readCommentUntilEndOfLine()
-    {
+    private String readCommentUntilEndOfLine() {
         StringBuilder buf = new StringBuilder();
         char c;
-        while (true)
-        {
+        while (true) {
             c = peek();
             // '\n' by itself
-            if (c == '\n')
-            {
+            if (c == '\n') {
                 read();
                 break;
             }
-            else if (c == (char) -1)
-            {
+            else if (c == (char) -1) {
                 break;
             }
             read();
@@ -416,28 +322,23 @@ public class Scanner
      * in single quotes.  Escape characters are respected.
      * @return The <code>Token</code> associated with the character literal.
      */
-    private Token readCharacterLiteral()
-    {
+    private Token readCharacterLiteral() {
         read();
-        if (peek() == '\'')
-        {
+        if (peek() == '\'') {
             throw new CompileException("Illegal empty character literal.");
         }
 
         Token t;
 
-        switch(peek())
-        {
-        case '\\':
+        if (peek() == '\\') {
             read();
             t = createToken(TokenType.CHARACTER_LITERAL, String.valueOf(applyEscape()));
-            break;
-        default:
-            t = createToken(TokenType.CHARACTER_LITERAL, String.valueOf(read()));
-            break;
         }
-        if (read() != '\'')
-        {
+        else {
+            t = createToken(TokenType.CHARACTER_LITERAL, String.valueOf(read()));
+        }
+
+        if (read() != '\'') {
             throw new CompileException("Illegal unclosed character literal.");
         }
         return t;
@@ -452,29 +353,23 @@ public class Scanner
      * @throws CompileException If end-of-line or end-of-file occurs before the
      *     next double-quote character.
      */
-    private Token readStringLiteral()
-    {
+    private Token readStringLiteral() {
         read();
-        if (peek() == '"')
-        {
+        if (peek() == '"') {
             read();
-            if (peek() == '"')
-            {
+            if (peek() == '"') {
                 read();
-                return readUnescapedMultilineStringLiteral();
+                return readTextBlockStringLiteral();
             }
-            else
-            {
+            else {
                 // Empty string literal.
                 return createToken(TokenType.STRING_LITERAL, "");
             }
         }
         StringBuilder buf = new StringBuilder();
-        while (peek() != '"')
-        {
+        while (peek() != '"') {
             // Escapes
-            switch(peek())
-            {
+            switch(peek()) {
             case '\\':
                 read();
                 buf.append(applyEscape());
@@ -500,69 +395,89 @@ public class Scanner
      * escape character.  Apply the escape and return the char.
      * @return The character that the escape sequence represents.
      */
-    private char applyEscape()
-    {
-        switch (read())
-        {
-        case 'b':
-            return '\b';
-        case 'f':
-            return '\f';
-        case 'n':
-            return '\n';
-        case 'r':
-            return '\r';
-        case 't':
-            return '\t';
-        case '"':
-            return '"';
-        case '\'':
-            return '\'';
-        case '\\':
-            return '\\';
-        default:
-            throw new CompileException("Illegal escape sequence: \\" + peek());
-        }
+    private char applyEscape() {
+        return switch (read()) {
+            case 'b' -> '\b';
+            case 'f' -> '\f';
+            case 'n' -> '\n';
+            case 'r' -> '\r';
+            case 't' -> '\t';
+            case '"' -> '"';
+            case '\'' -> '\'';
+            case '\\' -> '\\';
+            default -> throw new CompileException("Illegal escape sequence: \\" + peek());
+        };
     }
 
     /**
-     * Reads an unescaped string literal where newlines are allowed.  The
+     * Reads an unescaped string literal where newlines are allowed.  Before the
+     * actual content starts, but after the initial 3 double-quotes, there can be
+     * optional whitespace before the initial line terminator. The
      * literal is ended by 3 consecutive double-quote characters in the source.
      * More than 3 consecutive means that additional double-quote characters
      * are appended to the literal.
+     * Trailing whitespace is stripped on every line of the literal.
+     * Determine the minimum number of the number of leading whitespace characters
+     * at the beginning of each line.  Then strip exactly that number of whitespace
+     * characters from the beginning of each line.
      * @return The <code>Token</code> associated with the string literal.
      */
-    private Token readUnescapedMultilineStringLiteral()
-    {
+    private Token readTextBlockStringLiteral() {
         StringBuilder buf = new StringBuilder();
+        boolean pastInitialWhitespace = false;
         boolean terminated = false;
-        while (!terminated)
-        {
-            switch(peek())
-            {
+        char c;
+        // Read past any whitespace beyond """ but before the end of the line.
+        while ( (c = read()) != (char) -1) {
+            if (c == '\n' || c == '\r') {
+                pastInitialWhitespace = true;
+                break;
+            } else if (!Character.isWhitespace(c)) {
+                throw new CompileException("Missing new line after opening quotes!");
+            }
+        }
+        if (!pastInitialWhitespace) {
+            throw new CompileException("End of file reached before close of text block!");
+        }
+        // First char of line terminator is read.  Read past any \r\n stuff.
+        if (c == '\r' && peek() == '\n') {
+            read();
+        }
+
+        // Read lines of the Text Block literal.
+        while (!terminated) {
+            switch (peek()) {
             case '"':
                 read();
-                if (peek() == '"')
-                {
+                if (peek() == '"') {
                     read();
-                    if (peek() == '"')
-                    {
+                    if (peek() == '"') {
                         read();
                         terminated = true;
                         break;
                     }
-                    else
-                    {
+                    else {
                         buf.append("\"\"");
                     }
                 }
-                else
-                {
+                else {
                     buf.append("\"");
                 }
                 break;
+            case '\r':
+                // \r or \r\n => \n.
+                read();
+                if (peek() != '\n') {
+                    read();
+                }
+                buf.append('\n');
+                break;
+            case '\n':
+                read();
+                buf.append('\n');
+                break;
             case (char) -1:
-                throw new CompileException("String not terminated before end of file.");
+                throw new CompileException("Text block not terminated before end of file.");
             default:
                 buf.append(read());
                 break;
@@ -573,12 +488,11 @@ public class Scanner
         // the end of the string, then append (n - 3) double-quotes to the
         // literal.
         // Here we've read 3 double-quote characters already.
-        while (peek() == '"')
-        {
+        while (peek() == '"') {
             buf.append(read());
         }
 
-        return createToken(TokenType.STRING_LITERAL, buf.toString());
+        return createToken(TokenType.STRING_LITERAL, buf.toString().stripIndent());
     }
 
     /**
@@ -587,22 +501,26 @@ public class Scanner
      * <code>BigDecimal</code> literals.
      * @return The <code>Token</code> associated with the numeric literal.
      */
-    private Token readNumericLiteral()
-    {
+    private Token readNumericLiteral() {
         StringBuilder buf = new StringBuilder();
-        while (Character.isDigit(peek()))
-        {
+        while (Character.isDigit(peek())) {
             buf.append(read());
         }
         char c = peek();
-        if (c == 'e' || c == 'E' || c == '.')
-        {
-            return readFloatingPointLiteral(buf, c == '.');
+        if (c == 'e' || c == 'E') {
+            return readFloatingPointLiteral(buf, false);
         }
-        else
-        {
-            return createToken(TokenType.INT_LITERAL, buf.toString());
+        if (c == '.') {
+            read();
+            // Range operator TWO_DOTS will not generate a floating point literal.
+            if (peek() == '.') {
+                putBack();
+                return createToken(TokenType.INT_LITERAL, buf.toString());
+            }
+            putBack();
+            return readFloatingPointLiteral(buf, true);
         }
+        return createToken(TokenType.INT_LITERAL, buf.toString());
     }
 
     /**
@@ -612,36 +530,29 @@ public class Scanner
      *     <li>Digits have been read, and one of <code>e E .</code> is next.</li>
      *     <li>A decimal point has been read, and a digit is next.</li>
      * </ul>
-     * @param soFar What has been read so far into the token.
+     * @param soFar Contains what has been read so far into the token.
      * @param dotIsNext Whether a <code>.</code> is next to be read.
      * @return The <code>Token</code> associated with the floating point literal.
      */
-    private Token readFloatingPointLiteral(StringBuilder soFar, boolean dotIsNext)
-    {
-        if (dotIsNext)
-        {
+    private Token readFloatingPointLiteral(StringBuilder soFar, boolean dotIsNext) {
+        if (dotIsNext) {
             soFar.append(read());
         }
-        while (Character.isDigit(peek()))
-        {
+        while (Character.isDigit(peek())) {
             soFar.append(read());
         }
         char expPart = peek();
         // Exponent part.
-        if (expPart == 'e' || expPart == 'E')
-        {
+        if (expPart == 'e' || expPart == 'E') {
             soFar.append(read());
             char next = peek();
-            if (next == '+' || next == '-')
-            {
+            if (next == '+' || next == '-') {
                 soFar.append(read());
             }
-            if (!Character.isDigit(peek()))
-            {
+            if (!Character.isDigit(peek())) {
                 throw new CompileException("Invalid floating point literal; missing exponent");
             }
-            while (Character.isDigit(peek()))
-            {
+            while (Character.isDigit(peek())) {
                 soFar.append(read());
             }
         }
@@ -652,16 +563,13 @@ public class Scanner
      * Scans "[" and "[]".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithOpenBracket()
-    {
+    private Token readStartingWithOpenBracket() {
         read();
-        if (peek() == ']')
-        {
+        if (peek() == ']') {
             read();
             return createToken(TokenType.OPEN_CLOSE_BRACKET, "[]");
         }
-        else
-        {
+        else {
             return createToken(TokenType.OPEN_BRACKET, "[");
         }
     }
@@ -670,111 +578,92 @@ public class Scanner
      * Scans "::", ":=", ":&gt;", and ":".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithColon()
-    {
+    private Token readStartingWithColon() {
         read();
-        switch (peek())
-        {
-        case ':':
-            read();
-            return createToken(TokenType.DOUBLE_COLON, "::");
-        case '=':
-            read();
-            return createToken(TokenType.ASSIGNMENT, ":=");
-        case '>':
-            read();
-            return createToken(TokenType.SUPERTYPE, ":>");
-        default:
-            return createToken(TokenType.COLON, ":");
-        }
+        return switch (peek()) {
+            case ':' -> {
+                read();
+                yield createToken(TokenType.DOUBLE_COLON, "::");
+            }
+            case '>' -> {
+                read();
+                yield createToken(TokenType.SUPERTYPE, ":>");
+            }
+            default -> createToken(TokenType.COLON, ":");
+        };
     }
 
     /**
-     * Scans "=".
+     * Scans "=" and "==".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithEquals()
-    {
+    private Token readStartingWithEquals() {
         read();
+        if (peek() == '=') {
+            read();
+            return createToken(TokenType.DOUBLE_EQUAL, "==");
+        }
         return createToken(TokenType.EQUAL, "=");
     }
 
     /**
-     * Scans "...", ".", and floating point literals that start with ".".
+     * Scans "...", "..", ".", and floating point literals that start with ".".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithDot()
-    {
+    private Token readStartingWithDot() {
         read();
-        if (Character.isDigit(peek()))
-        {
+        if (Character.isDigit(peek())) {
             return readFloatingPointLiteral(new StringBuilder("."), true);
         }
-        switch (peek())
-        {
-        case '.':
+        if (peek() == '.') {
             read();
-            if (peek() == '.')
-            {
+            if (peek() == '.') {
                 read();
-                return createToken(TokenType.ELLIPSIS, "...");
+                return createToken(TokenType.THREE_DOTS, "...");
             }
-            else
-            {
-                putBack();
+            else {
+                return createToken(TokenType.TWO_DOTS, "..");
             }
-            // FALLTHROUGH!
-        default:
-            return createToken(TokenType.DOT, ".");
         }
+        return createToken(TokenType.DOT, ".");
     }
 
     /**
      * Scans "!=" and "!".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithExclamation()
-    {
+    private Token readStartingWithExclamation() {
         read();
-        switch (peek())
-        {
-        case '=':
+        if (peek() == '=') {
             read();
             return createToken(TokenType.NOT_EQUAL, "!=");
-        default:
-            return createToken(TokenType.LOGICAL_COMPLEMENT, "!");
         }
+        return createToken(TokenType.EXCLAMATION, "!");
     }
 
     /**
      * Scans "&lt;&lt;", "&lt;&lt;=", "&lt;=", "&lt;=&gt;", "&lt;:", and "&lt;".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithLessThan()
-    {
+    private Token readStartingWithLessThan() {
         read();
-        switch (peek())
-        {
+        switch (peek()) {
         case '=':
             read();
-            if (peek() == '>')
-            {
+            if (peek() == '>') {
                 read();
                 return createToken(TokenType.COMPARISON, "<=>");
             }
-            else
-            {
+            else {
                 return createToken(TokenType.LESS_THAN_OR_EQUAL, "<=");
             }
         case '<':
             read();
-            if (peek() == '=')
-            {
+            if (peek() == '=') {
                 read();
                 return createToken(TokenType.SHIFT_LEFT_EQUALS, "<<=");
             }
-            else
-            {
+            else {
                 return createToken(TokenType.SHIFT_LEFT, "<<");
             }
         case ':':
@@ -789,36 +678,20 @@ public class Scanner
      * Scans "&gt;&gt;", "&gt;&gt;=", "&gt;=", "&gt;&gt;&gt;", "&gt;&gt;&gt;=", and "&gt;".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithGreaterThan()
-    {
+    private Token readStartingWithGreaterThan() {
         read();
-        switch (peek())
-        {
+        switch (peek()) {
         case '=':
             read();
             return createToken(TokenType.GREATER_THAN_OR_EQUAL, ">=");
         case '>':
-            if (!amInTypeContext)
-            {
+            if (!amInTypeContext) {
                 read();
-                switch (peek())
-                {
-                case '>':
-                    read();
-                    if (peek() == '=')
-                    {
-                        read();
-                        return createToken(TokenType.UNSIGNED_SHIFT_RIGHT_EQUALS, ">>>=");
-                    } else
-                    {
-                        return createToken(TokenType.UNSIGNED_SHIFT_RIGHT, ">>>");
-                    }
-                case '=':
+                if (peek() == '=') {
                     read();
                     return createToken(TokenType.SHIFT_RIGHT_EQUALS, ">>=");
-                default:
-                    return createToken(TokenType.SHIFT_RIGHT, ">>");
                 }
+                return createToken(TokenType.SHIFT_RIGHT, ">>");
             }
             /* FALLTHROUGH */
         default:
@@ -830,59 +703,55 @@ public class Scanner
      * Scans "++", "+=", and "+".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithPlus()
-    {
+    private Token readStartingWithPlus() {
         read();
-        switch(peek())
-        {
-        case '+':
-            read();
-            return createToken(TokenType.INCREMENT, "++");
-        case '=':
-            read();
-            return createToken(TokenType.PLUS_EQUALS, "+=");
-        default:
-            return createToken(TokenType.PLUS, "+");
-        }
+        return switch (peek()) {
+            case '+' -> {
+                read();
+                yield createToken(TokenType.INCREMENT, "++");
+            }
+            case '=' -> {
+                read();
+                yield createToken(TokenType.PLUS_EQUALS, "+=");
+            }
+            default -> createToken(TokenType.PLUS, "+");
+        };
     }
 
     /**
      * Scans "--", "-=", "->", and "-".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithMinus()
-    {
+    private Token readStartingWithMinus() {
         read();
-        switch(peek())
-        {
-        case '-':
-            read();
-            return createToken(TokenType.DECREMENT, "--");
-        case '=':
-            read();
-            return createToken(TokenType.MINUS_EQUALS, "-=");
-        case '>':
-            read();
-            return createToken(TokenType.LAMBDA_MAPS_TO, "->");
-        default:
-            return createToken(TokenType.MINUS, "-");
-        }
+        return switch (peek()) {
+            case '-' -> {
+                read();
+                yield createToken(TokenType.DECREMENT, "--");
+            }
+            case '=' -> {
+                read();
+                yield createToken(TokenType.MINUS_EQUALS, "-=");
+            }
+            case '>' -> {
+                read();
+                yield createToken(TokenType.ARROW, "->");
+            }
+            default -> createToken(TokenType.MINUS, "-");
+        };
     }
 
     /**
      * Scans "*=" and "*".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithStar()
-    {
+    private Token readStartingWithStar() {
         read();
-        if (peek() == '=')
-        {
+        if (peek() == '=') {
             read();
             return createToken(TokenType.STAR_EQUALS, "*=");
         }
-        else
-        {
+        else {
             return createToken(TokenType.STAR, "*");
         }
     }
@@ -893,118 +762,111 @@ public class Scanner
      * line" comment, e.g. <code>// comment &lt;end-of-line&gt;</code>
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithSlash()
-    {
+    private Token readStartingWithSlash() {
         read();
-        switch(peek())
-        {
-        case '=':
-            read();
-            return createToken(TokenType.SLASH_EQUALS, "/=");
-        case '*':
-            read();
-            return createToken(TokenType.COMMENT, readCommentUntilEndComment());
-        case '/':
-            read();
-            return createToken(TokenType.COMMENT, readCommentUntilEndOfLine());
-        default:
-            return createToken(TokenType.SLASH, "/");
-        }
+        return switch (peek()) {
+            case '=' -> {
+                read();
+                yield createToken(TokenType.SLASH_EQUALS, "/=");
+            }
+            case '*' -> {
+                read();
+                yield createToken(TokenType.COMMENT, readCommentUntilEndComment());
+            }
+            case '/' -> {
+                read();
+                yield createToken(TokenType.COMMENT, readCommentUntilEndOfLine());
+            }
+            default -> createToken(TokenType.SLASH, "/");
+        };
     }
 
     /**
      * Scans "%=" and "%".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithPercent()
-    {
+    private Token readStartingWithPercent() {
         read();
-        switch(peek())
-        {
-        case '=':
+        if (peek() == '=') {
             read();
             return createToken(TokenType.PERCENT_EQUALS, "%=");
-        default:
-            return createToken(TokenType.PERCENT, "%");
         }
+        return createToken(TokenType.PERCENT, "%");
     }
 
     /**
      * Scans "&=", "&&", "&:", and "&".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithAmpersand()
-    {
+    private Token readStartingWithAmpersand() {
         read();
-        switch(peek())
-        {
-        case '=':
-            read();
-            return createToken(TokenType.AND_EQUALS, "&=");
-        case '&':
-            read();
-            return createToken(TokenType.CONDITIONAL_AND, "&&");
-        case ':':
-            read();
-            return createToken(TokenType.LOGICAL_AND, "&:");
-        default:
-            return createToken(TokenType.BITWISE_AND, "&");
-        }
+        return switch (peek()) {
+            case '=' -> {
+                read();
+                yield createToken(TokenType.AMPERSAND_EQUALS, "&=");
+            }
+            case '&' -> {
+                read();
+                yield createToken(TokenType.DOUBLE_AMPERSAND, "&&");
+            }
+            case ':' -> {
+                read();
+                yield createToken(TokenType.AMPERSAND_COLON, "&:");
+            }
+            default -> createToken(TokenType.AMPERSAND, "&");
+        };
     }
 
     /**
      * Scans "|=", "||", "|:", and "|".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithPipe()
-    {
+    private Token readStartingWithPipe() {
         read();
-        switch(peek())
-        {
-        case '=':
-            read();
-            return createToken(TokenType.OR_EQUALS, "|=");
-        case '|':
-            read();
-            return createToken(TokenType.CONDITIONAL_OR, "||");
-        case ':':
-            read();
-            return createToken(TokenType.LOGICAL_OR, "|:");
-        default:
-            return createToken(TokenType.BITWISE_OR, "|");
-        }
+        return switch (peek()) {
+            case '=' -> {
+                read();
+                yield createToken(TokenType.PIPE_EQUALS, "|=");
+            }
+            case '|' -> {
+                read();
+                yield createToken(TokenType.DOUBLE_PIPE, "||");
+            }
+            case ':' -> {
+                read();
+                yield createToken(TokenType.PIPE_COLON, "|:");
+            }
+            default -> createToken(TokenType.PIPE, "|");
+        };
     }
 
     /**
      * Scans "^=" and "^".
      * @return The appropriate <code>Token</code>.
      */
-    private Token readStartingWithCaret()
-    {
+    private Token readStartingWithCaret() {
         read();
-        switch(peek())
-        {
-        case '=':
-            read();
-            return createToken(TokenType.XOR_EQUALS, "^=");
-        case ':':
-            read();
-            return createToken(TokenType.LOGICAL_XOR, "^:");
-        default:
-            return createToken(TokenType.BITWISE_XOR, "^");
-        }
+        return switch (peek()) {
+            case '=' -> {
+                read();
+                yield createToken(TokenType.CARET_EQUALS, "^=");
+            }
+            case ':' -> {
+                read();
+                yield createToken(TokenType.CARET_COLON, "^:");
+            }
+            default -> createToken(TokenType.CARET, "^");
+        };
     }
 
     /**
      * Reads the next character, advancing to it.
      * @return The next character, or <code>(char) -1</code> if EOF.
      */
-    private char read()
-    {
+    private char read() {
         char c = peek();
         myCharPos++;
-        if (c == '\n')
-        {
+        if (c == '\n') {
             myCharPos = 0;
             myLineNbr++;
         }
@@ -1015,17 +877,13 @@ public class Scanner
      * Peeks at the next character, not advancing to it.
      * @return The next character, or <code>(char) -1</code> if EOF.
      */
-    private char peek()
-    {
+    private char peek() {
         String currLine = myLines.get(myLineNbr);
-        if (myCharPos >= currLine.length())
-        {
-            if (myLineNbr == myLines.size() - 1)
-            {
+        if (myCharPos >= currLine.length()) {
+            if (myLineNbr == myLines.size() - 1) {
                 return (char) -1; // EOF
             }
-            else
-            {
+            else {
                 return '\n';
             }
         }
@@ -1036,10 +894,8 @@ public class Scanner
      * Effectively "puts back" the most recent character read.  It just backs
      * up the counter.
      */
-    private void putBack()
-    {
-        if (myCharPos == 0)
-        {
+    private void putBack() {
+        if (myCharPos == 0) {
             throw new IllegalStateException("Internal error: Attempted to put back before beginning of line!");
         }
         myCharPos--;

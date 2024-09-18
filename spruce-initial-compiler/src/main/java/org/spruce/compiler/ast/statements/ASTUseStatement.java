@@ -7,24 +7,22 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTSynchronizedStatement</code> is "synchronized", followed by
- * an expression (no incr/decr) in parentheses, and a block.</p>
+ * <p>An <code>ASTUseStatement</code> is "use" followed by an
+ * expression, then a semicolon.</p>
  *
  * <em>
- * SynchronizedStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;synchronized ( ExpressionNoIncrDecr ) Block
+ * UseStatement:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;use Expression ;
  * </em>
  */
-public class ASTSynchronizedStatement extends ASTParentNode
-{
+public class ASTUseStatement extends ASTParentNode{
     /**
-     * Constructs an <code>ASTSynchronizedStatement</code> at the given <code>Location</code>
+     * Constructs an <code>ASTUseStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTSynchronizedStatement(Location location, List<ASTNode> children)
-    {
+    public ASTUseStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTSynchronizedStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

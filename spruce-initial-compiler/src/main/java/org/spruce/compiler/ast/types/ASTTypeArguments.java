@@ -19,16 +19,14 @@ import org.spruce.compiler.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;&lt; TypeArgumentList &gt;
  * </em>
  */
-public class ASTTypeArguments extends ASTParentNode
-{
+public class ASTTypeArguments extends ASTParentNode {
     /**
      * Constructs an <code>ASTTypeArguments</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTTypeArguments(Location location, List<ASTNode> children)
-    {
+    public ASTTypeArguments(Location location, List<ASTNode> children) {
         super(location, children, TokenType.LESS_THAN);
     }
 
@@ -37,8 +35,7 @@ public class ASTTypeArguments extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

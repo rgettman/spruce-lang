@@ -16,16 +16,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;EscapeCharacter
  * </em>
  */
-public class ASTStringLiteral extends ASTValueNode
-{
+public class ASTStringLiteral extends ASTLiteral {
     /**
      * Constructs an <code>ASTStringLiteral</code> given the <code>Location</code>
      * and the string value of the token.
      * @param location The <code>Location</code>.
      * @param value The string value.
      */
-    public ASTStringLiteral(Location location, String value)
-    {
+    public ASTStringLiteral(Location location, String value) {
         super(location, value);
     }
 
@@ -33,8 +31,7 @@ public class ASTStringLiteral extends ASTValueNode
      * Returns the string value.
      * @return The string value.
      */
-    public String getStringValue()
-    {
+    public String getStringValue() {
         return getValue();
     }
 }

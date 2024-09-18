@@ -7,12 +7,12 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTVariableModifier</code> is "final" or "const".</p>
+ * <p>An <code>ASTVariableModifier</code> is "var" or "mut".</p>
  *
  * <em>
  * VariableModifier:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;final<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;const
+ * &nbsp;&nbsp;&nbsp;&nbsp;var<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;mut
  * </em>
  */
 public class ASTVariableModifier extends ASTParentNode

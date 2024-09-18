@@ -15,7 +15,6 @@ import org.spruce.compiler.scanner.Location;
  *     <li>final</li>
  *     <li>override</li>
  *     <li>shared</li>
- *     <li>strictfp</li>
  * </ul>
  *
  * <em>

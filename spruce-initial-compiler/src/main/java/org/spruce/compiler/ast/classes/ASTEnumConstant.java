@@ -16,15 +16,13 @@ import org.spruce.compiler.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier [( ArgumentList )] [ClassBody]
  * </em>
  */
-public class ASTEnumConstant extends ASTParentNode
-{
+public class ASTEnumConstant extends ASTParentNode {
     /**
      * Constructs an <code>ASTEnumConstant</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTEnumConstant(Location location, List<ASTNode> children)
-    {
+    public ASTEnumConstant(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTEnumConstant extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -16,21 +16,18 @@ import org.spruce.compiler.scanner.Location;
  * <em>
  * ShiftExpression:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;AdditiveExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ShiftExpression &lt;&lt; ShiftExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ShiftExpression &gt;&gt; ShiftExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ShiftExpression &gt;&gt;&gt; ShiftExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ShiftExpression &lt;&lt; AdditiveExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ShiftExpression &gt;&gt; AdditiveExpression<br>
  * </em>
  */
-public class ASTShiftExpression extends ASTParentNode
-{
+public class ASTShiftExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTShiftExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTShiftExpression(Location location, List<ASTNode> children)
-    {
+    public ASTShiftExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -39,8 +36,7 @@ public class ASTShiftExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

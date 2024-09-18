@@ -17,16 +17,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess
  * </em>
  */
-public class ASTResource extends ASTParentNode
-{
+public class ASTResource extends ASTParentNode {
     /**
      * Constructs an <code>ASTResource</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTResource(Location location, List<ASTNode> children)
-    {
+    public ASTResource(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -35,8 +33,7 @@ public class ASTResource extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

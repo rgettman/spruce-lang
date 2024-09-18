@@ -13,19 +13,17 @@ import org.spruce.compiler.scanner.Location;
  * <em>
  * VariableDeclarator:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Identifier := VariableInitializer
+ * &nbsp;&nbsp;&nbsp;&nbsp;Identifier = VariableInitializer
  * </em>
  */
-public class ASTVariableDeclarator extends ASTParentNode
-{
+public class ASTVariableDeclarator extends ASTParentNode {
     /**
      * Constructs an <code>ASTVariableDeclarator</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTVariableDeclarator(Location location, List<ASTNode> children)
-    {
+    public ASTVariableDeclarator(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +32,7 @@ public class ASTVariableDeclarator extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -15,15 +15,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [FieldModifierList] DataType VariableDeclaratorList
  * </em>
  */
-public class ASTFieldDeclaration extends ASTParentNode
-{
+public class ASTFieldDeclaration extends ASTParentNode {
     /**
      * Constructs an <code>ASTFieldDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTFieldDeclaration(Location location, List<ASTNode> children)
-    {
+    public ASTFieldDeclaration(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTFieldDeclaration extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -1,6 +1,6 @@
 package org.spruce.compiler.ast;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 import org.spruce.compiler.scanner.Location;
 
@@ -19,27 +19,23 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;double<br>
  * </em>
  */
-public class ASTPrimitiveType extends ASTParentNode
-{
+public class ASTPrimitiveType extends ASTParentNode {
     /**
      * Constructs an <code>ASTPrimitiveType</code> at the given <code>Location</code>
      * and with one child as its node.
      * @param location The <code>Location</code>.
      * @param child The child node.
      */
-    public ASTPrimitiveType(Location location, ASTNode child)
-    {
-        super(location, Arrays.asList(child));
+    public ASTPrimitiveType(Location location, ASTNode child) {
+        super(location, Collections.singletonList(child));
     }
-
 
     /**
      * This node is collapsible.
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

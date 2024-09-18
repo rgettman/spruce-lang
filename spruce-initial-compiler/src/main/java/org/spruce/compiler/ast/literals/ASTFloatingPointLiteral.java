@@ -19,16 +19,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;e|E[+|-][Digits]\
  * </em>
  */
-public class ASTFloatingPointLiteral extends ASTValueNode
-{
+public class ASTFloatingPointLiteral extends ASTLiteral {
     /**
      * Constructs an <code>ASTFloatingPointLiteral</code> given the <code>Location</code>
      * and the string value of the token.
      * @param location The <code>Location</code>.
      * @param value The string value.
      */
-    public ASTFloatingPointLiteral(Location location, String value)
-    {
+    public ASTFloatingPointLiteral(Location location, String value) {
         super(location, value);
     }
 
@@ -36,8 +34,7 @@ public class ASTFloatingPointLiteral extends ASTValueNode
      * Returns the floating point value.
      * @return The floating point value.
      */
-    public double getNumericValue()
-    {
+    public double getNumericValue() {
         return Double.parseDouble(getValue());
     }
 }

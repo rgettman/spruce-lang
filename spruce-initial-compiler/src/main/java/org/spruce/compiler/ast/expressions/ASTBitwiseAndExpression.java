@@ -19,16 +19,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;BitwiseAndExpression &amp; ShiftExpression<br>
  * </em>
  */
-public class ASTBitwiseAndExpression extends ASTParentNode
-{
+public class ASTBitwiseAndExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTBitwiseAndExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTBitwiseAndExpression(Location location, List<ASTNode> children)
-    {
+    public ASTBitwiseAndExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -37,8 +35,7 @@ public class ASTBitwiseAndExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

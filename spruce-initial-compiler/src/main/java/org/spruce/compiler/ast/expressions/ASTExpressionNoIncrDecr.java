@@ -21,16 +21,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;LambdaExpression
  * </em>
  */
-public class ASTExpressionNoIncrDecr extends ASTParentNode
-{
+public class ASTExpressionNoIncrDecr extends ASTParentNode {
     /**
      * Constructs an <code>ASTExpressionNoIncrDecr</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTExpressionNoIncrDecr(Location location, List<ASTNode> children)
-    {
+    public ASTExpressionNoIncrDecr(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -39,8 +37,7 @@ public class ASTExpressionNoIncrDecr extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 
@@ -51,8 +48,7 @@ public class ASTExpressionNoIncrDecr extends ASTParentNode
      * @throws CompileException If no descendant node can be a child of an
      *     <code>ASTLeftHandSide</code>.
      */
-    public ASTLeftHandSide getLeftHandSide()
-    {
+    public ASTLeftHandSide getLeftHandSide() {
         return convertDescendant(Arrays.asList(ASTExpressionName.class, ASTElementAccess.class),
                 ASTLeftHandSide::new,
                 "Expected variable or element access.");

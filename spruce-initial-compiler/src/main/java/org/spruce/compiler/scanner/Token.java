@@ -6,11 +6,10 @@ import java.util.Objects;
  * A <code>Token</code> consists of a <code>Type</code>, the string value,
  * and its <code>Location</code>.
  */
-public class Token
-{
-    private TokenType myType;
-    private String myValue;
-    private Location myLocation;
+public class Token {
+    private final TokenType myType;
+    private final String myValue;
+    private final Location myLocation;
 
     /**
      * Constructs a <code>Token</code> with the given <code>TokenType</code>,
@@ -18,8 +17,7 @@ public class Token
      * @param type The <code>TokenType</code>.
      * @param value The string value of the token.
      */
-    public Token(TokenType type, String value)
-    {
+    public Token(TokenType type, String value) {
         this(null, type, value);
     }
 
@@ -30,8 +28,7 @@ public class Token
      * @param type The <code>TokenType</code>.
      * @param value The string value of the token.
      */
-    public Token(Location location, TokenType type, String value)
-    {
+    public Token(Location location, TokenType type, String value) {
         myLocation = location;
         myType = type;
         myValue = value;
@@ -41,8 +38,7 @@ public class Token
      * Returns the type of the token.
      * @return The type of the token.
      */
-    public TokenType getType()
-    {
+    public TokenType getType() {
         return myType;
     }
 
@@ -50,8 +46,7 @@ public class Token
      * Returns the string value of the token.
      * @return The string value of the token.
      */
-    public String getValue()
-    {
+    public String getValue() {
         return myValue;
     }
 
@@ -59,8 +54,7 @@ public class Token
      * Returns the <code>Location</code> of the token.
      * @return The <code>Location</code> of the token.
      */
-    public Location getLocation()
-    {
+    public Location getLocation() {
         return myLocation;
     }
 
@@ -69,8 +63,7 @@ public class Token
      * @return A string representation of this <code>Token</code>.
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Token{" + myType + ", \"" + myValue + "\"}";
     }
 
@@ -80,12 +73,9 @@ public class Token
      * @return Whether all attributes (type, string value) match.
      */
     @Override
-    public boolean equals(Object other)
-    {
+    public boolean equals(Object other) {
         if (other == null) return false;
-        if (other instanceof Token)
-        {
-            Token t = (Token) other;
+        if (other instanceof Token t) {
             return myType == t.myType && Objects.equals(myValue, t.myValue);
         }
         return false;
@@ -96,8 +86,7 @@ public class Token
      * @return A hash code for a <code>Token</code>.
      */
     @Override
-    public int hashCode()
-    {
+    public int hashCode() {
         return Objects.hash(myType, myValue);
     }
 }

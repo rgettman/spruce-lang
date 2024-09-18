@@ -14,16 +14,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;@ TypeName
  * </em>
  */
-public class ASTMarkerAnnotation extends ASTParentNode
-{
+public class ASTMarkerAnnotation extends ASTParentNode {
     /**
      * Constructs an <code>ASTMarkerAnnotation</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTMarkerAnnotation(Location location, List<ASTNode> children)
-    {
+    public ASTMarkerAnnotation(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTMarkerAnnotation extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

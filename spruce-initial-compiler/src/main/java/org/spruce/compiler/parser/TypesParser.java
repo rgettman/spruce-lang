@@ -18,16 +18,14 @@ import static org.spruce.compiler.scanner.TokenType.*;
 /**
  * A <code>TypesParser</code> is a <code>BasicParser</code> that parses types.
  */
-public class TypesParser extends BasicParser
-{
+public class TypesParser extends BasicParser {
     /**
      * Constructs a <code>TypesParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
      * @param parser The <code>Parser</code> that is creating this object.
      */
-    public TypesParser(Scanner scanner, Parser parser)
-    {
+    public TypesParser(Scanner scanner, Parser parser) {
         super(scanner, parser);
     }
 
@@ -36,12 +34,11 @@ public class TypesParser extends BasicParser
      * associative with each other.
      * @return An <code>ASTIntersectionType</code>.
      */
-    public ASTIntersectionType parseIntersectionType()
-    {
+    public ASTIntersectionType parseIntersectionType() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
-                BITWISE_AND,
+                AMPERSAND,
                 this::parseDataType,
                 ASTIntersectionType::new
         );
@@ -52,24 +49,20 @@ public class TypesParser extends BasicParser
      * the <code>Scanner</code> for the duration parsing this node.
      * @return An <code>ASTTypeArguments</code>.
      */
-    public ASTTypeParameters parseTypeParameters()
-    {
+    public ASTTypeParameters parseTypeParameters() {
         Location loc = curr().getLocation();
         // TODO: Move this higher up in the parsing, to prevent nested type
         // arguments from turning this off too early.
         setInTypeContext(true);
-        if (accept(LESS_THAN) != null)
-        {
+        if (accept(LESS_THAN) != null) {
             ASTTypeParameterList typeParamList = parseTypeParameterList();
-            if (accept(GREATER_THAN) == null)
-            {
+            if (accept(GREATER_THAN) == null) {
                 throw new CompileException("Expected \">\".");
             }
             setInTypeContext(false);
-            return new ASTTypeParameters(loc, Arrays.asList(typeParamList));
+            return new ASTTypeParameters(loc, Collections.singletonList(typeParamList));
         }
-        else
-        {
+        else {
             throw new CompileException("Expected \"<\".");
         }
     }
@@ -78,8 +71,7 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTTypeParameterList</code>.
      * @return An <code>ASTTypeParameterList</code>.
      */
-    public ASTTypeParameterList parseTypeParameterList()
-    {
+    public ASTTypeParameterList parseTypeParameterList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
@@ -93,13 +85,11 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTTypeParameter</code>.
      * @return An <code>ASTTypeParameter</code>.
      */
-    public ASTTypeParameter parseTypeParameter()
-    {
+    public ASTTypeParameter parseTypeParameter() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
         children.add(getNamesParser().parseIdentifier());
-        if (isCurr(SUBTYPE))
-        {
+        if (isCurr(SUBTYPE)) {
             children.add(parseTypeBound());
         }
         return new ASTTypeParameter(loc, children);
@@ -109,16 +99,13 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTTypeBound</code>.
      * @return An <code>ASTTypeBound</code>.
      */
-    public ASTTypeBound parseTypeBound()
-    {
+    public ASTTypeBound parseTypeBound() {
         Location loc = curr().getLocation();
-        if (accept(SUBTYPE) == null)
-        {
+        if (accept(SUBTYPE) == null) {
             throw new CompileException("Expected \"<:\".");
         }
-        else
-        {
-            ASTTypeBound node = new ASTTypeBound(loc, Arrays.asList(parseIntersectionType()));
+        else {
+            ASTTypeBound node = new ASTTypeBound(loc, Collections.singletonList(parseIntersectionType()));
             node.setOperation(SUBTYPE);
             return node;
         }
@@ -128,19 +115,16 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTDataType</code>.
      * @return An <code>ASTDataType</code>.
      */
-    public ASTDataType parseDataType()
-    {
+    public ASTDataType parseDataType() {
         Location loc = curr().getLocation();
         ASTDataTypeNoArray dtna = parseDataTypeNoArray();
-        if (isCurr(OPEN_CLOSE_BRACKET))
-        {
+        if (isCurr(OPEN_CLOSE_BRACKET)) {
             ASTDims dims = parseDims();
             ASTArrayType arrayType = new ASTArrayType(loc, Arrays.asList(dtna, dims));
-            return new ASTDataType(loc, Arrays.asList(arrayType));
+            return new ASTDataType(loc, Collections.singletonList(arrayType));
         }
-        else
-        {
-            return new ASTDataType(loc, Arrays.asList(dtna));
+        else {
+            return new ASTDataType(loc, Collections.singletonList(dtna));
         }
     }
 
@@ -148,24 +132,19 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTArrayType</code>.
      * @return An <code>ASTArrayType</code>.
      */
-    public ASTArrayType parseArrayType()
-    {
+    public ASTArrayType parseArrayType() {
         Location loc = curr().getLocation();
-        if (isCurr(IDENTIFIER))
-        {
+        if (isCurr(IDENTIFIER)) {
             ASTDataTypeNoArray dtna = parseDataTypeNoArray();
-            if (isCurr(OPEN_CLOSE_BRACKET))
-            {
+            if (isCurr(OPEN_CLOSE_BRACKET)) {
                 ASTDims dims = parseDims();
                 return new ASTArrayType(loc, Arrays.asList(dtna, dims));
             }
-            else
-            {
+            else {
                 throw new CompileException("Expected [].");
             }
         }
-        else
-        {
+        else {
             throw new CompileException("Identifier expected.");
         }
     }
@@ -174,26 +153,21 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTDims</code>.
      * @return An <code>ASTDims</code>.
      */
-    public ASTDims parseDims()
-    {
-        if (!isCurr(OPEN_CLOSE_BRACKET))
-        {
+    public ASTDims parseDims() {
+        if (!isCurr(OPEN_CLOSE_BRACKET)) {
             throw new CompileException("Expected [].");
         }
         ASTDims node = null;
         List<ASTNode> children = null;
-        while (isCurr(OPEN_CLOSE_BRACKET))
-        {
+        while (isCurr(OPEN_CLOSE_BRACKET)) {
             Location loc = curr().getLocation();
             accept(OPEN_CLOSE_BRACKET);
-            if (node == null)
-            {
+            if (node == null) {
                 children = new ArrayList<>(1);
                 node = new ASTDims(loc, children);
                 node.setOperation(OPEN_CLOSE_BRACKET);
             }
-            else
-            {
+            else {
                 ASTDims dims = new ASTDims(loc, new ArrayList<>(1));
                 dims.setOperation(OPEN_CLOSE_BRACKET);
                 children.add(dims);
@@ -207,8 +181,7 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTDataTypeNoArrayList</code>.
      * @return An <code>ASTDataTypeNoArrayList</code>.
      */
-    public ASTDataTypeNoArrayList parseDataTypeNoArrayList()
-    {
+    public ASTDataTypeNoArrayList parseDataTypeNoArrayList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected a data type (no array).",
@@ -223,8 +196,7 @@ public class TypesParser extends BasicParser
      * with each other.
      * @return An <code>ASTDataTypeNoArray</code>.
      */
-    public ASTDataTypeNoArray parseDataTypeNoArray()
-    {
+    public ASTDataTypeNoArray parseDataTypeNoArray() {
         return parseBinaryExpressionLeftAssociative(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier",
@@ -238,8 +210,7 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTSimpleType</code>.
      * @return An <code>ASTSimpleType</code>.
      */
-    public ASTSimpleType parseSimpleType()
-    {
+    public ASTSimpleType parseSimpleType() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
         children.add(getNamesParser().parseIdentifier());
@@ -255,8 +226,7 @@ public class TypesParser extends BasicParser
                         (isNext(IDENTIFIER) && isPeek(GREATER_THAN)) ||
                         (isNext(QUESTION_MARK))
                 )
-                )
-        {
+                ) {
             children.add(parseTypeArguments());
         }
         return new ASTSimpleType(loc, children);
@@ -267,22 +237,19 @@ public class TypesParser extends BasicParser
      * the <code>Scanner</code> for the duration parsing this node.
      * @return An <code>ASTTypeArgumentsOrDiamond</code>.
      */
-    public ASTTypeArgumentsOrDiamond parseTypeArgumentsOrDiamond()
-    {
+    public ASTTypeArgumentsOrDiamond parseTypeArgumentsOrDiamond() {
         Location loc = curr().getLocation();
         // TODO: Move this higher up in the parsing, to prevent nested type
         // arguments from turning this off too early.
         setInTypeContext(true);
         ASTTypeArgumentsOrDiamond node;
-        if (isCurr(LESS_THAN) && isNext(GREATER_THAN))
-        {
+        if (isCurr(LESS_THAN) && isNext(GREATER_THAN)) {
             accept(LESS_THAN);
             accept(GREATER_THAN);
             node = new ASTTypeArgumentsOrDiamond(loc, Collections.emptyList());
             node.setOperation(LESS_THAN);
         }
-        else
-        {
+        else {
             ASTTypeArguments ta = parseTypeArguments();
             node = new ASTTypeArgumentsOrDiamond(loc, Collections.singletonList(ta));
         }
@@ -294,24 +261,20 @@ public class TypesParser extends BasicParser
      * the <code>Scanner</code> for the duration parsing this node.
      * @return An <code>ASTTypeArguments</code>.
      */
-    public ASTTypeArguments parseTypeArguments()
-    {
+    public ASTTypeArguments parseTypeArguments() {
         Location loc = curr().getLocation();
         // TODO: Move this higher up in the parsing, to prevent nested type
         // arguments from turning this off too early.
         setInTypeContext(true);
-        if (accept(LESS_THAN) != null)
-        {
+        if (accept(LESS_THAN) != null) {
             ASTTypeArgumentList typeArgList = parseTypeArgumentList();
-            if (accept(GREATER_THAN) == null)
-            {
+            if (accept(GREATER_THAN) == null) {
                 throw new CompileException("Expected \">\".");
             }
             setInTypeContext(false);
-            return new ASTTypeArguments(loc, Arrays.asList(typeArgList));
+            return new ASTTypeArguments(loc, Collections.singletonList(typeArgList));
         }
-        else
-        {
+        else {
             throw new CompileException("Expected \"<\".");
         }
     }
@@ -322,8 +285,7 @@ public class TypesParser extends BasicParser
      * @param t A <code>Token</code>.
      * @return Whether the given token can start a type argument.
      */
-    private static boolean isTypeArgument(Token t)
-    {
+    private static boolean isTypeArgument(Token t) {
         return (test(t, QUESTION_MARK, IDENTIFIER));
     }
 
@@ -331,8 +293,7 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTTypeArgumentList</code>.
      * @return An <code>ASTTypeArgumentList</code>.
      */
-    public ASTTypeArgumentList parseTypeArgumentList()
-    {
+    public ASTTypeArgumentList parseTypeArgumentList() {
         return parseList(
                 TypesParser::isTypeArgument,
                 "Expected a type argument.",
@@ -345,21 +306,17 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTTypeArgument</code>.
      * @return An <code>ASTTypeArgument</code>.
      */
-    public ASTTypeArgument parseTypeArgument()
-    {
+    public ASTTypeArgument parseTypeArgument() {
         Location loc = curr().getLocation();
-        if (isCurr(QUESTION_MARK))
-        {
+        if (isCurr(QUESTION_MARK)) {
             ASTWildcard wildcard = parseWildcard();
-            return new ASTTypeArgument(loc, Arrays.asList(wildcard));
+            return new ASTTypeArgument(loc, Collections.singletonList(wildcard));
         }
-        else if (isCurr(IDENTIFIER))
-        {
+        else if (isCurr(IDENTIFIER)) {
             ASTDataType dt = parseDataType();
-            return new ASTTypeArgument(loc, Arrays.asList(dt));
+            return new ASTTypeArgument(loc, Collections.singletonList(dt));
         }
-        else
-        {
+        else {
             throw new CompileException("Expected wildcard or data type.");
         }
     }
@@ -368,16 +325,13 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTWildcard</code>.
      * @return An <code>ASTWildcard</code>.
      */
-    public ASTWildcard parseWildcard()
-    {
+    public ASTWildcard parseWildcard() {
         Location loc = curr().getLocation();
-        if (accept(QUESTION_MARK) == null)
-        {
+        if (accept(QUESTION_MARK) == null) {
             throw new CompileException("Wildcard expected.");
         }
         ASTWildcard node = new ASTWildcard(loc, new ArrayList<>(1));
-        if (isCurr(SUBTYPE) || isCurr(SUPERTYPE))
-        {
+        if (isCurr(SUBTYPE) || isCurr(SUPERTYPE)) {
             ASTWildcardBounds wb = parseWildcardBounds();
             node.getChildren().add(wb);
         }
@@ -388,25 +342,21 @@ public class TypesParser extends BasicParser
      * Parses an <code>ASTWildcardBounds</code>.
      * @return An <code>ASTWildcardBounds</code>.
      */
-    public ASTWildcardBounds parseWildcardBounds()
-    {
+    public ASTWildcardBounds parseWildcardBounds() {
         Location loc = curr().getLocation();
         TokenType curr;
-        if (isCurr(SUBTYPE))
-        {
+        if (isCurr(SUBTYPE)) {
             accept(SUBTYPE);
             curr = SUBTYPE;
         }
-        else if (isCurr(SUPERTYPE))
-        {
+        else if (isCurr(SUPERTYPE)) {
             accept(SUPERTYPE);
             curr = SUPERTYPE;
         }
-        else
-        {
+        else {
             throw new CompileException("Expected \"<:\" or \":>\".");
         }
-        ASTWildcardBounds node = new ASTWildcardBounds(loc, Arrays.asList(parseDataType()));
+        ASTWildcardBounds node = new ASTWildcardBounds(loc, Collections.singletonList(parseDataType()));
         node.setOperation(curr);
         return node;
     }

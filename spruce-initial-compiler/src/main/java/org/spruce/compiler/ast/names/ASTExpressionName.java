@@ -16,8 +16,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
  * </em>
  */
-public class ASTExpressionName extends ASTParentNode
-{
+public class ASTExpressionName extends ASTParentNode {
     /**
      * Constructs an <code>ASTExpressionName</code> at the given <code>Location</code>
      * and with at least one node as its children.
@@ -25,8 +24,7 @@ public class ASTExpressionName extends ASTParentNode
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTExpressionName(Location location, List<ASTNode> children)
-    {
+    public ASTExpressionName(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -36,8 +34,7 @@ public class ASTExpressionName extends ASTParentNode
      * @return <code>false</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return false;
     }
 
@@ -48,12 +45,10 @@ public class ASTExpressionName extends ASTParentNode
      *     <code>ASTExpressionName</code>.
      * @see ASTAmbiguousName#convertToNamespaceOrTypeName
      */
-    public ASTTypeName convertToTypeName()
-    {
+    public ASTTypeName convertToTypeName() {
         List<ASTNode> children = getChildren();
-        if (children.size() >= 1 && children.get(0) instanceof ASTAmbiguousName)
+        if (!children.isEmpty() && children.get(0) instanceof ASTAmbiguousName ambName)
         {
-            ASTAmbiguousName ambName = (ASTAmbiguousName) children.get(0);
             ASTNamespaceOrTypeName portName = ambName.convertToNamespaceOrTypeName();
             children.set(0, portName);
         }

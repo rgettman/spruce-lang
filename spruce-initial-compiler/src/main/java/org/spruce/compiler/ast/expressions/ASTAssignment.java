@@ -17,22 +17,19 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ConditionalExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;LeftHandSide AssignmentOperator AssignmentExpression
  * </em>
- *
  * <em>
  * AssignmentOperator:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;(One of) := += -= *= /= %= &= |= ^= &lt;&lt;= &gt;&gt;= &gt;&gt;&gt;=
+ * &nbsp;&nbsp;&nbsp;&nbsp;(One of) = += -= *= /= %= &= |= ^= &lt;&lt;= &gt;&gt;=
  * </em>
  */
-public class ASTAssignment extends ASTParentNode
-{
+public class ASTAssignment extends ASTParentNode {
     /**
      * Constructs an <code>ASTAssignment</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTAssignment(Location location, List<ASTNode> children)
-    {
+    public ASTAssignment(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -41,8 +38,7 @@ public class ASTAssignment extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -1,4 +1,4 @@
-package org.spruce.compiler.ast.statements;
+package org.spruce.compiler.ast.expressions;
 
 import java.util.List;
 
@@ -7,25 +7,22 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTSwitchValue</code> is an expression (no incr/decr) or an
- * identifier.</p>
+ * <p>An <code>ASTCaseConstants</code> is a comma-separated list of
+ * conditional expressions.</p>
  *
  * <em>
- * SwitchValue:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionNoIncrDecr<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Identifier
+ * CaseConstants:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ConditionalExpression {, ConditionalExpression}
  * </em>
  */
-public class ASTSwitchValue extends ASTParentNode
-{
+public class ASTCaseConstants extends ASTParentNode {
     /**
-     * Constructs an <code>SwitchValue</code> at the given <code>Location</code>
+     * Constructs an <code>ASTCaseConstants</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTSwitchValue(Location location, List<ASTNode> children)
-    {
+    public ASTCaseConstants(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +31,7 @@ public class ASTSwitchValue extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

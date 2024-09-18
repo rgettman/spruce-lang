@@ -6,17 +6,19 @@ import java.util.Collections;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.statements.*;
+import org.spruce.compiler.ast.expressions.ASTAssignment;
+import org.spruce.compiler.ast.expressions.ASTLeftHandSide;
 import org.spruce.compiler.ast.expressions.ASTClassInstanceCreationExpression;
 import org.spruce.compiler.ast.expressions.ASTFieldAccess;
 import org.spruce.compiler.ast.expressions.ASTMethodInvocation;
-import org.spruce.compiler.ast.expressions.ASTPrefixExpression;
 import org.spruce.compiler.ast.expressions.ASTPrimary;
 import org.spruce.compiler.ast.names.ASTExpressionName;
+import org.spruce.compiler.ast.statements.*;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
+import org.spruce.compiler.scanner.TokenType;
 
 import static org.spruce.compiler.scanner.TokenType.*;
 
@@ -24,16 +26,14 @@ import static org.spruce.compiler.scanner.TokenType.*;
  * A <code>StatementsParser</code> is a <code>BasicParser</code> that parses
  * statements.
  */
-public class StatementsParser extends BasicParser
-{
+public class StatementsParser extends BasicParser {
     /**
-     * Constructs a <code>ExpressionsParser</code> using a <code>Scanner</code>.
+     * Constructs a <code>StatementsParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
      * @param parser The <code>Parser</code> that is creating this object.
      */
-    public StatementsParser(Scanner scanner, Parser parser)
-    {
+    public StatementsParser(Scanner scanner, Parser parser) {
         super(scanner, parser);
     }
 
@@ -41,22 +41,18 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTBlock</code>.
      * @return An <code>ASTBlock</code>.
      */
-    public ASTBlock parseBlock()
-    {
+    public ASTBlock parseBlock() {
         Location loc = curr().getLocation();
-        if (accept(OPEN_BRACE) == null)
-        {
+        if (accept(OPEN_BRACE) == null) {
             throw new CompileException("Expected '{'.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         ASTBlock node = new ASTBlock(loc, children);
         node.setOperation(OPEN_BRACE);
-        if (!isCurr(CLOSE_BRACE))
-        {
+        if (!isCurr(CLOSE_BRACE)) {
             children.add(parseBlockStatements());
         }
-        if (accept(CLOSE_BRACE) == null)
-        {
+        if (accept(CLOSE_BRACE) == null) {
             throw new CompileException("Expected '}'.");
         }
         return node;
@@ -66,8 +62,7 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTBlockStatements</code>.
      * @return An <code>ASTBlockStatements</code>.
      */
-    public ASTBlockStatements parseBlockStatements()
-    {
+    public ASTBlockStatements parseBlockStatements() {
         return parseMultiple(
                 t -> !test(t, CLOSE_BRACE) && !test(t, DEFAULT) && !test(t, CASE),
                 "Expected statement or local variable declaration.",
@@ -80,25 +75,19 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTBlockStatement</code>.
      * @return An <code>ASTBlockStatement</code>.
      */
-    public ASTBlockStatement parseBlockStatement()
-    {
+    public ASTBlockStatement parseBlockStatement() {
         Location loc = curr().getLocation();
-        switch(curr().getType())
-        {
-        case FINAL:
-        case CONST:
-        case CONSTANT:
-        case AUTO:
+        switch(curr().getType()) {
+        case MUT:
+        case VAR:
             return new ASTBlockStatement(loc, Arrays.asList(parseLocalVariableDeclarationStatement()));
         case IDENTIFIER:
             ASTDataType dt = getTypesParser().parseDataType();
             // DataType varName ...
-            if (isCurr(IDENTIFIER))
-            {
+            if (isCurr(IDENTIFIER)) {
                 return new ASTBlockStatement(loc, Arrays.asList(parseLocalVariableDeclarationStatement(dt)));
             }
-            else
-            {
+            else {
                 // Convert to Expression Name.
                 ASTExpressionName exprName = dt.convertToExpressionName();
                 // There may be more or a Primary to parse, e.g. method
@@ -116,12 +105,10 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTLocalVariableDeclarationStatement</code>.
      * @return An <code>ASTLocalVariableDeclarationStatement</code>.
      */
-    public ASTLocalVariableDeclarationStatement parseLocalVariableDeclarationStatement()
-    {
+    public ASTLocalVariableDeclarationStatement parseLocalVariableDeclarationStatement() {
         Location loc = curr().getLocation();
         ASTLocalVariableDeclaration localVarDecl = parseLocalVariableDeclaration();
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Missing semicolon.");
         }
         ASTLocalVariableDeclarationStatement node = new ASTLocalVariableDeclarationStatement(loc, Arrays.asList(localVarDecl));
@@ -135,12 +122,10 @@ public class StatementsParser extends BasicParser
      * @param dt An already parsed <code>ASTDataType</code>.
      * @return An <code>ASTLocalVariableDeclarationStatement</code>.
      */
-    public ASTLocalVariableDeclarationStatement parseLocalVariableDeclarationStatement(ASTDataType dt)
-    {
+    public ASTLocalVariableDeclarationStatement parseLocalVariableDeclarationStatement(ASTDataType dt) {
         Location loc = dt.getLocation();
         ASTLocalVariableDeclaration localVarDecl = parseLocalVariableDeclaration(dt);
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Missing semicolon.");
         }
         ASTLocalVariableDeclarationStatement node = new ASTLocalVariableDeclarationStatement(loc, Arrays.asList(localVarDecl));
@@ -152,12 +137,10 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTLocalVariableDeclaration</code>.
      * @return An <code>ASTLocalVariableDeclaration</code>.
      */
-    public ASTLocalVariableDeclaration parseLocalVariableDeclaration()
-    {
+    public ASTLocalVariableDeclaration parseLocalVariableDeclaration() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(3);
-        if (isAcceptedOperator(Arrays.asList(FINAL, CONST, CONSTANT)) != null)
-        {
+        if (isAcceptedOperator(Arrays.asList(MUT, VAR)) != null) {
             children.add(parseVariableModifierList());
         }
         children.add(parseLocalVariableType());
@@ -171,11 +154,10 @@ public class StatementsParser extends BasicParser
      * @param dt An already parsed <code>ASTDataType</code>.
      * @return An <code>ASTLocalVariableDeclaration</code>.
      */
-    public ASTLocalVariableDeclaration parseLocalVariableDeclaration(ASTDataType dt)
-    {
+    public ASTLocalVariableDeclaration parseLocalVariableDeclaration(ASTDataType dt) {
         Location loc = dt.getLocation();
         List<ASTNode> children = new ArrayList<>(3);
-        children.add(new ASTLocalVariableType(loc, Collections.singletonList(dt)));
+        children.add(new ASTLocalVariableType(loc, Arrays.asList(dt)));
         children.add(parseVariableDeclaratorList());
         return new ASTLocalVariableDeclaration(loc, children);
     }
@@ -184,11 +166,10 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTVariableModifierList</code>.
      * @return An <code>ASTVariableModifierList</code>.
      */
-    public ASTVariableModifierList parseVariableModifierList()
-    {
+    public ASTVariableModifierList parseVariableModifierList() {
         return parseMultiple(
-                t -> test(t, FINAL, CONST, CONSTANT),
-                "Expected final, const, or constant.",
+                t -> test(t, MUT, VAR),
+                "Expected mut or var.",
                 this::parseVariableModifier,
                 ASTVariableModifierList::new
         );
@@ -198,11 +179,10 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTVariableModifier</code>.
      * @return An <code>ASTVariableModifier</code>.
      */
-    public ASTVariableModifier parseVariableModifier()
-    {
+    public ASTVariableModifier parseVariableModifier() {
         return parseOneOf(
-                Arrays.asList(FINAL, CONST, CONSTANT),
-                "Expected final, const, or constant.",
+                Arrays.asList(MUT, VAR),
+                "Expected mut or var.",
                 ASTVariableModifier::new
         );
     }
@@ -212,8 +192,7 @@ public class StatementsParser extends BasicParser
      * with each other.
      * @return An <code>ASTVariableDeclarator</code>.
      */
-    public ASTVariableDeclaratorList parseVariableDeclaratorList()
-    {
+    public ASTVariableDeclaratorList parseVariableDeclaratorList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected identifier",
@@ -227,17 +206,15 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTVariableDeclarator</code>.
      * @return An <code>ASTVariableDeclarator</code>.
      */
-    public ASTVariableDeclarator parseVariableDeclarator()
-    {
+    public ASTVariableDeclarator parseVariableDeclarator() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
         children.add(getNamesParser().parseIdentifier());
         ASTVariableDeclarator node = new ASTVariableDeclarator(loc, children);
-        if (isCurr(ASSIGNMENT))
-        {
-            accept(ASSIGNMENT);
+        if (isCurr(EQUAL)) {
+            accept(EQUAL);
             children.add(getExpressionsParser().parseVariableInitializer());
-            node.setOperation(ASSIGNMENT);
+            node.setOperation(EQUAL);
         }
         return node;
     }
@@ -246,20 +223,17 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTLocalVariableType</code>.
      * @return An <code>ASTLocalVariableType</code>.
      */
-    public ASTLocalVariableType parseLocalVariableType()
-    {
+    public ASTLocalVariableType parseLocalVariableType() {
         Location loc = curr().getLocation();
-        if (isCurr(AUTO))
-        {
-            accept(AUTO);
+        if (isCurr(VAR)) {
+            accept(VAR);
             ASTLocalVariableType node = new ASTLocalVariableType(loc, Collections.emptyList());
-            node.setOperation(AUTO);
+            node.setOperation(VAR);
             return node;
         }
-        else
-        {
+        else {
             ASTDataType dt = getTypesParser().parseDataType();
-            return new ASTLocalVariableType(loc, Collections.singletonList(dt));
+            return new ASTLocalVariableType(loc, Arrays.asList(dt));
         }
     }
 
@@ -267,57 +241,78 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTStatement</code>.
      * @return An <code>ASTStatement</code>.
      */
-    public ASTStatement parseStatement()
-    {
+    public ASTStatement parseStatement() {
         Location loc = curr().getLocation();
-        switch(curr().getType())
-        {
-        case OPEN_BRACE:
-            ASTBlock block = parseBlock();
-            return new ASTStatement(loc, Arrays.asList(block));
-        case RETURN:
-            ASTReturnStatement retnStmt = parseReturnStatement();
-            return new ASTStatement(loc, Arrays.asList(retnStmt));
-        case THROW:
-            ASTThrowStatement throwStmt = parseThrowStatement();
-            return new ASTStatement(loc, Arrays.asList(throwStmt));
-        case BREAK:
-            ASTBreakStatement breakStmt = parseBreakStatement();
-            return new ASTStatement(loc, Arrays.asList(breakStmt));
-        case CONTINUE:
-            ASTContinueStatement contStmt = parseContinueStatement();
-            return new ASTStatement(loc, Arrays.asList(contStmt));
-        case FALLTHROUGH:
-            ASTFallthroughStatement ftStmt = parseFallthroughStatement();
-            return new ASTStatement(loc, Arrays.asList(ftStmt));
-        case ASSERT:
-            ASTAssertStatement assertStmt = parseAssertStatement();
-            return new ASTStatement(loc, Arrays.asList(assertStmt));
-        case IF:
-            ASTIfStatement ifStmt = parseIfStatement();
-            return new ASTStatement(loc, Arrays.asList(ifStmt));
-        case WHILE:
-            ASTWhileStatement whileStmt = parseWhileStatement();
-            return new ASTStatement(loc, Arrays.asList(whileStmt));
-        case FOR:
-            ASTForStatement forStmt = parseForStatement();
-            return new ASTStatement(loc, Arrays.asList(forStmt));
-        case DO:
-            ASTDoStatement doStmt = parseDoStatement();
-            return new ASTStatement(loc, Arrays.asList(doStmt));
-        case SYNCHRONIZED:
-            ASTSynchronizedStatement syncStmt = parseSynchronizedStatement();
-            return new ASTStatement(loc, Arrays.asList(syncStmt));
-        case TRY:
-            ASTTryStatement tryStmt = parseTryStatement();
-            return new ASTStatement(loc, Arrays.asList(tryStmt));
-        case SWITCH:
-            ASTSwitchStatement switchStmt = parseSwitchStatement();
-            return new ASTStatement(loc, Arrays.asList(switchStmt));
-        default:
-            ASTExpressionStatement exprStmt = parseExpressionStatement();
-            return new ASTStatement(loc, Arrays.asList(exprStmt));
-        }
+        return switch (curr().getType()) {
+            case OPEN_BRACE -> {
+                ASTBlock block = parseBlock();
+                yield new ASTStatement(loc, Arrays.asList(block));
+            }
+            case RETURN -> {
+                ASTReturnStatement retnStmt = parseReturnStatement();
+                yield new ASTStatement(loc, Arrays.asList(retnStmt));
+            }
+            case THROW -> {
+                ASTThrowStatement throwStmt = parseThrowStatement();
+                yield new ASTStatement(loc, Arrays.asList(throwStmt));
+            }
+            case BREAK -> {
+                ASTBreakStatement breakStmt = parseBreakStatement();
+                yield new ASTStatement(loc, Arrays.asList(breakStmt));
+            }
+            case CONTINUE -> {
+                ASTContinueStatement contStmt = parseContinueStatement();
+                yield new ASTStatement(loc, Arrays.asList(contStmt));
+            }
+            case FALLTHROUGH -> {
+                ASTFallthroughStatement ftStmt = parseFallthroughStatement();
+                yield new ASTStatement(loc, Arrays.asList(ftStmt));
+            }
+            case ASSERT -> {
+                ASTAssertStatement assertStmt = parseAssertStatement();
+                yield new ASTStatement(loc, Arrays.asList(assertStmt));
+            }
+            case IF -> {
+                ASTIfStatement ifStmt = parseIfStatement();
+                yield new ASTStatement(loc, Arrays.asList(ifStmt));
+            }
+            case WHILE -> {
+                ASTWhileStatement whileStmt = parseWhileStatement();
+                yield new ASTStatement(loc, Arrays.asList(whileStmt));
+            }
+            case FOR -> {
+                ASTForStatement forStmt = parseForStatement();
+                yield new ASTStatement(loc, Arrays.asList(forStmt));
+            }
+            case DO -> {
+                ASTDoStatement doStmt = parseDoStatement();
+                yield new ASTStatement(loc, Arrays.asList(doStmt));
+            }
+            case CRITICAL -> {
+                ASTCriticalStatement doStmt = parseCriticalStatement();
+                yield new ASTStatement(loc, Arrays.asList(doStmt));
+            }
+            case TRY -> {
+                ASTTryStatement tryStmt = parseTryStatement();
+                yield new ASTStatement(loc, Arrays.asList(tryStmt));
+            }
+            case SWITCH -> {
+                ASTSwitchStatement switchStmt = parseSwitchStatement();
+                yield new ASTStatement(loc, Arrays.asList(switchStmt));
+            }
+            case USE -> {
+                ASTUseStatement useStmt = parseUseStatement();
+                yield new ASTStatement(loc, Arrays.asList(useStmt));
+            }
+            case YIELD -> {
+                ASTYieldStatement yieldStmt = parseYieldStatement();
+                yield new ASTStatement(loc, Arrays.asList(yieldStmt));
+            }
+            default -> {
+                ASTExpressionStatement exprStmt = parseExpressionStatement();
+                yield new ASTStatement(loc, Arrays.asList(exprStmt));
+            }
+        };
     }
 
     /**
@@ -326,8 +321,7 @@ public class StatementsParser extends BasicParser
      * @param primary An already parsed <code>ASTPrimary</code>.
      * @return An <code>ASTStatement</code>.
      */
-    public ASTStatement parseStatement(ASTPrimary primary)
-    {
+    public ASTStatement parseStatement(ASTPrimary primary) {
         return new ASTStatement(primary.getLocation(), Arrays.asList(parseExpressionStatement(primary)));
     }
 
@@ -335,179 +329,93 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTSwitchStatement</code>.
      * @return An <code>ASTSwitchStatement</code>.
      */
-    public ASTSwitchStatement parseSwitchStatement()
-    {
+    public ASTSwitchStatement parseSwitchStatement() {
         Location loc = curr().getLocation();
-        List<ASTNode> children = new ArrayList<>(2);
-        if (accept(SWITCH) == null)
-        {
+        if (accept(SWITCH) == null) {
             throw new CompileException("Expected switch.");
         }
-        if (accept(OPEN_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected '('.");
-        }
-        children.add(getExpressionsParser().parseExpression());
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected ')'.");
-        }
-        children.add(parseSwitchBlock());
+        List<ASTNode> children = Arrays.asList(
+            getExpressionsParser().parseExpression(),
+            parseSwitchStatementBlock()
+        );
         ASTSwitchStatement node = new ASTSwitchStatement(loc, children);
         node.setOperation(SWITCH);
         return node;
     }
 
     /**
-     * Parses an <code>ASTSwitchBlock</code>.
-     * @return An <code>ASTSwitchBlock</code>.
+     * Parses an <code>ASTSwitchStatementBlock</code>.
+     * @return An <code>ASTSwitchStatementBlock</code>.
      */
-    public ASTSwitchBlock parseSwitchBlock()
-    {
+    public ASTSwitchStatementBlock parseSwitchStatementBlock() {
         Location loc = curr().getLocation();
-        if (accept(OPEN_BRACE) == null)
-        {
+        if (accept(OPEN_BRACE) == null) {
             throw new CompileException("Expected '{'.");
         }
-        List<ASTNode> children = new ArrayList<>(1);
-        if (!isCurr(CLOSE_BRACE))
-        {
-            children.add(parseSwitchCases());
-        }
-        if (accept(CLOSE_BRACE) == null)
-        {
+        List<ASTNode> children = Arrays.asList(parseSwitchStatementRules());
+        if (accept(CLOSE_BRACE) == null) {
             throw new CompileException("Expected '}'.");
         }
-        ASTSwitchBlock node = new ASTSwitchBlock(loc, children);
+        ASTSwitchStatementBlock node = new ASTSwitchStatementBlock(loc, children);
         node.setOperation(OPEN_BRACE);
         return node;
     }
 
     /**
-     * Parses an <code>ASTSwitchCases</code>.
-     * @return An <code>ASTSwitchCases</code>.
+     * Parses an <code>ASTSwitchStatementRules</code>.
+     * @return A <code>ASTSwitchStatementRules</code>.
      */
-    public ASTSwitchCases parseSwitchCases()
-    {
+    public ASTSwitchStatementRules parseSwitchStatementRules() {
         return parseMultiple(
-                t -> test(t, DEFAULT, CASE),
-                "Expected case label or default.",
-                this::parseSwitchCase,
-                ASTSwitchCases::new
+                t -> test(t, CASE, DEFAULT, MUT, VAR, IDENTIFIER) || isPrimary(curr()),
+                "Expected a switch case.",
+                this::parseSwitchStatementRule,
+                ASTSwitchStatementRules::new
         );
     }
 
     /**
-     * Parses an <code>ASTSwitchCase</code>.
-     * @return An <code>ASTSwitchCase</code>.
+     * Parses an <code>ASTSwitchStatementRule</code>.
+     * @return A <code>ASTSwitchStatementRule</code>.
      */
-    public ASTSwitchCase parseSwitchCase()
-    {
+    public ASTSwitchStatementRule parseSwitchStatementRule() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
-        children.add(parseSwitchLabel());
-        if (isAcceptedOperator(Arrays.asList(CLOSE_BRACE, CASE, DEFAULT)) == null)
-        {
-            children.add(parseBlockStatements());
+        children.add(getExpressionsParser().parseSwitchLabel());
+        if (accept(ARROW) == null) {
+            throw new CompileException("Expected arrow (->).");
         }
-        return new ASTSwitchCase(loc, children);
-    }
-
-    /**
-     * Parses an <code>ASTSwitchLabel</code>.
-     * @return An <code>ASTSwitchLabel</code>.
-     */
-    public ASTSwitchLabel parseSwitchLabel()
-    {
-        Location loc = curr().getLocation();
-        if (isCurr(CASE))
-        {
-            accept(CASE);
-            ASTSwitchLabel node = new ASTSwitchLabel(loc, Arrays.asList(parseSwitchValues()));
-            if (accept(COLON) == null)
-            {
-                throw new CompileException("Expected colon.");
-            }
-            node.setOperation(CASE);
-            return node;
+        switch(curr().getType()) {
+        case OPEN_BRACE -> children.add(parseBlock());
+        case THROW ->  children.add(parseThrowStatement());
+        default -> children.add(parseExpressionStatement());
         }
-        else if (isCurr(DEFAULT))
-        {
-            accept(DEFAULT);
-            ASTSwitchLabel node = new ASTSwitchLabel(loc, Collections.emptyList());
-            if (accept(COLON) == null)
-            {
-                throw new CompileException("Expected colon.");
-            }
-            node.setOperation(DEFAULT);
-            return node;
-        }
-        else
-        {
-            throw new CompileException("Expected case or default.");
-        }
-    }
-
-    /**
-     * Parses an <code>ASTSwitchValues</code>.
-     * @return An <code>ASTSwitchValues</code>.
-     */
-    public ASTSwitchValues parseSwitchValues()
-    {
-        return parseList(
-                ExpressionsParser::isExpression,
-                "Expected an expression.",
-                COMMA,
-                this::parseSwitchValue,
-                ASTSwitchValues::new);
-    }
-
-    /**
-     * Parses an <code>ASTSwitchValue</code>.
-     * @return An <code>ASTSwitchValue</code>.
-     */
-    public ASTSwitchValue parseSwitchValue()
-    {
-        Location loc = curr().getLocation();
-        List<ASTNode> children = new ArrayList<>(1);
-        if (isCurr(IDENTIFIER) && (isNext(COLON) || isNext(COMMA)))
-        {
-            children.add(getNamesParser().parseIdentifier());
-        }
-        else
-        {
-            children.add(getExpressionsParser().parseExpressionNoIncrDecr());
-        }
-        return new ASTSwitchValue(loc, children);
+        ASTSwitchStatementRule ssr = new ASTSwitchStatementRule(loc, children);
+        ssr.setOperation(ARROW);
+        return ssr;
     }
 
     /**
      * Parses an <code>ASTTryStatement</code>.
      * @return An <code>ASTTryStatement</code>.
      */
-    public ASTTryStatement parseTryStatement()
-    {
+    public ASTTryStatement parseTryStatement() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(4);
-        if (accept(TRY) == null)
-        {
+        if (accept(TRY) == null) {
             throw new CompileException("Expected try.");
         }
-        if (isCurr(OPEN_PARENTHESIS))
-        {
+        if (isCurr(OPEN_PARENTHESIS)) {
             children.add(parseResourceSpecification());
         }
         children.add(parseBlock());
-        if (isCurr(CATCH))
-        {
+        if (isCurr(CATCH)) {
             children.add(parseCatches());
         }
-        if (isCurr(FINALLY))
-        {
+        if (isCurr(FINALLY)) {
             children.add(parseFinally());
         }
-        if (children.size() <= 1)
-        {
+        if (children.size() <= 1) {
             throw new CompileException("Expected 'catch' and/or 'finally' block.");
         }
         ASTTryStatement node = new ASTTryStatement(loc, children);
@@ -519,20 +427,16 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTResourceSpecification</code>.
      * @return An <code>ASTResourceSpecification</code>.
      */
-    public ASTResourceSpecification parseResourceSpecification()
-    {
+    public ASTResourceSpecification parseResourceSpecification() {
         Location loc = curr().getLocation();
-        if (accept(OPEN_PARENTHESIS) == null)
-        {
+        if (accept(OPEN_PARENTHESIS) == null) {
             throw new CompileException("Expected '('.");
         }
         ASTResourceSpecification node = new ASTResourceSpecification(loc, Arrays.asList(parseResourceList()));
-        if (isCurr(SEMICOLON))
-        {
+        if (isCurr(SEMICOLON)) {
             accept(SEMICOLON);
         }
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
+        if (accept(CLOSE_PARENTHESIS) == null) {
             throw new CompileException("Expected ')'.");
         }
         return node;
@@ -542,10 +446,9 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTResourceList</code>.
      * @return An <code>ASTResourceList</code>.
      */
-    public ASTResourceList parseResourceList()
-    {
+    public ASTResourceList parseResourceList() {
         return parseList(
-                t -> isPrimary(t) || isAcceptedOperator(Arrays.asList(FINAL, CONST, CONSTANT, AUTO)) != null,
+                t -> isPrimary(t) || isAcceptedOperator(Arrays.asList(MUT, CONSTANT, VAR)) != null,
                 "Expected an expression.",
                 SEMICOLON,
                 this::parseResource,
@@ -556,26 +459,21 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTResource</code>.
      * @return An <code>ASTResource</code>.
      */
-    public ASTResource parseResource()
-    {
+    public ASTResource parseResource() {
         Location loc = curr().getLocation();
         ASTPrimary primary;
-        switch(curr().getType())
-        {
-        case FINAL:
-        case CONST:
+        switch(curr().getType()) {
+        case MUT:
         case CONSTANT:
-        case AUTO:
+        case VAR:
             return new ASTResource(loc, Arrays.asList(parseResourceDeclaration()));
         case IDENTIFIER:
             ASTDataType dt = getTypesParser().parseDataType();
             // DataType varName ...
-            if (isCurr(IDENTIFIER))
-            {
+            if (isCurr(IDENTIFIER)) {
                 return new ASTResource(loc, Arrays.asList(parseResourceDeclaration(dt)));
             }
-            else
-            {
+            else {
                 // Convert to Expression Name.
                 ASTExpressionName exprName = dt.convertToExpressionName();
                 // There may be more or a Primary to parse, e.g. method
@@ -585,17 +483,15 @@ public class StatementsParser extends BasicParser
             }
             break;
         default:
-            // May be an expression name or a field access.
+            // Maybe an expression name or a field access.
             primary = getExpressionsParser().parsePrimary();
         }
 
         // Must be an expression name or a field access.
         List<ASTNode> children = primary.getChildren();
-        if (children.size() == 1)
-        {
+        if (children.size() == 1) {
             ASTNode child = children.get(0);
-            if (child instanceof ASTExpressionName || child instanceof ASTFieldAccess)
-            {
+            if (child instanceof ASTExpressionName || child instanceof ASTFieldAccess) {
                 return new ASTResource(loc, Arrays.asList(child));
             }
         }
@@ -606,23 +502,20 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTResourceDeclaration</code>.
      * @return An <code>ASTResourceDeclaration</code>.
      */
-    public ASTResourceDeclaration parseResourceDeclaration()
-    {
+    public ASTResourceDeclaration parseResourceDeclaration() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(4);
         ASTResourceDeclaration node = new ASTResourceDeclaration(loc, children);
-        if (isAcceptedOperator(Arrays.asList(FINAL, CONST, CONSTANT)) != null)
-        {
+        if (isAcceptedOperator(Arrays.asList(MUT, VAR)) != null) {
             children.add(parseVariableModifierList());
         }
         children.add(parseLocalVariableType());
         children.add(getNamesParser().parseIdentifier());
-        if (accept(ASSIGNMENT) == null)
-        {
-            throw new CompileException("Expected ':='.");
+        if (accept(EQUAL) == null) {
+            throw new CompileException("Expected '='.");
         }
-        children.add(getExpressionsParser().parseExpressionNoIncrDecr());
-        node.setOperation(ASSIGNMENT);
+        children.add(getExpressionsParser().parseExpression());
+        node.setOperation(EQUAL);
         return node;
     }
 
@@ -632,19 +525,17 @@ public class StatementsParser extends BasicParser
      * @param dt An already parsed <code>ASTDataType</code>.
      * @return An <code>ASTResourceDeclaration</code>.
      */
-    public ASTResourceDeclaration parseResourceDeclaration(ASTDataType dt)
-    {
+    public ASTResourceDeclaration parseResourceDeclaration(ASTDataType dt) {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(3);
         ASTResourceDeclaration node = new ASTResourceDeclaration(loc, children);
-        children.add(new ASTLocalVariableType(loc, Collections.singletonList(dt)));
+        children.add(new ASTLocalVariableType(loc, Arrays.asList(dt)));
         children.add(getNamesParser().parseIdentifier());
-        if (accept(ASSIGNMENT) == null)
-        {
+        if (accept(EQUAL) == null) {
             throw new CompileException("Expected ':='.");
         }
-        children.add(getExpressionsParser().parseExpressionNoIncrDecr());
-        node.setOperation(ASSIGNMENT);
+        children.add(getExpressionsParser().parseExpression());
+        node.setOperation(EQUAL);
         return node;
     }
 
@@ -652,8 +543,7 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTCatches</code>.
      * @return An <code>ASTCatches</code>.
      */
-    public ASTCatches parseCatches()
-    {
+    public ASTCatches parseCatches() {
         return parseMultiple(
                 t -> test(t, CATCH),
                 "Expected catch clause.",
@@ -666,21 +556,17 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTCatchClause</code>.
      * @return An <code>ASTCatchClause</code>.
      */
-    public ASTCatchClause parseCatchClause()
-    {
+    public ASTCatchClause parseCatchClause() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
-        if (accept(CATCH) == null)
-        {
+        if (accept(CATCH) == null) {
             throw new CompileException("Expected catch.");
         }
-        if (accept(OPEN_PARENTHESIS) == null)
-        {
+        if (accept(OPEN_PARENTHESIS) == null) {
             throw new CompileException("Expected '('");
         }
         children.add(parseCatchFormalParameter());
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
+        if (accept(CLOSE_PARENTHESIS) == null) {
             throw new CompileException("Expected ')'");
         }
         children.add(parseBlock());
@@ -693,12 +579,10 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTCatchFormalParameter</code>.
      * @return An <code>ASTCatchFormalParameter</code>.
      */
-    public ASTCatchFormalParameter parseCatchFormalParameter()
-    {
+    public ASTCatchFormalParameter parseCatchFormalParameter() {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(3);
-        if (isAcceptedOperator(Arrays.asList(FINAL, CONST, CONSTANT)) != null)
-        {
+        if (isAcceptedOperator(Arrays.asList(MUT, VAR)) != null) {
             children.add(parseVariableModifierList());
         }
         children.add(parseCatchType());
@@ -710,12 +594,11 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTCatchType</code>.
      * @return An <code>ASTCatchType</code>.
      */
-    public ASTCatchType parseCatchType()
-    {
+    public ASTCatchType parseCatchType() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected data type.",
-                BITWISE_OR,
+                PIPE,
                 getTypesParser()::parseDataType,
                 ASTCatchType::new
         );
@@ -725,11 +608,9 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTFinally</code>.
      * @return An <code>ASTFinally</code>.
      */
-    public ASTFinally parseFinally()
-    {
+    public ASTFinally parseFinally() {
         Location loc = curr().getLocation();
-        if (accept(FINALLY) == null)
-        {
+        if (accept(FINALLY) == null) {
             throw new CompileException("Expected finally.");
         }
         ASTBlock block = parseBlock();
@@ -742,38 +623,30 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTForStatement</code>.
      * @return An <code>ASTForStatement</code>.
      */
-    public ASTForStatement parseForStatement()
-    {
+    public ASTForStatement parseForStatement() {
         Location loc = curr().getLocation();
         ASTForStatement node;
-        if (accept(FOR) == null)
-        {
+        if (accept(FOR) == null) {
             System.out.println("Expected for.");
         }
-        if (accept(OPEN_PARENTHESIS) == null)
-        {
+        if (accept(OPEN_PARENTHESIS) == null) {
             System.out.println("Expected '('.");
         }
-        if (isCurr(SEMICOLON))
-        {
+        if (isCurr(SEMICOLON)) {
             ASTBasicForStatement basicForStmt = parseBasicForStatement(loc);
             node = new ASTForStatement(loc, Arrays.asList(basicForStmt));
         }
-        else
-        {
+        else {
             ASTInit init = parseInit();
-            if (isCurr(SEMICOLON))
-            {
+            if (isCurr(SEMICOLON)) {
                 ASTBasicForStatement basicForStmt = parseBasicForStatement(loc, init);
                 node = new ASTForStatement(loc, Arrays.asList(basicForStmt));
             }
-            else if (isCurr(COLON))
-            {
+            else if (isCurr(COLON)) {
                 ASTEnhancedForStatement enhForStmt = parseEnhancedForStatement(loc, init);
                 node = new ASTForStatement(loc, Arrays.asList(enhForStmt));
             }
-            else
-            {
+            else {
                 throw new CompileException("Expected semicolon or colon.");
             }
         }
@@ -789,39 +662,32 @@ public class StatementsParser extends BasicParser
      * @param init An already parsed <code>ASTInit</code>.
      * @return An <code>ASTEnhancedForStatement</code>.
      */
-    public ASTEnhancedForStatement parseEnhancedForStatement(Location locFor, ASTInit init)
-    {
+    public ASTEnhancedForStatement parseEnhancedForStatement(Location locFor, ASTInit init) {
         List<ASTNode> children = new ArrayList<>(3);
 
         List<ASTNode> initChildren = init.getChildren();
         ASTNode child = initChildren.get(0);
-        if (child instanceof ASTLocalVariableDeclaration)
-        {
-            ASTLocalVariableDeclaration varDecl = (ASTLocalVariableDeclaration) child;
+        if (child instanceof ASTLocalVariableDeclaration varDecl) {
             List<ASTNode> varDeclChildren = varDecl.getChildren();
             ASTVariableDeclaratorList variables = (ASTVariableDeclaratorList) varDeclChildren.get(varDeclChildren.size() - 1);
             List<ASTNode> variablesChildren = variables.getChildren();
-            if (variablesChildren.size() != 1)
-            {
+            if (variablesChildren.size() != 1) {
                 throw new CompileException("Only one variable can be declared in an enhanced for loop.");
             }
             children.add(varDecl);
         }
-        else
-        {
+        else {
             throw new CompileException("Enhanced for loop requires a variable declaration before the colon.");
         }
 
-        if (accept(COLON) == null)
-        {
+        if (accept(COLON) == null) {
             throw new CompileException("Expected colon.");
         }
-        children.add(getExpressionsParser().parseExpressionNoIncrDecr());
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
+        children.add(getExpressionsParser().parseConditionalExpression());
+        if (accept(CLOSE_PARENTHESIS) == null) {
             throw new CompileException("Expected ')'.");
         }
-        children.add(parseStatement());
+        children.add(parseBlock());
         ASTEnhancedForStatement node = new ASTEnhancedForStatement(locFor, children);
         node.setOperation(COLON);
         return node;
@@ -834,30 +700,24 @@ public class StatementsParser extends BasicParser
      * @param locFor The location of the "for" keyword, already parsed.
      * @return An <code>ASTBasicForStatement</code>.
      */
-    public ASTBasicForStatement parseBasicForStatement(Location locFor)
-    {
+    public ASTBasicForStatement parseBasicForStatement(Location locFor) {
         List<ASTNode> children = new ArrayList<>(4);
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Expected semicolon.");
         }
-        if (!isCurr(SEMICOLON))
-        {
-            children.add(getExpressionsParser().parseExpressionNoIncrDecr());
+        if (!isCurr(SEMICOLON)) {
+            children.add(getExpressionsParser().parseConditionalExpression());
         }
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Expected second semicolon.");
         }
-        if (!isCurr(CLOSE_PARENTHESIS))
-        {
+        if (!isCurr(CLOSE_PARENTHESIS)) {
             children.add(parseStatementExpressionList());
         }
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
+        if (accept(CLOSE_PARENTHESIS) == null) {
             throw new CompileException("Expected ')'.");
         }
-        children.add(parseStatement());
+        children.add(parseBlock());
         ASTBasicForStatement node = new ASTBasicForStatement(locFor, children);
         node.setOperation(SEMICOLON);
         return node;
@@ -871,8 +731,7 @@ public class StatementsParser extends BasicParser
      * @param init An already parsed <code>ASTInit</code>.
      * @return An <code>ASTBasicForStatement</code>.
      */
-    public ASTBasicForStatement parseBasicForStatement(Location locFor, ASTInit init)
-    {
+    public ASTBasicForStatement parseBasicForStatement(Location locFor, ASTInit init) {
         ASTBasicForStatement node = parseBasicForStatement(locFor);
         node.getChildren().add(0, init);
         return node;
@@ -882,38 +741,33 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTIfStatement</code>.
      * @return An <code>ASTIfStatement</code>.
      */
-    public ASTIfStatement parseIfStatement()
-    {
+    public ASTIfStatement parseIfStatement() {
         Location loc = curr().getLocation();
-        if (accept(IF) == null)
-        {
+        if (accept(IF) == null) {
             throw new CompileException("Expected if.");
         }
         List<ASTNode> children = new ArrayList<>(4);
-        if (isCurr(OPEN_BRACE))
-        {
+        if (isCurr(OPEN_BRACE)) {
             accept(OPEN_BRACE);
             children.add(parseInit());
-            if (accept(CLOSE_BRACE) == null)
-            {
+            if (accept(CLOSE_BRACE) == null) {
                 throw new CompileException("Expected '}'.");
             }
         }
-        if (accept(OPEN_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected '('.");
-        }
-        children.add(getExpressionsParser().parseExpressionNoIncrDecr());
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected ')'.");
-        }
-        children.add(parseStatement());
+        children.add(getExpressionsParser().parseConditionalExpression());
+        children.add(parseBlock());
         // Greedy else.
-        if (isCurr(ELSE))
-        {
+        if (isCurr(ELSE)) {
             accept(ELSE);
-            children.add(parseStatement());
+            if (isCurr(IF)) {
+                children.add(parseIfStatement());
+            }
+            else if (isCurr(OPEN_BRACE)) {
+                children.add(parseBlock());
+            }
+            else {
+                throw new CompileException("Expected 'if' or a block.");
+            }
         }
         ASTIfStatement node = new ASTIfStatement(loc, children);
         node.setOperation(IF);
@@ -924,33 +778,21 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTWhileStatement</code>.
      * @return An <code>ASTWhileStatement</code>.
      */
-    public ASTWhileStatement parseWhileStatement()
-    {
+    public ASTWhileStatement parseWhileStatement() {
         Location loc = curr().getLocation();
-        if (accept(WHILE) == null)
-        {
+        if (accept(WHILE) == null) {
             throw new CompileException("Expected while.");
         }
         List<ASTNode> children = new ArrayList<>(3);
-        if (isCurr(OPEN_BRACE))
-        {
+        if (isCurr(OPEN_BRACE)) {
             accept(OPEN_BRACE);
             children.add(parseInit());
-            if (accept(CLOSE_BRACE) == null)
-            {
+            if (accept(CLOSE_BRACE) == null) {
                 throw new CompileException("Expected '}'.");
             }
         }
-        if (accept(OPEN_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected '('.");
-        }
-        children.add(getExpressionsParser().parseExpressionNoIncrDecr());
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected ')'.");
-        }
-        children.add(parseStatement());
+        children.add(getExpressionsParser().parseConditionalExpression());
+        children.add(parseBlock());
         ASTWhileStatement node = new ASTWhileStatement(loc, children);
         node.setOperation(WHILE);
         return node;
@@ -960,30 +802,18 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTDoStatement</code>.
      * @return An <code>ASTDoStatement</code>.
      */
-    public ASTDoStatement parseDoStatement()
-    {
+    public ASTDoStatement parseDoStatement() {
         Location loc = curr().getLocation();
-        if (accept(DO) == null)
-        {
+        if (accept(DO) == null) {
             throw new CompileException("Expected do.");
         }
         List<ASTNode> children = new ArrayList<>(2);
-        children.add(parseStatement());
-        if (accept(WHILE) == null)
-        {
+        children.add(parseBlock());
+        if (accept(WHILE) == null) {
             throw new CompileException("Expected while.");
         }
-        if (accept(OPEN_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected '('.");
-        }
-        children.add(getExpressionsParser().parseExpressionNoIncrDecr());
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected ')'.");
-        }
-        if (accept(SEMICOLON) == null)
-        {
+        children.add(getExpressionsParser().parseConditionalExpression());
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Expected semicolon.");
         }
         ASTDoStatement node = new ASTDoStatement(loc, children);
@@ -992,29 +822,19 @@ public class StatementsParser extends BasicParser
     }
 
     /**
-     * Parses an <code>ASTSynchronizedStatement</code>.
-     * @return An <code>ASTSynchronizedStatement</code>.
+     * Parses an <code>ASTCriticalStatement</code>.
+     * @return An <code>ASTCriticalStatement</code>.
      */
-    public ASTSynchronizedStatement parseSynchronizedStatement()
-    {
+    public ASTCriticalStatement parseCriticalStatement() {
         Location loc = curr().getLocation();
-        if (accept(SYNCHRONIZED) == null)
-        {
-            throw new CompileException("Expected synchronized.");
+        if (accept(CRITICAL) == null) {
+            throw new CompileException("Expected critical.");
         }
         List<ASTNode> children = new ArrayList<>(2);
-        if (accept(OPEN_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected '('.");
-        }
-        children.add(getExpressionsParser().parseExpressionNoIncrDecr());
-        if (accept(CLOSE_PARENTHESIS) == null)
-        {
-            throw new CompileException("Expected ')'.");
-        }
+        children.add(getExpressionsParser().parseConditionalExpression());
         children.add(parseBlock());
-        ASTSynchronizedStatement node = new ASTSynchronizedStatement(loc, children);
-        node.setOperation(SYNCHRONIZED);
+        ASTCriticalStatement node = new ASTCriticalStatement(loc, children);
+        node.setOperation(CRITICAL);
         return node;
     }
 
@@ -1022,17 +842,14 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTThrowStatement</code>.
      * @return An <code>ASTThrowStatement</code>.
      */
-    public ASTThrowStatement parseThrowStatement()
-    {
+    public ASTThrowStatement parseThrowStatement() {
         Location loc = curr().getLocation();
-        if (accept(THROW) == null)
-        {
+        if (accept(THROW) == null) {
             throw new CompileException("Expected throw.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         children.add(getExpressionsParser().parseExpression());
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Missing semicolon.");
         }
         ASTThrowStatement node = new ASTThrowStatement(loc, children);
@@ -1041,23 +858,57 @@ public class StatementsParser extends BasicParser
     }
 
     /**
+     * Parses an <code>ASTYieldStatement</code>.
+     * @return An <code>ASTYieldStatement</code>.
+     */
+    public ASTYieldStatement parseYieldStatement() {
+        Location loc = curr().getLocation();
+        if (accept(YIELD) == null) {
+            throw new CompileException("Expected yield.");
+        }
+        List<ASTNode> children = new ArrayList<>(1);
+        children.add(getExpressionsParser().parseExpression());
+        if (accept(SEMICOLON) == null) {
+            throw new CompileException("Missing semicolon.");
+        }
+        ASTYieldStatement node = new ASTYieldStatement(loc, children);
+        node.setOperation(YIELD);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTUseStatement</code>.
+     * @return An <code>ASTUseStatement</code>.
+     */
+    public ASTUseStatement parseUseStatement() {
+        Location loc = curr().getLocation();
+        if (accept(USE) == null) {
+            throw new CompileException("Expected use.");
+        }
+        List<ASTNode> children = new ArrayList<>(1);
+        children.add(getExpressionsParser().parseExpression());
+        if (accept(SEMICOLON) == null) {
+            throw new CompileException("Missing semicolon.");
+        }
+        ASTUseStatement node = new ASTUseStatement(loc, children);
+        node.setOperation(USE);
+        return node;
+    }
+
+    /**
      * Parses an <code>ASTReturnStatement</code>.
      * @return An <code>ASTReturnStatement</code>.
      */
-    public ASTReturnStatement parseReturnStatement()
-    {
+    public ASTReturnStatement parseReturnStatement() {
         Location loc = curr().getLocation();
-        if (accept(RETURN) == null)
-        {
+        if (accept(RETURN) == null) {
             throw new CompileException("Expected return.");
         }
         List<ASTNode> children = new ArrayList<>(1);
-        if (!isCurr(SEMICOLON))
-        {
+        if (!isCurr(SEMICOLON)) {
             children.add(getExpressionsParser().parseExpression());
         }
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Missing semicolon.");
         }
         ASTReturnStatement node = new ASTReturnStatement(loc, children);
@@ -1069,15 +920,12 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTBreakStatement</code>.
      * @return An <code>ASTBreakStatement</code>.
      */
-    public ASTBreakStatement parseBreakStatement()
-    {
+    public ASTBreakStatement parseBreakStatement() {
         Location loc = curr().getLocation();
-        if (accept(BREAK) == null)
-        {
+        if (accept(BREAK) == null) {
             throw new CompileException("Expected break.");
         }
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Missing semicolon.");
         }
         ASTBreakStatement node = new ASTBreakStatement(loc, Collections.emptyList());
@@ -1089,15 +937,12 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTContinueStatement</code>.
      * @return An <code>ASTContinueStatement</code>.
      */
-    public ASTContinueStatement parseContinueStatement()
-    {
+    public ASTContinueStatement parseContinueStatement() {
         Location loc = curr().getLocation();
-        if (accept(CONTINUE) == null)
-        {
+        if (accept(CONTINUE) == null) {
             throw new CompileException("Expected continue.");
         }
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Missing semicolon.");
         }
         ASTContinueStatement node = new ASTContinueStatement(loc, Collections.emptyList());
@@ -1109,15 +954,12 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTFallthroughStatement</code>.
      * @return An <code>ASTFallthroughStatement</code>.
      */
-    public ASTFallthroughStatement parseFallthroughStatement()
-    {
+    public ASTFallthroughStatement parseFallthroughStatement() {
         Location loc = curr().getLocation();
-        if (accept(FALLTHROUGH) == null)
-        {
+        if (accept(FALLTHROUGH) == null) {
             throw new CompileException("Expected fallthrough.");
         }
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Missing semicolon.");
         }
         ASTFallthroughStatement node = new ASTFallthroughStatement(loc, Collections.emptyList());
@@ -1129,22 +971,18 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTAssertStatement</code>.
      * @return An <code>ASTAssertStatement</code>.
      */
-    public ASTAssertStatement parseAssertStatement()
-    {
+    public ASTAssertStatement parseAssertStatement() {
         Location loc = curr().getLocation();
-        if (accept(ASSERT) == null)
-        {
+        if (accept(ASSERT) == null) {
             throw new CompileException("Expected assert.");
         }
         List<ASTNode> children = new ArrayList<>(2);
         children.add(getExpressionsParser().parseExpression());
-        if (isCurr(COLON))
-        {
+        if (isCurr(COLON)) {
             accept(COLON);
             children.add(getExpressionsParser().parseExpression());
         }
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Missing semicolon.");
         }
         ASTAssertStatement node = new ASTAssertStatement(loc, children);
@@ -1156,13 +994,11 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTExpressionStatement</code>.
      * @return An <code>ASTExpressionStatement</code>.
      */
-    public ASTExpressionStatement parseExpressionStatement()
-    {
+    public ASTExpressionStatement parseExpressionStatement() {
         Location loc = curr().getLocation();
 
         ASTStatementExpression stmtExpr = parseStatementExpression();
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Semicolon expected.");
         }
         ASTExpressionStatement exprStmt = new ASTExpressionStatement(loc, Arrays.asList(stmtExpr));
@@ -1176,11 +1012,9 @@ public class StatementsParser extends BasicParser
      * @param primary An already parsed <code>ASTPrimary</code>.
      * @return An <code>ASTExpressionStatement</code>.
      */
-    public ASTExpressionStatement parseExpressionStatement(ASTPrimary primary)
-    {
+    public ASTExpressionStatement parseExpressionStatement(ASTPrimary primary) {
         ASTStatementExpression stmtExpr = parseStatementExpression(primary);
-        if (accept(SEMICOLON) == null)
-        {
+        if (accept(SEMICOLON) == null) {
             throw new CompileException("Semicolon expected.");
         }
         ASTExpressionStatement exprStmt = new ASTExpressionStatement(primary.getLocation(), Arrays.asList(stmtExpr));
@@ -1192,25 +1026,20 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTInit</code>.
      * @return An <code>ASTInit</code>.
      */
-    public ASTInit parseInit()
-    {
+    public ASTInit parseInit() {
         Location loc = curr().getLocation();
-        switch(curr().getType())
-        {
-        case FINAL:
-        case CONST:
+        switch(curr().getType()) {
+        case MUT:
         case CONSTANT:
-        case AUTO:
+        case VAR:
             return new ASTInit(loc, Arrays.asList(parseLocalVariableDeclaration()));
         case IDENTIFIER:
             ASTDataType dt = getTypesParser().parseDataType();
             // DataType varName ...
-            if (isCurr(IDENTIFIER))
-            {
+            if (isCurr(IDENTIFIER)) {
                 return new ASTInit(loc, Arrays.asList(parseLocalVariableDeclaration(dt)));
             }
-            else
-            {
+            else {
                 // Convert to Expression Name.
                 ASTExpressionName exprName = dt.convertToExpressionName();
                 // There may be more or a Primary to parse, e.g. method
@@ -1228,8 +1057,7 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTStatementExpressionList</code>.
      * @return An <code>ASTStatementExpressionList</code>.
      */
-    public ASTStatementExpressionList parseStatementExpressionList()
-    {
+    public ASTStatementExpressionList parseStatementExpressionList() {
         return parseList(
                 t -> test(t, INCREMENT, DECREMENT) || isPrimary(t),
                 "Expected a statement expression.",
@@ -1244,21 +1072,18 @@ public class StatementsParser extends BasicParser
      * @param primary An already parsed <code>ASTPrimary</code>.
      * @return An <code>ASTStatementExpressionList</code>.
      */
-    public ASTStatementExpressionList parseStatementExpressionList(ASTPrimary primary)
-    {
+    public ASTStatementExpressionList parseStatementExpressionList(ASTPrimary primary) {
         Location loc = primary.getLocation();
         ASTStatementExpression stmtExpr = parseStatementExpression(primary);
         ASTStatementExpressionList node;
-        if (isCurr(COMMA))
-        {
+        if (isCurr(COMMA)) {
             accept(COMMA);
             ASTStatementExpressionList rest = parseStatementExpressionList();
             List<ASTNode> children = rest.getChildren();
             children.add(0, stmtExpr);
             node = new ASTStatementExpressionList(loc, rest.getChildren());
         }
-        else
-        {
+        else {
             List<ASTNode> children = Arrays.asList(stmtExpr);
             node = new ASTStatementExpressionList(loc, children);
         }
@@ -1270,22 +1095,13 @@ public class StatementsParser extends BasicParser
      * Parses an <code>ASTStatementExpression</code>.
      * @return An <code>ASTStatementExpression</code>.
      */
-    public ASTStatementExpression parseStatementExpression()
-    {
-        Location loc = curr().getLocation();
-        if (isCurr(INCREMENT) || isCurr(DECREMENT))
-        {
-            ASTPrefixExpression prefixExpression = getExpressionsParser().parsePrefixExpression();
-            return new ASTStatementExpression(loc, Arrays.asList(prefixExpression));
-        }
-        if (isPrimary(curr()))
-        {
+    public ASTStatementExpression parseStatementExpression() {
+        if (isPrimary(curr())) {
             ASTPrimary primary = getExpressionsParser().parsePrimary();
             return parseStatementExpression(primary);
         }
-        else
-        {
-            throw new CompileException("Expected assignment, post/pre increment/decrement, or method invocation.");
+        else {
+            throw new CompileException("Expected assignment, postfix, method invocation, or class instance creation.");
         }
     }
 
@@ -1295,27 +1111,75 @@ public class StatementsParser extends BasicParser
      * @param primary An already parsed <code>ASTPrimary</code>.
      * @return An <code>ASTStatementExpression</code>.
      */
-    public ASTStatementExpression parseStatementExpression(ASTPrimary primary)
-    {
+    public ASTStatementExpression parseStatementExpression(ASTPrimary primary) {
         Location loc = primary.getLocation();
-        if (isCurr(INCREMENT) || isCurr(DECREMENT))
-        {
-            return new ASTStatementExpression(loc, Arrays.asList(getExpressionsParser().parsePostfixExpression(loc, primary.getLeftHandSide())));
+        if (isCurr(INCREMENT) || isCurr(DECREMENT)) {
+            return new ASTStatementExpression(loc, Arrays.asList(parsePostfix(loc, primary.getLeftHandSide())));
         }
-        else
-        {
+        else {
             // Primary may already be a method invocation or class instance creation expression.
             // If so, retrieve and use it.
             ASTNode child = primary.getChildren().get(0);
-            if (child instanceof ASTMethodInvocation || child instanceof ASTClassInstanceCreationExpression)
-            {
+            if (child instanceof ASTMethodInvocation || child instanceof ASTClassInstanceCreationExpression) {
                 return new ASTStatementExpression(loc, Arrays.asList(child));
             }
-            else
-            {
+            else {
                 // Assume assignment.
-                return new ASTStatementExpression(loc, Arrays.asList(getExpressionsParser().parseAssignment(loc, primary.getLeftHandSide())));
+                return new ASTStatementExpression(loc, Arrays.asList(parseAssignment(loc, primary.getLeftHandSide())));
             }
+        }
+    }
+
+    /**
+     * Parses an <code>ASTPrefixExpression</code>, given an <code>ASTLeftHandSide</code>
+     * that has already been parsed and its <code>Location</code>.
+     * @param loc The <code>Location</code>.
+     * @param lhs An already parsed <code>ASTLeftHandSide</code>.
+     * @return An <code>ASTAssignment</code>.
+     */
+    public ASTAssignment parseAssignment(Location loc, ASTLeftHandSide lhs) {
+        TokenType currToken = curr().getType();
+        switch(currToken) {
+        case EQUAL:
+        case PLUS_EQUALS:
+        case MINUS_EQUALS:
+        case STAR_EQUALS:
+        case SLASH_EQUALS:
+        case PERCENT_EQUALS:
+        case SHIFT_LEFT_EQUALS:
+        case SHIFT_RIGHT_EQUALS:
+        case AMPERSAND_EQUALS:
+        case PIPE_EQUALS:
+        case CARET_EQUALS:
+            List<ASTNode> children = new ArrayList<>(2);
+            children.add(lhs);
+            accept(currToken);
+            children.add(getExpressionsParser().parseExpression());
+            ASTAssignment node = new ASTAssignment(loc, children);
+            node.setOperation(currToken);
+            return node;
+        default:
+            throw new CompileException("Expected assignment operator.");
+        }
+    }
+
+    /**
+     * Parses an <code>ASTPostfix</code>.
+     * @param loc The <code>Location</code>.
+     * @param lhs An already parsed <code>ASTLeftHandSide</code>.
+     * @return An <code>ASTPostfix</code>.
+     */
+    public ASTPostfix parsePostfix(Location loc, ASTLeftHandSide lhs) {
+        if (isCurr(INCREMENT)) {
+            accept(INCREMENT);
+            return new ASTPostfix(loc, lhs, INCREMENT);
+        }
+        else if (isCurr(DECREMENT)) {
+            accept(DECREMENT);
+            return new ASTPostfix(loc, lhs, DECREMENT);
+        }
+        else {
+            throw new CompileException("Operator ++ or -- expected.");
         }
     }
 }

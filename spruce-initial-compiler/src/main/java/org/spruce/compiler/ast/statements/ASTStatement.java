@@ -25,22 +25,20 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;IfStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;WhileStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;DoWhileStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;SynchronizedStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;CriticalStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ForStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;TryStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatement
  * </em>
  */
-public class ASTStatement extends ASTParentNode
-{
+public class ASTStatement extends ASTParentNode {
     /**
      * Constructs an <code>ASTStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTStatement(Location location, List<ASTNode> children)
-    {
+    public ASTStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -49,8 +47,7 @@ public class ASTStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

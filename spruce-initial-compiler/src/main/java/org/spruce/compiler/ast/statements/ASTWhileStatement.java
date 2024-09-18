@@ -8,24 +8,22 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTWhileStatement</code> is "while", optionally followed by an Init
- * within braces, followed by an expression (no incr/decr) in parentheses, and a statement.</p>
+ * within braces, followed by a conditional expression, and a block.</p>
  *
  * <em>
  * WhileStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;while { Init } ( ExpressionNoIncrDecr ) Statement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;while ( ExpressionNoIncrDecr ) Statement
+ * &nbsp;&nbsp;&nbsp;&nbsp;while { Init } ConditionalExpression Block<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;while ConditionalExpression Block
  * </em>
  */
-public class ASTWhileStatement extends ASTParentNode
-{
+public class ASTWhileStatement extends ASTParentNode {
     /**
      * Constructs an <code>ASTWhileStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTWhileStatement(Location location, List<ASTNode> children)
-    {
+    public ASTWhileStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +32,7 @@ public class ASTWhileStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

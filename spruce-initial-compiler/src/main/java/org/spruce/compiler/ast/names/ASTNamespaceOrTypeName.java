@@ -16,16 +16,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceOrTypeName . Identifier<br>
  * </em>
  */
-public class ASTNamespaceOrTypeName extends ASTParentNode
-{
+public class ASTNamespaceOrTypeName extends ASTParentNode {
     /**
      * Constructs an <code>ASTNamespaceOrTypeName</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTNamespaceOrTypeName(Location location, List<ASTNode> children)
-    {
+    public ASTNamespaceOrTypeName(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +32,7 @@ public class ASTNamespaceOrTypeName extends ASTParentNode
      * @return <code>false</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return false;
     }
 }

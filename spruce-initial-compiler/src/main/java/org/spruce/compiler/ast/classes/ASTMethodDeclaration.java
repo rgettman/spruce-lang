@@ -15,15 +15,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [MethodModifierList] MethodHeader MethodBody
  * </em>
  */
-public class ASTMethodDeclaration extends ASTParentNode
-{
+public class ASTMethodDeclaration extends ASTParentNode {
     /**
      * Constructs an <code>ASTMethodDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTMethodDeclaration(Location location, List<ASTNode> children)
-    {
+    public ASTMethodDeclaration(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTMethodDeclaration extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

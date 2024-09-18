@@ -14,15 +14,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;EnumConstant {, EnumConstant}
  * </em>
  */
-public class ASTEnumConstantList extends ASTParentNode
-{
+public class ASTEnumConstantList extends ASTParentNode {
     /**
      * Constructs an <code>ASTEnumConstantList</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTEnumConstantList(Location location, List<ASTNode> children)
-    {
+    public ASTEnumConstantList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -31,8 +29,7 @@ public class ASTEnumConstantList extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

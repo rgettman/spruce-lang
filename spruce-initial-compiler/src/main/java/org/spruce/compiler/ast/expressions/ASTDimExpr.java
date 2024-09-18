@@ -14,16 +14,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;[ Expression ]
  * </em>
  */
-public class ASTDimExpr extends ASTParentNode
-{
+public class ASTDimExpr extends ASTParentNode {
     /**
      * Constructs an <code>ASTDimExpr</code> at the given <code>Location</code>
      * and with possibly a node as its child.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTDimExpr(Location location, List<ASTNode> children)
-    {
+    public ASTDimExpr(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTDimExpr extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

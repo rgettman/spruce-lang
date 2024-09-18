@@ -5,16 +5,14 @@ import org.spruce.compiler.scanner.Location;
 /**
  * The top-level class for abstract syntax tree nodes.
  */
-public abstract class ASTNode
-{
-    private Location myLocation;
+public abstract class ASTNode {
+    private final Location myLocation;
 
     /**
      * Constructs an <code>ASTNode</code> with a <code>Location</code>.
      * @param location The <code>Location</code> of the node.
      */
-    public ASTNode(Location location)
-    {
+    public ASTNode(Location location) {
         myLocation = location;
     }
 
@@ -22,16 +20,14 @@ public abstract class ASTNode
      * Returns the <code>Location</code>.
      * @return The <code>Location</code>.
      */
-    public Location getLocation()
-    {
+    public Location getLocation() {
         return myLocation;
     }
 
     /**
      * Prints this node to the output stream.
      */
-    public void print()
-    {
+    public void print() {
         print("", true);
     }
 

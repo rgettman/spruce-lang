@@ -17,16 +17,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ArrayType
  * </em>
  */
-public class ASTDataType extends ASTParentNode
-{
+public class ASTDataType extends ASTParentNode {
     /**
      * Constructs an <code>ASTDataType</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTDataType(Location location, List<ASTNode> children)
-    {
+    public ASTDataType(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -35,8 +33,7 @@ public class ASTDataType extends ASTParentNode
      * @return <code>false</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return false;
     }
 
@@ -44,12 +41,10 @@ public class ASTDataType extends ASTParentNode
      * Converts this into an <code>ASTExpressionName</code>.
      * @return An <code>ASTExpressionName</code>.
      */
-    public ASTExpressionName convertToExpressionName()
-    {
+    public ASTExpressionName convertToExpressionName() {
         List<ASTNode> children = getChildren();
         ASTNode child = children.get(0);
-        if (child instanceof ASTArrayType)
-        {
+        if (child instanceof ASTArrayType) {
             throw new CompileException("Expected variable.");
         }
         ASTDataTypeNoArray dtna = (ASTDataTypeNoArray) child;

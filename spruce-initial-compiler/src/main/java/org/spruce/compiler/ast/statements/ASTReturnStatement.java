@@ -16,16 +16,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;return Expression ;
  * </em>
  */
-public class ASTReturnStatement extends ASTParentNode
-{
+public class ASTReturnStatement extends ASTParentNode{
     /**
      * Constructs an <code>ASTReturnStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTReturnStatement(Location location, List<ASTNode> children)
-    {
+    public ASTReturnStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +32,7 @@ public class ASTReturnStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

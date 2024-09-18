@@ -14,16 +14,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;extends DataTypeNoArray
  * </em>
  */
-public class ASTSuperclass extends ASTParentNode
-{
+public class ASTSuperclass extends ASTParentNode {
     /**
      * Constructs an <code>ASTSuperclass</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTSuperclass(Location location, List<ASTNode> children)
-    {
+    public ASTSuperclass(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTSuperclass extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

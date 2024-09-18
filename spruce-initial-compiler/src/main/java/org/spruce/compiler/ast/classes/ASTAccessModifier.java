@@ -14,23 +14,21 @@ import org.spruce.compiler.scanner.Location;
  * ClassModifier, InterfaceModifier.</p>
  *
  * <em>
- * MethodModifier:<br>
+ * AccessModifier:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;public<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;protected<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;internal<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;private
  * </em>
  */
-public class ASTAccessModifier extends ASTParentNode
-{
+public class ASTAccessModifier extends ASTParentNode {
     /**
      * Constructs an <code>ASTAccessModifier</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTAccessModifier(Location location, List<ASTNode> children)
-    {
+    public ASTAccessModifier(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -39,8 +37,7 @@ public class ASTAccessModifier extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

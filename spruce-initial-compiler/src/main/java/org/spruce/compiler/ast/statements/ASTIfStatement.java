@@ -8,8 +8,8 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTIfStatement</code> is "if", optionally followed by an Init
- * within braces, followed by an expression (no incr/decr) in parentheses, and a statement,
- * optionally followed by "else" and another statement.</p>
+ * within braces, followed by a conditional expression, and a block,
+ * optionally followed by "else" and another block or another if statement.</p>
  *
  * <p>The parser here is greedy; it will consume an "else" that it finds.  It
  * resolves the parser ambiguity known as the "dangling else" problem by being
@@ -17,22 +17,19 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * IfStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;if { Init } ( ExpressionNoIncrDecr ) Statement else Statement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;if ( ExpressionNoIncrDecr ) Statement else Statement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;if ( ExpressionNoIncrDecr ) Statement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;if { Init } ( ExpressionNoIncrDecr ) Statement
+ * &nbsp;&nbsp;&nbsp;&nbsp;if [{ Init }] ConditionalExpression Block else Block<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;if [{ Init }] ConditionalExpression Block else IfStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;if [{ Init }] ConditionalExpression Block<br>
  * </em>
  */
-public class ASTIfStatement extends ASTParentNode
-{
+public class ASTIfStatement extends ASTParentNode {
     /**
      * Constructs an <code>ASTIfStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTIfStatement(Location location, List<ASTNode> children)
-    {
+    public ASTIfStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -41,8 +38,7 @@ public class ASTIfStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -14,16 +14,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;CatchClause {CatchClause}
  * </em>
  */
-public class ASTCatches extends ASTParentNode
-{
+public class ASTCatches extends ASTParentNode {
     /**
      * Constructs an <code>ASTCatches</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTCatches(Location location, List<ASTNode> children)
-    {
+    public ASTCatches(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTCatches extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

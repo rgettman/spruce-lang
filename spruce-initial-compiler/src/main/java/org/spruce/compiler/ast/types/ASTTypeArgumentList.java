@@ -15,15 +15,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeArgument {, TypeArgument}
  * </em>
  */
-public class ASTTypeArgumentList extends ASTParentNode
-{
+public class ASTTypeArgumentList extends ASTParentNode {
     /**
      * Constructs an <code>ASTTypeArgumentList</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTTypeArgumentList(Location location, List<ASTNode> children)
-    {
+    public ASTTypeArgumentList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTTypeArgumentList extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -14,15 +14,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationPart {AnnotationPart}
  * </em>
  */
-public class ASTAnnotationPartList extends ASTParentNode
-{
+public class ASTAnnotationPartList extends ASTParentNode {
     /**
      * Constructs an <code>ASTAnnotationPartList</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTAnnotationPartList(Location location, List<ASTNode> children)
-    {
+    public ASTAnnotationPartList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -31,8 +29,7 @@ public class ASTAnnotationPartList extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

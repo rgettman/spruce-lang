@@ -23,12 +23,11 @@ import static org.spruce.compiler.scanner.TokenType.*;
  * a <code>Scanner</code>, token test/advance methods, and general methods for
  * lists, multiples, and binary/left-associative.  Subclasses represent parsers
  * of various categories of productions and can obtain references to each other
- * for parsing productions outside of their category, using the Parser class.
+ * for parsing productions outside their category, using the Parser class.
  */
-public class BasicParser
-{
-    private Scanner myScanner;
-    private Parser myParser;
+public class BasicParser {
+    private final Scanner myScanner;
+    private final Parser myParser;
 
     /**
      * Constructs a <code>BasicParser</code> using a <code>Scanner</code>.
@@ -36,8 +35,7 @@ public class BasicParser
      * @param scanner A <code>Scanner</code>.
      * @param parser The <code>Parser</code> that is creating this object.
      */
-    public BasicParser(Scanner scanner, Parser parser)
-    {
+    public BasicParser(Scanner scanner, Parser parser) {
         myScanner = scanner;
         myParser = parser;
     }
@@ -46,8 +44,7 @@ public class BasicParser
      * Returns the <code>LiteralsParser</code>.
      * @return The <code>LiteralsParser</code>.
      */
-    public LiteralsParser getLiteralsParser()
-    {
+    public LiteralsParser getLiteralsParser() {
         return myParser.getLiteralsParser();
     }
 
@@ -55,8 +52,7 @@ public class BasicParser
      * Returns the <code>NamesParser</code>.
      * @return The <code>NamesParser</code>.
      */
-    public NamesParser getNamesParser()
-    {
+    public NamesParser getNamesParser() {
         return myParser.getNamesParser();
     }
 
@@ -64,8 +60,7 @@ public class BasicParser
      * Returns the <code>TypesParser</code>.
      * @return The <code>TypesParser</code>.
      */
-    public TypesParser getTypesParser()
-    {
+    public TypesParser getTypesParser() {
         return myParser.getTypesParser();
     }
 
@@ -73,8 +68,7 @@ public class BasicParser
      * Returns the <code>ExpressionsParser</code>.
      * @return The <code>ExpressionsParser</code>.
      */
-    public ExpressionsParser getExpressionsParser()
-    {
+    public ExpressionsParser getExpressionsParser() {
         return myParser.getExpressionsParser();
     }
 
@@ -82,8 +76,7 @@ public class BasicParser
      * Returns the <code>StatementsParser</code>.
      * @return The <code>StatementsParser</code>.
      */
-    public StatementsParser getStatementsParser()
-    {
+    public StatementsParser getStatementsParser() {
         return myParser.getStatementsParser();
     }
 
@@ -91,8 +84,7 @@ public class BasicParser
      * Returns the <code>ClassesParser</code>.
      * @return The <code>ClassesParser</code>.
      */
-    public ClassesParser getClassesParser()
-    {
+    public ClassesParser getClassesParser() {
         return myParser.getClassesParser();
     }
 
@@ -104,10 +96,8 @@ public class BasicParser
      * @param tokenType The expected token type.
      * @return The token that matches, or <code>null</code> on mismatch.
      */
-    protected Token accept(TokenType tokenType)
-    {
-        if (isCurr(tokenType))
-        {
+    protected Token accept(TokenType tokenType) {
+        if (isCurr(tokenType)) {
             Token t = curr();
             advance();
             return t;
@@ -120,8 +110,7 @@ public class BasicParser
      *
      * @return The current <code>Token</code> from the <code>Scanner</code>.
      */
-    protected Token curr()
-    {
+    protected Token curr() {
         return myScanner.getCurrToken();
     }
 
@@ -130,8 +119,7 @@ public class BasicParser
      *
      * @return The next <code>Token</code> from the <code>Scanner</code>.
      */
-    protected Token next()
-    {
+    protected Token next() {
         return myScanner.getNextToken();
     }
 
@@ -140,8 +128,7 @@ public class BasicParser
      *
      * @return The peek <code>Token</code> (after "next") from the <code>Scanner</code>.
      */
-    protected Token peek()
-    {
+    protected Token peek() {
         return myScanner.getPeekToken();
     }
 
@@ -152,8 +139,7 @@ public class BasicParser
      * @param tokenType The expected token type.
      * @return Whether the given token's type matches the given type.
      */
-    protected static boolean test(Token t, TokenType tokenType)
-    {
+    protected static boolean test(Token t, TokenType tokenType) {
         return t.getType() == tokenType;
     }
 
@@ -164,8 +150,7 @@ public class BasicParser
      * @param tokenTypes The list of expected token types.
      * @return Whether the given token's type exists in a list of token types.
      */
-    protected static boolean test(Token t, TokenType... tokenTypes)
-    {
+    protected static boolean test(Token t, TokenType... tokenTypes) {
         return Arrays.asList(tokenTypes).contains(t.getType());
     }
 
@@ -175,8 +160,7 @@ public class BasicParser
      * @param tokenType The expected token type.
      * @return Whether the current token's type matches the given type.
      */
-    protected boolean isCurr(TokenType tokenType)
-    {
+    protected boolean isCurr(TokenType tokenType) {
         return curr().getType() == tokenType;
     }
 
@@ -186,8 +170,7 @@ public class BasicParser
      * @param tokenType The expected token type.
      * @return Whether the next token's type matches the given type.
      */
-    protected boolean isNext(TokenType tokenType)
-    {
+    protected boolean isNext(TokenType tokenType) {
         return next().getType() == tokenType;
     }
 
@@ -197,16 +180,14 @@ public class BasicParser
      * @param tokenType The expected token type.
      * @return Whether the peek token's type matches the given type.
      */
-    protected boolean isPeek(TokenType tokenType)
-    {
+    protected boolean isPeek(TokenType tokenType) {
         return peek().getType() == tokenType;
     }
 
     /**
      * Advance the <code>Scanner</code> to the next token.
      */
-    protected void advance()
-    {
+    protected void advance() {
         myScanner.next();
     }
 
@@ -216,11 +197,9 @@ public class BasicParser
      * @param acceptedTokens A <code>List</code> of acceptable <code>TokenType</code>s.
      * @return The <code>TokenType</code> that matches, or <code>null</code> if none match.
      */
-    protected TokenType isAcceptedOperator(List<TokenType> acceptedTokens)
-    {
+    protected TokenType isAcceptedOperator(List<TokenType> acceptedTokens) {
         TokenType type = curr().getType();
-        if (acceptedTokens.indexOf(type) >= 0)
-        {
+        if (acceptedTokens.contains(type)) {
             return type;
         }
         return null;
@@ -234,8 +213,7 @@ public class BasicParser
      * @param isInTypeContext Whether the <code>Scanner</code> is in a type
      *     context.
      */
-    protected void setInTypeContext(boolean isInTypeContext)
-    {
+    protected void setInTypeContext(boolean isInTypeContext) {
         myScanner.setInTypeContext(isInTypeContext);
     }
 
@@ -258,18 +236,15 @@ public class BasicParser
     protected <T extends ASTParentNode> T parseBinaryExpressionLeftAssociative(Predicate<Token> isOnInitialToken, String initialErrorMessage,
                                                                              List<TokenType> acceptedTokens,
                                                                              Supplier<? extends ASTNode> childParser,
-                                                                             BiFunction<Location, List<ASTNode>, T> nodeSupplier)
-    {
-        if (isOnInitialToken.test(curr()))
-        {
+                                                                             BiFunction<Location, List<ASTNode>, T> nodeSupplier) {
+        if (isOnInitialToken.test(curr())) {
             Location loc = curr().getLocation();
             List<ASTNode> children = new ArrayList<>(2);
             children.add(childParser.get());
             T node = nodeSupplier.apply(loc, children);
 
             TokenType curr;
-            while ( (curr = isAcceptedOperator(acceptedTokens) ) != null && isOnInitialToken.test(next()))
-            {
+            while ( (curr = isAcceptedOperator(acceptedTokens) ) != null && isOnInitialToken.test(next())) {
                 accept(curr);
                 children = new ArrayList<>(2);
                 children.add(node);
@@ -279,8 +254,7 @@ public class BasicParser
             }
             return node;
         }
-        else
-        {
+        else {
             throw new CompileException(initialErrorMessage);
         }
     }
@@ -304,30 +278,24 @@ public class BasicParser
     protected <T extends ASTParentNode> T parseList(Predicate<Token> isOnInitialToken, String initialErrorMessage,
                                                   TokenType acceptedToken,
                                                   Supplier<? extends ASTNode> childParser,
-                                                  BiFunction<Location, List<ASTNode>, T> nodeSupplier)
-    {
-        if (isOnInitialToken.test(curr()))
-        {
+                                                  BiFunction<Location, List<ASTNode>, T> nodeSupplier) {
+        if (isOnInitialToken.test(curr())) {
             Location loc = curr().getLocation();
             List<ASTNode> children = new ArrayList<>();
             children.add(childParser.get());
             T node = nodeSupplier.apply(loc, children);
             node.setOperation(acceptedToken);
 
-            while (isCurr(acceptedToken) && isOnInitialToken.test(next()))
-            {
+            while (isCurr(acceptedToken) && isOnInitialToken.test(next())) {
                 accept(acceptedToken);
                 children.add(childParser.get());
             }
             return node;
         }
-        else
-        {
+        else {
             throw new CompileException(initialErrorMessage);
         }
     }
-
-
 
     /**
      * Helper method to avoid duplicating code for parsing multiple expressions
@@ -346,18 +314,15 @@ public class BasicParser
      */
     protected <T extends ASTParentNode> T parseMultiple(Predicate<Token> isOnInitialToken, String initialErrorMessage,
                                                       Supplier<? extends ASTNode> childParser,
-                                                      BiFunction<Location, List<ASTNode>, T> nodeSupplier)
-    {
-        if (!isOnInitialToken.test(curr()))
-        {
+                                                      BiFunction<Location, List<ASTNode>, T> nodeSupplier) {
+        if (!isOnInitialToken.test(curr())) {
             throw new CompileException(initialErrorMessage);
         }
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>();
         children.add(childParser.get());
         T node = nodeSupplier.apply(loc, children);
-        while (isOnInitialToken.test(curr()))
-        {
+        while (isOnInitialToken.test(curr())) {
             children.add(childParser.get());
         }
         return node;
@@ -374,12 +339,10 @@ public class BasicParser
      * @param <T> The type of node to parse and create.
      * @return A node of the desired type with no children.
      */
-    protected <T extends ASTParentNode> T parseOneOf(List<TokenType> acceptedTokens, String initialErrorMessage, BiFunction<Location, List<ASTNode>, T> nodeSupplier)
-    {
+    protected <T extends ASTParentNode> T parseOneOf(List<TokenType> acceptedTokens, String initialErrorMessage, BiFunction<Location, List<ASTNode>, T> nodeSupplier) {
         Location loc = curr().getLocation();
         TokenType operation = isAcceptedOperator(acceptedTokens);
-        if (operation == null)
-        {
+        if (operation == null) {
             throw new CompileException(initialErrorMessage);
         }
         accept(operation);
@@ -394,21 +357,11 @@ public class BasicParser
      * @param t A <code>Token</code>.
      * @return Whether the give token is a literal.
      */
-    protected static boolean isLiteral(Token t)
-    {
-        switch (t.getType())
-        {
-        case TRUE:
-        case FALSE:
-        case NULL:
-        case INT_LITERAL:
-        case FLOATING_POINT_LITERAL:
-        case STRING_LITERAL:
-        case CHARACTER_LITERAL:
-            return true;
-        default:
-            return false;
-        }
+    protected static boolean isLiteral(Token t) {
+        return switch (t.getType()) {
+            case TRUE, FALSE, INT_LITERAL, FLOATING_POINT_LITERAL, STRING_LITERAL, CHARACTER_LITERAL -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -417,8 +370,7 @@ public class BasicParser
      * @param t A <code>Token</code>.
      * @return Whether the given token can start an expression.
      */
-    protected static boolean isExpression(Token t)
-    {
+    protected static boolean isExpression(Token t) {
         return (test(t, INCREMENT, DECREMENT) || isPrimary(t));
     }
 
@@ -429,7 +381,8 @@ public class BasicParser
      * <li>~</li>
      * <li>!</li>
      * <li>identifier</li>
-     * <li><code>this</code></li>
+     * <li><code>self</code></li>
+     * <li><code>new</code></li>
      * <li><code>super</code></li>
      * <li>(</li>
      * </ul>
@@ -437,25 +390,13 @@ public class BasicParser
      * @param t A <code>Token</code>.
      * @return Whether the given token can start a Primary.
      */
-    protected static boolean isPrimary(Token t)
-    {
-        if (isLiteral(t))
-        {
+    protected static boolean isPrimary(Token t) {
+        if (isLiteral(t)) {
             return true;
         }
-        switch (t.getType())
-        {
-        case MINUS:
-        case BITWISE_COMPLEMENT:
-        case LOGICAL_COMPLEMENT:
-        case IDENTIFIER:
-        case THIS:
-        case OPEN_PARENTHESIS:
-        case NEW:
-        case SUPER:
-            return true;
-        default:
-            return false;
-        }
+        return switch (t.getType()) {
+            case MINUS, TILDE, EXCLAMATION, IDENTIFIER, SELF, OPEN_PARENTHESIS, NEW, SUPER -> true;
+            default -> false;
+        };
     }
 }

@@ -14,20 +14,18 @@ import org.spruce.compiler.scanner.TokenType;
  * <p>An <code>ASTGeneralModifierList</code> is a list of general modifiers.</p>
  *
  * <em>
- * MethodModifierList:<br>
+ * GeneralModifierList:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;GeneralModifier {GeneralModifier}
  * </em>
  */
-public class ASTGeneralModifierList extends ASTParentNode
-{
+public class ASTGeneralModifierList extends ASTParentNode {
     /**
      * Constructs an <code>ASTMethodModifierList</code> at the given <code>Location</code>
      * and with possibly a node as its child.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTGeneralModifierList(Location location, List<ASTNode> children)
-    {
+    public ASTGeneralModifierList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -36,14 +34,13 @@ public class ASTGeneralModifierList extends ASTParentNode
      * @return <code>false</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return false;
     }
 
     /**
      * Converts this general modifier list to a more specific modifier list,
-     * giving an error is we have a modifier that is not in a more specific
+     * giving an error if we have a modifier that is not in a more specific
      * list, or if there are duplicate modifiers.
      * @param errorMessage The error message expected.
      * @param expectedModifiers A List of expected modifiers (token types).
@@ -55,21 +52,17 @@ public class ASTGeneralModifierList extends ASTParentNode
      *     specific list, or if there are duplicate modifiers.
      */
     public <T extends ASTParentNode> T convertToSpecificList(String errorMessage, List<TokenType> expectedModifiers,
-                                                             BiFunction<Location, List<ASTNode>, T> nodeSupplier)
-    {
+                                                             BiFunction<Location, List<ASTNode>, T> nodeSupplier) {
         // Dupe check.
         HashSet<TokenType> seen = new HashSet<>();
         List<ASTNode> children = getChildren();
-        for (ASTNode child : children)
-        {
+        for (ASTNode child : children) {
             ASTGeneralModifier mod = (ASTGeneralModifier) child;
             TokenType modifier = mod.getOperation();
-            if (!seen.add(modifier))
-            {
+            if (!seen.add(modifier)) {
                 throw new CompileException("Duplicate modifier found: " + modifier.getRepresentation());
             }
-            if (!expectedModifiers.contains(modifier))
-            {
+            if (!expectedModifiers.contains(modifier)) {
                 throw new CompileException(errorMessage);
             }
         }

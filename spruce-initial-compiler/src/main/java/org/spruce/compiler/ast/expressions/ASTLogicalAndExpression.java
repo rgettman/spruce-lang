@@ -20,16 +20,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;LogicalAndExpression &amp;: RelationalExpression
  * </em>
  */
-public class ASTLogicalAndExpression extends ASTParentNode
-{
+public class ASTLogicalAndExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTLogicalAndExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTLogicalAndExpression(Location location, List<ASTNode> children)
-    {
+    public ASTLogicalAndExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -38,8 +36,7 @@ public class ASTLogicalAndExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -7,8 +7,7 @@ import java.util.Map;
  * The types of tokens.  This includes separators, literals, operators,
  * keywords, identifiers, end-of-file, and "unknown".
  */
-public enum TokenType
-{
+public enum TokenType {
     // SPECIAL
 
     /**
@@ -23,10 +22,17 @@ public enum TokenType
      * Includes space, tab, newline, carriage return, form feed.
      */
     WHITESPACE(" "),
+
+    // Annotation and directive indicators.
+
     /**
      * The token <code>@</code>.
      */
     AT_SIGN("@"),
+    /**
+     * The token <code>#</code>.
+     */
+    HASHTAG("#"),
 
     // COMMENTS
 
@@ -58,7 +64,7 @@ public enum TokenType
      */
     INT_LITERAL("int"),
     /**
-     * An floating point literal from <code>-Double.MAX_VALUE</code> through <code>Double.MAX_VALUE</code>,
+     * A floating point literal from <code>-Double.MAX_VALUE</code> through <code>Double.MAX_VALUE</code>,
      * e.g. -1.256, 1E100.
      * Decimal point, digits on either side of it or both, with optional exponent <code>[eE][+-]?[digits]+</code>,
      * or digits with exponent.
@@ -118,11 +124,15 @@ public enum TokenType
     /**
      * The token <code>-&gt;</code>.
      */
-    LAMBDA_MAPS_TO("->"),
+    ARROW("->"),
+    /**
+     * The token <code>..</code>.
+     */
+    TWO_DOTS(".."),
     /**
      * The token <code>...</code>.
      */
-    ELLIPSIS("..."),
+    THREE_DOTS("..."),
 
     // OPERATORS
 
@@ -139,6 +149,10 @@ public enum TokenType
      * The token <code>=</code>.
      */
     EQUAL("="),
+    /**
+     * The token <code>==</code>.
+     */
+    DOUBLE_EQUAL("=="),
     /**
      * The token <code>!=</code>.
      */
@@ -159,55 +173,55 @@ public enum TokenType
     /**
      * The token <code>&amp;</code>
      */
-    BITWISE_AND("&"),
+    AMPERSAND("&"),
     /**
      * The token <code>&amp;=</code>
      */
-    AND_EQUALS("&="),
+    AMPERSAND_EQUALS("&="),
     /**
      * The token <code>|</code>
      */
-    BITWISE_OR("|"),
+    PIPE("|"),
     /**
      * The token <code>|=</code>
      */
-    OR_EQUALS("|="),
+    PIPE_EQUALS("|="),
     /**
      * The token <code>^</code>
      */
-    BITWISE_XOR("^"),
+    CARET("^"),
     /**
      * The token <code>^=</code>
      */
-    XOR_EQUALS("^="),
+    CARET_EQUALS("^="),
     /**
      * The token <code>~</code>
      */
-    BITWISE_COMPLEMENT("~"),
+    TILDE("~"),
     /**
      * The token <code>&amp;&amp;</code>
      */
-    CONDITIONAL_AND("&&"),
+    DOUBLE_AMPERSAND("&&"),
     /**
      * The token <code>||</code>
      */
-    CONDITIONAL_OR("||"),
+    DOUBLE_PIPE("||"),
     /**
      * The token <code>&amp;:</code>
      */
-    LOGICAL_AND("&:"),
+    AMPERSAND_COLON("&:"),
     /**
      * The token <code>^:</code>
      */
-    LOGICAL_XOR("^:"),
+    CARET_COLON("^:"),
     /**
      * The token <code>|:</code>
      */
-    LOGICAL_OR("|:"),
+    PIPE_COLON("|:"),
     /**
      * The token <code>!</code>
      */
-    LOGICAL_COMPLEMENT("!"),
+    EXCLAMATION("!"),
     /**
      * The token <code>&lt;&lt;</code>
      */
@@ -224,14 +238,6 @@ public enum TokenType
      * The token <code>&gt;&gt;&gt;=</code>
      */
     SHIFT_RIGHT_EQUALS(">>="),
-    /**
-     * The token <code>&gt;&gt;&gt;</code>
-     */
-    UNSIGNED_SHIFT_RIGHT(">>>"),
-    /**
-     * The token <code>&gt;&gt;&gt;=</code>
-     */
-    UNSIGNED_SHIFT_RIGHT_EQUALS(">>>="),
     // increment/decrement
     /**
      * The token <code>++</code>
@@ -287,11 +293,6 @@ public enum TokenType
      * The token <code>%=</code>.
      */
     PERCENT_EQUALS("%="),
-    // Assignment
-    /**
-     * The token <code>:=</code>.
-     */
-    ASSIGNMENT(":="),
     // Generics subtype/supertype.
     /**
      * The token <code>&lt;:</code>.
@@ -304,92 +305,156 @@ public enum TokenType
 
     // KEYWORDS
 
-    // class-related
     /**
-     * Allow simple names for identifiers not in same package or in spruce.lang.
+     * Not implemented/instantiable.
      */
-    RECOGNIZE,
-    /**
-     * Declare membership in a namespace.
-     */
-    NAMESPACE,
-    /**
-     * Declare a class.
-     */
-    CLASS,
-    /**
-     * All functionality abstract except for default methods; constants.
-     */
-    INTERFACE,
-    /**
-     * Special class declaration with constant types.
-     */
-    ENUM,
+    ABSTRACT,
     /**
      * Special class declaration; instances applied to classes, constructors,
      * fields, methods with "@".
      */
     ANNOTATION,
     /**
-     * Class extends superclass; upper bound generics wildcard.
+     * Cast operator
      */
-    EXTENDS,
+    AS,
+    /**
+     * Assertions
+     */
+    ASSERT,
+    /**
+     * Get out of current loop and don't start any more iterations.
+     */
+    BREAK,
+    /**
+     * Case labels within switch statements.
+     */
+    CASE,
+    /**
+     * Declare a class.
+     */
+    CLASS,
+    /**
+     * Shared, not reassignable, and immutable.
+     */
+    CONSTANT,
     /**
      * Define constructor; <strong>not</strong> the same name as the class.
      */
     CONSTRUCTOR,
     /**
-     * Refer to superclass method/instance; lower bound generics wildcard.
+     * Get out of current loop and start the next iteration.
      */
-    SUPER,
+    CONTINUE,
+    /**
+     * Critical section.
+     */
+    CRITICAL,
+    /**
+     * Default cases, default methods, default parameter values?
+     */
+    DEFAULT,
+    /**
+     * Do/while statement.
+     */
+    DO,
+    /**
+     * Special class declaration; instances applied to classes, constructors,
+     * fields, methods with "#".  Directives tell the compiler to do something:
+     * generate boilerplate code, check for failing the compiler, etc.
+     */
+    DIRECTIVE,
+    /**
+     * else, else if.
+     */
+    ELSE,
+    /**
+     * Special class declaration with constant types.
+     */
+    ENUM,
+    /**
+     * Class extends superclass; upper bound generics wildcard.
+     */
+    EXTENDS,
+    /**
+     * Explicit fallthrough in cases in switch statements.
+     */
+    FALLTHROUGH,
+    /**
+     * Can't extend class or can't override method.
+     */
+    FINAL,
+    /**
+     * For statements, traditional and "enhanced".
+     */
+    FOR,
+    /**
+     * Give ownership of a variable to something else.
+     */
+    GIVE,
+    /**
+     * if, else, else if.
+     */
+    IF,
     /**
      * Class implements interface.
      */
     IMPLEMENTS,
     /**
-     * Create a new object, yielding an object reference.
+     * All functionality abstract except for default methods; constants.
      */
-    NEW,
+    INTERFACE,
     /**
-     * End a method or constructor, possibly returning a value.
+     * Can be accessed only by any same-package code.
      */
-    RETURN,
-    /**
-     * Implicitly typed variable.  Still strongly typed, like Java 10.
-     */
-    AUTO,
-    /**
-     * The "this" object reference for constructors and non-shared methods.
-     */
-    THIS,
-    /**
-     * Determines if an object referred to by a reference is an instance of a
-     * class, interface, or enum.
-     */
-    INSTANCEOF,
+    INTERNAL,
     /**
      * Determines if an object reference refers to the same object as another
      * object reference (reference == in Java).
      */
     IS,
     /**
+     * Determines if an object referred to by a reference is an instance of a
+     * class, interface, or enum.
+     */
+    ISA,
+    /**
      * Determines if an object reference does not refer to the same object as another
      * object reference (reference != in Java).
      */
     ISNT,
     /**
-     * Cast operator
+     * Match statement.
      */
-    AS,
-    // access modifiers
+    MATCH,
+    /**
+     * Contents are mutable.
+     */
+    MUT,
+    /**
+     * Declare membership in a namespace.
+     */
+    NAMESPACE,
+    /**
+     * Implemented in native code.
+     */
+    NATIVE,
+    /**
+     * Create a new object, yielding an object reference.
+     */
+    NEW,
+    /**
+     * With this modifier, the method MUST override a superclass method.
+     */
+    OVERRIDE,
+    /**
+     * Allowed subclasses of a sealed class.
+     */
+    PERMITS,
     /**
      * Can be accessed only by any same-class code.
      */
     PRIVATE,
-    /**
-     * Can be accessed only by any same-package code.
-     */
-    INTERNAL,
     /**
      * Can be accessed only by any subclasses or other same-package code.
      */
@@ -398,106 +463,69 @@ public enum TokenType
      * Can be accessed by any code.
      */
     PUBLIC,
-    // other modifiers
     /**
-     * Not implemented/instantiable.
+     * Data type class with special handling.
      */
-    ABSTRACT,
+    RECORD,
+    /**
+     * End a method or constructor, possibly returning a value.
+     */
+    RETURN,
+    /**
+     * Sealed classes have controlled, limited inheritance.
+     */
+    SEALED,
+    /**
+     * The "self" object reference for constructors and non-shared methods.
+     */
+    SELF,
     /**
      * Class, not, instance-specific.  This is "static" in Java.
      */
     SHARED,
     /**
-     * Strict IEEE math; no x86 80-bit mode.
+     * Refer to superclass method/instance; lower bound generics wildcard.
      */
-    STRICTFP,
-    /**
-     * Implemented in native code.
-     */
-    NATIVE,
-    /**
-     * Obtain lock before executing.
-     */
-    SYNCHRONIZED,
-    /**
-     * Not part of serialized state.
-     */
-    TRANSIENT,
-    /**
-     * Writes provide "happens-before".
-     */
-    VOLATILE,
-    /**
-     * With this modifier, the method MUST override a superclass method.
-     */
-    OVERRIDE,
-    // restrictions
-    /**
-     * Reference may not be changed.
-     */
-    FINAL,
-    /**
-     * Contents are immutable.
-     */
-    CONST,
-    /**
-     * Both final and const.
-     */
-    CONSTANT,
-    // LOGIC
-    /**
-     * if, else, else if.
-     */
-    IF,
-    /**
-     * else, else if.
-     */
-    ELSE,
-    /**
-     * For statements, traditional and "enhanced".
-     */
-    FOR,
-    /**
-     * Do/while statement.
-     */
-    DO,
-    /**
-     * While or do/while statement.
-     */
-    WHILE,
+    SUPER,
     /**
      * Switch statement.
      */
     SWITCH,
     /**
-     * Case labels within switch statements.
+     * Take ownership of a variable from something else.
      */
-    CASE,
+    TAKE,
     /**
-     * Default cases, default methods, default parameter values?
+     * Allow simple names for identifiers not in same package or in spruce.lang.
+     * Also used for "use statements" inside switch expressions.
      */
-    DEFAULT,
+    USE,
     /**
-     * Explicit fall through for switch case labels.
+     * Variable; can be reassigned.
      */
-    FALLTHROUGH,
-    /**
-     * Get out of current loop and don't start any more iterations.
-     */
-    BREAK,
-    /**
-     * Get out of current loop and start the next iteration.
-     */
-    CONTINUE,
-    /**
-     * Assertions
-     */
-    ASSERT,
-    // types
+    VAR,
     /**
      * Method doesn't return anything.
      */
     VOID,
+    /**
+     * Writes provide "happens-before".
+     */
+    VOLATILE,
+    /**
+     * When clause for guards on switch labels.
+     */
+    WHEN,
+    /**
+     * While or do/while statement.
+     */
+    WHILE,
+    /**
+     * Yield statement.
+     */
+    YIELD,
+
+    // types
     /**
      * <code>true</code> or <code>false</code>.
      */
@@ -530,19 +558,6 @@ public enum TokenType
      * 64-bit IEEE floating-point.
      */
     DOUBLE,
-    // exception handling
-    /**
-     * Throw an exception.
-     */
-    THROW,
-    /**
-     * Declare exceptions thrown.
-     */
-    THROWS,
-    /**
-     * Try a block of code that may throw an exception.
-     */
-    TRY,
     /**
      * Catch an exception.
      */
@@ -551,7 +566,14 @@ public enum TokenType
      * Always executed.
      */
     FINALLY,
-    // values
+    /**
+     * Throw an exception.
+     */
+    THROW,
+    /**
+     * Try a block of code that may throw an exception.
+     */
+    TRY,
     /**
      * The literal <code>true</code>.
      */
@@ -559,19 +581,13 @@ public enum TokenType
     /**
      * The literal <code>false</code>.
      */
-    FALSE,
-    /**
-     * The literal <code>null</code>.
-     */
-    NULL;
+    FALSE;
 
     private static final Map<String, TokenType> LOOKUP;
 
-    static
-    {
+    static {
         LOOKUP = new HashMap<>();
-        for (TokenType t : values())
-        {
+        for (TokenType t : values()) {
             LOOKUP.put(t.getRepresentation(), t);
         }
     }
@@ -585,20 +601,17 @@ public enum TokenType
      * @return The associated <code>TokenType</code>, or <code>null</code> if not
      *     found.
      */
-    public static TokenType forRepresentation(String representation)
-    {
+    public static TokenType forRepresentation(String representation) {
         return LOOKUP.get(representation);
     }
 
-    private String myRepresentation;
+    private final String myRepresentation;
 
-    TokenType(String representation)
-    {
+    TokenType(String representation) {
         myRepresentation = representation;
     }
 
-    TokenType()
-    {
+    TokenType() {
         myRepresentation = toString().toLowerCase();
     }
 
@@ -606,8 +619,7 @@ public enum TokenType
      * Returns the representation string for the <code>TokenType</code>.
      * @return The representation string for the <code>TokenType</code>.
      */
-    public String getRepresentation()
-    {
+    public String getRepresentation() {
         return myRepresentation;
     }
 }

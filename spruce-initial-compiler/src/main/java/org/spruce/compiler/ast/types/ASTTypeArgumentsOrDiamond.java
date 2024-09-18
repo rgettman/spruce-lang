@@ -18,16 +18,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;&lt; &gt;
  * </em>
  */
-public class ASTTypeArgumentsOrDiamond extends ASTParentNode
-{
+public class ASTTypeArgumentsOrDiamond extends ASTParentNode {
     /**
      * Constructs an <code>ASTTypeArgumentsOrDiamond</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTTypeArgumentsOrDiamond(Location location, List<ASTNode> children)
-    {
+    public ASTTypeArgumentsOrDiamond(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -36,8 +34,7 @@ public class ASTTypeArgumentsOrDiamond extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

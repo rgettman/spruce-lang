@@ -7,22 +7,21 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTRecognizeDeclarationList</code> is multiple recognize declarations.</p>
+ * <p>An <code>ASTUseSharedAllDeclaration</code> is "use" followed
+ * by "shared" followed by a Type Name, dot, star, then a semicolon.</p>
  *
  * <em>
- * RecognizeDeclarationList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;RecognizeDeclaration {RecognizeDeclaration}
+ * UseSharedAllDeclaration:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . * ;
  * </em>
  */
-public class ASTRecognizeDeclarationList extends ASTParentNode
-{
+public class ASTUseSharedAllDeclaration extends ASTParentNode {
     /**
-     * Constructs an <code>ASTRecognizeDeclarationList</code> at the given <code>Location</code>
+     * Constructs an <code>ASTUseSharedAllDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTRecognizeDeclarationList(Location location, List<ASTNode> children)
-    {
+    public ASTUseSharedAllDeclaration(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -31,8 +30,7 @@ public class ASTRecognizeDeclarationList extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

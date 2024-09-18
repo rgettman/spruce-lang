@@ -17,15 +17,13 @@ import org.spruce.compiler.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeParameters Result MethodDeclarator
  * </em>
  */
-public class ASTMethodHeader extends ASTParentNode
-{
+public class ASTMethodHeader extends ASTParentNode {
     /**
      * Constructs an <code>ASTMethodHeader</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTMethodHeader(Location location, List<ASTNode> children)
-    {
+    public ASTMethodHeader(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +32,7 @@ public class ASTMethodHeader extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

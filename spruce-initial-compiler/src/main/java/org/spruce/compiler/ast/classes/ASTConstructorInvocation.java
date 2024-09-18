@@ -12,6 +12,8 @@ import org.spruce.compiler.scanner.TokenType;
  * arguments optionally preceded by Expression Name "." or Primary ".", then
  * "constructor" or "super" followed by a pair parentheses optionally containing
  * an Argument List.</p>
+ * <p>The Expression Name or Primary are only provided to supply an enclosing
+ * class instance if the superclass is an inner class.</p>
  *
  * <em>
  * ConstructorInvocation:<br>
@@ -21,15 +23,13 @@ import org.spruce.compiler.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;: Primary . [TypeArguments] super ( ArgumentList )
  * </em>
  */
-public class ASTConstructorInvocation extends ASTParentNode
-{
+public class ASTConstructorInvocation extends ASTParentNode {
     /**
      * Constructs an <code>ASTConstructorInvocation</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTConstructorInvocation(Location location, List<ASTNode> children)
-    {
+    public ASTConstructorInvocation(Location location, List<ASTNode> children) {
         super(location, children, TokenType.OPEN_PARENTHESIS);
     }
 
@@ -38,8 +38,7 @@ public class ASTConstructorInvocation extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -20,16 +20,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AdditiveExpression - MultiplicativeExpression<br>
  * </em>
  */
-public class ASTAdditiveExpression extends ASTParentNode
-{
+public class ASTAdditiveExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTAdditiveExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTAdditiveExpression(Location location, List<ASTNode> children)
-    {
+    public ASTAdditiveExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -38,8 +36,7 @@ public class ASTAdditiveExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

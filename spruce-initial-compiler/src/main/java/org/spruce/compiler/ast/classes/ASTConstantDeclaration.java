@@ -11,19 +11,17 @@ import org.spruce.compiler.scanner.Location;
  * DataType, and a VariableDeclaratorList.</p>
  *
  * <em>
- * FieldDeclaration:<br>
+ * ConstantDeclaration:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;[ConstantModifier] DataType VariableDeclaratorList
  * </em>
  */
-public class ASTConstantDeclaration extends ASTParentNode
-{
+public class ASTConstantDeclaration extends ASTParentNode {
     /**
      * Constructs an <code>ASTConstantDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTConstantDeclaration(Location location, List<ASTNode> children)
-    {
+    public ASTConstantDeclaration(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTConstantDeclaration extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

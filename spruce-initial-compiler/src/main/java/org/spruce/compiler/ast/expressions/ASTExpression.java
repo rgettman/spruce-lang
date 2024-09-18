@@ -7,36 +7,23 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTExpression</code> is an expression, no incr / decr, or
- * a prefix / postfix increment / decrement expression.</p>
- *
- * <p>This element will only be found in the few places that will allow
- * increment and decrement expressions:</p>
- *
- * <ul>
- *     <li><code>return</code> statements</li>
- *     <li>the index for <code>ElementAccess</code> expressions</li>
- *     <li>arguments to <code>MethodInvocations</code></li>
- *     <li>dimensions to array creation expressions</li>
- * </ul>
+ * <p>An <code>ASTExpression</code> is a conditional expression or
+ * a lambda expression.</p>
  *
  * <em>
  * Expression:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionNoIncrDecr<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;PrefixExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;PostfixExpression
+ * &nbsp;&nbsp;&nbsp;&nbsp;ConditionalExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;LambdaExpression<br>
  * </em>
  */
-public class ASTExpression extends ASTParentNode
-{
+public class ASTExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTExpression(Location location, List<ASTNode> children)
-    {
+    public ASTExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -45,8 +32,7 @@ public class ASTExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

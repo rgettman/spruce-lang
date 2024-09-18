@@ -7,23 +7,22 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTSwitchValues</code> is comma-separated list of switch values.</p>
+ * <p>An <code>ASTCriticalStatement</code> is a "critical statement".
+ * It is "critical" followed by a conditional expression and a block.</p>
  *
  * <em>
- * SwitchValues:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;SwitchValue {, SwitchValue}
+ * CriticalStatement:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;critical ConditionalExpression Block
  * </em>
  */
-public class ASTSwitchValues extends ASTParentNode
-{
+public class ASTCriticalStatement extends ASTParentNode {
     /**
-     * Constructs an <code>SwitchValues</code> at the given <code>Location</code>
+     * Constructs an <code>ASTSynchronizedStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTSwitchValues(Location location, List<ASTNode> children)
-    {
+    public ASTCriticalStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +31,7 @@ public class ASTSwitchValues extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

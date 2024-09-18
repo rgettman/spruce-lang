@@ -17,15 +17,13 @@ import org.spruce.compiler.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;[TypeArguments] constructor ( [FormalParameterList] )
  * </em>
  */
-public class ASTConstructorDeclarator extends ASTParentNode
-{
+public class ASTConstructorDeclarator extends ASTParentNode {
     /**
      * Constructs an <code>ASTConstructorDeclarator</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTConstructorDeclarator(Location location, List<ASTNode> children)
-    {
+    public ASTConstructorDeclarator(Location location, List<ASTNode> children) {
         super(location, children, TokenType.OPEN_PARENTHESIS);
     }
 
@@ -34,8 +32,7 @@ public class ASTConstructorDeclarator extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

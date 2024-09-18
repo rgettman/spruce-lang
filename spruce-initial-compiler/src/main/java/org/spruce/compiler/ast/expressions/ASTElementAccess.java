@@ -18,15 +18,13 @@ import org.spruce.compiler.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;Primary [ Expression ]<br>
  * </em>
  */
-public class ASTElementAccess extends ASTParentNode
-{
+public class ASTElementAccess extends ASTParentNode {
     /**
      * Constructs an <code>ASTElementAccess</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTElementAccess(Location location, List<ASTNode> children)
-    {
+    public ASTElementAccess(Location location, List<ASTNode> children) {
         super(location, children, TokenType.OPEN_BRACKET);
     }
 
@@ -35,8 +33,7 @@ public class ASTElementAccess extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -15,16 +15,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;switch ( Expression ) SwitchBlock
  * </em>
  */
-public class ASTSwitchStatement extends ASTParentNode
-{
+public class ASTSwitchStatement extends ASTParentNode {
     /**
      * Constructs an <code>ASTSwitchStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTSwitchStatement(Location location, List<ASTNode> children)
-    {
+    public ASTSwitchStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTSwitchStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -1,9 +1,9 @@
 package org.spruce.compiler.ast.literals;
 
-import java.util.Arrays;
+import java.util.Collections;
 
 import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTValueNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -19,27 +19,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;NullLiteral
  * </em>
  */
-public class ASTLiteral extends ASTParentNode
-{
+public class ASTLiteral extends ASTValueNode {
     /**
      * Constructs an <code>ASTLiteral</code> at the given <code>Location</code>
      * and with one child as its node.
      * @param location The <code>Location</code>.
-     * @param child The child node.
+     * @param value The value of the node.
      */
-    public ASTLiteral(Location location, ASTNode child)
-    {
-        super(location, Arrays.asList(child));
-    }
-
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible()
-    {
-        return true;
+    public ASTLiteral(Location location, String value) {
+        super(location, value);
     }
 }

@@ -18,16 +18,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;JavaLetterOrDigit
  * </em>
  */
-public class ASTIdentifier extends ASTValueNode
-{
+public class ASTIdentifier extends ASTValueNode {
     /**
      * Constructs an <code>ASTIdentifier</code> given the <code>Location</code>
      * and the string value of the token.
      * @param location The <code>Location</code>.
      * @param value The string value.
      */
-    public ASTIdentifier(Location location, String value)
-    {
+    public ASTIdentifier(Location location, String value) {
         super(location, value);
     }
 }

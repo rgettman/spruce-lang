@@ -14,16 +14,14 @@ import org.spruce.compiler.scanner.Location;
  * VariableInitializerList:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;VariableInitializer {, VariableInitializer}
  */
-public class ASTVariableInitializerList extends ASTParentNode
-{
+public class ASTVariableInitializerList extends ASTParentNode {
     /**
      * Constructs an <code>ASTVariableInitializerList</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTVariableInitializerList(Location location, List<ASTNode> children)
-    {
+    public ASTVariableInitializerList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTVariableInitializerList extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

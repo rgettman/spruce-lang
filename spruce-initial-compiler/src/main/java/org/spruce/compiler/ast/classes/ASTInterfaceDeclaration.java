@@ -13,18 +13,16 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * InterfaceDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceModifierList] interface Identifier [TypeParameters] [ExtendsInterfaces] InterfaceBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceModifierList] interface Identifier [TypeParameters] [ExtendsInterfaces] [Permits] InterfaceBody
  * </em>
  */
-public class ASTInterfaceDeclaration extends ASTParentNode
-{
+public class ASTInterfaceDeclaration extends ASTParentNode {
     /**
      * Constructs an <code>ASTInterfaceDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTInterfaceDeclaration(Location location, List<ASTNode> children)
-    {
+    public ASTInterfaceDeclaration(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTInterfaceDeclaration extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

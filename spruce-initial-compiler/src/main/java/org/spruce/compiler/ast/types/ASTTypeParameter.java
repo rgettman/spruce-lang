@@ -16,16 +16,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier TypeBound
  * </em>
  */
-public class ASTTypeParameter extends ASTParentNode
-{
+public class ASTTypeParameter extends ASTParentNode {
     /**
      * Constructs an <code>ASTTypeParameter</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTTypeParameter(Location location, List<ASTNode> children)
-    {
+    public ASTTypeParameter(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +32,7 @@ public class ASTTypeParameter extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

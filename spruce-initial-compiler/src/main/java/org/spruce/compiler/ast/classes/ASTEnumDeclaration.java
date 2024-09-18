@@ -16,15 +16,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [ClassModifierList] enum Identifier [Superinterfaces] EnumBody
  * </em>
  */
-public class ASTEnumDeclaration extends ASTParentNode
-{
+public class ASTEnumDeclaration extends ASTParentNode {
     /**
      * Constructs an <code>ASTEnumDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTEnumDeclaration(Location location, List<ASTNode> children)
-    {
+    public ASTEnumDeclaration(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTEnumDeclaration extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

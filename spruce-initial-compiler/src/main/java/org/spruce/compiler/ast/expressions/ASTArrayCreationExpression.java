@@ -18,16 +18,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray Dims ArrayInitializer
  * </em>
  */
-public class ASTArrayCreationExpression extends ASTParentNode
-{
+public class ASTArrayCreationExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTArrayCreationExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTArrayCreationExpression(Location location, List<ASTNode> children)
-    {
+    public ASTArrayCreationExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -36,8 +34,7 @@ public class ASTArrayCreationExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

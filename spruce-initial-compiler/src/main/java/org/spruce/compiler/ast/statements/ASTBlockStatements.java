@@ -14,16 +14,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;BlockStatement {BlockStatement}
  * </em>
  */
-public class ASTBlockStatements extends ASTParentNode
-{
+public class ASTBlockStatements extends ASTParentNode {
     /**
      * Constructs an <code>ASTBlockStatements</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTBlockStatements(Location location, List<ASTNode> children)
-    {
+    public ASTBlockStatements(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTBlockStatements extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

@@ -14,7 +14,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;0-9
  * </em>
  */
-public class ASTIntegerLiteral extends ASTValueNode
+public class ASTIntegerLiteral extends ASTLiteral
 {
     /**
      * Constructs an <code>ASTIntegerLiteral</code> given the <code>Location</code>
@@ -22,8 +22,7 @@ public class ASTIntegerLiteral extends ASTValueNode
      * @param location The <code>Location</code>.
      * @param value The string value.
      */
-    public ASTIntegerLiteral(Location location, String value)
-    {
+    public ASTIntegerLiteral(Location location, String value) {
         super(location, value);
     }
 
@@ -31,8 +30,7 @@ public class ASTIntegerLiteral extends ASTValueNode
      * Returns the integer value.
      * @return The integer value.
      */
-    public long getNumericValue()
-    {
+    public long getNumericValue() {
         return Long.parseLong(getValue());
     }
 }

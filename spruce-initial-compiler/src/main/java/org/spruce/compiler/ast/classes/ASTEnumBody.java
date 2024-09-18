@@ -12,19 +12,17 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * ClassBody:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;{ [EnumConstantList] [EnumBodyDeclaration] }
+ * &nbsp;&nbsp;&nbsp;&nbsp;{ [EnumConstantList] [EnumBodyDeclarations] }
  * </em>
  */
-public class ASTEnumBody extends ASTParentNode
-{
+public class ASTEnumBody extends ASTParentNode {
     /**
      * Constructs an <code>ASTEnumBody</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTEnumBody(Location location, List<ASTNode> children)
-    {
+    public ASTEnumBody(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTEnumBody extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

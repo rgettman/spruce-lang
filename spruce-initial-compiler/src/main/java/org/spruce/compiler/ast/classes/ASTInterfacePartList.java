@@ -14,16 +14,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;InterfacePart {InterfacePart}
  * </em>
  */
-public class ASTInterfacePartList extends ASTParentNode
-{
+public class ASTInterfacePartList extends ASTParentNode {
     /**
      * Constructs an <code>ASTInterfacePartList</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTInterfacePartList(Location location, List<ASTNode> children)
-    {
+    public ASTInterfacePartList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTInterfacePartList extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

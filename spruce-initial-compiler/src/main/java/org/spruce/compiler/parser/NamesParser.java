@@ -12,16 +12,14 @@ import static org.spruce.compiler.scanner.TokenType.*;
 /**
  * A <code>NamesParser</code> is a <code>BasicParser</code> that parses names.
  */
-public class NamesParser extends BasicParser
-{
+public class NamesParser extends BasicParser {
     /**
      * Constructs a <code>NamesParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
      * @param parser The <code>Parser</code> that is creating this object.
      */
-    public NamesParser(Scanner scanner, Parser parser)
-    {
+    public NamesParser(Scanner scanner, Parser parser) {
         super(scanner, parser);
     }
 
@@ -30,8 +28,7 @@ public class NamesParser extends BasicParser
      * with each other.
      * @return An <code>ASTNamespaceName</code>.
      */
-    public ASTNamespaceName parseNamespaceName()
-    {
+    public ASTNamespaceName parseNamespaceName() {
         return parseBinaryExpressionLeftAssociative(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
@@ -46,8 +43,7 @@ public class NamesParser extends BasicParser
      * with each other.
      * @return An <code>ASTTypeName</code>.
      */
-    public ASTTypeName parseTypeName()
-    {
+    public ASTTypeName parseTypeName() {
         ASTNamespaceOrTypeName ptName = parseNamespaceOrTypeName();
         ASTTypeName node = new ASTTypeName(ptName.getLocation(), ptName.getChildren());
         node.setOperation(ptName.getOperation());
@@ -59,8 +55,7 @@ public class NamesParser extends BasicParser
      * with each other.
      * @return An <code>ASTNamespaceOrTypeName</code>.
      */
-    public ASTNamespaceOrTypeName parseNamespaceOrTypeName()
-    {
+    public ASTNamespaceOrTypeName parseNamespaceOrTypeName() {
         return parseBinaryExpressionLeftAssociative(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
@@ -75,8 +70,7 @@ public class NamesParser extends BasicParser
      * with each other.
      * @return An <code>ASTExpressionName</code>.
      */
-    public ASTExpressionName parseExpressionName()
-    {
+    public ASTExpressionName parseExpressionName() {
         ASTAmbiguousName ambName = parseAmbiguousName();
         ASTExpressionName node = new ASTExpressionName(ambName.getLocation(), ambName.getChildren());
         node.setOperation(ambName.getOperation());
@@ -88,8 +82,7 @@ public class NamesParser extends BasicParser
      * with each other.
      * @return An <code>ASTAmbiguousName</code>.
      */
-    public ASTAmbiguousName parseAmbiguousName()
-    {
+    public ASTAmbiguousName parseAmbiguousName() {
         return parseBinaryExpressionLeftAssociative(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
@@ -103,8 +96,7 @@ public class NamesParser extends BasicParser
      * Parses an <code>ASTIdentifierList</code>.
      * @return An <code>ASTIdentifierList</code>.
      */
-    public ASTIdentifierList parseIdentifierList()
-    {
+    public ASTIdentifierList parseIdentifierList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected identifier",
@@ -118,15 +110,12 @@ public class NamesParser extends BasicParser
      * Parses an <code>ASTIdentifier</code>.
      * @return An <code>ASTIdentifier</code>.
      */
-    public ASTIdentifier parseIdentifier()
-    {
+    public ASTIdentifier parseIdentifier() {
         Token t;
-        if ((t = accept(IDENTIFIER)) != null)
-        {
+        if ((t = accept(IDENTIFIER)) != null) {
             return new ASTIdentifier(t.getLocation(), t.getValue());
         }
-        else
-        {
+        else {
             throw new CompileException("Expected an identifier.");
         }
     }

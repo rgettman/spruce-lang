@@ -15,16 +15,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier TypeArguments
  * </em>
  */
-public class ASTSimpleType extends ASTParentNode
-{
+public class ASTSimpleType extends ASTParentNode {
     /**
      * Constructs an <code>ASTSimpleType</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTSimpleType(Location location, List<ASTNode> children)
-    {
+    public ASTSimpleType(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTSimpleType extends ASTParentNode
      * @return <code>false</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return false;
     }
 }

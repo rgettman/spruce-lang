@@ -1,4 +1,4 @@
-package org.spruce.compiler.ast.statements;
+package org.spruce.compiler.ast.expressions;
 
 import java.util.List;
 
@@ -7,24 +7,23 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTSwitchCase</code> is a Switch Label optionally followed by Block Statements.</p>
+ * <p>An <code>ASTGiveExpression</code> is an expression optionally preceded by
+ * "give".</p>
  *
  * <em>
- * SwitchCase:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;SwitchLabel<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;SwitchLabel BlockStatements
+ * Expression:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;Expression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;give Expression<br>
  * </em>
  */
-public class ASTSwitchCase extends ASTParentNode
-{
+public class ASTGiveExpression extends ASTParentNode {
     /**
-     * Constructs an <code>ASTSwitchCase</code> at the given <code>Location</code>
+     * Constructs an <code>ASTGiveExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTSwitchCase(Location location, List<ASTNode> children)
-    {
+    public ASTGiveExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +32,7 @@ public class ASTSwitchCase extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

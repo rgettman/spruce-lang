@@ -16,16 +16,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;EnhancedForStatement
  * </em>
  */
-public class ASTForStatement extends ASTParentNode
-{
+public class ASTForStatement extends ASTParentNode {
     /**
      * Constructs an <code>ASTStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTForStatement(Location location, List<ASTNode> children)
-    {
+    public ASTForStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +32,7 @@ public class ASTForStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

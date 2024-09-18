@@ -41,33 +41,33 @@ public class ParserTopLevelTest
     @Test
     public void testOrdinaryCompilationUnitFull()
     {
-        TopLevelParser parser = new Parser(new Scanner("namespace foo;\nrecognize project.Bar;\npublic class Baz<T> extends Bar<T> {}\nenum Light {RED, YELLOW, GREEN}")).getTopLevelParser();
+        TopLevelParser parser = new Parser(new Scanner("namespace foo;\nuse project.Bar;\npublic class Baz<T> extends Bar<T> {}\nenum Light {RED, YELLOW, GREEN}")).getTopLevelParser();
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
-        checkTrinary(node, null, ASTNamespaceDeclaration.class, ASTRecognizeDeclarationList.class, ASTTypeDeclarationList.class);
+        checkTrinary(node, null, ASTNamespaceDeclaration.class, ASTUseDeclarationList.class, ASTTypeDeclarationList.class);
         node.collapseThenPrint();
     }
 
     /**
-     * Tests recognize declaration list of recognize declaration.
+     * Tests use declaration list of use declaration.
      */
     @Test
-    public void testRecognizeDeclarationListOfRecognizeDeclaration()
+    public void testUseDeclarationListOfUseDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("recognize spruce.collections.List;")).getTopLevelParser();
-        ASTRecognizeDeclarationList node = parser.parseRecognizeDeclarationList();
-        checkSimple(node, ASTRecognizeDeclaration.class);
+        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.List;")).getTopLevelParser();
+        ASTUseDeclarationList node = parser.parseUseDeclarationList();
+        checkSimple(node, ASTUseDeclaration.class);
         node.collapseThenPrint();
     }
 
     /**
-     * Tests recognize declaration list of multiple recognize declarations.
+     * Tests use declaration list of multiple use declarations.
      */
     @Test
-    public void testRecognizeDeclarationListOfMultipleRecognizeDeclarations()
+    public void testUseDeclarationListOfMultipleUseDeclarations()
     {
-        TopLevelParser parser = new Parser(new Scanner("recognize spurce.collections.{List, ArrayList};\nrecognize spruce.reflection.*;\nrecognize shared spruce.test.Assertions.*;")).getTopLevelParser();
-        ASTRecognizeDeclarationList node = parser.parseRecognizeDeclarationList();
-        checkList(node, null, ASTRecognizeDeclaration.class, 3);
+        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.{List, ArrayList};\nuse spruce.reflection.*;\nuse shared spruce.test.Assertions.*;")).getTopLevelParser();
+        ASTUseDeclarationList node = parser.parseUseDeclarationList();
+        checkList(node, null, ASTUseDeclaration.class, 3);
         node.collapseThenPrint();
     }
 
@@ -84,92 +84,92 @@ public class ParserTopLevelTest
     }
 
     /**
-     * Tests recognize declaration of recognize shared all declaration.
+     * Tests use declaration of use shared all declaration.
      */
     @Test
-    public void testRecognizeDeclarationOfRSAD()
+    public void testUseDeclarationOfUSAD()
     {
-        TopLevelParser parser = new Parser(new Scanner("recognize shared spruce.test.Assertions.*;")).getTopLevelParser();
-        ASTRecognizeDeclaration node = parser.parseRecognizeDeclaration();
-        checkSimple(node, ASTRecognizeSharedAllDeclaration.class);
+        TopLevelParser parser = new Parser(new Scanner("use shared spruce.test.Assertions.*;")).getTopLevelParser();
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        checkSimple(node, ASTUseSharedAllDeclaration.class);
 
-        ASTRecognizeSharedAllDeclaration rad = (ASTRecognizeSharedAllDeclaration) node.getChildren().get(0);
-        checkSimple(rad, ASTTypeName.class, RECOGNIZE);
+        ASTUseSharedAllDeclaration rad = (ASTUseSharedAllDeclaration) node.getChildren().get(0);
+        checkSimple(rad, ASTTypeName.class, USE);
         node.collapseThenPrint();
     }
 
     /**
-     * Tests recognize declaration of recognize shared type declaration.
+     * Tests use declaration of use shared type declaration.
      */
     @Test
-    public void testRecognizeDeclarationOfRSTD()
+    public void testUseDeclarationOfUSTD()
     {
-        TopLevelParser parser = new Parser(new Scanner("recognize shared spruce.test.Assertions.assertEquals;")).getTopLevelParser();
-        ASTRecognizeDeclaration node = parser.parseRecognizeDeclaration();
-        checkSimple(node, ASTRecognizeSharedTypeDeclaration.class);
+        TopLevelParser parser = new Parser(new Scanner("use shared spruce.test.Assertions.assertEquals;")).getTopLevelParser();
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        checkSimple(node, ASTUseSharedTypeDeclaration.class);
 
-        ASTRecognizeSharedTypeDeclaration rtd = (ASTRecognizeSharedTypeDeclaration) node.getChildren().get(0);
-        checkBinary(rtd, RECOGNIZE, ASTTypeName.class, ASTIdentifier.class);
+        ASTUseSharedTypeDeclaration rtd = (ASTUseSharedTypeDeclaration) node.getChildren().get(0);
+        checkBinary(rtd, USE, ASTTypeName.class, ASTIdentifier.class);
         node.collapseThenPrint();
     }
 
     /**
-     * Tests recognize declaration of recognize shared multiple declaration.
+     * Tests use declaration of use shared multiple declaration.
      */
     @Test
-    public void testRecognizeDeclarationOfRSMD()
+    public void testUseDeclarationOfUSMD()
     {
-        TopLevelParser parser = new Parser(new Scanner("recognize shared spruce.test.Assertions.{assertEquals, assertTrue, assertFalse};")).getTopLevelParser();
-        ASTRecognizeDeclaration node = parser.parseRecognizeDeclaration();
-        checkSimple(node, ASTRecognizeSharedMultDeclaration.class);
+        TopLevelParser parser = new Parser(new Scanner("use shared spruce.test.Assertions.{assertEquals, assertTrue, assertFalse};")).getTopLevelParser();
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        checkSimple(node, ASTUseSharedMultDeclaration.class);
 
-        ASTRecognizeSharedMultDeclaration rmd = (ASTRecognizeSharedMultDeclaration) node.getChildren().get(0);
-        checkBinary(rmd, RECOGNIZE, ASTTypeName.class, ASTIdentifierList.class);
+        ASTUseSharedMultDeclaration rmd = (ASTUseSharedMultDeclaration) node.getChildren().get(0);
+        checkBinary(rmd, USE, ASTTypeName.class, ASTIdentifierList.class);
         node.collapseThenPrint();
     }
 
     /**
-     * Tests recognize declaration of recognize all declaration.
+     * Tests use declaration of use all declaration.
      */
     @Test
-    public void testRecognizeDeclarationOfRAD()
+    public void testUseDeclarationOfUAD()
     {
-        TopLevelParser parser = new Parser(new Scanner("recognize spruce.collections.*;")).getTopLevelParser();
-        ASTRecognizeDeclaration node = parser.parseRecognizeDeclaration();
-        checkSimple(node, ASTRecognizeAllDeclaration.class);
+        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.*;")).getTopLevelParser();
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        checkSimple(node, ASTUseAllDeclaration.class);
 
-        ASTRecognizeAllDeclaration rad = (ASTRecognizeAllDeclaration) node.getChildren().get(0);
-        checkSimple(rad, ASTNamespaceOrTypeName.class, RECOGNIZE);
+        ASTUseAllDeclaration rad = (ASTUseAllDeclaration) node.getChildren().get(0);
+        checkSimple(rad, ASTNamespaceOrTypeName.class, USE);
         node.collapseThenPrint();
     }
 
     /**
-     * Tests recognize declaration of recognize type declaration.
+     * Tests use declaration of use type declaration.
      */
     @Test
-    public void testRecognizeDeclarationOfRTD()
+    public void testUseDeclarationOfUTD()
     {
-        TopLevelParser parser = new Parser(new Scanner("recognize spruce.collections.ArrayList;")).getTopLevelParser();
-        ASTRecognizeDeclaration node = parser.parseRecognizeDeclaration();
-        checkSimple(node, ASTRecognizeTypeDeclaration.class);
+        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.ArrayList;")).getTopLevelParser();
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        checkSimple(node, ASTUseTypeDeclaration.class);
 
-        ASTRecognizeTypeDeclaration rtd = (ASTRecognizeTypeDeclaration) node.getChildren().get(0);
-        checkSimple(rtd, ASTTypeName.class, RECOGNIZE);
+        ASTUseTypeDeclaration rtd = (ASTUseTypeDeclaration) node.getChildren().get(0);
+        checkSimple(rtd, ASTTypeName.class, USE);
         node.collapseThenPrint();
     }
 
     /**
-     * Tests recognize declaration of recognize multiple declaration.
+     * Tests use declaration of use multiple declaration.
      */
     @Test
-    public void testRecognizeDeclarationOfRMD()
+    public void testUseDeclarationOfUMD()
     {
-        TopLevelParser parser = new Parser(new Scanner("recognize spruce.collections.{List, ArrayList, LinkedList};")).getTopLevelParser();
-        ASTRecognizeDeclaration node = parser.parseRecognizeDeclaration();
-        checkSimple(node, ASTRecognizeMultDeclaration.class);
+        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.{List, ArrayList, LinkedList};")).getTopLevelParser();
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        checkSimple(node, ASTUseMultDeclaration.class);
 
-        ASTRecognizeMultDeclaration rmd = (ASTRecognizeMultDeclaration) node.getChildren().get(0);
-        checkBinary(rmd, RECOGNIZE, ASTNamespaceOrTypeName.class, ASTIdentifierList.class);
+        ASTUseMultDeclaration rmd = (ASTUseMultDeclaration) node.getChildren().get(0);
+        checkBinary(rmd, USE, ASTNamespaceOrTypeName.class, ASTIdentifierList.class);
         node.collapseThenPrint();
     }
 

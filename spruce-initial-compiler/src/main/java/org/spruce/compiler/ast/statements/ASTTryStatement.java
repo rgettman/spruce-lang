@@ -19,16 +19,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;try ResourceSpecification Block [Catches] [Finally]
  * </em>
  */
-public class ASTTryStatement extends ASTParentNode
-{
+public class ASTTryStatement extends ASTParentNode {
     /**
      * Constructs an <code>ASTTryStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTTryStatement(Location location, List<ASTNode> children)
-    {
+    public ASTTryStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -37,8 +35,7 @@ public class ASTTryStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

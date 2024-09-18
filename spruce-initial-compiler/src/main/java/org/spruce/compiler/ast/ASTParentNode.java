@@ -1,6 +1,6 @@
 package org.spruce.compiler.ast;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -11,9 +11,8 @@ import org.spruce.compiler.scanner.TokenType;
 /**
  * An <code>ASTParentNode</code> is an <code>ASTNode</code> that has children.
  */
-public abstract class ASTParentNode extends ASTNode
-{
-    private List<ASTNode> myChildren;
+public abstract class ASTParentNode extends ASTNode {
+    private final List<ASTNode> myChildren;
     private TokenType myOperation;
 
     /**
@@ -22,8 +21,7 @@ public abstract class ASTParentNode extends ASTNode
      * @param location The <code>Location</code>.
      * @param children The list of child nodes.
      */
-    public ASTParentNode(Location location, List<ASTNode> children)
-    {
+    public ASTParentNode(Location location, List<ASTNode> children) {
         this(location, children, null);
     }
 
@@ -35,8 +33,7 @@ public abstract class ASTParentNode extends ASTNode
      * @param operation The <code>TokenType</code> that represents an operation
      *     involving the children.
      */
-    public ASTParentNode(Location location, List<ASTNode> children, TokenType operation)
-    {
+    public ASTParentNode(Location location, List<ASTNode> children, TokenType operation) {
         super(location);
         myChildren = children;
         myOperation = operation;
@@ -46,8 +43,7 @@ public abstract class ASTParentNode extends ASTNode
      * Returns the list of child nodes.
      * @return A <code>List</code> of <code>ASTNodes</code>.
      */
-    public List<ASTNode> getChildren()
-    {
+    public List<ASTNode> getChildren() {
         return myChildren;
     }
 
@@ -56,8 +52,7 @@ public abstract class ASTParentNode extends ASTNode
      * <code>null</code> if there is no such operation.
      * @return The <code>TokenType</code> representing the operation name.
      */
-    public TokenType getOperation()
-    {
+    public TokenType getOperation() {
         return myOperation;
     }
 
@@ -66,8 +61,7 @@ public abstract class ASTParentNode extends ASTNode
      * <code>null</code> if there is no such operation.
      * @param operation The <code>TokenType</code> representing the operation name.
      */
-    public void setOperation(TokenType operation)
-    {
+    public void setOperation(TokenType operation) {
         myOperation = operation;
     }
 
@@ -77,15 +71,12 @@ public abstract class ASTParentNode extends ASTNode
      * @param isTail Whether this node is last in its siblings (or the only child).
      */
     @Override
-    protected void print(String prefix, boolean isTail)
-    {
+    protected void print(String prefix, boolean isTail) {
         System.out.println(prefix + (isTail ? "└── " : "├── ") + toString());
-        for (int i = 0; i < myChildren.size() - 1; i++)
-        {
+        for (int i = 0; i < myChildren.size() - 1; i++) {
             myChildren.get(i).print(prefix + (isTail ? "    " : "|   "), false);
         }
-        if (myChildren.size() > 0)
-        {
+        if (!myChildren.isEmpty()) {
             myChildren.get(myChildren.size() - 1).print(prefix + (isTail ? "    " : "│   "), true);
         }
     }
@@ -96,8 +87,7 @@ public abstract class ASTParentNode extends ASTNode
      * @return A string representation of this node.
      */
     @Override
-    public String toString()
-    {
+    public String toString() {
         TokenType operation = getOperation();
         return getClass().getSimpleName() + (operation != null ? ("(" + operation.getRepresentation() + ")") : "")
                 + " at " + getLocation();
@@ -108,22 +98,17 @@ public abstract class ASTParentNode extends ASTNode
      * has only one child.  Collapse until we reach a child that is either not
      * a parent node, has more than one child, or refuses to collapse further.
      */
-    public void collapse()
-    {
+    public void collapse() {
         List<ASTNode> children = getChildren();
-        if (isCollapsible())
-        {
+        if (isCollapsible()) {
             // Collapses children recursively.
-            for (int i = 0; i < children.size(); i++)
-            {
+            for (int i = 0; i < children.size(); i++) {
                 ASTNode child = children.get(i);
                 ASTNode descendant = findNonCollapsibleDescendant(child);
-                if (descendant != child)
-                {
+                if (descendant != child) {
                     children.set(i, descendant);
                 }
-                if (descendant instanceof ASTParentNode)
-                {
+                if (descendant instanceof ASTParentNode) {
                     ((ASTParentNode) descendant).collapse();
                 }
             }
@@ -133,8 +118,7 @@ public abstract class ASTParentNode extends ASTNode
     /**
      * Collapses then prints this node.
      */
-    public void collapseThenPrint()
-    {
+    public void collapseThenPrint() {
         collapse();
         print();
     }
@@ -145,18 +129,13 @@ public abstract class ASTParentNode extends ASTNode
      * @return Returns the non-collapsible descendant node.  Could be
      *     <code>child</code> if it's not collapsible.
      */
-    private ASTNode findNonCollapsibleDescendant(ASTNode child)
-    {
-        if (child instanceof ASTParentNode)
-        {
-            ASTParentNode childAsParent = (ASTParentNode) child;
+    private ASTNode findNonCollapsibleDescendant(ASTNode child) {
+        if (child instanceof ASTParentNode childAsParent) {
             List<ASTNode> descendants = childAsParent.getChildren();
-            if (childAsParent.isCollapsible() && descendants.size() == 1 && childAsParent.getOperation() == null)
-            {
+            if (childAsParent.isCollapsible() && descendants.size() == 1 && childAsParent.getOperation() == null) {
                 return childAsParent.findNonCollapsibleDescendant(descendants.get(0));
             }
-            else
-            {
+            else {
                 return childAsParent;
             }
         }
@@ -183,25 +162,20 @@ public abstract class ASTParentNode extends ASTNode
      */
     public <T extends ASTParentNode> T convertDescendant(List<Class<? extends ASTNode>> childClassList,
                                                          BiFunction<Location, List<ASTNode>, T> nodeSupplier,
-                                                         String errorMsg)
-    {
+                                                         String errorMsg) {
         ASTParentNode current = this;
         List<ASTNode> children = getChildren();
-        while (children.size() == 1 && current.getOperation() == null)
-        {
+        while (children.size() == 1 && current.getOperation() == null) {
             ASTNode child = children.get(0);
-            if (childClassList.contains(child.getClass()))
-            {
-                return nodeSupplier.apply(current.getLocation(), Arrays.asList(child));
+            if (childClassList.contains(child.getClass())) {
+                return nodeSupplier.apply(current.getLocation(), Collections.singletonList(child));
             }
-            else if (child instanceof ASTParentNode)
-            {
+            else if (child instanceof ASTParentNode) {
                 // Look at next down.
                 current = (ASTParentNode) children.get(0);
                 children = current.getChildren();
             }
-            else
-            {
+            else {
                 throw new CompileException(errorMsg);
             }
         }

@@ -15,15 +15,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;namespace NamespaceName
  * </em>
  */
-public class ASTNamespaceDeclaration extends ASTParentNode
-{
+public class ASTNamespaceDeclaration extends ASTParentNode {
     /**
      * Constructs an <code>ASTNamespaceDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTNamespaceDeclaration(Location location, List<ASTNode> children)
-    {
+    public ASTNamespaceDeclaration(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTNamespaceDeclaration extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

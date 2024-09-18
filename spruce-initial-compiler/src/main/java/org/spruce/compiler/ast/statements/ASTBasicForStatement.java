@@ -8,24 +8,22 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTBasicForStatement</code> is "for (", an optional Init, a
- * semicolon, an optional Expression (no incr/decr), another semicolon, an optional statement
- * expression list, ")", and a statement.</p>
+ * semicolon, an optional Conditional Expression, another semicolon, an optional statement
+ * expression list, ")", and a block.</p>
  *
  * <em>
  * BasicForStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;for ( [Init] ; [ExpressionNoIncrDecr] ; [StatementExpressionList] ) Statement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;for ( [Init] ; [ConditionalExpression] ; [StatementExpressionList] ) Block<br>
  * </em>
  */
-public class ASTBasicForStatement extends ASTParentNode
-{
+public class ASTBasicForStatement extends ASTParentNode {
     /**
      * Constructs an <code>ASTBasicForStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTBasicForStatement(Location location, List<ASTNode> children)
-    {
+    public ASTBasicForStatement(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -34,8 +32,7 @@ public class ASTBasicForStatement extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

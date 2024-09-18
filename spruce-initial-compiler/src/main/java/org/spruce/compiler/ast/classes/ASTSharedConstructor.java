@@ -15,15 +15,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;shared constructor ( ) Block
  * </em>
  */
-public class ASTSharedConstructor extends ASTParentNode
-{
+public class ASTSharedConstructor extends ASTParentNode {
     /**
      * Constructs an <code>ASTSharedConstructor</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */
-    public ASTSharedConstructor(Location location, List<ASTNode> children)
-    {
+    public ASTSharedConstructor(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -32,8 +30,7 @@ public class ASTSharedConstructor extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

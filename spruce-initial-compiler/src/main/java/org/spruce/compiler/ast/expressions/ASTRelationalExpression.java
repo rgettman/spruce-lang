@@ -20,22 +20,20 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression &lt;= CompareExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression &gt; CompareExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression &gt;= CompareExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression = CompareExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression == CompareExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression != CompareExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression is CompareExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression instanceof DataType
+ * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression isa DataType
  * </em>
  */
-public class ASTRelationalExpression extends ASTParentNode
-{
+public class ASTRelationalExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTRelationalExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTRelationalExpression(Location location, List<ASTNode> children)
-    {
+    public ASTRelationalExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -44,8 +42,7 @@ public class ASTRelationalExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

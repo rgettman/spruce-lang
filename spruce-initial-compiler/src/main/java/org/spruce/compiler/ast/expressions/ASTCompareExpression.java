@@ -19,16 +19,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;BitwiseOrExpression &lt;=&gt; BitwiseOrExpression<br>
  * </em>
  */
-public class ASTCompareExpression extends ASTParentNode
-{
+public class ASTCompareExpression extends ASTParentNode {
     /**
      * Constructs an <code>ASTCompareExpression</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTCompareExpression(Location location, List<ASTNode> children)
-    {
+    public ASTCompareExpression(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -37,8 +35,7 @@ public class ASTCompareExpression extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

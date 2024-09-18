@@ -8,7 +8,7 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTAmbiguousName</code> is a node representing part of a
- * qualified name that could be an expression name, a package name, or a type
+ * qualified name that could be an expression name, a namespace name, or a type
  * name.</p>
  *
  * <em>
@@ -17,16 +17,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
  * </em>
  */
-public class ASTAmbiguousName extends ASTParentNode
-{
+public class ASTAmbiguousName extends ASTParentNode {
     /**
      * Constructs an <code>ASTAmbiguousName</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTAmbiguousName(Location location, List<ASTNode> children)
-    {
+    public ASTAmbiguousName(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -35,8 +33,7 @@ public class ASTAmbiguousName extends ASTParentNode
      * @return <code>false</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return false;
     }
 
@@ -47,12 +44,10 @@ public class ASTAmbiguousName extends ASTParentNode
      *     <code>ASTAmbiguousName</code>.
      * @see ASTExpressionName#convertToTypeName
      */
-    public ASTNamespaceOrTypeName convertToNamespaceOrTypeName()
-    {
+    public ASTNamespaceOrTypeName convertToNamespaceOrTypeName() {
         List<ASTNode> children = getChildren();
-        if (children.size() >= 1 && children.get(0) instanceof ASTAmbiguousName)
+        if (!children.isEmpty() && children.get(0) instanceof ASTAmbiguousName ambName)
         {
-            ASTAmbiguousName ambName = (ASTAmbiguousName) children.get(0);
             ASTNamespaceOrTypeName portName = ambName.convertToNamespaceOrTypeName();
             children.set(0, portName);
         }

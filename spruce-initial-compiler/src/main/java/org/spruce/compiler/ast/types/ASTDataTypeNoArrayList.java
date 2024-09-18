@@ -15,16 +15,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray {, DataTypeNoArray}
  * </em>
  */
-public class ASTDataTypeNoArrayList extends ASTParentNode
-{
+public class ASTDataTypeNoArrayList extends ASTParentNode {
     /**
      * Constructs an <code>ASTDataTypeNoArrayList</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTDataTypeNoArrayList(Location location, List<ASTNode> children)
-    {
+    public ASTDataTypeNoArrayList(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
@@ -33,8 +31,7 @@ public class ASTDataTypeNoArrayList extends ASTParentNode
      * @return <code>true</code>.
      */
     @Override
-    public boolean isCollapsible()
-    {
+    public boolean isCollapsible() {
         return true;
     }
 }

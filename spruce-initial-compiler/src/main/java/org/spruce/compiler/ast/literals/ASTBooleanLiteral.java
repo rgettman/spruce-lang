@@ -12,16 +12,14 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;false
  * </em>
  */
-public class ASTBooleanLiteral extends ASTValueNode
-{
+public class ASTBooleanLiteral extends ASTLiteral {
     /**
      * Constructs an <code>ASTBooleanLiteral</code> given the <code>Location</code>
      * and the string value of the token.
      * @param location The <code>Location</code>.
      * @param value The string value.
      */
-    public ASTBooleanLiteral(Location location, String value)
-    {
+    public ASTBooleanLiteral(Location location, String value) {
         super(location, value);
     }
 
@@ -29,8 +27,7 @@ public class ASTBooleanLiteral extends ASTValueNode
      * Returns the boolean value.
      * @return The boolean value.
      */
-    public boolean getBooleanValue()
-    {
+    public boolean getBooleanValue() {
         return Boolean.parseBoolean(getValue());
     }
 }
