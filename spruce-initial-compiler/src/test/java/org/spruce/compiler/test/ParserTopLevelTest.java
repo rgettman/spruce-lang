@@ -4,6 +4,7 @@ import org.spruce.compiler.ast.classes.ASTAnnotationDeclaration;
 import org.spruce.compiler.ast.classes.ASTClassDeclaration;
 import org.spruce.compiler.ast.classes.ASTEnumDeclaration;
 import org.spruce.compiler.ast.classes.ASTInterfaceDeclaration;
+import org.spruce.compiler.ast.classes.ASTRecordDeclaration;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.names.ASTIdentifierList;
 import org.spruce.compiler.ast.names.ASTNamespaceName;
@@ -242,6 +243,18 @@ public class ParserTopLevelTest
         TopLevelParser parser = new Parser(new Scanner("public shared annotation Spruce { String language();}")).getTopLevelParser();
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
         checkSimple(node, ASTAnnotationDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests type declaration of record declaration.
+     */
+    @Test
+    public void testTypeDeclarationOfRecordDeclaration()
+    {
+        TopLevelParser parser = new Parser(new Scanner("internal record Redacted(String byWhom) { }")).getTopLevelParser();
+        ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        checkSimple(node, ASTRecordDeclaration.class);
         node.collapseThenPrint();
     }
 }

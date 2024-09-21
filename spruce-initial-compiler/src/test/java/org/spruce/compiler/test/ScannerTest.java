@@ -490,6 +490,10 @@ public class ScannerTest {
         assertThrows(CompileException.class, scanner::next);
     }
 
+    /**
+     * Test a bad text block that doesn't end.
+     */
+    @Test
     public void testTextBlockNoEnd() {
         String code = """
                 \"""

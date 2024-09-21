@@ -48,7 +48,7 @@ public class LiteralsParser extends BasicParser {
             return parseBooleanLiteral();
         }
         else {
-            throw new CompileException("Expected a literal.");
+            throw new CompileException(curr().getLocation(), "Expected a literal.");
         }
     }
 
@@ -62,7 +62,7 @@ public class LiteralsParser extends BasicParser {
             return new ASTIntegerLiteral(t.getLocation(), t.getValue());
         }
         else {
-            throw new CompileException("Expected an integer.");
+            throw new CompileException(curr().getLocation(), "Expected an integer.");
         }
     }
 
@@ -76,7 +76,7 @@ public class LiteralsParser extends BasicParser {
             return new ASTFloatingPointLiteral(t.getLocation(), t.getValue());
         }
         else {
-            throw new CompileException("Expected a floating point number.");
+            throw new CompileException(curr().getLocation(), "Expected a floating point number.");
         }
     }
 
@@ -90,7 +90,7 @@ public class LiteralsParser extends BasicParser {
             return new ASTStringLiteral(t.getLocation(), t.getValue());
         }
         else {
-            throw new CompileException("Expected a string.");
+            throw new CompileException(curr().getLocation(), "Expected a string.");
         }
     }
 
@@ -104,7 +104,7 @@ public class LiteralsParser extends BasicParser {
             return new ASTCharacterLiteral(t.getLocation(), t.getValue());
         }
         else {
-            throw new CompileException("Expected a character.");
+            throw new CompileException(curr().getLocation(), "Expected a character.");
         }
     }
 
@@ -121,7 +121,7 @@ public class LiteralsParser extends BasicParser {
             return new ASTBooleanLiteral(t.getLocation(), t.getValue());
         }
         else {
-            throw new CompileException("Expected true or false.");
+            throw new CompileException(curr().getLocation(), "Expected true or false.");
         }
     }
 }

@@ -176,9 +176,9 @@ public abstract class ASTParentNode extends ASTNode {
                 children = current.getChildren();
             }
             else {
-                throw new CompileException(errorMsg);
+                throw new CompileException(child.getLocation(), errorMsg);
             }
         }
-        throw new CompileException(errorMsg);
+        throw new CompileException(current.getLocation(), errorMsg);
     }
 }

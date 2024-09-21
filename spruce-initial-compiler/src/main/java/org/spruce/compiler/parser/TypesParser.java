@@ -57,13 +57,13 @@ public class TypesParser extends BasicParser {
         if (accept(LESS_THAN) != null) {
             ASTTypeParameterList typeParamList = parseTypeParameterList();
             if (accept(GREATER_THAN) == null) {
-                throw new CompileException("Expected \">\".");
+                throw new CompileException(curr().getLocation(), "Expected \">\".");
             }
             setInTypeContext(false);
             return new ASTTypeParameters(loc, Collections.singletonList(typeParamList));
         }
         else {
-            throw new CompileException("Expected \"<\".");
+            throw new CompileException(curr().getLocation(), "Expected \"<\".");
         }
     }
 
@@ -102,7 +102,7 @@ public class TypesParser extends BasicParser {
     public ASTTypeBound parseTypeBound() {
         Location loc = curr().getLocation();
         if (accept(SUBTYPE) == null) {
-            throw new CompileException("Expected \"<:\".");
+            throw new CompileException(curr().getLocation(), "Expected \"<:\".");
         }
         else {
             ASTTypeBound node = new ASTTypeBound(loc, Collections.singletonList(parseIntersectionType()));
@@ -141,11 +141,11 @@ public class TypesParser extends BasicParser {
                 return new ASTArrayType(loc, Arrays.asList(dtna, dims));
             }
             else {
-                throw new CompileException("Expected [].");
+                throw new CompileException(curr().getLocation(), "Expected [].");
             }
         }
         else {
-            throw new CompileException("Identifier expected.");
+            throw new CompileException(curr().getLocation(), "Identifier expected.");
         }
     }
 
@@ -155,7 +155,7 @@ public class TypesParser extends BasicParser {
      */
     public ASTDims parseDims() {
         if (!isCurr(OPEN_CLOSE_BRACKET)) {
-            throw new CompileException("Expected [].");
+            throw new CompileException(curr().getLocation(), "Expected [].");
         }
         ASTDims node = null;
         List<ASTNode> children = null;
@@ -269,13 +269,13 @@ public class TypesParser extends BasicParser {
         if (accept(LESS_THAN) != null) {
             ASTTypeArgumentList typeArgList = parseTypeArgumentList();
             if (accept(GREATER_THAN) == null) {
-                throw new CompileException("Expected \">\".");
+                throw new CompileException(curr().getLocation(), "Expected \">\".");
             }
             setInTypeContext(false);
             return new ASTTypeArguments(loc, Collections.singletonList(typeArgList));
         }
         else {
-            throw new CompileException("Expected \"<\".");
+            throw new CompileException(curr().getLocation(), "Expected \"<\".");
         }
     }
 
@@ -317,7 +317,7 @@ public class TypesParser extends BasicParser {
             return new ASTTypeArgument(loc, Collections.singletonList(dt));
         }
         else {
-            throw new CompileException("Expected wildcard or data type.");
+            throw new CompileException(curr().getLocation(), "Expected wildcard or data type.");
         }
     }
 
@@ -328,7 +328,7 @@ public class TypesParser extends BasicParser {
     public ASTWildcard parseWildcard() {
         Location loc = curr().getLocation();
         if (accept(QUESTION_MARK) == null) {
-            throw new CompileException("Wildcard expected.");
+            throw new CompileException(curr().getLocation(), "Wildcard expected.");
         }
         ASTWildcard node = new ASTWildcard(loc, new ArrayList<>(1));
         if (isCurr(SUBTYPE) || isCurr(SUPERTYPE)) {
@@ -354,7 +354,7 @@ public class TypesParser extends BasicParser {
             curr = SUPERTYPE;
         }
         else {
-            throw new CompileException("Expected \"<:\" or \":>\".");
+            throw new CompileException(curr().getLocation(), "Expected \"<:\" or \":>\".");
         }
         ASTWildcardBounds node = new ASTWildcardBounds(loc, Collections.singletonList(parseDataType()));
         node.setOperation(curr);

@@ -49,7 +49,7 @@ public class ClassesParser extends BasicParser {
             children.add(parseInterfaceModifierList());
         }
         if (accept(ANNOTATION) == null) {
-            throw new CompileException("Expected annotation.");
+            throw new CompileException(curr().getLocation(), "Expected annotation.");
         }
         children.add(getNamesParser().parseIdentifier());
         children.add(parseAnnotationBody());
@@ -79,7 +79,7 @@ public class ClassesParser extends BasicParser {
             ));
         }
         if (accept(ANNOTATION) == null) {
-            throw new CompileException("Expected annotation.");
+            throw new CompileException(curr().getLocation(), "Expected annotation.");
         }
         children.add(getNamesParser().parseIdentifier());
         children.add(parseAnnotationBody());
@@ -95,14 +95,14 @@ public class ClassesParser extends BasicParser {
     public ASTAnnotationBody parseAnnotationBody() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException("Expected '{'.");
+            throw new CompileException(curr().getLocation(), "Expected '{'.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         if (!isCurr(CLOSE_BRACE)) {
             children.add(parseAnnotationPartList());
         }
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException("Expected '}'.");
+            throw new CompileException(curr().getLocation(), "Expected '}'.");
         }
         ASTAnnotationBody node = new ASTAnnotationBody(loc, children);
         node.setOperation(OPEN_BRACE);
@@ -116,7 +116,7 @@ public class ClassesParser extends BasicParser {
     public ASTAnnotationPartList parseAnnotationPartList() {
         return parseMultiple(
                 t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
-                        ABSTRACT, SHARED, CLASS, INTERFACE,
+                        ABSTRACT, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD,
                         CONSTANT, IDENTIFIER)
                         .contains(t.getType()),
                 "Expected constant or element declaration.",
@@ -150,6 +150,11 @@ public class ClassesParser extends BasicParser {
             return new ASTAnnotationPart(loc, Collections.singletonList(parseInterfaceDeclaration(loc, accessMod, genModList)));
         case ANNOTATION:
             return new ASTAnnotationPart(loc, Collections.singletonList(parseAnnotationDeclaration(loc, accessMod, genModList)));
+        case RECORD:
+            if (genModList != null) {
+                throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+            }
+            return new ASTAnnotationPart(loc, Collections.singletonList(parseRecordDeclaration(loc, accessMod)));
         }
 
         ASTTypeParameters typeParams = null;
@@ -160,19 +165,19 @@ public class ClassesParser extends BasicParser {
         ASTDataType dt = getTypesParser().parseDataType();
         if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS)) {
             if (typeParams != null) {
-                throw new CompileException("Type parameters not allowed on annotation element declaration.");
+                throw new CompileException(curr().getLocation(), "Type parameters not allowed on annotation element declaration.");
             }
             if (genModList != null) {
-                throw new CompileException("Method modifiers not allowed on annotation element declaration.");
+                throw new CompileException(curr().getLocation(), "Method modifiers not allowed on annotation element declaration.");
             }
             if (accessMod != null) {
-                throw new CompileException("Access modifiers not allowed on annotation element declaration.");
+                throw new CompileException(curr().getLocation(), "Access modifiers not allowed on annotation element declaration.");
             }
             return new ASTAnnotationPart(loc, Collections.singletonList(parseAnnotationTypeElementDeclaration(loc, dt)));
         }
         else {
             if (typeParams != null) {
-                throw new CompileException("Type parameters not allowed on constant declaration.");
+                throw new CompileException(curr().getLocation(), "Type parameters not allowed on constant declaration.");
             }
             return new ASTAnnotationPart(loc, Collections.singletonList(parseConstantDeclaration(loc, accessMod, genModList, dt)));
         }
@@ -188,16 +193,16 @@ public class ClassesParser extends BasicParser {
         children.add(getTypesParser().parseDataType());
         children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('");
+            throw new CompileException(curr().getLocation(), "Expected '('");
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'");
+            throw new CompileException(curr().getLocation(), "Expected ')'");
         }
         if (isCurr(DEFAULT)) {
             children.add(parseDefaultValue());
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTAnnotationTypeElementDeclaration node = new ASTAnnotationTypeElementDeclaration(loc, children);
         node.setOperation(OPEN_PARENTHESIS);
@@ -216,16 +221,16 @@ public class ClassesParser extends BasicParser {
         children.add(dt);
         children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('");
+            throw new CompileException(curr().getLocation(), "Expected '('");
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'");
+            throw new CompileException(curr().getLocation(), "Expected ')'");
         }
         if (isCurr(DEFAULT)) {
             children.add(parseDefaultValue());
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTAnnotationTypeElementDeclaration node = new ASTAnnotationTypeElementDeclaration(loc, children);
         node.setOperation(OPEN_PARENTHESIS);
@@ -240,7 +245,7 @@ public class ClassesParser extends BasicParser {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(1);
         if (accept(DEFAULT) == null) {
-            throw new CompileException("Expected default.");
+            throw new CompileException(curr().getLocation(), "Expected default.");
         }
         children.add(parseElementValue());
         ASTDefaultValue node = new ASTDefaultValue(loc, children);
@@ -256,7 +261,7 @@ public class ClassesParser extends BasicParser {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(1);
         if (accept(AT_SIGN) == null) {
-            throw new CompileException("Expected '@'.");
+            throw new CompileException(curr().getLocation(), "Expected '@'.");
         }
         ASTTypeName tn = getNamesParser().parseTypeName();
         if (isCurr(OPEN_PARENTHESIS)) {
@@ -310,7 +315,7 @@ public class ClassesParser extends BasicParser {
         children.add(tn);
         children.add(parseElementValue());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         ASTSingleElementAnnotation node = new ASTSingleElementAnnotation(loc, children);
         node.setOperation(AT_SIGN);
@@ -331,7 +336,7 @@ public class ClassesParser extends BasicParser {
             children.add(parseElementValuePairList());
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         ASTNormalAnnotation node = new ASTNormalAnnotation(loc, children);
         node.setOperation(AT_SIGN);
@@ -361,7 +366,7 @@ public class ClassesParser extends BasicParser {
         List<ASTNode> children = new ArrayList<>(2);
         children.add(getNamesParser().parseIdentifier());
         if (accept(EQUAL) == null) {
-            throw new CompileException("Expected assignment operator ':='.");
+            throw new CompileException(curr().getLocation(), "Expected assignment operator ':='.");
         }
         children.add(parseElementValue());
         ASTElementValuePair node = new ASTElementValuePair(loc, children);
@@ -377,13 +382,13 @@ public class ClassesParser extends BasicParser {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(1);
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException("Expected '{'.");
+            throw new CompileException(curr().getLocation(), "Expected '{'.");
         }
         if (!isCurr(CLOSE_BRACE)) {
             children.add(parseElementValueList());
         }
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException("Expected '}'.");
+            throw new CompileException(curr().getLocation(), "Expected '}'.");
         }
         ASTElementValueArrayInitializer node = new ASTElementValueArrayInitializer(loc, children);
         node.setOperation(OPEN_BRACE);
@@ -438,7 +443,7 @@ public class ClassesParser extends BasicParser {
             children.add(parseInterfaceModifierList());
         }
         if (accept(INTERFACE) == null) {
-            throw new CompileException("Expected interface.");
+            throw new CompileException(curr().getLocation(), "Expected interface.");
         }
         children.add(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
@@ -477,7 +482,7 @@ public class ClassesParser extends BasicParser {
             ));
         }
         if (accept(INTERFACE) == null) {
-            throw new CompileException("Expected interface.");
+            throw new CompileException(curr().getLocation(), "Expected interface.");
         }
         children.add(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
@@ -513,7 +518,7 @@ public class ClassesParser extends BasicParser {
     public ASTExtendsInterfaces parseExtendsInterfaces() {
         Location loc = curr().getLocation();
         if (accept(EXTENDS) == null) {
-            throw new CompileException("Expected extends.");
+            throw new CompileException(curr().getLocation(), "Expected extends.");
         }
         ASTExtendsInterfaces node = new ASTExtendsInterfaces(loc, Collections.singletonList(parseDataTypeNoArrayList()));
         node.setOperation(EXTENDS);
@@ -527,14 +532,14 @@ public class ClassesParser extends BasicParser {
     public ASTInterfaceBody parseInterfaceBody() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException("Expected '{'.");
+            throw new CompileException(curr().getLocation(), "Expected '{'.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         if (!isCurr(CLOSE_BRACE)) {
             children.add(parseInterfacePartList());
         }
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException("Expected '}'.");
+            throw new CompileException(curr().getLocation(), "Expected '}'.");
         }
         ASTInterfaceBody node = new ASTInterfaceBody(loc, children);
         node.setOperation(OPEN_BRACE);
@@ -548,7 +553,7 @@ public class ClassesParser extends BasicParser {
     public ASTInterfacePartList parseInterfacePartList() {
         return parseMultiple(
                 t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
-                        ABSTRACT, OVERRIDE, SHARED, CLASS, INTERFACE,
+                        ABSTRACT, OVERRIDE, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD,
                         DEFAULT, MUT, CONSTANT, VOID, IDENTIFIER, LESS_THAN)
                         .contains(t.getType()),
                 "Expected constant or method declaration.",
@@ -582,6 +587,11 @@ public class ClassesParser extends BasicParser {
             return new ASTInterfacePart(loc, Collections.singletonList(parseInterfaceDeclaration(loc, accessMod, genModList)));
         case ANNOTATION:
             return new ASTInterfacePart(loc, Collections.singletonList(parseAnnotationDeclaration(loc, accessMod, genModList)));
+        case RECORD:
+            if (genModList != null) {
+                throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+            }
+            return new ASTInterfacePart(loc, Collections.singletonList(parseRecordDeclaration(loc, accessMod)));
         }
 
         ASTTypeParameters typeParams = null;
@@ -599,7 +609,7 @@ public class ClassesParser extends BasicParser {
             }
             else {
                 if (typeParams != null) {
-                    throw new CompileException("Type parameters not allowed on constant declaration.");
+                    throw new CompileException(curr().getLocation(), "Type parameters not allowed on constant declaration.");
                 }
                 return new ASTInterfacePart(loc, Collections.singletonList(parseConstantDeclaration(loc, accessMod, genModList, dt)));
             }
@@ -715,7 +725,7 @@ public class ClassesParser extends BasicParser {
         children.add(getTypesParser().parseDataType());
         children.add(getStatementsParser().parseVariableDeclaratorList());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Expected semicolon.");
+            throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         return new ASTConstantDeclaration(loc, children);
     }
@@ -748,7 +758,7 @@ public class ClassesParser extends BasicParser {
         children.add(dt);
         children.add(getStatementsParser().parseVariableDeclaratorList());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Expected semicolon.");
+            throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         return new ASTConstantDeclaration(loc, children);
     }
@@ -766,6 +776,75 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
+     * Parses an <code>ASTEnumDeclaration</code>, given an already parsed
+     * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
+     * @param loc The <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @return An <code>ASTEnumDeclaration</code>.
+     */
+    public ASTRecordDeclaration parseRecordDeclaration(Location loc, ASTAccessModifier am) {
+        List<ASTNode> children = new ArrayList<>(6);
+        if (am != null) {
+            children.add(am);
+        }
+        if (accept(RECORD) == null) {
+            throw new CompileException(curr().getLocation(), "Expected record.");
+        }
+        children.add(getNamesParser().parseIdentifier());
+        if (isCurr(LESS_THAN)) {
+            children.add(getTypesParser().parseTypeParameters());
+        }
+        children.add(parseRecordHeader());
+        if (isCurr(IMPLEMENTS)) {
+            children.add(parseSuperinterfaces());
+        }
+        children.add(parseClassBody());
+        ASTRecordDeclaration node = new ASTRecordDeclaration(loc, children);
+        node.setOperation(RECORD);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTRecordHeader</code>.
+     * @return An <code>ASTRecordHeader</code>.
+     */
+    public ASTRecordHeader parseRecordHeader() {
+        Location loc = curr().getLocation();
+        if (accept(OPEN_PARENTHESIS) == null) {
+            throw new CompileException(curr().getLocation(), "Expected '('.");
+        }
+        List<ASTNode> children = new ArrayList<>(1);
+        if (!isCurr(CLOSE_PARENTHESIS)) {
+            children.add(parseFormalParameterList());
+        }
+        if (accept(CLOSE_PARENTHESIS) == null) {
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
+        }
+        return new ASTRecordHeader(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTCompactConstructorDeclaration</code> given a <code>Location</code>
+     * and possibly an already parsed <code>ASTAccessModifier</code>.
+     * @param loc A <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @return An <code>ASTCompactConstructorDeclaration</code>.
+     */
+    public ASTCompactConstructorDeclaration parseCompactConstructorDeclaration(Location loc, ASTAccessModifier am) {
+        List<ASTNode> children = new ArrayList<>(2);
+        if (am != null) {
+            children.add(am);
+        }
+        if (accept(CONSTRUCTOR) == null) {
+            throw new CompileException(curr().getLocation(), "Expected 'constructor'.");
+        }
+        children.add(getStatementsParser().parseBlock());
+        ASTCompactConstructorDeclaration node = new ASTCompactConstructorDeclaration(loc, children);
+        node.setOperation(CONSTRUCTOR);
+        return node;
+    }
+
+    /**
      * Parses an <code>ASTEnumDeclaration</code>.
      * @return An <code>ASTEnumDeclaration</code>.
      */
@@ -779,7 +858,7 @@ public class ClassesParser extends BasicParser {
             children.add(parseClassModifierList());
         }
         if (accept(ENUM) == null) {
-            throw new CompileException("Expected enum.");
+            throw new CompileException(curr().getLocation(), "Expected enum.");
         }
         children.add(getNamesParser().parseIdentifier());
         if (isCurr(IMPLEMENTS)) {
@@ -812,7 +891,7 @@ public class ClassesParser extends BasicParser {
             ));
         }
         if (accept(ENUM) == null) {
-            throw new CompileException("Expected enum.");
+            throw new CompileException(curr().getLocation(), "Expected enum.");
         }
         children.add(getNamesParser().parseIdentifier());
         if (isCurr(IMPLEMENTS)) {
@@ -832,7 +911,7 @@ public class ClassesParser extends BasicParser {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException("Expected '{'.");
+            throw new CompileException(curr().getLocation(), "Expected '{'.");
         }
         if (isAcceptedOperator(Arrays.asList(SEMICOLON, CLOSE_BRACE)) == null) {
             children.add(parseEnumConstantList());
@@ -841,7 +920,7 @@ public class ClassesParser extends BasicParser {
             children.add(parseEnumBodyDeclarations());
         }
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException("Expected '}'.");
+            throw new CompileException(curr().getLocation(), "Expected '}'.");
         }
         return new ASTEnumBody(loc, children);
     }
@@ -853,7 +932,7 @@ public class ClassesParser extends BasicParser {
     public ASTEnumBodyDeclarations parseEnumBodyDeclarations() {
         Location loc = curr().getLocation();
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Expected semicolon.");
+            throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         ASTEnumBodyDeclarations node = new ASTEnumBodyDeclarations(loc, Collections.singletonList(parseClassPartList()));
         node.setOperation(SEMICOLON);
@@ -888,7 +967,7 @@ public class ClassesParser extends BasicParser {
                 children.add(getExpressionsParser().parseArgumentList());
             }
             if (accept(CLOSE_PARENTHESIS) == null) {
-                throw new CompileException("Expected ')'.");
+                throw new CompileException(curr().getLocation(), "Expected ')'.");
             }
         }
         if (isCurr(OPEN_BRACE)) {
@@ -911,7 +990,7 @@ public class ClassesParser extends BasicParser {
             children.add(parseClassModifierList());
         }
         if (accept(CLASS) == null) {
-            throw new CompileException("Expected class.");
+            throw new CompileException(curr().getLocation(), "Expected class.");
         }
         children.add(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
@@ -953,7 +1032,7 @@ public class ClassesParser extends BasicParser {
             ));
         }
         if (accept(CLASS) == null) {
-            throw new CompileException("Expected class.");
+            throw new CompileException(curr().getLocation(), "Expected class.");
         }
         children.add(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
@@ -981,7 +1060,7 @@ public class ClassesParser extends BasicParser {
     public ASTPermits parsePermits() {
         Location loc = curr().getLocation();
         if (accept(PERMITS) == null) {
-            throw new CompileException("Expected permits.");
+            throw new CompileException(curr().getLocation(), "Expected permits.");
         }
         ASTPermits node = new ASTPermits(loc, Collections.singletonList(parseDataTypeNoArrayList()));
         node.setOperation(PERMITS);
@@ -995,7 +1074,7 @@ public class ClassesParser extends BasicParser {
     public ASTSuperinterfaces parseSuperinterfaces() {
         Location loc = curr().getLocation();
         if (accept(IMPLEMENTS) == null) {
-            throw new CompileException("Expected implements.");
+            throw new CompileException(curr().getLocation(), "Expected implements.");
         }
         ASTSuperinterfaces node = new ASTSuperinterfaces(loc, Collections.singletonList(parseDataTypeNoArrayList()));
         node.setOperation(IMPLEMENTS);
@@ -1023,7 +1102,7 @@ public class ClassesParser extends BasicParser {
     public ASTSuperclass parseSuperclass() {
         Location loc = curr().getLocation();
         if (accept(EXTENDS) == null) {
-            throw new CompileException("Expected extends.");
+            throw new CompileException(curr().getLocation(), "Expected extends.");
         }
         ASTSuperclass node = new ASTSuperclass(loc, Collections.singletonList(getTypesParser().parseDataTypeNoArray()));
         node.setOperation(EXTENDS);
@@ -1048,14 +1127,14 @@ public class ClassesParser extends BasicParser {
     public ASTClassBody parseClassBody() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException("Expected '{'.");
+            throw new CompileException(curr().getLocation(), "Expected '{'.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         if (!isCurr(CLOSE_BRACE)) {
             children.add(parseClassPartList());
         }
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException("Expected '}'.");
+            throw new CompileException(curr().getLocation(), "Expected '}'.");
         }
         ASTClassBody node = new ASTClassBody(loc, children);
         node.setOperation(OPEN_BRACE);
@@ -1068,7 +1147,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTClassPartList parseClassPartList() {
         return parseMultiple(
-                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED, CLASS, INTERFACE,
+                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD,
                         ABSTRACT, OVERRIDE, SHARED, VOLATILE,
                         CONSTRUCTOR, MUT, CONSTANT, VOID, IDENTIFIER, LESS_THAN)
                         .contains(t.getType()),
@@ -1106,6 +1185,11 @@ public class ClassesParser extends BasicParser {
             return new ASTClassPart(loc, Collections.singletonList(parseInterfaceDeclaration(loc, accessMod, genModList)));
         case ANNOTATION:
             return new ASTClassPart(loc, Collections.singletonList(parseAnnotationDeclaration(loc, accessMod, genModList)));
+        case RECORD:
+            if (genModList != null) {
+                throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+            }
+            return new ASTClassPart(loc, Collections.singletonList(parseRecordDeclaration(loc, accessMod)));
         }
 
         ASTTypeParameters typeParams = null;
@@ -1116,8 +1200,13 @@ public class ClassesParser extends BasicParser {
         if (isAcceptedOperator(Arrays.asList(MUT, VOID)) != null) {
             return new ASTClassPart(loc, Collections.singletonList(parseMethodDeclaration(loc, accessMod, genModList, typeParams)));
         }
-        else if (isAcceptedOperator(Collections.singletonList(CONSTRUCTOR)) != null) {
-            return new ASTClassPart(loc, Collections.singletonList(parseConstructorDeclaration(loc, accessMod, genModList, typeParams)));
+        else if (isCurr(CONSTRUCTOR)) {
+            if (typeParams == null && isNext(OPEN_BRACE)) {
+                return new ASTClassPart(loc, Collections.singletonList(parseCompactConstructorDeclaration(loc, accessMod)));
+            }
+            else {
+                return new ASTClassPart(loc, Collections.singletonList(parseConstructorDeclaration(loc, accessMod, genModList, typeParams)));
+            }
         }
         else {
             ASTDataType dt = getTypesParser().parseDataType();
@@ -1126,7 +1215,7 @@ public class ClassesParser extends BasicParser {
             }
             else {
                 if (typeParams != null) {
-                    throw new CompileException("Type parameters not allowed on field declaration.");
+                    throw new CompileException(curr().getLocation(), "Type parameters not allowed on field declaration.");
                 }
                 return new ASTClassPart(loc, Collections.singletonList(parseFieldDeclaration(loc, accessMod, genModList, dt)));
             }
@@ -1141,18 +1230,20 @@ public class ClassesParser extends BasicParser {
     public ASTSharedConstructor parseSharedConstructor() {
         Location loc = curr().getLocation();
         if (accept(SHARED) == null) {
-            throw new CompileException("Expected shared.");
+            throw new CompileException(curr().getLocation(), "Expected shared.");
         }
         if (accept(CONSTRUCTOR) == null) {
-            throw new CompileException("Expected constructor.");
+            throw new CompileException(curr().getLocation(), "Expected constructor.");
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('.");
+            throw new CompileException(curr().getLocation(), "Expected '('.");
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
-        return new ASTSharedConstructor(loc, Collections.singletonList(getStatementsParser().parseBlock()));
+        ASTSharedConstructor node = new ASTSharedConstructor(loc, Collections.singletonList(getStatementsParser().parseBlock()));
+        node.setOperation(CONSTRUCTOR);
+        return node;
     }
 
     /**
@@ -1171,7 +1262,9 @@ public class ClassesParser extends BasicParser {
             children.add(parseConstructorInvocation());
         }
         children.add(getStatementsParser().parseBlock());
-        return new ASTConstructorDeclaration(loc, children);
+        ASTConstructorDeclaration node = new ASTConstructorDeclaration(loc, children);
+        node.setOperation(CONSTRUCTOR);
+        return node;
     }
 
     /**
@@ -1208,7 +1301,9 @@ public class ClassesParser extends BasicParser {
             children.add(parseConstructorInvocation());
         }
         children.add(getStatementsParser().parseBlock());
-        return new ASTConstructorDeclaration(loc, children);
+        ASTConstructorDeclaration node = new ASTConstructorDeclaration(loc, children);
+        node.setOperation(CONSTRUCTOR);
+        return node;
     }
 
 
@@ -1220,7 +1315,7 @@ public class ClassesParser extends BasicParser {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(4);
         if (accept(COLON) == null) {
-            throw new CompileException("Expected ':' for explicit constructor invocation.");
+            throw new CompileException(curr().getLocation(), "Expected ':' for explicit constructor invocation.");
         }
         ASTPrimary primary = null;
         if (isAcceptedOperator(Arrays.asList(CONSTRUCTOR, SUPER, LESS_THAN)) == null) {
@@ -1238,7 +1333,7 @@ public class ClassesParser extends BasicParser {
                     children.add(primary);
                 }
                 if (accept(DOT) == null) {
-                    throw new CompileException("Expected '.' between expression and super.");
+                    throw new CompileException(curr().getLocation(), "Expected '.' between expression and super.");
                 }
                 if (isCurr(LESS_THAN)) {
                     children.add(getTypesParser().parseTypeArguments());
@@ -1262,26 +1357,26 @@ public class ClassesParser extends BasicParser {
         if (primary != null) {
             if (accept(SUPER) == null) {
                 // ExpressionName and Primary can only have super.
-                throw new CompileException("Expected super after expression dot for explicit superclass constructor invocation.");
+                throw new CompileException(curr().getLocation(), "Expected super after expression dot for explicit superclass constructor invocation.");
             }
             node.setOperation(SUPER);
         }
         else {
             TokenType operation = isAcceptedOperator(Arrays.asList(SUPER, CONSTRUCTOR));
             if (operation == null) {
-                throw new CompileException("Expected constructor or super for explicit constructor invocation.");
+                throw new CompileException(curr().getLocation(), "Expected constructor or super for explicit constructor invocation.");
             }
             accept(operation);
             node.setOperation(operation);
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('.");
+            throw new CompileException(curr().getLocation(), "Expected '('.");
         }
         if (!isCurr(CLOSE_PARENTHESIS)) {
             children.add(getExpressionsParser().parseArgumentList());
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         return node;
     }
@@ -1297,16 +1392,16 @@ public class ClassesParser extends BasicParser {
             children.add(getTypesParser().parseTypeParameters());
         }
         if (accept(CONSTRUCTOR) == null) {
-            throw new CompileException("Expected \"constructor\".");
+            throw new CompileException(curr().getLocation(), "Expected \"constructor\".");
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('.");
+            throw new CompileException(curr().getLocation(), "Expected '('.");
         }
         if (!isCurr(CLOSE_PARENTHESIS)) {
             children.add(parseFormalParameterList());
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         ASTConstructorDeclarator node = new ASTConstructorDeclarator(loc, children);
         node.setOperation(CONSTRUCTOR);
@@ -1329,16 +1424,16 @@ public class ClassesParser extends BasicParser {
             loc = curr().getLocation();
         }
         if (accept(CONSTRUCTOR) == null) {
-            throw new CompileException("Expected \"constructor\".");
+            throw new CompileException(curr().getLocation(), "Expected \"constructor\".");
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('.");
+            throw new CompileException(curr().getLocation(), "Expected '('.");
         }
         if (!isCurr(CLOSE_PARENTHESIS)) {
             children.add(parseFormalParameterList());
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         ASTConstructorDeclarator node = new ASTConstructorDeclarator(loc, children);
         node.setOperation(CONSTRUCTOR);
@@ -1361,7 +1456,7 @@ public class ClassesParser extends BasicParser {
         children.add(getTypesParser().parseDataType());
         children.add(getStatementsParser().parseVariableDeclaratorList());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Expected semicolon.");
+            throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         return new ASTFieldDeclaration(loc, children);
     }
@@ -1394,7 +1489,7 @@ public class ClassesParser extends BasicParser {
         children.add(dt);
         children.add(getStatementsParser().parseVariableDeclaratorList());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Expected semicolon.");
+            throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         return new ASTFieldDeclaration(loc, children);
     }
@@ -1510,7 +1605,7 @@ public class ClassesParser extends BasicParser {
             children.add(getStatementsParser().parseBlock());
         }
         else {
-            throw new CompileException("Expected block for method body.");
+            throw new CompileException(curr().getLocation(), "Expected block for method body.");
         }
         return node;
     }
@@ -1650,13 +1745,13 @@ public class ClassesParser extends BasicParser {
         List<ASTNode> children = new ArrayList<>(3);
         children.add(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('.");
+            throw new CompileException(curr().getLocation(), "Expected '('.");
         }
         if (!isCurr(CLOSE_PARENTHESIS)) {
             children.add(parseFormalParameterList());
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         if (isCurr(MUT)) {
             children.add(parseMutModifier());
@@ -1694,7 +1789,7 @@ public class ClassesParser extends BasicParser {
         boolean ellipsisSeen = false;
         for (ASTNode child : children) {
             if (ellipsisSeen) {
-                throw new CompileException("Varargs parameter must be last in the list.");
+                throw new CompileException(curr().getLocation(), "Varargs parameter must be last in the list.");
             }
             ASTFormalParameter formalParam = (ASTFormalParameter) child;
             if (formalParam.getOperation() == THREE_DOTS) {

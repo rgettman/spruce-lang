@@ -116,7 +116,7 @@ public class NamesParser extends BasicParser {
             return new ASTIdentifier(t.getLocation(), t.getValue());
         }
         else {
-            throw new CompileException("Expected an identifier.");
+            throw new CompileException(curr().getLocation(), "Expected an identifier.");
         }
     }
 }

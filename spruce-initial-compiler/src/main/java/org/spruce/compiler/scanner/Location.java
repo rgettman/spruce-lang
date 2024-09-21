@@ -1,5 +1,7 @@
 package org.spruce.compiler.scanner;
 
+import java.io.File;
+
 /**
  * A <code>Location</code> describes where a <code>Token</code> can be found in
  * source code.  It consists of a filename, a line number (1-based), a
@@ -72,6 +74,7 @@ public class Location {
         return "Location{" + myFilename + ":" + myLineNbr + ", pos " + myCharPos + ", line \"" + myLine + "\"}";
     }
 
+
     /**
      * Returns a string of the format "filename:lineNbr".
      * @return A string of the format "filename:lineNbr".
@@ -91,5 +94,15 @@ public class Location {
      */
     public String getPosIndicator() {
         return " ".repeat(myCharPos - 1) + "^";
+    }
+
+    /**
+     * Returns a String representing where the <code>CompilerException</code>
+     * occurred.
+     * @return A String representing where the <code>CompilerException</code>
+     *     occurred.
+     */
+    public String where() {
+        return String.join(System.lineSeparator(), getLine(), getPosIndicator());
     }
 }

@@ -57,7 +57,7 @@ public class ASTDataTypeNoArray extends ASTParentNode {
             else if (child instanceof ASTSimpleType st) {
                 List<ASTNode> stChildren = st.getChildren();
                 if (stChildren.size() > 1) {
-                    throw new CompileException("Variable declarator expected after type.");
+                    throw new CompileException(child.getLocation(), "Variable declarator expected after type.");
                 }
                 convertedChildren.add(stChildren.get(0)); // ASTIdentifier
             }

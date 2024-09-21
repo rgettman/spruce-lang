@@ -287,7 +287,8 @@ public class Scanner {
             buf.append(c);
         }
         if (!endCommentReached) {
-            throw new CompileException("End of file reached before end of traditional comment!");
+            throw new CompileException(new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr)),
+                    "End of file reached before end of traditional comment!");
         }
         return buf.toString();
     }
@@ -295,8 +296,6 @@ public class Scanner {
     /**
      * Reads until the end of the line or file.
      * @return The comment text.
-     * @throws CompileException If the end of the file was reached before the
-     *     end of the traditional comment.
      */
     private String readCommentUntilEndOfLine() {
         StringBuilder buf = new StringBuilder();
@@ -325,7 +324,7 @@ public class Scanner {
     private Token readCharacterLiteral() {
         read();
         if (peek() == '\'') {
-            throw new CompileException("Illegal empty character literal.");
+            throw new CompileException(getPeekToken().getLocation(), "Illegal empty character literal.");
         }
 
         Token t;
@@ -339,7 +338,7 @@ public class Scanner {
         }
 
         if (read() != '\'') {
-            throw new CompileException("Illegal unclosed character literal.");
+            throw new CompileException(getCurrToken().getLocation(), "Illegal unclosed character literal.");
         }
         return t;
     }
@@ -376,9 +375,9 @@ public class Scanner {
                 break;
             case '\n':
             case '\r':
-                throw new CompileException("String not terminated before end of line.");
+                throw new CompileException(getPeekToken().getLocation(), "String not terminated before end of line.");
             case (char) -1:
-                throw new CompileException("String not terminated before end of file.");
+                throw new CompileException(getPeekToken().getLocation(), "String not terminated before end of file.");
             default:
                 buf.append(read());
                 break;
@@ -405,7 +404,7 @@ public class Scanner {
             case '"' -> '"';
             case '\'' -> '\'';
             case '\\' -> '\\';
-            default -> throw new CompileException("Illegal escape sequence: \\" + peek());
+            default -> throw new CompileException(getCurrToken().getLocation(), "Illegal escape sequence: \\" + peek());
         };
     }
 
@@ -433,11 +432,12 @@ public class Scanner {
                 pastInitialWhitespace = true;
                 break;
             } else if (!Character.isWhitespace(c)) {
-                throw new CompileException("Missing new line after opening quotes!");
+                throw new CompileException(new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr)),
+                        "Missing new line after opening quotes!");
             }
         }
         if (!pastInitialWhitespace) {
-            throw new CompileException("End of file reached before close of text block!");
+            throw new CompileException(getCurrToken().getLocation(), "End of file reached before close of text block!");
         }
         // First char of line terminator is read.  Read past any \r\n stuff.
         if (c == '\r' && peek() == '\n') {
@@ -477,7 +477,7 @@ public class Scanner {
                 buf.append('\n');
                 break;
             case (char) -1:
-                throw new CompileException("Text block not terminated before end of file.");
+                throw new CompileException(new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr)), "Text block not terminated before end of file.");
             default:
                 buf.append(read());
                 break;
@@ -550,7 +550,7 @@ public class Scanner {
                 soFar.append(read());
             }
             if (!Character.isDigit(peek())) {
-                throw new CompileException("Invalid floating point literal; missing exponent");
+                throw new CompileException(getPeekToken().getLocation(), "Invalid floating point literal; missing exponent");
             }
             while (Character.isDigit(peek())) {
                 soFar.append(read());

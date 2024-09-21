@@ -255,7 +255,7 @@ public class BasicParser {
             return node;
         }
         else {
-            throw new CompileException(initialErrorMessage);
+            throw new CompileException(curr().getLocation(), initialErrorMessage);
         }
     }
 
@@ -293,7 +293,7 @@ public class BasicParser {
             return node;
         }
         else {
-            throw new CompileException(initialErrorMessage);
+            throw new CompileException(curr().getLocation(), initialErrorMessage);
         }
     }
 
@@ -316,7 +316,7 @@ public class BasicParser {
                                                       Supplier<? extends ASTNode> childParser,
                                                       BiFunction<Location, List<ASTNode>, T> nodeSupplier) {
         if (!isOnInitialToken.test(curr())) {
-            throw new CompileException(initialErrorMessage);
+            throw new CompileException(curr().getLocation(), initialErrorMessage);
         }
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>();
@@ -343,7 +343,7 @@ public class BasicParser {
         Location loc = curr().getLocation();
         TokenType operation = isAcceptedOperator(acceptedTokens);
         if (operation == null) {
-            throw new CompileException(initialErrorMessage);
+            throw new CompileException(curr().getLocation(), initialErrorMessage);
         }
         accept(operation);
         T node = nodeSupplier.apply(loc, Collections.emptyList());

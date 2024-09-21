@@ -60,10 +60,10 @@ public class ASTGeneralModifierList extends ASTParentNode {
             ASTGeneralModifier mod = (ASTGeneralModifier) child;
             TokenType modifier = mod.getOperation();
             if (!seen.add(modifier)) {
-                throw new CompileException("Duplicate modifier found: " + modifier.getRepresentation());
+                throw new CompileException(mod.getLocation(), "Duplicate modifier found: " + modifier.getRepresentation());
             }
             if (!expectedModifiers.contains(modifier)) {
-                throw new CompileException(errorMessage);
+                throw new CompileException(mod.getLocation(), errorMessage);
             }
         }
         return nodeSupplier.apply(getLocation(), children);

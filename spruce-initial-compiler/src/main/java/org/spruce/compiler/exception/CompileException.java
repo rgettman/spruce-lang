@@ -5,6 +5,7 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.parser.ClassesParser;
 import org.spruce.compiler.parser.ExpressionsParser;
+import org.spruce.compiler.scanner.Location;
 
 /**
  * A <code>CompileException</code> is thrown when an unrecoverable error occurs
@@ -13,20 +14,15 @@ import org.spruce.compiler.parser.ExpressionsParser;
  */
 public class CompileException extends RuntimeException {
     private List<ASTNode> myAlreadyParsed;
-
-    /**
-     * Create a <code>CompileException</code>.
-     */
-    public CompileException() {
-        super();
-    }
+    private final Location myLocation;
 
     /**
      * Create a <code>CompileException</code> with the given message.
      * @param message The message.
      */
-    public CompileException(String message) {
+    public CompileException(Location location, String message) {
         super(message);
+        myLocation = location;
     }
 
     /**
@@ -35,26 +31,10 @@ public class CompileException extends RuntimeException {
      * @param message The message.
      * @param alreadyParsed Already parsed <code>ASTNodes</code>.
      */
-    public CompileException(String message, List<ASTNode> alreadyParsed) {
+    public CompileException(Location location, String message, List<ASTNode> alreadyParsed) {
         super(message);
+        myLocation = location;
         myAlreadyParsed = alreadyParsed;
-    }
-
-    /**
-     * Create a <code>CompileException</code>.
-     * @param cause The cause.
-     */
-    public CompileException(Throwable cause) {
-        super(cause);
-    }
-
-    /**
-     * Create a <code>CompileException</code> with the given message.
-     * @param message The message.
-     * @param cause The cause.
-     */
-    public CompileException(String message, Throwable cause) {
-        super(message, cause);
     }
 
     /**
@@ -72,5 +52,23 @@ public class CompileException extends RuntimeException {
      */
     public List<ASTNode> getAlreadyParsed() {
         return myAlreadyParsed;
+    }
+
+    /**
+     * Returns the <code>Location</code> in the source code that caused this
+     * <code>CompileException</code>.
+     * @return A <code>Location</code>.
+     */
+    public Location getLocation() {
+        return myLocation;
+    }
+
+    /**
+     * Inserts the <code>Location</code> into the error message string.
+     * @return The String representation of this exception object.
+     */
+    @Override
+    public String getMessage() {
+        return System.lineSeparator() + String.join(System.lineSeparator(), getLocation().where(), super.getMessage());
     }
 }

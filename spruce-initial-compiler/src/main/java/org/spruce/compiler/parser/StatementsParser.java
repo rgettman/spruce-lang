@@ -44,7 +44,7 @@ public class StatementsParser extends BasicParser {
     public ASTBlock parseBlock() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException("Expected '{'.");
+            throw new CompileException(curr().getLocation(), "Expected '{'.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         ASTBlock node = new ASTBlock(loc, children);
@@ -53,7 +53,7 @@ public class StatementsParser extends BasicParser {
             children.add(parseBlockStatements());
         }
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException("Expected '}'.");
+            throw new CompileException(curr().getLocation(), "Expected '}'.");
         }
         return node;
     }
@@ -109,7 +109,7 @@ public class StatementsParser extends BasicParser {
         Location loc = curr().getLocation();
         ASTLocalVariableDeclaration localVarDecl = parseLocalVariableDeclaration();
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTLocalVariableDeclarationStatement node = new ASTLocalVariableDeclarationStatement(loc, Arrays.asList(localVarDecl));
         node.setOperation(SEMICOLON);
@@ -126,7 +126,7 @@ public class StatementsParser extends BasicParser {
         Location loc = dt.getLocation();
         ASTLocalVariableDeclaration localVarDecl = parseLocalVariableDeclaration(dt);
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTLocalVariableDeclarationStatement node = new ASTLocalVariableDeclarationStatement(loc, Arrays.asList(localVarDecl));
         node.setOperation(SEMICOLON);
@@ -332,7 +332,7 @@ public class StatementsParser extends BasicParser {
     public ASTSwitchStatement parseSwitchStatement() {
         Location loc = curr().getLocation();
         if (accept(SWITCH) == null) {
-            throw new CompileException("Expected switch.");
+            throw new CompileException(curr().getLocation(), "Expected switch.");
         }
         List<ASTNode> children = Arrays.asList(
             getExpressionsParser().parseExpression(),
@@ -350,11 +350,11 @@ public class StatementsParser extends BasicParser {
     public ASTSwitchStatementBlock parseSwitchStatementBlock() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException("Expected '{'.");
+            throw new CompileException(curr().getLocation(), "Expected '{'.");
         }
         List<ASTNode> children = Arrays.asList(parseSwitchStatementRules());
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException("Expected '}'.");
+            throw new CompileException(curr().getLocation(), "Expected '}'.");
         }
         ASTSwitchStatementBlock node = new ASTSwitchStatementBlock(loc, children);
         node.setOperation(OPEN_BRACE);
@@ -383,7 +383,7 @@ public class StatementsParser extends BasicParser {
         List<ASTNode> children = new ArrayList<>(2);
         children.add(getExpressionsParser().parseSwitchLabel());
         if (accept(ARROW) == null) {
-            throw new CompileException("Expected arrow (->).");
+            throw new CompileException(curr().getLocation(), "Expected arrow (->).");
         }
         switch(curr().getType()) {
         case OPEN_BRACE -> children.add(parseBlock());
@@ -403,7 +403,7 @@ public class StatementsParser extends BasicParser {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(4);
         if (accept(TRY) == null) {
-            throw new CompileException("Expected try.");
+            throw new CompileException(curr().getLocation(), "Expected try.");
         }
         if (isCurr(OPEN_PARENTHESIS)) {
             children.add(parseResourceSpecification());
@@ -416,7 +416,7 @@ public class StatementsParser extends BasicParser {
             children.add(parseFinally());
         }
         if (children.size() <= 1) {
-            throw new CompileException("Expected 'catch' and/or 'finally' block.");
+            throw new CompileException(curr().getLocation(), "Expected 'catch' and/or 'finally' block.");
         }
         ASTTryStatement node = new ASTTryStatement(loc, children);
         node.setOperation(TRY);
@@ -430,14 +430,14 @@ public class StatementsParser extends BasicParser {
     public ASTResourceSpecification parseResourceSpecification() {
         Location loc = curr().getLocation();
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('.");
+            throw new CompileException(curr().getLocation(), "Expected '('.");
         }
         ASTResourceSpecification node = new ASTResourceSpecification(loc, Arrays.asList(parseResourceList()));
         if (isCurr(SEMICOLON)) {
             accept(SEMICOLON);
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         return node;
     }
@@ -495,7 +495,7 @@ public class StatementsParser extends BasicParser {
                 return new ASTResource(loc, Arrays.asList(child));
             }
         }
-        throw new CompileException("Expected resource declaration or variable.");
+        throw new CompileException(curr().getLocation(), "Expected resource declaration or variable.");
     }
 
     /**
@@ -512,7 +512,7 @@ public class StatementsParser extends BasicParser {
         children.add(parseLocalVariableType());
         children.add(getNamesParser().parseIdentifier());
         if (accept(EQUAL) == null) {
-            throw new CompileException("Expected '='.");
+            throw new CompileException(curr().getLocation(), "Expected '='.");
         }
         children.add(getExpressionsParser().parseExpression());
         node.setOperation(EQUAL);
@@ -532,7 +532,7 @@ public class StatementsParser extends BasicParser {
         children.add(new ASTLocalVariableType(loc, Arrays.asList(dt)));
         children.add(getNamesParser().parseIdentifier());
         if (accept(EQUAL) == null) {
-            throw new CompileException("Expected ':='.");
+            throw new CompileException(curr().getLocation(), "Expected '='.");
         }
         children.add(getExpressionsParser().parseExpression());
         node.setOperation(EQUAL);
@@ -560,14 +560,14 @@ public class StatementsParser extends BasicParser {
         Location loc = curr().getLocation();
         List<ASTNode> children = new ArrayList<>(2);
         if (accept(CATCH) == null) {
-            throw new CompileException("Expected catch.");
+            throw new CompileException(curr().getLocation(), "Expected catch.");
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException("Expected '('");
+            throw new CompileException(curr().getLocation(), "Expected '('");
         }
         children.add(parseCatchFormalParameter());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'");
+            throw new CompileException(curr().getLocation(), "Expected ')'");
         }
         children.add(parseBlock());
         ASTCatchClause node = new ASTCatchClause(loc, children);
@@ -611,7 +611,7 @@ public class StatementsParser extends BasicParser {
     public ASTFinally parseFinally() {
         Location loc = curr().getLocation();
         if (accept(FINALLY) == null) {
-            throw new CompileException("Expected finally.");
+            throw new CompileException(curr().getLocation(), "Expected finally.");
         }
         ASTBlock block = parseBlock();
         ASTFinally node = new ASTFinally(loc, Arrays.asList(block));
@@ -647,7 +647,7 @@ public class StatementsParser extends BasicParser {
                 node = new ASTForStatement(loc, Arrays.asList(enhForStmt));
             }
             else {
-                throw new CompileException("Expected semicolon or colon.");
+                throw new CompileException(curr().getLocation(), "Expected semicolon or colon.");
             }
         }
         node.setOperation(FOR);
@@ -672,20 +672,20 @@ public class StatementsParser extends BasicParser {
             ASTVariableDeclaratorList variables = (ASTVariableDeclaratorList) varDeclChildren.get(varDeclChildren.size() - 1);
             List<ASTNode> variablesChildren = variables.getChildren();
             if (variablesChildren.size() != 1) {
-                throw new CompileException("Only one variable can be declared in an enhanced for loop.");
+                throw new CompileException(curr().getLocation(), "Only one variable can be declared in an enhanced for loop.");
             }
             children.add(varDecl);
         }
         else {
-            throw new CompileException("Enhanced for loop requires a variable declaration before the colon.");
+            throw new CompileException(curr().getLocation(), "Enhanced for loop requires a variable declaration before the colon.");
         }
 
         if (accept(COLON) == null) {
-            throw new CompileException("Expected colon.");
+            throw new CompileException(curr().getLocation(), "Expected colon.");
         }
         children.add(getExpressionsParser().parseConditionalExpression());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         children.add(parseBlock());
         ASTEnhancedForStatement node = new ASTEnhancedForStatement(locFor, children);
@@ -703,19 +703,19 @@ public class StatementsParser extends BasicParser {
     public ASTBasicForStatement parseBasicForStatement(Location locFor) {
         List<ASTNode> children = new ArrayList<>(4);
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Expected semicolon.");
+            throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         if (!isCurr(SEMICOLON)) {
             children.add(getExpressionsParser().parseConditionalExpression());
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Expected second semicolon.");
+            throw new CompileException(curr().getLocation(), "Expected second semicolon.");
         }
         if (!isCurr(CLOSE_PARENTHESIS)) {
             children.add(parseStatementExpressionList());
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException("Expected ')'.");
+            throw new CompileException(curr().getLocation(), "Expected ')'.");
         }
         children.add(parseBlock());
         ASTBasicForStatement node = new ASTBasicForStatement(locFor, children);
@@ -744,14 +744,14 @@ public class StatementsParser extends BasicParser {
     public ASTIfStatement parseIfStatement() {
         Location loc = curr().getLocation();
         if (accept(IF) == null) {
-            throw new CompileException("Expected if.");
+            throw new CompileException(curr().getLocation(), "Expected if.");
         }
         List<ASTNode> children = new ArrayList<>(4);
         if (isCurr(OPEN_BRACE)) {
             accept(OPEN_BRACE);
             children.add(parseInit());
             if (accept(CLOSE_BRACE) == null) {
-                throw new CompileException("Expected '}'.");
+                throw new CompileException(curr().getLocation(), "Expected '}'.");
             }
         }
         children.add(getExpressionsParser().parseConditionalExpression());
@@ -766,7 +766,7 @@ public class StatementsParser extends BasicParser {
                 children.add(parseBlock());
             }
             else {
-                throw new CompileException("Expected 'if' or a block.");
+                throw new CompileException(curr().getLocation(), "Expected 'if' or a block.");
             }
         }
         ASTIfStatement node = new ASTIfStatement(loc, children);
@@ -781,14 +781,14 @@ public class StatementsParser extends BasicParser {
     public ASTWhileStatement parseWhileStatement() {
         Location loc = curr().getLocation();
         if (accept(WHILE) == null) {
-            throw new CompileException("Expected while.");
+            throw new CompileException(curr().getLocation(), "Expected while.");
         }
         List<ASTNode> children = new ArrayList<>(3);
         if (isCurr(OPEN_BRACE)) {
             accept(OPEN_BRACE);
             children.add(parseInit());
             if (accept(CLOSE_BRACE) == null) {
-                throw new CompileException("Expected '}'.");
+                throw new CompileException(curr().getLocation(), "Expected '}'.");
             }
         }
         children.add(getExpressionsParser().parseConditionalExpression());
@@ -805,16 +805,16 @@ public class StatementsParser extends BasicParser {
     public ASTDoStatement parseDoStatement() {
         Location loc = curr().getLocation();
         if (accept(DO) == null) {
-            throw new CompileException("Expected do.");
+            throw new CompileException(curr().getLocation(), "Expected do.");
         }
         List<ASTNode> children = new ArrayList<>(2);
         children.add(parseBlock());
         if (accept(WHILE) == null) {
-            throw new CompileException("Expected while.");
+            throw new CompileException(curr().getLocation(), "Expected while.");
         }
         children.add(getExpressionsParser().parseConditionalExpression());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Expected semicolon.");
+            throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         ASTDoStatement node = new ASTDoStatement(loc, children);
         node.setOperation(DO);
@@ -828,7 +828,7 @@ public class StatementsParser extends BasicParser {
     public ASTCriticalStatement parseCriticalStatement() {
         Location loc = curr().getLocation();
         if (accept(CRITICAL) == null) {
-            throw new CompileException("Expected critical.");
+            throw new CompileException(curr().getLocation(), "Expected critical.");
         }
         List<ASTNode> children = new ArrayList<>(2);
         children.add(getExpressionsParser().parseConditionalExpression());
@@ -845,12 +845,12 @@ public class StatementsParser extends BasicParser {
     public ASTThrowStatement parseThrowStatement() {
         Location loc = curr().getLocation();
         if (accept(THROW) == null) {
-            throw new CompileException("Expected throw.");
+            throw new CompileException(curr().getLocation(), "Expected throw.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         children.add(getExpressionsParser().parseExpression());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTThrowStatement node = new ASTThrowStatement(loc, children);
         node.setOperation(THROW);
@@ -864,12 +864,12 @@ public class StatementsParser extends BasicParser {
     public ASTYieldStatement parseYieldStatement() {
         Location loc = curr().getLocation();
         if (accept(YIELD) == null) {
-            throw new CompileException("Expected yield.");
+            throw new CompileException(curr().getLocation(), "Expected yield.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         children.add(getExpressionsParser().parseExpression());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTYieldStatement node = new ASTYieldStatement(loc, children);
         node.setOperation(YIELD);
@@ -883,12 +883,12 @@ public class StatementsParser extends BasicParser {
     public ASTUseStatement parseUseStatement() {
         Location loc = curr().getLocation();
         if (accept(USE) == null) {
-            throw new CompileException("Expected use.");
+            throw new CompileException(curr().getLocation(), "Expected use.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         children.add(getExpressionsParser().parseExpression());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTUseStatement node = new ASTUseStatement(loc, children);
         node.setOperation(USE);
@@ -902,14 +902,14 @@ public class StatementsParser extends BasicParser {
     public ASTReturnStatement parseReturnStatement() {
         Location loc = curr().getLocation();
         if (accept(RETURN) == null) {
-            throw new CompileException("Expected return.");
+            throw new CompileException(curr().getLocation(), "Expected return.");
         }
         List<ASTNode> children = new ArrayList<>(1);
         if (!isCurr(SEMICOLON)) {
             children.add(getExpressionsParser().parseExpression());
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTReturnStatement node = new ASTReturnStatement(loc, children);
         node.setOperation(RETURN);
@@ -923,10 +923,10 @@ public class StatementsParser extends BasicParser {
     public ASTBreakStatement parseBreakStatement() {
         Location loc = curr().getLocation();
         if (accept(BREAK) == null) {
-            throw new CompileException("Expected break.");
+            throw new CompileException(curr().getLocation(), "Expected break.");
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTBreakStatement node = new ASTBreakStatement(loc, Collections.emptyList());
         node.setOperation(BREAK);
@@ -940,10 +940,10 @@ public class StatementsParser extends BasicParser {
     public ASTContinueStatement parseContinueStatement() {
         Location loc = curr().getLocation();
         if (accept(CONTINUE) == null) {
-            throw new CompileException("Expected continue.");
+            throw new CompileException(curr().getLocation(), "Expected continue.");
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTContinueStatement node = new ASTContinueStatement(loc, Collections.emptyList());
         node.setOperation(CONTINUE);
@@ -957,10 +957,10 @@ public class StatementsParser extends BasicParser {
     public ASTFallthroughStatement parseFallthroughStatement() {
         Location loc = curr().getLocation();
         if (accept(FALLTHROUGH) == null) {
-            throw new CompileException("Expected fallthrough.");
+            throw new CompileException(curr().getLocation(), "Expected fallthrough.");
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTFallthroughStatement node = new ASTFallthroughStatement(loc, Collections.emptyList());
         node.setOperation(FALLTHROUGH);
@@ -974,7 +974,7 @@ public class StatementsParser extends BasicParser {
     public ASTAssertStatement parseAssertStatement() {
         Location loc = curr().getLocation();
         if (accept(ASSERT) == null) {
-            throw new CompileException("Expected assert.");
+            throw new CompileException(curr().getLocation(), "Expected assert.");
         }
         List<ASTNode> children = new ArrayList<>(2);
         children.add(getExpressionsParser().parseExpression());
@@ -983,7 +983,7 @@ public class StatementsParser extends BasicParser {
             children.add(getExpressionsParser().parseExpression());
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Missing semicolon.");
+            throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         ASTAssertStatement node = new ASTAssertStatement(loc, children);
         node.setOperation(ASSERT);
@@ -999,7 +999,7 @@ public class StatementsParser extends BasicParser {
 
         ASTStatementExpression stmtExpr = parseStatementExpression();
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Semicolon expected.");
+            throw new CompileException(curr().getLocation(), "Semicolon expected.");
         }
         ASTExpressionStatement exprStmt = new ASTExpressionStatement(loc, Arrays.asList(stmtExpr));
         exprStmt.setOperation(SEMICOLON);
@@ -1015,7 +1015,7 @@ public class StatementsParser extends BasicParser {
     public ASTExpressionStatement parseExpressionStatement(ASTPrimary primary) {
         ASTStatementExpression stmtExpr = parseStatementExpression(primary);
         if (accept(SEMICOLON) == null) {
-            throw new CompileException("Semicolon expected.");
+            throw new CompileException(curr().getLocation(), "Semicolon expected.");
         }
         ASTExpressionStatement exprStmt = new ASTExpressionStatement(primary.getLocation(), Arrays.asList(stmtExpr));
         exprStmt.setOperation(SEMICOLON);
@@ -1101,7 +1101,7 @@ public class StatementsParser extends BasicParser {
             return parseStatementExpression(primary);
         }
         else {
-            throw new CompileException("Expected assignment, postfix, method invocation, or class instance creation.");
+            throw new CompileException(curr().getLocation(), "Expected assignment, postfix, method invocation, or class instance creation.");
         }
     }
 
@@ -1159,7 +1159,7 @@ public class StatementsParser extends BasicParser {
             node.setOperation(currToken);
             return node;
         default:
-            throw new CompileException("Expected assignment operator.");
+            throw new CompileException(curr().getLocation(), "Expected assignment operator.");
         }
     }
 
@@ -1179,7 +1179,7 @@ public class StatementsParser extends BasicParser {
             return new ASTPostfix(loc, lhs, DECREMENT);
         }
         else {
-            throw new CompileException("Operator ++ or -- expected.");
+            throw new CompileException(curr().getLocation(), "Operator ++ or -- expected.");
         }
     }
 }

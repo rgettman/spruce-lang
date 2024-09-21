@@ -8,6 +8,7 @@ import org.spruce.compiler.ast.types.*;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.parser.ClassesParser;
 import org.spruce.compiler.parser.Parser;
+import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
@@ -176,6 +177,17 @@ public class ParserClassesTest {
         ClassesParser parser = new Parser(new Scanner("public annotation Test { String getStatus() default \"SUCCESS\"; }")).getClassesParser();
         ASTAnnotationPart node = parser.parseAnnotationPart();
         checkSimple(node, ASTAnnotationDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests annotation part of record declaration.
+     */
+    @Test
+    public void testAnnotationPartOfRecordDeclaration() {
+        ClassesParser parser = new Parser(new Scanner("internal record Redacted(String byWhom) { }")).getClassesParser();
+        ASTAnnotationPart node = parser.parseAnnotationPart();
+        checkSimple(node, ASTRecordDeclaration.class);
         node.collapseThenPrint();
     }
 
@@ -608,6 +620,17 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests interface part of record declaration.
+     */
+    @Test
+    public void testInterfacePartOfRecordDeclaration() {
+        ClassesParser parser = new Parser(new Scanner("internal record Redacted(String byWhom) { }")).getClassesParser();
+        ASTInterfacePart node = parser.parseInterfacePart();
+        checkSimple(node, ASTRecordDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests simple interface method declaration.
      */
     @Test
@@ -685,6 +708,107 @@ public class ParserClassesTest {
         ClassesParser parser = new Parser(new Scanner("constant")).getClassesParser();
         ASTConstantModifier node = parser.parseConstantModifier();
         checkEmpty(node, CONSTANT);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests a full record declaration.
+     */
+    @Test
+    public void testRecordDeclarationFull() {
+        Scanner scanner = new Scanner("public record Value<T>(T value) implements Comparable<T> {}");
+        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ASTAccessModifier am = parser.parseAccessModifier();
+        ASTRecordDeclaration node = parser.parseRecordDeclaration(am.getLocation(), am);
+        checkNary(node, RECORD, ASTAccessModifier.class, ASTIdentifier.class, ASTTypeParameters.class,
+                ASTRecordHeader.class, ASTSuperinterfaces.class, ASTClassBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests a simple record declaration.
+     */
+    @Test
+    public void testRecordDeclarationSimple() {
+        Scanner scanner = new Scanner("record Person(String first, String last) {}");
+        ClassesParser parser = new Parser(scanner).getClassesParser();
+        Location loc = scanner.getCurrToken().getLocation();
+        ASTRecordDeclaration node = parser.parseRecordDeclaration(loc, null);
+        checkTrinary(node, RECORD, ASTIdentifier.class, ASTRecordHeader.class, ASTClassBody.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests bad Record Header, missing close parenthesis.
+     */
+    @Test
+    public void testRecordHeaderMissingCloseParen() {
+        ClassesParser parser = new Parser(new Scanner("(String filename, Int lineNbr")).getClassesParser();
+        assertThrows(CompileException.class, parser::parseRecordHeader, "Missing ')'.");
+    }
+
+    /**
+     * Tests bad Record Header, missing open parenthesis.
+     */
+    @Test
+    public void testRecordHeaderMissingOpenParen() {
+        ClassesParser parser = new Parser(new Scanner("String filename, Int lineNbr)")).getClassesParser();
+        assertThrows(CompileException.class, parser::parseRecordHeader, "Missing '('.");
+    }
+
+    /**
+     * Tests a Record Header.
+     */
+    @Test
+    public void testRecordHeader() {
+        ClassesParser parser = new Parser(new Scanner("(String filename, Int lineNbr)")).getClassesParser();
+        ASTRecordHeader node = parser.parseRecordHeader();
+        checkSimple(node, ASTFormalParameterList.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests bad compact constructor declaration.
+     */
+    @Test
+    public void testCompactConstructorDeclarationBad() {
+        ClassesParser parser = new Parser(new Scanner("private { }")).getClassesParser();
+        ASTAccessModifier am = parser.parseAccessModifier();
+        assertThrows(CompileException.class, () -> parser.parseCompactConstructorDeclaration(am.getLocation(), am));
+    }
+
+    /**
+     * Tests a compact constructor declaration, with access modifier.
+     */
+    @Test
+    public void testCompactConstructorDeclarationAccessModifier() {
+        ClassesParser parser = new Parser(new Scanner("""
+                public constructor {
+                    a *= 2;
+                    b /= 2;
+                }
+                """)).getClassesParser();
+        ASTAccessModifier am = parser.parseAccessModifier();
+        ASTCompactConstructorDeclaration node = parser.parseCompactConstructorDeclaration(am.getLocation(), am);
+        checkBinary(node, CONSTRUCTOR, ASTAccessModifier.class, ASTBlock.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests a simple compact constructor declaration, no access modifier.
+     */
+    @Test
+    public void testCompactConstructorDeclaration() {
+        Scanner scanner = new Scanner("""
+                constructor {
+                    a *= 2;
+                    b /= 2;
+                }
+                """);
+        ClassesParser parser = new Parser(scanner).getClassesParser();
+        Location loc = scanner.getCurrToken().getLocation();
+        ASTCompactConstructorDeclaration node = parser.parseCompactConstructorDeclaration(loc, null);
+        checkSimple(node, ASTBlock.class, CONSTRUCTOR);
         node.collapseThenPrint();
     }
 
@@ -956,6 +1080,30 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests class part list of all possible class parts.
+     */
+    @Test
+    public void testClassPartListComprehensive() {
+        ClassesParser parser = new Parser(new Scanner("""
+                protected String foo;
+                shared constructor() {}
+                constructor(String foo) { self.foo = foo; }
+                constructor { a++; }
+                public String getFoo() {
+                    return foo;
+                }
+                class Nested {}
+                enum TrafficLight {RED, YELLOW, GREEN}
+                interface Helper {}
+                annotation InnerAnnotation {}
+                record FooRecord(String bar) {}
+                """)).getClassesParser();
+        ASTClassPartList node = parser.parseClassPartList();
+        checkList(node, null, ASTClassPart.class, 10);
+        node.collapseThenPrint();
+    }
+
+    /**
      * Tests class part list of class part.
      */
     @Test
@@ -1056,7 +1204,7 @@ public class ParserClassesTest {
      * Tests class part of method declaration with mut result.
      */
     @Test
-    public void testClassPartOfMethodDeclarationConstResult() {
+    public void testClassPartOfMethodDeclarationMutResult() {
         ClassesParser parser = new Parser(new Scanner("mut String method(String param);")).getClassesParser();
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTMethodDeclaration.class);
@@ -1123,9 +1271,30 @@ public class ParserClassesTest {
      */
     @Test
     public void testClassPartOfAnnotationDeclaration() {
-        ClassesParser parser = new Parser(new Scanner("public annotation Test { String getStatus() default \"SUCCESS\"; }")).getClassesParser();
+        ClassesParser parser = new Parser(new Scanner("""
+                public annotation Test {
+                    String getStatus() default "SUCCESS";
+                }
+                """)).getClassesParser();
         ASTClassPart node = parser.parseClassPart();
         checkSimple(node, ASTAnnotationDeclaration.class);
+        node.collapseThenPrint();
+    }
+
+    /**
+     * Tests class part of record declaration.
+     */
+    @Test
+    public void testClassPartOfRecordDeclaration() {
+        ClassesParser parser = new Parser(new Scanner("""
+                public record LineItem(Order order, Int lineNbr, Product p, Int qty) {
+                    Double getSubtotal() {
+                        return p.getUnitPrice() * qty;
+                    }
+                }
+                """)).getClassesParser();
+        ASTClassPart node = parser.parseClassPart();
+        checkSimple(node, ASTRecordDeclaration.class);
         node.collapseThenPrint();
     }
 
@@ -1136,18 +1305,18 @@ public class ParserClassesTest {
     public void testSharedConstructor() {
         ClassesParser parser = new Parser(new Scanner("shared constructor() { sharedVar = reallyComplicatedLogic(); }")).getClassesParser();
         ASTSharedConstructor node = parser.parseSharedConstructor();
-        checkSimple(node, ASTBlock.class);
+        checkSimple(node, ASTBlock.class, CONSTRUCTOR);
         node.collapseThenPrint();
     }
 
     /**
-     * Tests constructor declaration of access modifier, strictfp, and constructor invocation.
+     * Tests constructor declaration of access modifier, and constructor invocation.
      */
     @Test
-    public void testConstructorDeclarationOfAccessStrictfpConstructorInvocation() {
+    public void testConstructorDeclarationOfAccessConstructorInvocation() {
         ClassesParser parser = new Parser(new Scanner("private constructor(String s) : super(s) { self.s = s; }")).getClassesParser();
         ASTConstructorDeclaration node = parser.parseConstructorDeclaration();
-        checkNary(node, null, ASTAccessModifier.class,  ASTConstructorDeclarator.class, ASTConstructorInvocation.class, ASTBlock.class);
+        checkNary(node, CONSTRUCTOR, ASTAccessModifier.class,  ASTConstructorDeclarator.class, ASTConstructorInvocation.class, ASTBlock.class);
         node.collapseThenPrint();
     }
 
@@ -1158,7 +1327,7 @@ public class ParserClassesTest {
     public void testConstructorDeclarationSimple() {
         ClassesParser parser = new Parser(new Scanner("constructor(String s) { self.s = s; }")).getClassesParser();
         ASTConstructorDeclaration node = parser.parseConstructorDeclaration();
-        checkBinary(node, ASTConstructorDeclarator.class, ASTBlock.class);
+        checkBinary(node, CONSTRUCTOR, ASTConstructorDeclarator.class, ASTBlock.class);
         node.collapseThenPrint();
     }
 

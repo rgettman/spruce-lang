@@ -45,7 +45,7 @@ public class ASTDataType extends ASTParentNode {
         List<ASTNode> children = getChildren();
         ASTNode child = children.get(0);
         if (child instanceof ASTArrayType) {
-            throw new CompileException("Expected variable.");
+            throw new CompileException(child.getLocation(), "Expected variable.");
         }
         ASTDataTypeNoArray dtna = (ASTDataTypeNoArray) child;
         List<ASTNode> exprNameChildren = dtna.convertChildren();
