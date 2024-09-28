@@ -30,7 +30,7 @@ public class ParserTopLevelTest
     @Test
     public void testOrdinaryCompilationUnitEmpty()
     {
-        TopLevelParser parser = new Parser(new Scanner("")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("");
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
         checkEmpty(node, null);
         node.collapseThenPrint();
@@ -42,7 +42,7 @@ public class ParserTopLevelTest
     @Test
     public void testOrdinaryCompilationUnitFull()
     {
-        TopLevelParser parser = new Parser(new Scanner("namespace foo;\nuse project.Bar;\npublic class Baz<T> extends Bar<T> {}\nenum Light {RED, YELLOW, GREEN}")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("namespace foo;\nuse project.Bar;\npublic class Baz<T> extends Bar<T> {}\nenum Light {RED, YELLOW, GREEN}");
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
         checkTrinary(node, null, ASTNamespaceDeclaration.class, ASTUseDeclarationList.class, ASTTypeDeclarationList.class);
         node.collapseThenPrint();
@@ -54,7 +54,7 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationListOfUseDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.List;")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("use spruce.collections.List;");
         ASTUseDeclarationList node = parser.parseUseDeclarationList();
         checkSimple(node, ASTUseDeclaration.class);
         node.collapseThenPrint();
@@ -66,7 +66,7 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationListOfMultipleUseDeclarations()
     {
-        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.{List, ArrayList};\nuse spruce.reflection.*;\nuse shared spruce.test.Assertions.*;")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("use spruce.collections.{List, ArrayList};\nuse spruce.reflection.*;\nuse shared spruce.test.Assertions.*;");
         ASTUseDeclarationList node = parser.parseUseDeclarationList();
         checkList(node, null, ASTUseDeclaration.class, 3);
         node.collapseThenPrint();
@@ -78,7 +78,7 @@ public class ParserTopLevelTest
     @Test
     public void testNamespaceDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("namespace spruce.test.parser;")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("namespace spruce.test.parser;");
         ASTNamespaceDeclaration node = parser.parseNamespaceDeclaration();
         checkSimple(node, ASTNamespaceName.class, NAMESPACE);
         node.collapseThenPrint();
@@ -90,7 +90,7 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationOfUSAD()
     {
-        TopLevelParser parser = new Parser(new Scanner("use shared spruce.test.Assertions.*;")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.*;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
         checkSimple(node, ASTUseSharedAllDeclaration.class);
 
@@ -105,7 +105,7 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationOfUSTD()
     {
-        TopLevelParser parser = new Parser(new Scanner("use shared spruce.test.Assertions.assertEquals;")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.assertEquals;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
         checkSimple(node, ASTUseSharedTypeDeclaration.class);
 
@@ -120,7 +120,7 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationOfUSMD()
     {
-        TopLevelParser parser = new Parser(new Scanner("use shared spruce.test.Assertions.{assertEquals, assertTrue, assertFalse};")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.{assertEquals, assertTrue, assertFalse};");
         ASTUseDeclaration node = parser.parseUseDeclaration();
         checkSimple(node, ASTUseSharedMultDeclaration.class);
 
@@ -135,7 +135,7 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationOfUAD()
     {
-        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.*;")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("use spruce.collections.*;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
         checkSimple(node, ASTUseAllDeclaration.class);
 
@@ -150,7 +150,7 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationOfUTD()
     {
-        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.ArrayList;")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("use spruce.collections.ArrayList;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
         checkSimple(node, ASTUseTypeDeclaration.class);
 
@@ -165,7 +165,7 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationOfUMD()
     {
-        TopLevelParser parser = new Parser(new Scanner("use spruce.collections.{List, ArrayList, LinkedList};")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("use spruce.collections.{List, ArrayList, LinkedList};");
         ASTUseDeclaration node = parser.parseUseDeclaration();
         checkSimple(node, ASTUseMultDeclaration.class);
 
@@ -180,7 +180,7 @@ public class ParserTopLevelTest
     @Test
     public void testTypeDeclarationListOfTypeDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("class Foo {}")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("class Foo {}");
         ASTTypeDeclarationList node = parser.parseTypeDeclarationList();
         checkSimple(node, ASTTypeDeclaration.class);
         node.collapseThenPrint();
@@ -192,7 +192,7 @@ public class ParserTopLevelTest
     @Test
     public void testTypeDeclarationListOfMultipleTypeDeclarations()
     {
-        TopLevelParser parser = new Parser(new Scanner("class Foo {}\nenum Bar {CHOCOLATE, EXAM, SAND}\ninterface Baz {}")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("class Foo {}\nenum Bar {CHOCOLATE, EXAM, SAND}\ninterface Baz {}");
         ASTTypeDeclarationList node = parser.parseTypeDeclarationList();
         checkList(node, null, ASTTypeDeclaration.class, 3);
         node.collapseThenPrint();
@@ -204,7 +204,7 @@ public class ParserTopLevelTest
     @Test
     public void testTypeDeclarationOfClassDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("public abstract class Dummy<T> { abstract void test(); }")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("public abstract class Dummy<T> { abstract void test(); }");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
         checkSimple(node, ASTClassDeclaration.class);
         node.collapseThenPrint();
@@ -216,7 +216,7 @@ public class ParserTopLevelTest
     @Test
     public void testTypeDeclarationOfEnumDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("public shared enum TrafficLight {RED, YELLOW, GREEN}")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("public shared enum TrafficLight {RED, YELLOW, GREEN}");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
         checkSimple(node, ASTEnumDeclaration.class);
         node.collapseThenPrint();
@@ -228,7 +228,7 @@ public class ParserTopLevelTest
     @Test
     public void testTypeDeclarationOfInterfaceDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("protected shared interface Dummy { public void run();}")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("protected shared interface Dummy { public void run();}");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
         checkSimple(node, ASTInterfaceDeclaration.class);
         node.collapseThenPrint();
@@ -240,7 +240,7 @@ public class ParserTopLevelTest
     @Test
     public void testTypeDeclarationOfAnnotationDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("public shared annotation Spruce { String language();}")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("public shared annotation Spruce { String language();}");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
         checkSimple(node, ASTAnnotationDeclaration.class);
         node.collapseThenPrint();
@@ -252,9 +252,18 @@ public class ParserTopLevelTest
     @Test
     public void testTypeDeclarationOfRecordDeclaration()
     {
-        TopLevelParser parser = new Parser(new Scanner("internal record Redacted(String byWhom) { }")).getTopLevelParser();
+        TopLevelParser parser = getTopLevelParser("internal record Redacted(String byWhom) { }");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
         checkSimple(node, ASTRecordDeclaration.class);
         node.collapseThenPrint();
+    }
+
+    /**
+     * Helper method to get a <code>TopLevelParser</code> directly from code.
+     * @param code The code to test.
+     * @return A <code>TopLevelParser</code> that will parse the given code.
+     */
+    private static TopLevelParser getTopLevelParser(String code) {
+        return new Parser(new Scanner(code)).getTopLevelParser();
     }
 }

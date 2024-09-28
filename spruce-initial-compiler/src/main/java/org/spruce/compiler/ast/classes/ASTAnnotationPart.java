@@ -8,8 +8,9 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTAnnotationPart</code> is an annotation type
- * member declaration, a constant declaration, a class declaration, or an
- * interface declaration.</p>
+ * member declaration, a constant declaration, a class declaration, an
+ * interface declaration, an enum declaration, an annotation declaration,
+ * a record declaration, or an adt declaration.</p>
  *
  * <em>
  * AnnotationPart:<br>
@@ -18,7 +19,9 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration
+ * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
  * </em>
  */
 public class ASTAnnotationPart extends ASTParentNode {

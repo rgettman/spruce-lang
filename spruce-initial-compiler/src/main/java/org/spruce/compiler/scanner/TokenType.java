@@ -310,6 +310,10 @@ public enum TokenType {
      */
     ABSTRACT,
     /**
+     * Special class declaration as algebraic data type.
+     */
+    ADT,
+    /**
      * Special class declaration; instances applied to classes, constructors,
      * fields, methods with "@".
      */
@@ -323,6 +327,10 @@ public enum TokenType {
      */
     ASSERT,
     /**
+     * Variable takes the type of the expression assigned to it.
+     */
+    AUTO,
+    /**
      * Get out of current loop and don't start any more iterations.
      */
     BREAK,
@@ -330,6 +338,10 @@ public enum TokenType {
      * Case labels within switch statements.
      */
     CASE,
+    /**
+     * Catch an exception.
+     */
+    CATCH,
     /**
      * Declare a class.
      */
@@ -355,15 +367,15 @@ public enum TokenType {
      */
     DEFAULT,
     /**
-     * Do/while statement.
-     */
-    DO,
-    /**
      * Special class declaration; instances applied to classes, constructors,
      * fields, methods with "#".  Directives tell the compiler to do something:
      * generate boilerplate code, check for failing the compiler, etc.
      */
     DIRECTIVE,
+    /**
+     * Do/while statement.
+     */
+    DO,
     /**
      * else, else if.
      */
@@ -381,9 +393,17 @@ public enum TokenType {
      */
     FALLTHROUGH,
     /**
+     * The literal <code>false</code>.
+     */
+    FALSE,
+    /**
      * Can't extend class or can't override method.
      */
     FINAL,
+    /**
+     * Always executed.
+     */
+    FINALLY,
     /**
      * For statements, traditional and "enhanced".
      */
@@ -496,6 +516,18 @@ public enum TokenType {
      */
     TAKE,
     /**
+     * Throw an exception.
+     */
+    THROW,
+    /**
+     * The literal <code>true</code>.
+     */
+    TRUE,
+    /**
+     * Try a block of code that may throw an exception.
+     */
+    TRY,
+    /**
      * Allow simple names for identifiers not in same package or in spruce.lang.
      * Also used for "use statements" inside switch expressions.
      */
@@ -557,31 +589,7 @@ public enum TokenType {
     /**
      * 64-bit IEEE floating-point.
      */
-    DOUBLE,
-    /**
-     * Catch an exception.
-     */
-    CATCH,
-    /**
-     * Always executed.
-     */
-    FINALLY,
-    /**
-     * Throw an exception.
-     */
-    THROW,
-    /**
-     * Try a block of code that may throw an exception.
-     */
-    TRY,
-    /**
-     * The literal <code>true</code>.
-     */
-    TRUE,
-    /**
-     * The literal <code>false</code>.
-     */
-    FALSE;
+    DOUBLE;
 
     private static final Map<String, TokenType> LOOKUP;
 

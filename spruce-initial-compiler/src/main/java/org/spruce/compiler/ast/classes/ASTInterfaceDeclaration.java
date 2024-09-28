@@ -9,7 +9,7 @@ import org.spruce.compiler.scanner.Location;
 /**
  * <p>An <code>ASTInterfaceDeclaration</code> is an optional AccessModifier followed by
  * an optional InterfaceModifierList, then "interface", an Identifier, followed by
- * optional Type Parameters, optional ExtendsInterfaces, then an InterfaceBody.</p>
+ * optional Type Parameters, optional ExtendsInterfaces, optional Permits, then an InterfaceBody.</p>
  *
  * <em>
  * InterfaceDeclaration:<br>

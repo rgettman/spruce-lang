@@ -8,8 +8,9 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTInterfacePart</code> is a constant declaration, an interface
- * method declaration, a class declaration, an enum declaration, an annotation
- * declaration, or an interface declaration.</p>
+ * method declaration, a class declaration, an interface declaration, an enum
+ * declaration, an annotation declaration, a record declaration, or an adt
+ * declaration.</p>
  *
  * <em>
  * InterfacePart:<br>
@@ -18,7 +19,9 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration
+ * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
  * </em>
  */
 public class ASTInterfacePart extends ASTParentNode {

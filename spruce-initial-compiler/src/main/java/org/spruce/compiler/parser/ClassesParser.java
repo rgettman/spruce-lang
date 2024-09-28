@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 
 import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.classes.*;
 import org.spruce.compiler.ast.expressions.ASTPrimary;
 import org.spruce.compiler.ast.names.ASTExpressionName;
@@ -33,6 +35,45 @@ public class ClassesParser extends BasicParser {
      */
     public ClassesParser(Scanner scanner, Parser parser) {
         super(scanner, parser);
+    }
+
+    /**
+     * General method to parse a nested type and produce a "part" type.  Reduces
+     * code repetition because many different "part" nodes can contain any of
+     * the same list of nested types.
+     * @param loc The <code>Location</code>.
+     * @param accessMod An already parsed <code>ASTAccessModifier</code>, if it was found.
+     * @param genModList An already parsed <code>ASTGeneralModifierList</code>, if it was found.
+     * @param nodeFunction A <code>BiFunction</code> that takes a Location and a list of
+     *                     child nodes, and returns a parent node instance.
+     * @return An instance of the parent node desired.
+     * @param <T> The type of the parent node to create, e.g. <code>ASTClassPart</code>.
+     */
+    private <T extends ASTParentNode> T parseNestedType(Location loc, ASTAccessModifier accessMod, ASTGeneralModifierList genModList,
+                                                        BiFunction<? super Location, ? super List<ASTNode>, ? extends T> nodeFunction) {
+        return switch (curr().getType()) {
+            case CLASS ->
+                    nodeFunction.apply(loc, Collections.singletonList(parseClassDeclaration(loc, accessMod, genModList)));
+            case ENUM ->
+                    nodeFunction.apply(loc, Collections.singletonList(parseEnumDeclaration(loc, accessMod, genModList)));
+            case INTERFACE ->
+                    nodeFunction.apply(loc, Collections.singletonList(parseInterfaceDeclaration(loc, accessMod, genModList)));
+            case ANNOTATION ->
+                    nodeFunction.apply(loc, Collections.singletonList(parseAnnotationDeclaration(loc, accessMod, genModList)));
+            case RECORD -> {
+                if (genModList != null) {
+                    throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+                }
+                yield nodeFunction.apply(loc, Collections.singletonList(parseRecordDeclaration(loc, accessMod)));
+            }
+            case ADT -> {
+                if (genModList != null) {
+                    throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+                }
+                yield nodeFunction.apply(loc, Collections.singletonList(parseAdtDeclaration(loc, accessMod)));
+            }
+            default -> throw new CompileException(loc, "Expected a type declaration.");
+        };
     }
 
     /**
@@ -116,7 +157,7 @@ public class ClassesParser extends BasicParser {
     public ASTAnnotationPartList parseAnnotationPartList() {
         return parseMultiple(
                 t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
-                        ABSTRACT, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD,
+                        ABSTRACT, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
                         CONSTANT, IDENTIFIER)
                         .contains(t.getType()),
                 "Expected constant or element declaration.",
@@ -140,21 +181,9 @@ public class ClassesParser extends BasicParser {
             genModList = parseGeneralModifierList();
         }
 
-        // class/enum/interface/annotation
-        switch (curr().getType()) {
-        case CLASS:
-            return new ASTAnnotationPart(loc, Collections.singletonList(parseClassDeclaration(loc, accessMod, genModList)));
-        case ENUM:
-            return new ASTAnnotationPart(loc, Collections.singletonList(parseEnumDeclaration(loc, accessMod, genModList)));
-        case INTERFACE:
-            return new ASTAnnotationPart(loc, Collections.singletonList(parseInterfaceDeclaration(loc, accessMod, genModList)));
-        case ANNOTATION:
-            return new ASTAnnotationPart(loc, Collections.singletonList(parseAnnotationDeclaration(loc, accessMod, genModList)));
-        case RECORD:
-            if (genModList != null) {
-                throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
-            }
-            return new ASTAnnotationPart(loc, Collections.singletonList(parseRecordDeclaration(loc, accessMod)));
+        switch(curr().getType()) {
+        case CLASS, ENUM, INTERFACE, ANNOTATION, RECORD, ADT:
+            return parseNestedType(loc, accessMod, genModList, ASTAnnotationPart::new);
         }
 
         ASTTypeParameters typeParams = null;
@@ -430,6 +459,122 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
+     * Parses an <code>ASTAdtDeclaration</code>, given an already parsed
+     * <code>ASTAccessModifier</code>.
+     * @param loc The <code>Location</code>.
+     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @return An <code>ASTAdtDeclaration</code>.
+     */
+    public ASTAdtDeclaration parseAdtDeclaration(Location loc, ASTAccessModifier am) {
+        List<ASTNode> children = new ArrayList<>(6);
+        if (am != null) {
+            children.add(am);
+        }
+        if (accept(ADT) == null) {
+            throw new CompileException(curr().getLocation(), "Expected adt.");
+        }
+        children.add(getNamesParser().parseIdentifier());
+        if (isCurr(LESS_THAN)) {
+            children.add(getTypesParser().parseTypeParameters());
+        }
+        if (isCurr(EXTENDS)) {
+            children.add(parseExtendsInterfaces());
+        }
+        children.add(parseAdtBody());
+        ASTAdtDeclaration node = new ASTAdtDeclaration(loc, children);
+        node.setOperation(ADT);
+        return node;
+    }
+
+    /**
+     * Parses an <code>ASTAdtBody</code>.
+     * @return An <code>ASTAdtBody</code>.
+     */
+    public ASTAdtBody parseAdtBody() {
+        Location loc = curr().getLocation();
+        if (accept(OPEN_BRACE) == null) {
+            throw new CompileException(loc, "Expected '{'.");
+        }
+        List<ASTNode> children = new ArrayList<>(2);
+        children.add(parseVariantList());
+        if (isCurr(SEMICOLON)) {
+            children.add(parseAdtBodyDeclarations());
+        }
+        if (accept(CLOSE_BRACE) == null) {
+            throw new CompileException(loc, "Expected '}'.");
+        }
+        return new ASTAdtBody(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTVariantList</code>.
+     * @return An <code>ASTVariantList</code>.
+     */
+    public ASTVariantList parseVariantList() {
+        return parseList(
+                t -> test(t, IDENTIFIER),
+                "Expected a data type or a compact record declaration.",
+                COMMA,
+                this::parseVariant,
+                ASTVariantList::new
+        );
+    }
+
+    /**
+     * Parses an <code>ASTVariant</code>.
+     * @return An <code>ASTVariant</code>.
+     */
+    public ASTVariant parseVariant() {
+        Location loc = curr().getLocation();
+        if (!isCurr(IDENTIFIER)) {
+            throw new CompileException(loc, "Expected an identifier.");
+        }
+        switch(next().getType()) {
+            case DOT, COMMA, SEMICOLON, CLOSE_BRACE -> {
+                return new ASTVariant(loc, Arrays.asList(getTypesParser().parseDataType()));
+            }
+            default -> {
+                return new ASTVariant(loc, Arrays.asList(parseCompactRecordDeclaration()));
+            }
+        }
+    }
+
+    /**
+     * Parses an <code>ASTCompactRecordDeclaration</code>.
+     * @return An <code>ASTCompactRecordDeclaration</code>.
+     */
+    public ASTCompactRecordDeclaration parseCompactRecordDeclaration() {
+        Location loc = curr().getLocation();
+        if (!isCurr(IDENTIFIER)) {
+            throw new CompileException(loc, "Expected an identifier.");
+        }
+        List<ASTNode> children = new ArrayList<>(5);
+        children.add(getNamesParser().parseIdentifier());
+        if (isCurr(LESS_THAN)) {
+            children.add(getTypesParser().parseTypeParameters());
+        }
+        children.add(parseRecordHeader());
+        if (isCurr(IMPLEMENTS)) {
+            children.add(parseSuperinterfaces());
+        }
+        children.add(parseClassBody());
+        return new ASTCompactRecordDeclaration(loc, children);
+    }
+
+    /**
+     * Parses an <code>ASTAdtBodyDeclarations</code>.
+     * @return An <code>ASTAdtBodyDeclarations</code>.
+     */
+    public ASTAdtBodyDeclarations parseAdtBodyDeclarations() {
+        Location loc = curr().getLocation();
+        if (accept(SEMICOLON) == null) {
+            throw new CompileException(loc, "Expected ';'.");
+        }
+        List<ASTNode> children = Arrays.asList(parseInterfacePartList());
+        return new ASTAdtBodyDeclarations(loc, children);
+    }
+
+    /**
      * Parses an <code>ASTInterfaceDeclaration</code>.
      * @return An <code>ASTInterfaceDeclaration</code>.
      */
@@ -553,7 +698,7 @@ public class ClassesParser extends BasicParser {
     public ASTInterfacePartList parseInterfacePartList() {
         return parseMultiple(
                 t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
-                        ABSTRACT, OVERRIDE, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD,
+                        ABSTRACT, OVERRIDE, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
                         DEFAULT, MUT, CONSTANT, VOID, IDENTIFIER, LESS_THAN)
                         .contains(t.getType()),
                 "Expected constant or method declaration.",
@@ -577,21 +722,9 @@ public class ClassesParser extends BasicParser {
             genModList = parseGeneralModifierList();
         }
 
-        // class/enum/interface/annotation
-        switch (curr().getType()) {
-        case CLASS:
-            return new ASTInterfacePart(loc, Collections.singletonList(parseClassDeclaration(loc, accessMod, genModList)));
-        case ENUM:
-            return new ASTInterfacePart(loc, Collections.singletonList(parseEnumDeclaration(loc, accessMod, genModList)));
-        case INTERFACE:
-            return new ASTInterfacePart(loc, Collections.singletonList(parseInterfaceDeclaration(loc, accessMod, genModList)));
-        case ANNOTATION:
-            return new ASTInterfacePart(loc, Collections.singletonList(parseAnnotationDeclaration(loc, accessMod, genModList)));
-        case RECORD:
-            if (genModList != null) {
-                throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
-            }
-            return new ASTInterfacePart(loc, Collections.singletonList(parseRecordDeclaration(loc, accessMod)));
+        switch(curr().getType()) {
+        case CLASS, ENUM, INTERFACE, ANNOTATION, RECORD, ADT:
+            return parseNestedType(loc, accessMod, genModList, ASTInterfacePart::new);
         }
 
         ASTTypeParameters typeParams = null;
@@ -776,11 +909,11 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTEnumDeclaration</code>, given an already parsed
-     * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
+     * Parses an <code>ASTRecordDeclaration</code>, given an already parsed
+     * <code>ASTAccessModifier</code>.
      * @param loc The <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @return An <code>ASTEnumDeclaration</code>.
+     * @return An <code>ASTRecordDeclaration</code>.
      */
     public ASTRecordDeclaration parseRecordDeclaration(Location loc, ASTAccessModifier am) {
         List<ASTNode> children = new ArrayList<>(6);
@@ -1147,7 +1280,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTClassPartList parseClassPartList() {
         return parseMultiple(
-                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD,
+                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
                         ABSTRACT, OVERRIDE, SHARED, VOLATILE,
                         CONSTRUCTOR, MUT, CONSTANT, VOID, IDENTIFIER, LESS_THAN)
                         .contains(t.getType()),
@@ -1175,21 +1308,9 @@ public class ClassesParser extends BasicParser {
             genModList = parseGeneralModifierList();
         }
 
-        // class/enum/interface/annotation
         switch(curr().getType()) {
-        case CLASS:
-            return new ASTClassPart(loc, Collections.singletonList(parseClassDeclaration(loc, accessMod, genModList)));
-        case ENUM:
-            return new ASTClassPart(loc, Collections.singletonList(parseEnumDeclaration(loc, accessMod, genModList)));
-        case INTERFACE:
-            return new ASTClassPart(loc, Collections.singletonList(parseInterfaceDeclaration(loc, accessMod, genModList)));
-        case ANNOTATION:
-            return new ASTClassPart(loc, Collections.singletonList(parseAnnotationDeclaration(loc, accessMod, genModList)));
-        case RECORD:
-            if (genModList != null) {
-                throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
-            }
-            return new ASTClassPart(loc, Collections.singletonList(parseRecordDeclaration(loc, accessMod)));
+        case CLASS, ENUM, INTERFACE, ANNOTATION, RECORD, ADT:
+            return parseNestedType(loc, accessMod, genModList, ASTClassPart::new);
         }
 
         ASTTypeParameters typeParams = null;

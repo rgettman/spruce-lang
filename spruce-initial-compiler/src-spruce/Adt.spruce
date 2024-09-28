@@ -1,0 +1,21 @@
+// sugar: sealed interface Optional<T> permits None, Some
+public adt Optional<T> {
+    // None<T> implements Optional<T>, has same access modifier
+    None() {
+        !Override
+        public T get() {
+            throw new NoSuchElementException();
+        }
+    },
+    // Some<T> implements Optional<T>, has same access modifier
+    Some(T value) {
+        !Override
+        public T get() {
+            return value();
+        }
+    };
+
+    // could have constants, like interfaces.
+    public T get();
+    // could have default and shared methods, like interfaces.
+}

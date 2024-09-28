@@ -8,8 +8,9 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTClassPart</code> is a shared constructor, a constructor, a
- * field declaration, a method declaration, a class declaration, an enum
- * declaration, an annotation declaration, or an interface declaration.</p>
+ * field declaration, a method declaration, a class declaration, an interface
+ * declaration, an enum declaration, an annotation declaration, a record
+ * declaration, or an adt declaration.</p>
  *
  * <em>
  * ClassPart:<br>
@@ -20,7 +21,9 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration
+ * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
  * </em>
  */
 public class ASTClassPart extends ASTParentNode {

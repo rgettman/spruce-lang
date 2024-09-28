@@ -225,10 +225,10 @@ public class StatementsParser extends BasicParser {
      */
     public ASTLocalVariableType parseLocalVariableType() {
         Location loc = curr().getLocation();
-        if (isCurr(VAR)) {
-            accept(VAR);
+        if (isCurr(AUTO)) {
+            accept(AUTO);
             ASTLocalVariableType node = new ASTLocalVariableType(loc, Collections.emptyList());
-            node.setOperation(VAR);
+            node.setOperation(AUTO);
             return node;
         }
         else {

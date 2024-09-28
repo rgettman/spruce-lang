@@ -275,6 +275,34 @@ public class ScannerTest {
     }
 
     /**
+     * Test recognizing <code>adt</code>.
+     */
+    @Test
+    public void testAdt() {
+        String line = """
+                adt Optional<T> {
+                    None(),
+                    Some(T value)
+                }
+                """;
+        Scanner scanner = new Scanner(line);
+
+        List<Token> expectedTokens = Arrays.asList(
+                new Token(ADT, "adt"), new Token(IDENTIFIER, "Optional"),
+                new Token(LESS_THAN, "<"), new Token(IDENTIFIER, "T"),
+                new Token(GREATER_THAN, ">"), new Token(OPEN_BRACE, "{"),
+
+                new Token(IDENTIFIER, "None"), new Token(OPEN_PARENTHESIS, "("),
+                new Token(CLOSE_PARENTHESIS, ")"), new Token(COMMA, ","),
+
+                new Token(IDENTIFIER, "Some"), new Token(OPEN_PARENTHESIS, "("),
+                new Token(IDENTIFIER, "T"), new Token(IDENTIFIER, "value"),
+                new Token(CLOSE_PARENTHESIS, ")"), new Token(CLOSE_BRACE, "}")
+        );
+        compareToExpected(expectedTokens, scanner);
+    }
+
+    /**
      * Test recognizing <code>record</code>.
      */
     @Test
@@ -748,10 +776,10 @@ public class ScannerTest {
      */
     @Test
     public void testMapsTo() {
-        String line = "var map = { \"one\" : 1, \"two\" : 2 };";
+        String line = "auto map = { \"one\" : 1, \"two\" : 2 };";
 
         List<Token> expectedTokens = Arrays.asList(
-                new Token(VAR, "var"), new Token(IDENTIFIER, "map"),
+                new Token(AUTO, "auto"), new Token(IDENTIFIER, "map"),
                 new Token(EQUAL, "="), new Token(OPEN_BRACE, "{"), new Token(STRING_LITERAL, "one"),
                 new Token(COLON, ":"), new Token(INT_LITERAL, "1"), new Token(COMMA, ","),
                 new Token(STRING_LITERAL, "two"), new Token(COLON, ":"), new Token(INT_LITERAL, "2"),

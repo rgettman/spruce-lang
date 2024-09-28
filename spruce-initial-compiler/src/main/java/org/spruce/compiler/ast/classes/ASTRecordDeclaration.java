@@ -12,13 +12,13 @@ import org.spruce.compiler.scanner.Location;
  * optional Superinterfaces, then a ClassBody.</p>
  *
  * <em>
- * EnumDeclaration:<br>
+ * RecordDeclaration:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [ClassModifierList] record Identifier [TypeArguments] [Superinterfaces] ClassBody
  * </em>
  */
 public class ASTRecordDeclaration extends ASTParentNode {
     /**
-     * Constructs an <code>ASTEnumDeclaration</code> at the given <code>Location</code>
+     * Constructs an <code>ASTRecordDeclaration</code> at the given <code>Location</code>
      * and with the base and the index as its children.
      * @param children The child nodes.
      */

@@ -18,7 +18,7 @@ public class ParserLiteralsTest {
      */
     @Test
     public void testLiteralOfInteger() {
-        LiteralsParser parser = new Parser(new Scanner("1234")).getLiteralsParser();
+        LiteralsParser parser = getLiteralsParser("1234");
         ASTLiteral node = parser.parseLiteral();
         checkIs(node, ASTIntegerLiteral.class);
         ASTIntegerLiteral integerLiteral = (ASTIntegerLiteral) node;
@@ -31,7 +31,7 @@ public class ParserLiteralsTest {
      */
     @Test
     public void testLiteralOfFloatingPoint() {
-        LiteralsParser parser = new Parser(new Scanner("1234.5")).getLiteralsParser();
+        LiteralsParser parser = getLiteralsParser("1234.5");
         ASTLiteral node = parser.parseLiteral();
         checkIs(node, ASTFloatingPointLiteral.class);
         ASTFloatingPointLiteral floatingPointLiteral = (ASTFloatingPointLiteral) node;
@@ -44,7 +44,7 @@ public class ParserLiteralsTest {
      */
     @Test
     public void testLiteralOfCharacter() {
-        LiteralsParser parser = new Parser(new Scanner("'c'")).getLiteralsParser();
+        LiteralsParser parser = getLiteralsParser("'c'");
         ASTLiteral node = parser.parseLiteral();
         checkIs(node, ASTCharacterLiteral.class);
         ASTCharacterLiteral charLiteral = (ASTCharacterLiteral) node;
@@ -57,7 +57,7 @@ public class ParserLiteralsTest {
      */
     @Test
     public void testLiteralOfStringNormal() {
-        LiteralsParser parser = new Parser(new Scanner("\"s\\tring\"")).getLiteralsParser();
+        LiteralsParser parser = getLiteralsParser("\"s\\tring\"");
         ASTLiteral node = parser.parseLiteral();
         checkIs(node, ASTStringLiteral.class);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node;
@@ -70,7 +70,7 @@ public class ParserLiteralsTest {
      */
     @Test
     public void testLiteralOfStringEmpty() {
-        LiteralsParser parser = new Parser(new Scanner("\"\"")).getLiteralsParser();
+        LiteralsParser parser = getLiteralsParser("\"\"");
         ASTLiteral node = parser.parseLiteral();
         checkIs(node, ASTStringLiteral.class);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node;
@@ -87,7 +87,7 @@ public class ParserLiteralsTest {
                 \"""
                 "stri\\ng"\"""
                 """;
-        LiteralsParser parser = new Parser(new Scanner(str)).getLiteralsParser();
+        LiteralsParser parser = getLiteralsParser(str);
         ASTLiteral node = parser.parseLiteral();
         checkIs(node, ASTStringLiteral.class);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node;
@@ -100,7 +100,7 @@ public class ParserLiteralsTest {
      */
     @Test
     public void testLiteralOfBooleanTrue() {
-        LiteralsParser parser = new Parser(new Scanner("true")).getLiteralsParser();
+        LiteralsParser parser = getLiteralsParser("true");
         ASTLiteral node = parser.parseLiteral();
         checkIs(node, ASTBooleanLiteral.class);
         ASTBooleanLiteral boolLiteral = (ASTBooleanLiteral) node;
@@ -113,11 +113,20 @@ public class ParserLiteralsTest {
      */
     @Test
     public void testLiteralOfBooleanFalse() {
-        LiteralsParser parser = new Parser(new Scanner("false")).getLiteralsParser();
+        LiteralsParser parser = getLiteralsParser("false");
         ASTLiteral node = parser.parseLiteral();
         checkIs(node, ASTBooleanLiteral.class);
         ASTBooleanLiteral boolLiteral = (ASTBooleanLiteral) node;
         assertFalse(boolLiteral.getBooleanValue());
         node.print();
+    }
+
+    /**
+     * Helper method to get a <code>LiteralsParser</code> directly from code.
+     * @param code The code to test.
+     * @return A <code>LiteralsParser</code> that will parse the given code.
+     */
+    private static LiteralsParser getLiteralsParser(String code) {
+        return new Parser(new Scanner(code)).getLiteralsParser();
     }
 }

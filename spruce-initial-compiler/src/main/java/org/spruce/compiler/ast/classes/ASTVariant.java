@@ -7,22 +7,22 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTEnumBodyDeclarations</code> is a semicolon followed by an
- * optional class part list.</p>
+ * <p>An <code>ASTVariant</code> is a data type or a compact record declaration.</p>
  *
  * <em>
- * EnumBodyDeclarations:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;; [ClassPartList]
+ * Variant:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;DataType<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;CompactRecordDeclaration<br>
  * </em>
  */
-public class ASTEnumBodyDeclarations extends ASTParentNode {
+public class ASTVariant extends ASTParentNode {
     /**
-     * Constructs an <code>ASTEnumBodyDeclarations</code> at the given <code>Location</code>
+     * Constructs an <code>ASTVariant</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
      * @param children The child nodes.
      */
-    public ASTEnumBodyDeclarations(Location location, List<ASTNode> children) {
+    public ASTVariant(Location location, List<ASTNode> children) {
         super(location, children);
     }
 
