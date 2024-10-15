@@ -3,11 +3,18 @@ package org.spruce.compiler.ast.expressions;
 import java.util.Arrays;
 import java.util.List;
 
+import org.spruce.compiler.ast.ASTBinaryNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTUnaryNode;
 import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.scanner.TokenType;
+
+import static org.spruce.compiler.ast.ASTListNode.Type.EXPR_NAME_IDS;
+import static org.spruce.compiler.scanner.TokenType.OPEN_BRACKET;
 
 /**
  * <p>An <code>ASTPrimary</code> is a simple expression.</p>
@@ -28,27 +35,32 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodReference
  * </em>
  */
-public class ASTPrimary extends ASTParentNode {
+public class ASTPrimary extends ASTUnaryNode {
+
     /**
      * Constructs an <code>ASTPrimary</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * and the given child.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param first The only child node.
      */
-    public ASTPrimary(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTPrimary(Location location, ASTNode first) {
+        super(location, first);
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Constructs an <code>ASTPrimary</code> at the given <code>Location</code>,
+     * the given child, and the given operation.
+     * @param location The <code>Location</code>.
+     * @param first The only child node.
+     * @param operation The operation, as a <code>TokenType</code>.
      */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTPrimary(Location location, ASTNode first, TokenType operation) {
+        super(location, operation, first);
     }
 
     /**
+     * TODO: Pull implementation from ASTParentNode to here; this is the only place
+     * TODO: convertDescendant is called.  Must add test cases.
      * Looks for something that can be the child of an <code>ASTLeftHandSide</code>.
      * If found, creates and returns the <code>ASTLeftHandSide</code>.
      * @return The <code>ASTLeftHandSide</code>.
@@ -56,8 +68,15 @@ public class ASTPrimary extends ASTParentNode {
      *     <code>ASTLeftHandSide</code>.
      */
     public ASTLeftHandSide getLeftHandSide() {
-        return convertDescendant(Arrays.asList(ASTExpressionName.class, ASTElementAccess.class, ASTFieldAccess.class),
-                ASTLeftHandSide::new,
-                "Expected variable or element access.");
+        Location loc = getFirst().getLocation();
+        return switch (getFirst()) {
+            case ASTListNode exprName when exprName.getType() == EXPR_NAME_IDS ->
+                new ASTLeftHandSide(loc, Arrays.asList(exprName));
+            case ASTBinaryNode elementAccess when elementAccess.getOperation() == OPEN_BRACKET ->
+                new ASTLeftHandSide(loc, Arrays.asList(elementAccess));
+            case ASTFieldAccess fieldAccess ->
+                new ASTLeftHandSide(loc, Arrays.asList(fieldAccess));
+            default -> throw new CompileException(getLocation(), "Expected variable or element access.");
+        };
     }
 }

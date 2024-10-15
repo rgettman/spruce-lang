@@ -9,51 +9,71 @@ import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 
+import static org.spruce.compiler.scanner.TokenType.QUESTION_MARK;
+
 /**
  * <p>An <code>ASTConditionalExpression</code> is a logical or expression or
- * a logical or expression, '?', a logical or expression, ':', and another
- * conditional expression.</p>
+ * a logical or expression, '?', an expression, ':', and another expression.</p>
  *
  * <p>The operators associated with conditional expressions are right-associative.</p>
  *
  * <em>
  * ConditionalExpression:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression ? LogicalOrExpression : ConditionalExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
- * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression ? Expression : ConditionalExpression
+ * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression ? Expression : Expression<br>
  * </em>
  */
 public class ASTConditionalExpression extends ASTParentNode {
+    private final ASTNode myCondition;
+    private final ASTNode myExprIfTrue;
+    private final ASTNode myExprIfFalse;
+
     /**
      * Constructs an <code>ASTConditionalExpression</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * given a condition node, an expression if true, and an expression if false.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param condition The <code>ASTNode</code> representing the condition.
+     * @param exprIfTrue The <code>ASTNode</code> representing the expression value if true.
+     * @param exprIfFalse The <code>ASTNode</code> representing the expression value if false.
      */
-    public ASTConditionalExpression(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTConditionalExpression(Location location, ASTNode condition, ASTNode exprIfTrue, ASTNode exprIfFalse) {
+        super(location, Arrays.asList(condition, exprIfTrue, exprIfFalse), QUESTION_MARK);
+        myCondition = condition;
+        myExprIfTrue = exprIfTrue;
+        myExprIfFalse = exprIfFalse;
     }
 
     /**
-     * Looks for something that can be the child of an <code>ASTLeftHandSide</code>.
-     * If found, creates and returns the <code>ASTLeftHandSide</code>.
-     * @return The <code>ASTLeftHandSide</code>.
-     * @throws CompileException If no descendant node can be a child of an
-     *     <code>ASTLeftHandSide</code>.
-     */
-    public ASTLeftHandSide getLeftHandSide() {
-        return convertDescendant(Arrays.asList(ASTExpressionName.class, ASTElementAccess.class),
-                ASTLeftHandSide::new,
-                "Expected variable or element access.");
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * TODO: For removal when removing collapsing.
      */
     @Override
     public boolean isCollapsible() {
-        return true;
+        return false;
+    }
+
+    /**
+     * Returns the condition to be evaluated.
+     * @return An <code>ASTNode</code> representing the condition to be evaluated.
+     */
+    public ASTNode getCondition() {
+        return myCondition;
+    }
+
+    /**
+     * Returns the expression to be evaluated if the condition is <code>true</code>.
+     * @return An <code>ASTNode</code> representing the expression to be evaluated
+     *     if the condition is <code>true</code>.
+     */
+    public ASTNode getExprIfTrue() {
+        return myExprIfTrue;
+    }
+
+    /**
+     * Returns the expression to be evaluated if the condition is <code>false</code>.
+     * @return An <code>ASTNode</code> representing the expression to be evaluated
+     *      if the condition is <code>false</code>.
+     */
+    public ASTNode getExprIfFalse() {
+        return myExprIfFalse;
     }
 }

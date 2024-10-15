@@ -7,12 +7,11 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTSwitchExpressionBlock</code> is a "{", optionally a list of switch
+ * <p>An <code>ASTSwitchExpressionBlock</code> is a "{", followed by a list of switch
  * expression rules, followed by a "}".</p>
  *
  * <em>
  * SwitchExpressionBlock:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;{ }<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;{ SwitchExpressionRules }
  * </em>
  */

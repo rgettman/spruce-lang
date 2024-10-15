@@ -5,7 +5,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.names.ASTAmbiguousName;
 import org.spruce.compiler.ast.types.*;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
@@ -13,6 +15,7 @@ import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 import org.spruce.compiler.scanner.TokenType;
 
+import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
@@ -30,17 +33,20 @@ public class TypesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTIntersectionType</code>; they are left-
-     * associative with each other.
-     * @return An <code>ASTIntersectionType</code>.
+     * Parses an <code>IntersectionType</code>.
+     * <em>
+     * IntersectionType:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;DataType {& DataType}
+     * </em>
+     * @return An <code>ASTListNode</code> with type <code>INTERSECTION_TYPES</code>.
      */
-    public ASTIntersectionType parseIntersectionType() {
+    public ASTListNode parseIntersectionType() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
                 AMPERSAND,
                 this::parseDataType,
-                ASTIntersectionType::new
+                INTERSECTION_TYPES
         );
     }
 
@@ -55,7 +61,7 @@ public class TypesParser extends BasicParser {
         // arguments from turning this off too early.
         setInTypeContext(true);
         if (accept(LESS_THAN) != null) {
-            ASTTypeParameterList typeParamList = parseTypeParameterList();
+            ASTListNode typeParamList = parseTypeParameterList();
             if (accept(GREATER_THAN) == null) {
                 throw new CompileException(curr().getLocation(), "Expected \">\".");
             }
@@ -68,16 +74,20 @@ public class TypesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTTypeParameterList</code>.
-     * @return An <code>ASTTypeParameterList</code>.
+     * Parses a <code>TypeParameterList</code>.
+     * <em>
+     * TypeParameterList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;TypeParameter {, TypeParameter}
+     * </em>
+     * @return An <code>ASTListNode</code> with type <code>TYPE_PARAMETERS</code>.
      */
-    public ASTTypeParameterList parseTypeParameterList() {
+    public ASTListNode parseTypeParameterList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
                 COMMA,
                 this::parseTypeParameter,
-                ASTTypeParameterList::new
+                TYPE_PARAMETERS
         );
     }
 
@@ -117,7 +127,7 @@ public class TypesParser extends BasicParser {
      */
     public ASTDataType parseDataType() {
         Location loc = curr().getLocation();
-        ASTDataTypeNoArray dtna = parseDataTypeNoArray();
+        ASTListNode dtna = parseDataTypeNoArray();
         if (isCurr(OPEN_CLOSE_BRACKET)) {
             ASTDims dims = parseDims();
             ASTArrayType arrayType = new ASTArrayType(loc, Arrays.asList(dtna, dims));
@@ -135,7 +145,7 @@ public class TypesParser extends BasicParser {
     public ASTArrayType parseArrayType() {
         Location loc = curr().getLocation();
         if (isCurr(IDENTIFIER)) {
-            ASTDataTypeNoArray dtna = parseDataTypeNoArray();
+            ASTListNode dtna = parseDataTypeNoArray();
             if (isCurr(OPEN_CLOSE_BRACKET)) {
                 ASTDims dims = parseDims();
                 return new ASTArrayType(loc, Arrays.asList(dtna, dims));
@@ -178,31 +188,39 @@ public class TypesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTDataTypeNoArrayList</code>.
-     * @return An <code>ASTDataTypeNoArrayList</code>.
+     * Parses an <code>DataTypeNoArrayList</code>.
+     * <em>
+     * DataTypeNoArrayList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray {, DataTypeNoArray}
+     * </em>
+     * @return An <code>ASTListNode</code> of <code>DATA_TYPES_NO_ARRAY</code>.
      */
-    public ASTDataTypeNoArrayList parseDataTypeNoArrayList() {
+    public ASTListNode parseDataTypeNoArrayList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected a data type (no array).",
                 COMMA,
-                this::parseDataTypeNoArray,
-                ASTDataTypeNoArrayList::new
+                getTypesParser()::parseDataTypeNoArray,
+                DATA_TYPES_NO_ARRAY
         );
     }
 
     /**
-     * Parses an <code>ASTDataTypeNoArray</code>; they are left-associative
-     * with each other.
-     * @return An <code>ASTDataTypeNoArray</code>.
+     * Parses a <code>DataTypeNoArray</code>.
+     * <em>
+     * DataTypeNoArray:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;SimpleType<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray . SimpleType
+     * </em>
+     * @return An <code>ASTListNode</code> with type <code>SIMPLE_TYPES</code>.
      */
-    public ASTDataTypeNoArray parseDataTypeNoArray() {
-        return parseBinaryExpressionLeftAssociative(
+    public ASTListNode parseDataTypeNoArray() {
+        return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier",
-                Collections.singletonList(DOT),
+                DOT,
                 this::parseSimpleType,
-                ASTDataTypeNoArray::new
+                SIMPLE_TYPES
         );
     }
 
@@ -267,7 +285,7 @@ public class TypesParser extends BasicParser {
         // arguments from turning this off too early.
         setInTypeContext(true);
         if (accept(LESS_THAN) != null) {
-            ASTTypeArgumentList typeArgList = parseTypeArgumentList();
+            ASTListNode typeArgList = parseTypeArgumentList();
             if (accept(GREATER_THAN) == null) {
                 throw new CompileException(curr().getLocation(), "Expected \">\".");
             }
@@ -290,16 +308,21 @@ public class TypesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTTypeArgumentList</code>.
-     * @return An <code>ASTTypeArgumentList</code>.
+     * Parses a <code>TypeArgumentList</code>.
+     * <em>
+     * TypeArgumentList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;TypeArgument {, TypeArgument}
+     * </em>
+     * @return An <code>ASTListNode</code> with type <code>TYPE_ARGUMENTS</code>.
      */
-    public ASTTypeArgumentList parseTypeArgumentList() {
+    public ASTListNode parseTypeArgumentList() {
         return parseList(
                 TypesParser::isTypeArgument,
                 "Expected a type argument.",
                 COMMA,
                 this::parseTypeArgument,
-                ASTTypeArgumentList::new);
+                TYPE_ARGUMENTS
+        );
     }
 
     /**
@@ -359,5 +382,62 @@ public class TypesParser extends BasicParser {
         ASTWildcardBounds node = new ASTWildcardBounds(loc, Collections.singletonList(parseDataType()));
         node.setOperation(curr);
         return node;
+    }
+
+    /**
+     * Converts an Expression Name into a Type Name.
+     * @param exprName A <code>ASTListNode</code> with type <code>EXPR_NAME_IDS</code>.
+     * @return An <code>ASTListNode</code> with type <code>TYPE_NAME_IDS</code>.
+     */
+    public ASTListNode convertToTypeName(ASTListNode exprName) {
+        List<ASTNode> children = exprName.getChildren();
+        ASTNode child = children.get(0);
+        if (child instanceof ASTArrayType) {
+            throw new CompileException(child.getLocation(), "Expected variable.");
+        }
+        return new ASTListNode(exprName.getLocation(), exprName.getChildren(), TYPENAME_IDS);
+    }
+
+    /**
+     * Converts a Data Type into an Expression Name.
+     * @param dt A <code>ASTDataType</code>.
+     * @return An <code>ASTListNode</code> with type <code>EXPR_NAME_IDS</code>.
+     */
+    public ASTListNode convertToExpressionName(ASTDataType dt) {
+        List<ASTNode> children = dt.getChildren();
+        ASTNode child = children.get(0);
+        if (child instanceof ASTArrayType) {
+            throw new CompileException(child.getLocation(), "Expected variable.");
+        }
+        ASTListNode dtna = (ASTListNode) child;
+        List<ASTNode> exprNameChildren = convertChildren(dtna);
+        return new ASTListNode(dt.getLocation(), exprNameChildren, EXPR_NAME_IDS);
+    }
+
+    /**
+     * Converts the children from (DTNA, SimpleType) to (AmbiguousName, Identifier)
+     * or (SimpleType) to (Identifier).
+     * @param dtna An <code>ASTListName</code> of type <code>DATA_TYPES_NO_ARRAY</code>.
+     * @return A <code>List</code> of child nodes suitable for an
+     *     Ambiguous Name or an Expression Name.
+     */
+    public List<ASTNode> convertChildren(ASTListNode dtna) {
+        List<ASTNode> children = dtna.getChildren();
+        List<ASTNode> convertedChildren = new ArrayList<>(children.size());
+        for (ASTNode child : children) {
+            if (child instanceof ASTDataTypeNoArray inner) {
+                ASTAmbiguousName ambName = new ASTAmbiguousName(inner.getLocation(), inner.convertChildren());
+                ambName.setOperation(inner.getOperation());
+                convertedChildren.add(ambName);
+            }
+            else if (child instanceof ASTSimpleType st) {
+                List<ASTNode> stChildren = st.getChildren();
+                if (stChildren.size() > 1) {
+                    throw new CompileException(child.getLocation(), "Variable declarator expected after type.");
+                }
+                convertedChildren.add(stChildren.get(0)); // ASTIdentifier
+            }
+        }
+        return convertedChildren;
     }
 }

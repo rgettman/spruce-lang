@@ -6,20 +6,20 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.classes.*;
 import org.spruce.compiler.ast.expressions.ASTPrimary;
 import org.spruce.compiler.ast.names.ASTExpressionName;
-import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.ast.types.ASTDataType;
-import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.ast.types.ASTTypeParameters;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.TokenType;
 
+import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
@@ -43,13 +43,13 @@ public class ClassesParser extends BasicParser {
      * the same list of nested types.
      * @param loc The <code>Location</code>.
      * @param accessMod An already parsed <code>ASTAccessModifier</code>, if it was found.
-     * @param genModList An already parsed <code>ASTGeneralModifierList</code>, if it was found.
+     * @param genModList An already parsed General Modifier List, as an <code>ASTListNode</code>, if it was found.
      * @param nodeFunction A <code>BiFunction</code> that takes a Location and a list of
      *                     child nodes, and returns a parent node instance.
      * @return An instance of the parent node desired.
      * @param <T> The type of the parent node to create, e.g. <code>ASTClassPart</code>.
      */
-    private <T extends ASTParentNode> T parseNestedType(Location loc, ASTAccessModifier accessMod, ASTGeneralModifierList genModList,
+    private <T extends ASTParentNode> T parseNestedType(Location loc, ASTAccessModifier accessMod, ASTListNode genModList,
                                                         BiFunction<? super Location, ? super List<ASTNode>, ? extends T> nodeFunction) {
         return switch (curr().getType()) {
             case CLASS ->
@@ -104,10 +104,10 @@ public class ClassesParser extends BasicParser {
      * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
      * @param loc The <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List, as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @return An <code>ASTAnnotationDeclaration</code>.
      */
-    public ASTAnnotationDeclaration parseAnnotationDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms) {
+    public ASTAnnotationDeclaration parseAnnotationDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms) {
         List<ASTNode> children = new ArrayList<>(4);
         if (am != null) {
             children.add(am);
@@ -151,10 +151,14 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTAnnotationPartList</code>.
-     * @return An <code>ASTAnnotationPartList</code>.
+     * Parses an <code>AnnotationPartList</code>.
+     * <em>
+     * AnnotationPartList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationPart {AnnotationPart}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>ANNOTATION_PARTS</code>.
      */
-    public ASTAnnotationPartList parseAnnotationPartList() {
+    public ASTListNode parseAnnotationPartList() {
         return parseMultiple(
                 t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
                         ABSTRACT, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
@@ -162,7 +166,8 @@ public class ClassesParser extends BasicParser {
                         .contains(t.getType()),
                 "Expected constant or element declaration.",
                 this::parseAnnotationPart,
-                ASTAnnotationPartList::new
+                ANNOTATION_PARTS,
+                false
         );
     }
 
@@ -176,7 +181,7 @@ public class ClassesParser extends BasicParser {
         if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null) {
             accessMod = parseAccessModifier();
         }
-        ASTGeneralModifierList genModList = null;
+        ASTListNode genModList = null;
         if (isAcceptedOperator(Arrays.asList(ABSTRACT, CONSTANT, DEFAULT, OVERRIDE, SHARED)) != null) {
             genModList = parseGeneralModifierList();
         }
@@ -292,7 +297,7 @@ public class ClassesParser extends BasicParser {
         if (accept(AT_SIGN) == null) {
             throw new CompileException(curr().getLocation(), "Expected '@'.");
         }
-        ASTTypeName tn = getNamesParser().parseTypeName();
+        ASTListNode tn = getNamesParser().parseTypeName();
         if (isCurr(OPEN_PARENTHESIS)) {
             accept(OPEN_PARENTHESIS);
             if (isCurr(CLOSE_PARENTHESIS)) {
@@ -321,10 +326,10 @@ public class ClassesParser extends BasicParser {
      * Parses an <code>ASTMarkerAnnotation</code>, given an already parsed
      * <code>ASTTypeName</code>.
      * @param loc The <code>Location</code>.
-     * @param tn An already parsed <code>ASTTypeName</code>.
+     * @param tn An already parsed <code>ASTListNode</code> as a type name.
      * @return An <code>ASTMarkerAnnotation</code>.
      */
-    public ASTMarkerAnnotation parseMarkerAnnotation(Location loc, ASTTypeName tn) {
+    public ASTMarkerAnnotation parseMarkerAnnotation(Location loc, ASTListNode tn) {
         List<ASTNode> children = new ArrayList<>(1);
         children.add(tn);
         ASTMarkerAnnotation node = new ASTMarkerAnnotation(loc, children);
@@ -336,10 +341,10 @@ public class ClassesParser extends BasicParser {
      * Parses an <code>ASTSingleElementAnnotation</code>, given an already parsed
      * <code>ASTTypeName</code>.  An open parenthesis ('(') has already been consumed.
      * @param loc The <code>Location</code>.
-     * @param tn An already parsed <code>ASTTypeName</code>.
+     * @param tn An already parsed <code>ASTListNode</code> as a type name.
      * @return An <code>ASTSingleElementAnnotation</code>.
      */
-    public ASTSingleElementAnnotation parseSingleElementAnnotation(Location loc, ASTTypeName tn) {
+    public ASTSingleElementAnnotation parseSingleElementAnnotation(Location loc, ASTListNode tn) {
         List<ASTNode> children = new ArrayList<>(2);
         children.add(tn);
         children.add(parseElementValue());
@@ -355,10 +360,10 @@ public class ClassesParser extends BasicParser {
      * Parses an <code>ASTNormalAnnotation</code>, given an already parsed
      * <code>ASTTypeName</code>.  An open parenthesis ('(') has already been consumed.
      * @param loc The <code>Location</code>.
-     * @param tn An already parsed <code>ASTTypeName</code>.
+     * @param tn An already parsed <code>ASTListNode</code> as a type name.
      * @return An <code>ASTNormalAnnotation</code>.
      */
-    public ASTNormalAnnotation parseNormalAnnotation(Location loc, ASTTypeName tn) {
+    public ASTNormalAnnotation parseNormalAnnotation(Location loc, ASTListNode tn) {
         List<ASTNode> children = new ArrayList<>(2);
         children.add(tn);
         if (!isCurr(CLOSE_PARENTHESIS)) {
@@ -373,16 +378,21 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTElementValuePairList</code>.
-     * @return An <code>ASTElementValuePairList</code>.
+     * Parses an <code>ElementValuePairList</code>.
+     * <em>
+     * ElementValuePairList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ElementValuePair {, ElementValuePair}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code></code>.
      */
-    public ASTElementValuePairList parseElementValuePairList() {
+    public ASTListNode parseElementValuePairList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected identifier.",
                 COMMA,
                 this::parseElementValuePair,
-                ASTElementValuePairList::new
+                ELEMENT_VALUE_PAIRS,
+                false
         );
     }
 
@@ -425,16 +435,21 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTElementValueList</code>.
-     * @return An <code>ASTElementValueList</code>.
+     * Parses an <code>ElementValueList</code>.
+     * <em>
+     * ElementValueList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ElementValue {, ElementValue}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>ELEMENT_VALUES</code>.
      */
-    public ASTElementValueList parseElementValueList() {
+    public ASTListNode parseElementValueList() {
         return parseList(
                 ExpressionsParser::isPrimary,
                 "Expected value.",
                 COMMA,
                 this::parseElementValue,
-                ASTElementValueList::new
+                ELEMENT_VALUES,
+                false
         );
     }
 
@@ -507,16 +522,21 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTVariantList</code>.
-     * @return An <code>ASTVariantList</code>.
+     * Parses a <code>VariantList</code>.
+     * <em>
+     * VariantList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;Variant {, Variant}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>VARIANTS</code>.
      */
-    public ASTVariantList parseVariantList() {
+    public ASTListNode parseVariantList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected a data type or a compact record declaration.",
                 COMMA,
                 this::parseVariant,
-                ASTVariantList::new
+                VARIANTS,
+                false
         );
     }
 
@@ -608,13 +628,13 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTInterfaceDeclaration</code>, given an already parsed
-     * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
+     * <code>ASTAccessModifier</code> and general modifier list.
      * @param loc The <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @return An <code>ASTInterfaceDeclaration</code>.
      */
-    public ASTInterfaceDeclaration parseInterfaceDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms) {
+    public ASTInterfaceDeclaration parseInterfaceDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms) {
         List<ASTNode> children = new ArrayList<>(6);
         if (am != null) {
             children.add(am);
@@ -665,7 +685,7 @@ public class ClassesParser extends BasicParser {
         if (accept(EXTENDS) == null) {
             throw new CompileException(curr().getLocation(), "Expected extends.");
         }
-        ASTExtendsInterfaces node = new ASTExtendsInterfaces(loc, Collections.singletonList(parseDataTypeNoArrayList()));
+        ASTExtendsInterfaces node = new ASTExtendsInterfaces(loc, Collections.singletonList(getTypesParser().parseDataTypeNoArrayList()));
         node.setOperation(EXTENDS);
         return node;
     }
@@ -692,10 +712,14 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTInterfacePartList</code>.
-     * @return An <code>ASTInterfacePartList</code>.
+     * Parses an <code>InterfacePartList</code>.
+     * <em>
+     * InterfacePartList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;InterfacePart {InterfacePart}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>INTERFACE_PARTS</code>.
      */
-    public ASTInterfacePartList parseInterfacePartList() {
+    public ASTListNode parseInterfacePartList() {
         return parseMultiple(
                 t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
                         ABSTRACT, OVERRIDE, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
@@ -703,7 +727,8 @@ public class ClassesParser extends BasicParser {
                         .contains(t.getType()),
                 "Expected constant or method declaration.",
                 this::parseInterfacePart,
-                ASTInterfacePartList::new
+                INTERFACE_PARTS,
+                false
         );
     }
 
@@ -717,7 +742,7 @@ public class ClassesParser extends BasicParser {
         if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null) {
             accessMod = parseAccessModifier();
         }
-        ASTGeneralModifierList genModList = null;
+        ASTListNode genModList = null;
         if (isAcceptedOperator(Arrays.asList(ABSTRACT, CONSTANT, DEFAULT, OVERRIDE, SHARED)) != null) {
             genModList = parseGeneralModifierList();
         }
@@ -769,16 +794,16 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTInterfaceMethodDeclaration</code>, given optionally already
-     * parsed productions: <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>,
+     * parsed productions: <code>ASTAccessModifier</code>, General Modifier List,
      * <code>ASTTypeParameters</code>.
      * @param loc The starting <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @param tps An already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
      * @param dt An already parsed <code>ASTDataType</code>, present.
      * @return An <code>ASTInterfaceMethodDeclaration</code>.
      */
-    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTTypeParameters tps, ASTDataType dt) {
+    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms, ASTTypeParameters tps, ASTDataType dt) {
         List<ASTNode> children = new ArrayList<>(4);
         if (am != null) {
             children.add(am);
@@ -800,15 +825,15 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTInterfaceMethodDeclaration</code>, given optionally already
-     * parsed productions: <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>,
+     * parsed productions: <code>ASTAccessModifier</code>, GeneralModifierList,
      * <code>ASTTypeParameters</code>.
      * @param loc The starting <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @param tps An already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
      * @return An <code>ASTInterfaceMethodDeclaration</code>.
      */
-    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTTypeParameters tps) {
+    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms, ASTTypeParameters tps) {
         List<ASTNode> children = new ArrayList<>(4);
         if (am != null) {
             children.add(am);
@@ -865,15 +890,15 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTConstantDeclaration</code>, given an already parsed
-     * <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>, and
+     * <code>ASTAccessModifier</code>, GeneralModifierList, and
      * <code>ASTDataType</code>.
      * @param loc The given <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @param dt An already parsed <code>ASTAccessModifier</code>, present.
      * @return An <code>ASTConstantDeclaration</code>.
      */
-    public ASTConstantDeclaration parseConstantDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTDataType dt) {
+    public ASTConstantDeclaration parseConstantDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms, ASTDataType dt) {
         List<ASTNode> children = new ArrayList<>(4);
         if (am != null) {
             children.add(am);
@@ -1005,13 +1030,13 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTEnumDeclaration</code>, given an already parsed
-     * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
+     * <code>ASTAccessModifier</code> and GeneralModifierList.
      * @param loc The <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @return An <code>ASTEnumDeclaration</code>.
      */
-    public ASTEnumDeclaration parseEnumDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms) {
+    public ASTEnumDeclaration parseEnumDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms) {
         List<ASTNode> children = new ArrayList<>(5);
         if (am != null) {
             children.add(am);
@@ -1073,16 +1098,21 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTEnumConstantList</code>.
-     * @return An <code>ASTEnumConstantList</code>.
+     * Parses an <code>EnumConstantList</code>.
+     * <em>
+     * EnumConstantList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;EnumConstant {, EnumConstant}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code></code>.
      */
-    public ASTEnumConstantList parseEnumConstantList() {
+    public ASTListNode parseEnumConstantList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected enum constant identifier.",
                 COMMA,
                 this::parseEnumConstant,
-                ASTEnumConstantList::new
+                ENUM_CONSTANTS,
+                false
         );
     }
 
@@ -1146,13 +1176,13 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTClassDeclaration</code>, given an already parsed
-     * <code>ASTAccessModifier</code> and <code>ASTGeneralModifierList</code>.
+     * <code>ASTAccessModifier</code> and GeneralModifierList.
      * @param loc The <code>Location</code>.
-     * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param am An already parsed General Modifier List as an <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @return An <code>ASTClassDeclaration</code>.
      */
-    public ASTClassDeclaration parseClassDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms) {
+    public ASTClassDeclaration parseClassDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms) {
         List<ASTNode> children = new ArrayList<>(7);
         if (am != null) {
             children.add(am);
@@ -1195,7 +1225,7 @@ public class ClassesParser extends BasicParser {
         if (accept(PERMITS) == null) {
             throw new CompileException(curr().getLocation(), "Expected permits.");
         }
-        ASTPermits node = new ASTPermits(loc, Collections.singletonList(parseDataTypeNoArrayList()));
+        ASTPermits node = new ASTPermits(loc, Collections.singletonList(getTypesParser().parseDataTypeNoArrayList()));
         node.setOperation(PERMITS);
         return node;
     }
@@ -1209,23 +1239,9 @@ public class ClassesParser extends BasicParser {
         if (accept(IMPLEMENTS) == null) {
             throw new CompileException(curr().getLocation(), "Expected implements.");
         }
-        ASTSuperinterfaces node = new ASTSuperinterfaces(loc, Collections.singletonList(parseDataTypeNoArrayList()));
+        ASTSuperinterfaces node = new ASTSuperinterfaces(loc, Collections.singletonList(getTypesParser().parseDataTypeNoArrayList()));
         node.setOperation(IMPLEMENTS);
         return node;
-    }
-
-    /**
-     * Parses an <code>ASTDataTypeNoArrayList</code>.
-     * @return An <code>ASTDataTypeNoArrayList</code>.
-     */
-    public ASTDataTypeNoArrayList parseDataTypeNoArrayList() {
-        return parseList(
-                t -> test(t, IDENTIFIER),
-                "Expected a data type (no array).",
-                COMMA,
-                getTypesParser()::parseDataTypeNoArray,
-                ASTDataTypeNoArrayList::new
-        );
     }
 
     /**
@@ -1275,10 +1291,14 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTClassPartList</code>.
-     * @return An <code>ASTClassPartList</code>.
+     * Parses a <code>ClassPartList</code>.
+     * <em>
+     * ClassPartList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ClassPart {ClassPart}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>CLASS_PARTS</code>.
      */
-    public ASTClassPartList parseClassPartList() {
+    public ASTListNode parseClassPartList() {
         return parseMultiple(
                 t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
                         ABSTRACT, OVERRIDE, SHARED, VOLATILE,
@@ -1286,7 +1306,8 @@ public class ClassesParser extends BasicParser {
                         .contains(t.getType()),
                 "Expected constructor, field, or method declaration.",
                 this::parseClassPart,
-                ASTClassPartList::new
+                CLASS_PARTS,
+                false
         );
     }
 
@@ -1303,7 +1324,7 @@ public class ClassesParser extends BasicParser {
         if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null) {
             accessMod = parseAccessModifier();
         }
-        ASTGeneralModifierList genModList = null;
+        ASTListNode genModList = null;
         if (isAcceptedOperator(Arrays.asList(ABSTRACT, CONSTANT, OVERRIDE, SHARED, VOLATILE)) != null) {
             genModList = parseGeneralModifierList();
         }
@@ -1390,16 +1411,16 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTConstructorDeclaration</code>, given optionally already
-     * parsed productions: <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>,
+     * parsed productions: <code>ASTAccessModifier</code>, GeneralModifierList,
      * <code>ASTTypeParameters</code>.
      *
      * @param loc The starting <code>Location</code>.
      * @param am  An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @param tps An already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
      * @return An <code>ASTMethodDeclaration</code>.
      */
-    public ASTConstructorDeclaration parseConstructorDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTTypeParameters tps) {
+    public ASTConstructorDeclaration parseConstructorDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms, ASTTypeParameters tps) {
         List<ASTNode> children = new ArrayList<>(5);
         if (am != null) {
             children.add(am);
@@ -1584,15 +1605,15 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTFieldDeclaration</code>, given an already parsed
-     * <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>, and
+     * <code>ASTAccessModifier</code>, GeneralModifierList, and
      * <code>ASTDataType</code>.
      * @param loc The given <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @param dt An already parsed <code>ASTAccessModifier</code>, present.
      * @return An <code>ASTFieldDeclaration</code>.
      */
-    public ASTFieldDeclaration parseFieldDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTDataType dt) {
+    public ASTFieldDeclaration parseFieldDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms, ASTDataType dt) {
         List<ASTNode> children = new ArrayList<>(4);
         if (am != null) {
             children.add(am);
@@ -1646,15 +1667,15 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTMethodDeclaration</code>, given optionally already
-     * parsed productions: <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>,
+     * parsed productions: <code>ASTAccessModifier</code>, GeneralModifierList,
      * <code>ASTTypeParameters</code>.
      * @param loc The starting <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @param tps An already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
      * @return An <code>ASTMethodDeclaration</code>.
      */
-    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTTypeParameters tps) {
+    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms, ASTTypeParameters tps) {
         List<ASTNode> children = new ArrayList<>(4);
         if (am != null) {
             children.add(am);
@@ -1681,16 +1702,16 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>ASTMethodDeclaration</code>, given optionally already
-     * parsed productions: <code>ASTAccessModifier</code>, <code>ASTGeneralModifierList</code>,
+     * parsed productions: <code>ASTAccessModifier</code>, GeneralModifierList,
      * <code>ASTTypeParameters</code>.
      * @param loc The starting <code>Location</code>.
      * @param am An already parsed <code>ASTAccessModifier</code>.  If not present, <code>null</code>.
-     * @param gms An already parsed <code>ASTGeneralModifierList</code>.  If not present, <code>null</code>.
+     * @param gms An already parsed General Modifier List as an <code>ASTListNode</code>.  If not present, <code>null</code>.
      * @param tps An already parsed <code>ASTTypeParameters</code>.  If not present, <code>null</code>.
      * @param dt An already parsed <code>ASTDataType</code>, present.
      * @return An <code>ASTMethodDeclaration</code>.
      */
-    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAccessModifier am, ASTGeneralModifierList gms, ASTTypeParameters tps, ASTDataType dt) {
+    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAccessModifier am, ASTListNode gms, ASTTypeParameters tps, ASTDataType dt) {
         List<ASTNode> children = new ArrayList<>(4);
         if (am != null) {
             children.add(am);
@@ -1755,15 +1776,20 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTGeneralModifierList</code>.
-     * @return An <code>ASTGeneralModifierList</code>.
+     * Parses a <code>GeneralModifierList</code>.
+     * <em>
+     * GeneralModifierList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;GeneralModifier {GeneralModifier}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>GENERAL_MODIFIERS</code>.
      */
-    public ASTGeneralModifierList parseGeneralModifierList() {
+    public ASTListNode parseGeneralModifierList() {
         return parseMultiple(
                 t -> test(t, ABSTRACT, FINAL, MUT, VAR, CONSTANT, DEFAULT, OVERRIDE, SEALED, SHARED, VOLATILE),
                 "Expected a general modifier.",
                 this::parseGeneralModifier,
-                ASTGeneralModifierList::new
+                GENERAL_MODIFIERS,
+                false
         );
     }
 
@@ -1893,16 +1919,21 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTFormalParameterList</code>.
-     * @return An <code>ASTFormalParameterList</code>.
+     * Parses a <code>FormalParameterList</code>.
+     * <em>
+     * FormalParameterList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;FormalParameter {, FormalParameter}
+     * </em
+     * @return An <code>ASTListNode</code>.
      */
-    public ASTFormalParameterList parseFormalParameterList() {
-        ASTFormalParameterList node = parseList(
+    public ASTListNode parseFormalParameterList() {
+        ASTListNode node = parseList(
                 t -> test(t, IDENTIFIER, MUT, VAR),
                 "Expected data type",
                 COMMA,
                 this::parseFormalParameter,
-                ASTFormalParameterList::new
+                FORMAL_PARAMETERS,
+                false
         );
 
         // Enforce varargs parameter must be last.

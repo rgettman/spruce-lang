@@ -10,7 +10,7 @@ import org.spruce.compiler.scanner.Location;
  * <p>An <code>ASTNamespaceName</code> is a node representing a namespace name.</p>
  *
  * <em>
- * PackageName:<br>
+ * NamespaceName:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceName . Identifier
  * </em>

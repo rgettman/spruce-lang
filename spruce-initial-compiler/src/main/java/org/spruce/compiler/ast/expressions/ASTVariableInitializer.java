@@ -12,7 +12,7 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * VariableInitializer:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionNoIncrDecr<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;Expression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ArrayInitializer
  * </em>
  */

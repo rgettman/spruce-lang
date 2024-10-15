@@ -18,7 +18,7 @@ public class ParserTestUtility {
      * @param expectedClasses A <code>List</code> of expected <code>Class</code>es.
      * @param children A <code>List</code> of child <code>ASTNode</code>s.
      */
-    static void compareClasses(List<Class<?>> expectedClasses, List<ASTNode> children) {
+    static void compareClasses(List<Class<?>> expectedClasses, List<? extends ASTNode> children) {
         assertEquals(expectedClasses.size(), children.size());
         for (int i = 0; i < children.size(); i++) {
             ASTNode child = children.get(i);
@@ -46,6 +46,20 @@ public class ParserTestUtility {
      */
     static void checkIs(ASTNode node, Class<? extends ASTNode> childClass) {
         assertTrue(childClass.isInstance(node));
+    }
+
+    /**
+     * Fails the test if the given node is <em>not</em> an instance of the
+     * given class.  If it is, this method casts the given node to the given
+     * class.
+     * @param node An <code>ASTNode</code>.
+     * @param nodeClass The node should be an instance of this <code>Class</code>.
+     * @return The node, down-casted to an instance of the given class.
+     * @param <T> The type to cast to.
+     */
+    static <T extends ASTNode> T ensureIsa(ASTNode node, Class<T> nodeClass) {
+        assertInstanceOf(nodeClass, node);
+        return nodeClass.cast(node);
     }
 
     /**
@@ -86,6 +100,35 @@ public class ParserTestUtility {
     }
 
     /**
+     * Helper method to test the simple node relationship:
+     *                     unary
+     *                       |
+     *                     child
+     * @param node The <code>UnaryNode</code> to check.
+     * @param childClass The expected class of the child node.
+     */
+    static void checkUnary(ASTUnaryNode node, Class<? extends ASTNode> childClass) {
+        assertNull(node.getOperation());
+        ASTNode child = node.getFirst();
+        assertTrue(childClass.isInstance(child));
+    }
+
+    /**
+     * Helper method to test the simple node relationship:
+     *                  unary(operation)
+     *                       |
+     *                     child
+     * @param node The <code>UnaryNode</code> to check.
+     * @param operation The expected operation for the unary node.
+     * @param childClass The expected class of the child node.
+     */
+    static void checkUnary(ASTUnaryNode node, TokenType operation, Class<? extends ASTNode> childClass) {
+        assertEquals(operation, node.getOperation());
+        ASTNode child = node.getFirst();
+        assertTrue(childClass.isInstance(child));
+    }
+
+    /**
      * Helper method to test the unary node relationship:
      *                  parent(operation)
      *                    |
@@ -98,18 +141,13 @@ public class ParserTestUtility {
      * @param node The parent node to check.
      * @param childClass The class of the child node.
      */
-    static void checkUnary(ASTParentNode node, TokenType expectedOperation,
-                           Class<? extends ASTParentNode> nodeClass, Class<? extends ASTNode> childClass) {
+    static <U extends ASTUnaryNode, C extends ASTNode> void checkUnary(ASTUnaryNode node, TokenType expectedOperation,
+                           Class<U> nodeClass, Class<C> childClass) {
         assertEquals(expectedOperation, node.getOperation());
-        List<ASTNode> children = node.getChildren();
-        assertEquals(1, children.size());
-        assertTrue(nodeClass.isInstance(children.get(0)));
+        U child = ensureIsa(node.getFirst(), nodeClass);
 
-        ASTParentNode child = (ASTParentNode) children.get(0);
         assertNull(child.getOperation());
-        children = child.getChildren();
-        assertEquals(1, children.size());
-        assertTrue(childClass.isInstance(children.get(0)));
+        assertInstanceOf(childClass, child.getFirst());
     }
 
     /**
@@ -121,7 +159,6 @@ public class ParserTestUtility {
      *               ...   child
      *               /
      *            child
-     *
      * The parent nodes are expected to have the given operations, and every child
      * is expected to have no operation.
      * @param node The parent node to check.
@@ -134,70 +171,120 @@ public class ParserTestUtility {
     static void checkBinaryLeftAssociative(ASTParentNode node, List<TokenType> expectedOperations,
                                            Class<? extends ASTParentNode> nodeClass, Class<? extends ASTNode> childClass) {
         ASTParentNode child = node;
-        List<ASTNode> children = node.getChildren();
+        //List<ASTNode> children = Arrays.asList(node.getFirst(), node.getSecond());
 
         for (TokenType operation : expectedOperations) {
             assertEquals(operation, child.getOperation());
-            children = child.getChildren();
-            assertEquals(2, children.size());
+            ASTBinaryNode binary = ensureIsa(child, ASTBinaryNode.class);
+            List<ASTNode> children = Arrays.asList(binary.getFirst(), binary.getSecond());
             List<Class<?>> expectedClasses = Arrays.asList(nodeClass, childClass);
             compareClasses(expectedClasses, children);
-            child = (ASTParentNode) children.get(0);
+            child = (ASTParentNode) binary.getFirst();
         }
 
-        child = (ASTParentNode) children.get(0);
         assertNull(child.getOperation());
-        children = child.getChildren();
-        assertEquals(1, children.size());
-        assertTrue(childClass.isInstance(children.get(0)));
+        assertInstanceOf(childClass, child);
+    }
+
+    /**
+     * Helper method to test the multi-level binary node by implementing a
+     * postorder traversal to check classes of leaf nodes and operations of
+     * binary (non-leaf) nodes.
+     *                          binary(op3)
+     *                           /    \
+     *                  binary(op2)   leaf(value4)
+     *                  /        \
+     *        leaf(value1)      binary(op1)
+     *                          /       \
+     *              leaf(value2)        leaf(value3)
+     * <em>value1 value2 value3 op1 op2 value4 op3</em>
+     * @param node An <code>ASTBinaryNode</code>.
+     * @param expected The postorder nodes that are expected, consisting of either
+     *                 <code>Class&lt;?&gt;</code> objects of leaf nodes or
+     *                 <code>TokenType</code>s representing binary node operations.
+     */
+    static void checkBinaryPostorder(ASTBinaryNode node, Object... expected) {
+        checkBinaryPostorder(node, 0, expected);
+    }
+
+    /**
+     * Helper method to implement binary node postorder traversal check.
+     * @param node An <code>ASTBinaryNode</code>.
+     * @param index The current index of postorder nodes to check.
+     * @param expected The postorder nodes that are expected, consisting of either
+     *                 <code>Class&lt;?&gt;</code> objects of leaf nodes or
+     *                 <code>TokenType</code>s representing binary node operations.
+     * @return The current index after checking <code>node</code>.
+     */
+    private static int checkBinaryPostorder(ASTBinaryNode node, int index, Object... expected) {
+        ASTNode left = node.getFirst();
+        ASTNode right = node.getSecond();
+
+        if (left instanceof ASTBinaryNode parent) {
+            index = checkBinaryPostorder(parent, index, expected);
+        }
+        else if (expected[index] instanceof Class<?> leaf) {
+            assertEquals(leaf, left.getClass());
+            index++;
+        }
+        else {
+            fail("Expected a " + expected[index] + ", got a " + left.getClass() + "!");
+        }
+
+        if (right instanceof ASTBinaryNode parent) {
+            index = checkBinaryPostorder(parent, index, expected);
+        }
+        else if (expected[index] instanceof Class<?> leaf) {
+            assertEquals(leaf, right.getClass());
+            index++;
+        }
+        else {
+            fail("Expected a " + expected[index] + ", got a " + right.getClass() + "!");
+        }
+
+        if (expected[index] instanceof TokenType operation) {
+            assertEquals(operation, node.getOperation());
+        } else {
+            fail("Expected " + expected[index] + ", got a " + node.getOperation());
+        }
+        return index + 1;
+    }
+
+    /**
+     * Helper method to test the binary node relationship:<code>
+     *                 binary(operation)
+     *                   /        \
+     *               child1     child2
+     * </code>
+     * The binary node is expected to have the given operation, and the
+     * children are expected to be of the given classes.
+     * @param node The <code>BinaryNode</code> to check.
+     * @param operation The expected operation for the unary node.
+     * @param firstClass The class of the first child node.
+     * @param secondClass The class of the second child node.
+     */
+    static void checkBinary(ASTBinaryNode node, TokenType operation,
+                            Class<? extends ASTNode> firstClass, Class<? extends ASTNode> secondClass) {
+        assertEquals(operation, node.getOperation());
+        List<Class<?>> expectedClasses = Arrays.asList(firstClass, secondClass);
+        compareClasses(expectedClasses, Arrays.asList(node.getFirst(), node.getSecond()));
     }
 
     /**
      * Helper method to test the binary node relationship:
-     *                 parent(operation)
-     *                   /            \
-     *            parent(operation)  child(value)
-     *                 /     \
-     *               ...   child(value)
-     *               /
-     *            child(value)
-     *
-     * The parent nodes are expected to have the given operations, and every child
-     * is expected to have no operation and a value.
-     * @param node The parent node to check.
-     * @param expectedOperations The operations that the parent nodes are
-     *      expected to have.  The size of this list also defines how tall the
-     *      tree is expected to be.
-     * @param expectedValues The values that the child nodes are expected to
-     *      have.  The size of this list must be exactly one longer than the
-     *      size of <code>expectedOperations</code>.
-     * @param nodeClass The class of the parent node.
-     * @param childClass The class of the child node.
+     *                 parent
+     *                 /    \
+     *             child1  child2
+     * The binary node is expected to have no operation, and the
+     * children are expected to be of the given classes.
+     * @param node The <code>ASTBinaryNode</code> to check.
+     * @param firstClass The class of the first child node.
+     * @param secondClass The class of the second child node.
      */
-    static void checkBinaryLeftAssociative(ASTParentNode node, List<TokenType> expectedOperations, List<?> expectedValues,
-                                           Class<? extends ASTParentNode> nodeClass, Class<? extends ASTValueNode> childClass) {
-        ASTParentNode child = node;
-        List<ASTNode> children = node.getChildren();
-
-        for (int i = 0; i < expectedOperations.size(); i++) {
-            TokenType operation = expectedOperations.get(i);
-            assertEquals(operation, child.getOperation());
-            children = child.getChildren();
-            assertEquals(2, children.size());
-            List<Class<?>> expectedClasses = Arrays.asList(nodeClass, childClass);
-            compareClasses(expectedClasses, children);
-            ASTValueNode valueChild = (ASTValueNode) children.get(1);
-            assertEquals(expectedValues.get(i), valueChild.getValue());
-            child = (ASTParentNode) children.get(0);
-        }
-
-        child = (ASTParentNode) children.get(0);
-        assertNull(child.getOperation());
-        children = child.getChildren();
-        assertEquals(1, children.size());
-        assertTrue(childClass.isInstance(children.get(0)));
-        ASTValueNode valueChild = (ASTValueNode) children.get(0);
-        assertEquals(expectedValues.get(expectedOperations.size()), valueChild.getValue());
+    static void checkBinary(ASTBinaryNode node, Class<? extends ASTNode> firstClass, Class<? extends ASTNode> secondClass) {
+        assertNull(node.getOperation());
+        List<Class<?>> expectedClasses = Arrays.asList(firstClass, secondClass);
+        compareClasses(expectedClasses, Arrays.asList(node.getFirst(), node.getSecond()));
     }
 
     /**
@@ -205,7 +292,6 @@ public class ParserTestUtility {
      *                 parent(operation)
      *                   /        \
      *               child1     child2
-     *
      * The parent node is expected to have the given operation, and the
      * children are expected to be of the given classes.
      * @param node The parent node to check.
@@ -224,11 +310,29 @@ public class ParserTestUtility {
     }
 
     /**
+     * Helper method to test the binary node relationship:
+     *                 parent
+     *                 /    \
+     *             child1  child2
+     * The parent node is expected to have no operation, and the
+     * children are expected to be of the given classes.
+     * @param node The parent node to check.
+     * @param firstClass The class of the first child node.
+     * @param secondClass The class of the second child node.
+     */
+    static void checkBinary(ASTParentNode node, Class<? extends ASTNode> firstClass, Class<? extends ASTNode> secondClass) {
+        assertNull(node.getOperation());
+        List<ASTNode> children = node.getChildren();
+        assertEquals(2, children.size());
+        List<Class<?>> expectedClasses = Arrays.asList(firstClass, secondClass);
+        compareClasses(expectedClasses, children);
+    }
+
+    /**
      * Helper method to test the list node relationship:
      *                 parent(operation)
      *                  /    |    \    \
      *              child  child  ...  child
-     *
      * The parent node is expected to have the given operation, and all
      * children are expected to be of the given child class.
      * @param node The parent node to check.
@@ -247,23 +351,25 @@ public class ParserTestUtility {
     }
 
     /**
-     * Helper method to test the binary node relationship:
-     *                 parent
-     *                 /    \
-     *             child1  child2
-     *
-     * The parent node is expected to have no operation, and the
-     * children are expected to be of the given classes.
+     * Helper method to test the list node relationship:
+     *                   listNode(type)
+     *                  /    |    \    \
+     *              child  child  ...  child
+     * The parent node is expected to have the given operation, and all
+     * children are expected to be of the given child class.
      * @param node The parent node to check.
-     * @param firstClass The class of the first child node.
-     * @param secondClass The class of the second child node.
+     * @param type The list type that the list node is expected
+     *      to have.
+     * @param expectedSize The expected size of the list of child nodes.
+     * @param childClass The class of the all children.
      */
-    static void checkBinary(ASTParentNode node, Class<? extends ASTNode> firstClass, Class<? extends ASTNode> secondClass) {
-        assertNull(node.getOperation());
+    static void checkList(ASTListNode node, ASTListNode.Type type, Class<? extends ASTNode> childClass, int expectedSize) {
+        assertEquals(type, node.getType());
         List<ASTNode> children = node.getChildren();
-        assertEquals(2, children.size());
-        List<Class<?>> expectedClasses = Arrays.asList(firstClass, secondClass);
-        compareClasses(expectedClasses, children);
+        assertEquals(expectedSize, children.size());
+        for (ASTNode child : children) {
+            assertInstanceOf(childClass, child);
+        }
     }
 
     /**
@@ -271,7 +377,6 @@ public class ParserTestUtility {
      *               parent(operation)
      *                /    |     \
      *           child1  child2  child3
-     *
      * The parent node is expected to have the given operation, and the
      * children are expected to be of the given classes.
      * @param node The parent node to check.
@@ -295,7 +400,6 @@ public class ParserTestUtility {
      *                 parent(operation)
      *                /    |     |     \
      *           child1 child2 child3  childN
-     *
      * The parent node is expected to have the given operation, and the
      * children are expected to be of the given classes.
      * @param node The parent node to check.
@@ -310,4 +414,5 @@ public class ParserTestUtility {
         List<Class<?>> expectedClasses = Arrays.asList(classes);
         compareClasses(expectedClasses, children);
     }
+
 }

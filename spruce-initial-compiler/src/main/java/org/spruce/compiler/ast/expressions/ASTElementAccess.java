@@ -15,7 +15,8 @@ import org.spruce.compiler.scanner.TokenType;
  *
  * <em>
  * ElementAccess:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Primary [ Expression ]<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;Primary [ ConditionalExpression ]<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess [ ConditionalExpression ]<br>
  * </em>
  */
 public class ASTElementAccess extends ASTParentNode {

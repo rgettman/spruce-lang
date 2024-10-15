@@ -2,11 +2,13 @@ package org.spruce.compiler.ast.types;
 
 import java.util.List;
 
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
-import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
+
+import static org.spruce.compiler.ast.ASTListNode.Type.EXPR_NAME_IDS;
 
 /**
  * <p>An <code>ASTDataType</code> is a data type (no array) or an array type.</p>
@@ -37,20 +39,4 @@ public class ASTDataType extends ASTParentNode {
         return false;
     }
 
-    /**
-     * Converts this into an <code>ASTExpressionName</code>.
-     * @return An <code>ASTExpressionName</code>.
-     */
-    public ASTExpressionName convertToExpressionName() {
-        List<ASTNode> children = getChildren();
-        ASTNode child = children.get(0);
-        if (child instanceof ASTArrayType) {
-            throw new CompileException(child.getLocation(), "Expected variable.");
-        }
-        ASTDataTypeNoArray dtna = (ASTDataTypeNoArray) child;
-        List<ASTNode> exprNameChildren = dtna.convertChildren();
-        ASTExpressionName exprName = new ASTExpressionName(getLocation(), exprNameChildren);
-        exprName.setOperation(getOperation());
-        return exprName;
-    }
 }

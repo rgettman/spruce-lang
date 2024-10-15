@@ -1,5 +1,6 @@
 package org.spruce.compiler.test;
 
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.classes.ASTAnnotationDeclaration;
 import org.spruce.compiler.ast.classes.ASTClassDeclaration;
 import org.spruce.compiler.ast.classes.ASTEnumDeclaration;
@@ -14,6 +15,8 @@ import org.spruce.compiler.ast.toplevel.*;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.parser.TopLevelParser;
 import org.spruce.compiler.scanner.Scanner;
+
+import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.spruce.compiler.scanner.TokenType.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
 
@@ -32,8 +35,8 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("");
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
+        node.print();
         checkEmpty(node, null);
-        node.collapseThenPrint();
     }
 
     /**
@@ -44,8 +47,8 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("namespace foo;\nuse project.Bar;\npublic class Baz<T> extends Bar<T> {}\nenum Light {RED, YELLOW, GREEN}");
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
-        checkTrinary(node, null, ASTNamespaceDeclaration.class, ASTUseDeclarationList.class, ASTTypeDeclarationList.class);
-        node.collapseThenPrint();
+        node.print();
+        checkTrinary(node, null, ASTNamespaceDeclaration.class, ASTListNode.class, ASTListNode.class);
     }
 
     /**
@@ -55,9 +58,9 @@ public class ParserTopLevelTest
     public void testUseDeclarationListOfUseDeclaration()
     {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.List;");
-        ASTUseDeclarationList node = parser.parseUseDeclarationList();
-        checkSimple(node, ASTUseDeclaration.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseUseDeclarationList();
+        node.print();
+        checkList(node, USE_DECLARATIONS, ASTUseDeclaration.class, 1);
     }
 
     /**
@@ -66,10 +69,14 @@ public class ParserTopLevelTest
     @Test
     public void testUseDeclarationListOfMultipleUseDeclarations()
     {
-        TopLevelParser parser = getTopLevelParser("use spruce.collections.{List, ArrayList};\nuse spruce.reflection.*;\nuse shared spruce.test.Assertions.*;");
-        ASTUseDeclarationList node = parser.parseUseDeclarationList();
-        checkList(node, null, ASTUseDeclaration.class, 3);
-        node.collapseThenPrint();
+        TopLevelParser parser = getTopLevelParser("""
+                use spruce.collections.{List, ArrayList};
+                use spruce.reflection.*;
+                use shared spruce.test.Assertions.*;
+                """);
+        ASTListNode node = parser.parseUseDeclarationList();
+        node.print();
+        checkList(node, USE_DECLARATIONS, ASTUseDeclaration.class, 3);
     }
 
     /**
@@ -80,8 +87,8 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("namespace spruce.test.parser;");
         ASTNamespaceDeclaration node = parser.parseNamespaceDeclaration();
-        checkSimple(node, ASTNamespaceName.class, NAMESPACE);
-        node.collapseThenPrint();
+        node.print();
+        checkSimple(node, ASTListNode.class, NAMESPACE);
     }
 
     /**
@@ -92,11 +99,11 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.*;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        checkSimple(node, ASTUseSharedAllDeclaration.class);
+        node.print();
 
+        checkSimple(node, ASTUseSharedAllDeclaration.class);
         ASTUseSharedAllDeclaration rad = (ASTUseSharedAllDeclaration) node.getChildren().get(0);
-        checkSimple(rad, ASTTypeName.class, USE);
-        node.collapseThenPrint();
+        checkSimple(rad, ASTListNode.class, USE);
     }
 
     /**
@@ -107,11 +114,11 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.assertEquals;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        checkSimple(node, ASTUseSharedTypeDeclaration.class);
+        node.print();
 
+        checkSimple(node, ASTUseSharedTypeDeclaration.class);
         ASTUseSharedTypeDeclaration rtd = (ASTUseSharedTypeDeclaration) node.getChildren().get(0);
-        checkBinary(rtd, USE, ASTTypeName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        checkBinary(rtd, USE, ASTListNode.class, ASTIdentifier.class);
     }
 
     /**
@@ -122,11 +129,11 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.{assertEquals, assertTrue, assertFalse};");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        checkSimple(node, ASTUseSharedMultDeclaration.class);
+        node.print();
 
+        checkSimple(node, ASTUseSharedMultDeclaration.class);
         ASTUseSharedMultDeclaration rmd = (ASTUseSharedMultDeclaration) node.getChildren().get(0);
-        checkBinary(rmd, USE, ASTTypeName.class, ASTIdentifierList.class);
-        node.collapseThenPrint();
+        checkBinary(rmd, USE, ASTListNode.class, ASTListNode.class);
     }
 
     /**
@@ -137,11 +144,11 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.*;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        checkSimple(node, ASTUseAllDeclaration.class);
+        node.print();
 
+        checkSimple(node, ASTUseAllDeclaration.class);
         ASTUseAllDeclaration rad = (ASTUseAllDeclaration) node.getChildren().get(0);
-        checkSimple(rad, ASTNamespaceOrTypeName.class, USE);
-        node.collapseThenPrint();
+        checkSimple(rad, ASTListNode.class, USE);
     }
 
     /**
@@ -152,11 +159,11 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.ArrayList;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        checkSimple(node, ASTUseTypeDeclaration.class);
+        node.print();
 
+        checkSimple(node, ASTUseTypeDeclaration.class);
         ASTUseTypeDeclaration rtd = (ASTUseTypeDeclaration) node.getChildren().get(0);
-        checkSimple(rtd, ASTTypeName.class, USE);
-        node.collapseThenPrint();
+        checkSimple(rtd, ASTListNode.class, USE);
     }
 
     /**
@@ -167,11 +174,11 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.{List, ArrayList, LinkedList};");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        checkSimple(node, ASTUseMultDeclaration.class);
+        node.print();
 
+        checkSimple(node, ASTUseMultDeclaration.class);
         ASTUseMultDeclaration rmd = (ASTUseMultDeclaration) node.getChildren().get(0);
-        checkBinary(rmd, USE, ASTNamespaceOrTypeName.class, ASTIdentifierList.class);
-        node.collapseThenPrint();
+        checkBinary(rmd, USE, ASTListNode.class, ASTListNode.class);
     }
 
     /**
@@ -181,9 +188,9 @@ public class ParserTopLevelTest
     public void testTypeDeclarationListOfTypeDeclaration()
     {
         TopLevelParser parser = getTopLevelParser("class Foo {}");
-        ASTTypeDeclarationList node = parser.parseTypeDeclarationList();
-        checkSimple(node, ASTTypeDeclaration.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseTypeDeclarationList();
+        node.print();
+        checkList(node, TYPE_DECLARATIONS, ASTTypeDeclaration.class, 1);
     }
 
     /**
@@ -192,10 +199,14 @@ public class ParserTopLevelTest
     @Test
     public void testTypeDeclarationListOfMultipleTypeDeclarations()
     {
-        TopLevelParser parser = getTopLevelParser("class Foo {}\nenum Bar {CHOCOLATE, EXAM, SAND}\ninterface Baz {}");
-        ASTTypeDeclarationList node = parser.parseTypeDeclarationList();
-        checkList(node, null, ASTTypeDeclaration.class, 3);
-        node.collapseThenPrint();
+        TopLevelParser parser = getTopLevelParser("""
+                class Foo {}
+                enum Bar {CHOCOLATE, EXAM, SAND}
+                interface Baz {}
+                """);
+        ASTListNode node = parser.parseTypeDeclarationList();
+        node.print();
+        checkList(node, TYPE_DECLARATIONS, ASTTypeDeclaration.class, 3);
     }
 
     /**
@@ -206,8 +217,8 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("public abstract class Dummy<T> { abstract void test(); }");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        node.print();
         checkSimple(node, ASTClassDeclaration.class);
-        node.collapseThenPrint();
     }
 
     /**
@@ -218,8 +229,8 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("public shared enum TrafficLight {RED, YELLOW, GREEN}");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        node.print();
         checkSimple(node, ASTEnumDeclaration.class);
-        node.collapseThenPrint();
     }
 
     /**
@@ -230,8 +241,8 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("protected shared interface Dummy { public void run();}");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        node.print();
         checkSimple(node, ASTInterfaceDeclaration.class);
-        node.collapseThenPrint();
     }
 
     /**
@@ -242,8 +253,8 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("public shared annotation Spruce { String language();}");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        node.print();
         checkSimple(node, ASTAnnotationDeclaration.class);
-        node.collapseThenPrint();
     }
 
     /**
@@ -254,8 +265,8 @@ public class ParserTopLevelTest
     {
         TopLevelParser parser = getTopLevelParser("internal record Redacted(String byWhom) { }");
         ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        node.print();
         checkSimple(node, ASTRecordDeclaration.class);
-        node.collapseThenPrint();
     }
 
     /**

@@ -7,11 +7,11 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTDimExpr</code> is an expression inside brackets.</p>
+ * <p>An <code>ASTDimExpr</code> is a conditional expression inside brackets.</p>
  *
  * <em>
  * DimExpr:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[ Expression ]
+ * &nbsp;&nbsp;&nbsp;&nbsp;[ ConditionalExpression ]
  * </em>
  */
 public class ASTDimExpr extends ASTParentNode {

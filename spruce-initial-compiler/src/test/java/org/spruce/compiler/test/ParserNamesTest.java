@@ -3,11 +3,13 @@ package org.spruce.compiler.test;
 import java.util.Arrays;
 import java.util.List;
 
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.names.*;
 import org.spruce.compiler.parser.NamesParser;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
-import static org.spruce.compiler.scanner.TokenType.*;
+
+import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.spruce.compiler.test.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
@@ -24,11 +26,11 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
-        ASTNamespaceName node = parser.parseNamespaceName();
-        checkSimple(node, ASTIdentifier.class);
+        ASTListNode node = parser.parseNamespaceName();
+        checkList(node, NAMESPACE_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
-        node.collapseThenPrint();
+        node.print();
     }
 
     /**
@@ -37,10 +39,9 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
-        ASTNamespaceName node = parser.parseNamespaceName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
-                ASTNamespaceName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseNamespaceName();
+        checkList(node, NAMESPACE_IDS, ASTIdentifier.class, 2);
+        node.print();
     }
 
     /**
@@ -49,10 +50,9 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
-        ASTNamespaceName node = parser.parseNamespaceName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
-                ASTNamespaceName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseNamespaceName();
+        checkList(node, NAMESPACE_IDS, ASTIdentifier.class, 3);
+        node.print();
     }
 
     /**
@@ -61,11 +61,11 @@ public class ParserNamesTest {
     @Test
     public void testTypeNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
-        ASTTypeName node = parser.parseTypeName();
-        checkSimple(node, ASTIdentifier.class);
+        ASTListNode node = parser.parseTypeName();
+        checkList(node, TYPENAME_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
-        node.collapseThenPrint();
+        node.print();
     }
 
     /**
@@ -74,10 +74,9 @@ public class ParserNamesTest {
     @Test
     public void testTypeNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
-        ASTTypeName node = parser.parseTypeName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
-                ASTNamespaceOrTypeName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseTypeName();
+        checkList(node, TYPENAME_IDS, ASTIdentifier.class, 2);
+        node.print();
     }
 
     /**
@@ -86,10 +85,9 @@ public class ParserNamesTest {
     @Test
     public void testTypeNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
-        ASTTypeName node = parser.parseTypeName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
-                ASTNamespaceOrTypeName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseTypeName();
+        checkList(node, TYPENAME_IDS, ASTIdentifier.class, 3);
+        node.print();
     }
 
     /**
@@ -98,11 +96,11 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceOrTypeNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
-        ASTNamespaceOrTypeName node = parser.parseNamespaceOrTypeName();
-        checkSimple(node, ASTIdentifier.class);
+        ASTListNode node = parser.parseNamespaceOrTypeName();
+        checkList(node, NAMESPACE_OR_TYPENAME_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
-        node.collapseThenPrint();
+        node.print();
     }
 
     /**
@@ -111,10 +109,9 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceOrTypeNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
-        ASTNamespaceOrTypeName node = parser.parseNamespaceOrTypeName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
-                ASTNamespaceOrTypeName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseNamespaceOrTypeName();
+        checkList(node, NAMESPACE_OR_TYPENAME_IDS, ASTIdentifier.class, 2);
+        node.print();
     }
 
     /**
@@ -123,10 +120,9 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceOrTypeNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
-        ASTNamespaceOrTypeName node = parser.parseNamespaceOrTypeName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
-                ASTNamespaceOrTypeName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseNamespaceOrTypeName();
+        checkList(node, NAMESPACE_OR_TYPENAME_IDS, ASTIdentifier.class, 3);
+        node.print();
     }
 
     /**
@@ -135,11 +131,11 @@ public class ParserNamesTest {
     @Test
     public void testExpressionNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
-        ASTExpressionName node = parser.parseExpressionName();
-        checkSimple(node, ASTIdentifier.class);
+        ASTListNode node = parser.parseExpressionName();
+        checkList(node, EXPR_NAME_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
-        node.collapseThenPrint();
+        node.print();
     }
 
     /**
@@ -148,10 +144,9 @@ public class ParserNamesTest {
     @Test
     public void testExpressionNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
-        ASTExpressionName node = parser.parseExpressionName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
-                ASTAmbiguousName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseExpressionName();
+        checkList(node, EXPR_NAME_IDS, ASTIdentifier.class, 2);
+        node.print();
     }
 
     /**
@@ -160,10 +155,9 @@ public class ParserNamesTest {
     @Test
     public void testExpressionNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
-        ASTExpressionName node = parser.parseExpressionName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
-                ASTAmbiguousName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseExpressionName();
+        checkList(node, EXPR_NAME_IDS, ASTIdentifier.class, 3);
+        node.print();
     }
 
     /**
@@ -172,11 +166,11 @@ public class ParserNamesTest {
     @Test
     public void testAmbiguousNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
-        ASTAmbiguousName node = parser.parseAmbiguousName();
-        checkSimple(node, ASTIdentifier.class);
+        ASTListNode node = parser.parseAmbiguousName();
+        checkList(node, AMBIGUOUS_NAME_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
-        node.collapseThenPrint();
+        node.print();
     }
 
     /**
@@ -185,10 +179,9 @@ public class ParserNamesTest {
     @Test
     public void testAmbiguousNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
-        ASTAmbiguousName node = parser.parseAmbiguousName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT), Arrays.asList("two", "one"),
-                ASTAmbiguousName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseAmbiguousName();
+        checkList(node, AMBIGUOUS_NAME_IDS, ASTIdentifier.class, 2);
+        node.print();
     }
 
     /**
@@ -197,10 +190,9 @@ public class ParserNamesTest {
     @Test
     public void testAmbiguousNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
-        ASTAmbiguousName node = parser.parseAmbiguousName();
-        checkBinaryLeftAssociative(node, Arrays.asList(DOT, DOT), Arrays.asList("three", "two", "one"),
-                ASTAmbiguousName.class, ASTIdentifier.class);
-        node.collapseThenPrint();
+        ASTListNode node = parser.parseAmbiguousName();
+        checkList(node, AMBIGUOUS_NAME_IDS, ASTIdentifier.class, 3);
+        node.print();
     }
 
     /**
@@ -209,11 +201,11 @@ public class ParserNamesTest {
     @Test
     public void testIdentifierListOfIdentifier() {
         NamesParser parser = getNamesParser("ArrayList");
-        ASTIdentifierList node = parser.parseIdentifierList();
-        checkSimple(node, ASTIdentifier.class, COMMA);
+        ASTListNode node = parser.parseIdentifierList();
+        checkList(node, IDENTIFIERS, ASTIdentifier.class, 1);
         ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("ArrayList", id.getValue());
-        node.collapseThenPrint();
+        node.print();
     }
 
     /**
@@ -222,14 +214,14 @@ public class ParserNamesTest {
     @Test
     public void testIdentifierListNested() {
         NamesParser parser = getNamesParser("List, ArrayList, LinkedList");
-        ASTIdentifierList node = parser.parseIdentifierList();
-        checkList(node, COMMA, ASTIdentifier.class, 3);
+        ASTListNode node = parser.parseIdentifierList();
+        checkList(node, IDENTIFIERS, ASTIdentifier.class, 3);
         List<String> expectedValues = Arrays.asList("List", "ArrayList", "LinkedList");
         for (int i = 0; i < expectedValues.size(); i++) {
             ASTIdentifier id = (ASTIdentifier) node.getChildren().get(i);
             assertEquals(expectedValues.get(i), id.getValue(), "Mismatch on child " + i);
         }
-        node.collapseThenPrint();
+        node.print();
     }
 
     /**

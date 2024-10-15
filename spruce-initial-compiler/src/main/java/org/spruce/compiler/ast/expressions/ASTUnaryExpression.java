@@ -2,10 +2,14 @@ package org.spruce.compiler.ast.expressions;
 
 import java.util.Arrays;
 
+import org.spruce.compiler.ast.ASTBinaryNode;
 import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTUnaryNode;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.TokenType;
+
+import static org.spruce.compiler.scanner.TokenType.SWITCH;
 
 /**
  * <p>An <code>ASTUnaryExpression</code> is an expression with a possible unary
@@ -20,7 +24,7 @@ import org.spruce.compiler.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;SwitchExpression<br>
  * </em>
  */
-public class ASTUnaryExpression extends ASTParentNode {
+public class ASTUnaryExpression extends ASTUnaryNode {
     /**
      * Constructs an <code>ASTUnaryExpression</code> at the given <code>Location</code>
      * and with a Primary as its child.
@@ -28,7 +32,7 @@ public class ASTUnaryExpression extends ASTParentNode {
      * @param primary An <code>ASTPrimary</code>.
      */
     public ASTUnaryExpression(Location location, ASTPrimary primary) {
-        super(location, Arrays.asList(primary));
+        super(location, primary);
     }
 
     /**
@@ -36,30 +40,20 @@ public class ASTUnaryExpression extends ASTParentNode {
      * and with a "!" operator, represented by the given <code>TokenType</code>,
      * and a <code>ASTUnaryExpression</code> as its child.
      * @param location The <code>Location</code>.
-     * @param operand The operand, another <code>ASTUnaryExpression</code>.
+     * @param operand The operand, another <code>ASTUnaryNode</code>.
      * @param operator The token type of the operator for this unary expression.
      */
-    public ASTUnaryExpression(Location location, ASTUnaryExpression operand, TokenType operator) {
-        super(location, Arrays.asList(operand), operator);
+    public ASTUnaryExpression(Location location, ASTUnaryNode operand, TokenType operator) {
+        super(location, operator, operand);
     }
 
     /**
      * Constructs an <code>ASTUnaryExpression</code> at the given <code>Location</code>
      * and with a switch expression as its child.
      * @param location The <code>Location</code>.
-     * @param operand The operand, a <code>ASTSwitchExpression</code>.
-     * @param operator The token type of the operator for this unary expression.
+     * @param switchExpr The operand, a <code>ASTSwitchExpression</code>.
      */
-    public ASTUnaryExpression(Location location, ASTSwitchExpression operand, TokenType operator) {
-        super(location, Arrays.asList(operand), operator);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTUnaryExpression(Location location, ASTBinaryNode switchExpr) {
+        super(location, SWITCH, switchExpr);
     }
 }

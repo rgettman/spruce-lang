@@ -57,6 +57,7 @@ public abstract class ASTParentNode extends ASTNode {
     }
 
     /**
+     * TODO: See if we can get rid of the setter and make myOperation final.
      * Sets the name representing the operation between the children, or
      * <code>null</code> if there is no such operation.
      * @param operation The <code>TokenType</code> representing the operation name.
@@ -71,7 +72,7 @@ public abstract class ASTParentNode extends ASTNode {
      * @param isTail Whether this node is last in its siblings (or the only child).
      */
     @Override
-    protected void print(String prefix, boolean isTail) {
+    public void print(String prefix, boolean isTail) {
         System.out.println(prefix + (isTail ? "└── " : "├── ") + toString());
         for (int i = 0; i < myChildren.size() - 1; i++) {
             myChildren.get(i).print(prefix + (isTail ? "    " : "|   "), false);
@@ -147,38 +148,4 @@ public abstract class ASTParentNode extends ASTNode {
      * @return Whether this node is collapsible.
      */
     public abstract boolean isCollapsible();
-
-    /**
-     * Finds a descendant that is an instance of one of the given classes, and
-     * make it a child of a new node to be created, specified by the given
-     * node supplier.
-     * @param childClassList A <code>List</code> of acceptable descendant classes.
-     * @param nodeSupplier A <code>BiFunction</code> that takes a <code>Location</code>
-     *     and a <code>List</code> of child nodes and returns the desired node.
-     * @param errorMsg The error message of a <code>CompileException</code> if
-     *     no suitable descendant is found.
-     * @return The desired node with the desired descendant as its child.
-     * @throws CompileException If there is no suitable descendant.
-     */
-    public <T extends ASTParentNode> T convertDescendant(List<Class<? extends ASTNode>> childClassList,
-                                                         BiFunction<Location, List<ASTNode>, T> nodeSupplier,
-                                                         String errorMsg) {
-        ASTParentNode current = this;
-        List<ASTNode> children = getChildren();
-        while (children.size() == 1 && current.getOperation() == null) {
-            ASTNode child = children.get(0);
-            if (childClassList.contains(child.getClass())) {
-                return nodeSupplier.apply(current.getLocation(), Collections.singletonList(child));
-            }
-            else if (child instanceof ASTParentNode) {
-                // Look at next down.
-                current = (ASTParentNode) children.get(0);
-                children = current.getChildren();
-            }
-            else {
-                throw new CompileException(child.getLocation(), errorMsg);
-            }
-        }
-        throw new CompileException(current.getLocation(), errorMsg);
-    }
 }

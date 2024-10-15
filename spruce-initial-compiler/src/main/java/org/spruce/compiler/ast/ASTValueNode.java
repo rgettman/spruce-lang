@@ -5,7 +5,7 @@ import org.spruce.compiler.scanner.Location;
 /**
  * An <code>ASTValueNode</code> is a leaf <code>ASTNode</code> with a value.
  */
-public /*abstract*/ class ASTValueNode extends ASTNode {
+public class ASTValueNode extends ASTNode {
     private final String myValue;
 
     /**
@@ -33,7 +33,7 @@ public /*abstract*/ class ASTValueNode extends ASTNode {
      * @param isTail Whether this node is last in its siblings (or the only child).
      */
     @Override
-    protected void print(String prefix, boolean isTail) {
+    public void print(String prefix, boolean isTail) {
         System.out.println(prefix + (isTail ? "└── " : "├── ") + toString());
     }
 

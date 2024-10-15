@@ -5,13 +5,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.*;
 import org.spruce.compiler.ast.expressions.ASTAssignment;
 import org.spruce.compiler.ast.expressions.ASTLeftHandSide;
 import org.spruce.compiler.ast.expressions.ASTClassInstanceCreationExpression;
 import org.spruce.compiler.ast.expressions.ASTFieldAccess;
 import org.spruce.compiler.ast.expressions.ASTMethodInvocation;
 import org.spruce.compiler.ast.expressions.ASTPrimary;
+import org.spruce.compiler.ast.expressions.ASTUnqualifiedClassInstanceCreationExpression;
 import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.ast.statements.*;
 import org.spruce.compiler.ast.types.ASTDataType;
@@ -20,6 +21,7 @@ import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.TokenType;
 
+import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
@@ -59,15 +61,20 @@ public class StatementsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTBlockStatements</code>.
-     * @return An <code>ASTBlockStatements</code>.
+     * Parses a <code>BlockStatements</code>.
+     * <em>
+     * BlockStatements:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;BlockStatement {BlockStatement}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>BLOCK_STATEMENTS</code>.
      */
-    public ASTBlockStatements parseBlockStatements() {
+    public ASTListNode parseBlockStatements() {
         return parseMultiple(
                 t -> !test(t, CLOSE_BRACE) && !test(t, DEFAULT) && !test(t, CASE),
                 "Expected statement or local variable declaration.",
                 this::parseBlockStatement,
-                ASTBlockStatements::new
+                BLOCK_STATEMENTS,
+                false
         );
     }
 
@@ -89,7 +96,7 @@ public class StatementsParser extends BasicParser {
             }
             else {
                 // Convert to Expression Name.
-                ASTExpressionName exprName = dt.convertToExpressionName();
+                ASTListNode exprName = getTypesParser().convertToExpressionName(dt);
                 // There may be more or a Primary to parse, e.g. method
                 // invocation, element access, and/or qualified class instance
                 // creation.
@@ -163,42 +170,55 @@ public class StatementsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTVariableModifierList</code>.
-     * @return An <code>ASTVariableModifierList</code>.
+     * Parses a <code>VariableModifierList</code>.
+     * <em>
+     * VariableModifierList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;VariableModifier {VariableModifier}
+     * </em>
+     * @return An <code>ASTListNode</code> with type <code>VARIABLE_MODIFIERS</code>.
      */
-    public ASTVariableModifierList parseVariableModifierList() {
+    public ASTListNode parseVariableModifierList() {
         return parseMultiple(
                 t -> test(t, MUT, VAR),
                 "Expected mut or var.",
                 this::parseVariableModifier,
-                ASTVariableModifierList::new
+                VARIABLE_MODIFIERS,
+                false
         );
     }
 
     /**
-     * Parses an <code>ASTVariableModifier</code>.
-     * @return An <code>ASTVariableModifier</code>.
+     * Parses a <code>VariableModifier</code>.
+     * <em>
+     * VariableModifier:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;var<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;mut
+     * </em>
+     * @return An <code>ASTModifierNode</code>.
      */
-    public ASTVariableModifier parseVariableModifier() {
-        return parseOneOf(
+    public ASTModifierNode parseVariableModifier() {
+        return parseModifier(
                 Arrays.asList(MUT, VAR),
                 "Expected mut or var.",
-                ASTVariableModifier::new
+                ASTModifierNode::new
         );
     }
 
     /**
-     * Parses an <code>ASTVariableDeclarator</code>; they are left-associative
-     * with each other.
-     * @return An <code>ASTVariableDeclarator</code>.
+     * Parses a <code>VariableDeclaratorList</code>.
+     * <em>
+     * VariableDeclaratorList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;VariableDeclarator {, VariableDeclarator}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>VARIABLE_DECLARATORS</code>.
      */
-    public ASTVariableDeclaratorList parseVariableDeclaratorList() {
+    public ASTListNode parseVariableDeclaratorList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected identifier",
                 COMMA,
                 this::parseVariableDeclarator,
-                ASTVariableDeclaratorList::new
+                VARIABLE_DECLARATORS
         );
     }
 
@@ -362,15 +382,19 @@ public class StatementsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTSwitchStatementRules</code>.
-     * @return A <code>ASTSwitchStatementRules</code>.
+     * Parses a <code>SwitchStatementRules</code>.
+     * <em>
+     * SwitchStatementRules:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatementRule {SwitchStatementRule}<br>
+     * </em>
+     * @return A <code>ASTListNode</code> of type <code>SWITCH_STMT_RULES</code>.
      */
-    public ASTSwitchStatementRules parseSwitchStatementRules() {
+    public ASTListNode parseSwitchStatementRules() {
         return parseMultiple(
                 t -> test(t, CASE, DEFAULT, MUT, VAR, IDENTIFIER) || isPrimary(curr()),
                 "Expected a switch case.",
                 this::parseSwitchStatementRule,
-                ASTSwitchStatementRules::new
+                SWITCH_STMT_RULES
         );
     }
 
@@ -443,16 +467,21 @@ public class StatementsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTResourceList</code>.
-     * @return An <code>ASTResourceList</code>.
+     * Parses a <code>ResourceList</code>.
+     * <em>
+     * ResourceList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;Resource {; Resource}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code></code>.
      */
-    public ASTResourceList parseResourceList() {
+    public ASTListNode parseResourceList() {
         return parseList(
                 t -> isPrimary(t) || isAcceptedOperator(Arrays.asList(MUT, CONSTANT, VAR)) != null,
                 "Expected an expression.",
                 SEMICOLON,
                 this::parseResource,
-                ASTResourceList::new);
+                RESOURCES
+        );
     }
 
     /**
@@ -475,7 +504,7 @@ public class StatementsParser extends BasicParser {
             }
             else {
                 // Convert to Expression Name.
-                ASTExpressionName exprName = dt.convertToExpressionName();
+                ASTListNode exprName = getTypesParser().convertToExpressionName(dt);
                 // There may be more or a Primary to parse, e.g. method
                 // invocation, element access, and/or qualified class instance
                 // creation.
@@ -491,7 +520,7 @@ public class StatementsParser extends BasicParser {
         List<ASTNode> children = primary.getChildren();
         if (children.size() == 1) {
             ASTNode child = children.get(0);
-            if (child instanceof ASTExpressionName || child instanceof ASTFieldAccess) {
+            if ((child instanceof ASTListNode exprName && exprName.getType() == EXPR_NAME_IDS)|| child instanceof ASTFieldAccess) {
                 return new ASTResource(loc, Arrays.asList(child));
             }
         }
@@ -540,15 +569,19 @@ public class StatementsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTCatches</code>.
-     * @return An <code>ASTCatches</code>.
+     * Parses a <code>Catches</code>.
+     * <em>
+     * Catches:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;CatchClause {CatchClause}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>CATCH_CLAUSES</code>.
      */
-    public ASTCatches parseCatches() {
+    public ASTListNode parseCatches() {
         return parseMultiple(
                 t -> test(t, CATCH),
                 "Expected catch clause.",
                 this::parseCatchClause,
-                ASTCatches::new
+                CATCH_CLAUSES
         );
     }
 
@@ -591,16 +624,20 @@ public class StatementsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTCatchType</code>.
-     * @return An <code>ASTCatchType</code>.
+     * Parses a <code>ASTCatchType</code>.
+     * <em>
+     * CatchType:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;DataType {| DataType}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>DATA_TYPES</code>.
      */
-    public ASTCatchType parseCatchType() {
+    public ASTListNode parseCatchType() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected data type.",
                 PIPE,
                 getTypesParser()::parseDataType,
-                ASTCatchType::new
+                DATA_TYPES
         );
     }
 
@@ -669,7 +706,7 @@ public class StatementsParser extends BasicParser {
         ASTNode child = initChildren.get(0);
         if (child instanceof ASTLocalVariableDeclaration varDecl) {
             List<ASTNode> varDeclChildren = varDecl.getChildren();
-            ASTVariableDeclaratorList variables = (ASTVariableDeclaratorList) varDeclChildren.get(varDeclChildren.size() - 1);
+            ASTListNode variables = (ASTListNode) varDeclChildren.get(varDeclChildren.size() - 1);
             List<ASTNode> variablesChildren = variables.getChildren();
             if (variablesChildren.size() != 1) {
                 throw new CompileException(curr().getLocation(), "Only one variable can be declared in an enhanced for loop.");
@@ -1041,7 +1078,7 @@ public class StatementsParser extends BasicParser {
             }
             else {
                 // Convert to Expression Name.
-                ASTExpressionName exprName = dt.convertToExpressionName();
+                ASTListNode exprName = getTypesParser().convertToExpressionName(dt);
                 // There may be more or a Primary to parse, e.g. method
                 // invocation, element access, and/or qualified class instance
                 // creation.
@@ -1054,16 +1091,22 @@ public class StatementsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTStatementExpressionList</code>.
-     * @return An <code>ASTStatementExpressionList</code>.
+     * Parses a <code>StatementExpressionList</code>.
+     * <em>
+     * StatementExpressionList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;StatementExpression {, StatementExpression}
+     * </em>
+     * @return An <code>ASTListNode</code> of type <code>STMT_EXPRS</code>.
      */
-    public ASTStatementExpressionList parseStatementExpressionList() {
+    public ASTListNode parseStatementExpressionList() {
         return parseList(
                 t -> test(t, INCREMENT, DECREMENT) || isPrimary(t),
                 "Expected a statement expression.",
                 COMMA,
                 this::parseStatementExpression,
-                ASTStatementExpressionList::new);
+                STMT_EXPRS,
+                false
+        );
     }
 
     /**
@@ -1078,7 +1121,7 @@ public class StatementsParser extends BasicParser {
         ASTStatementExpressionList node;
         if (isCurr(COMMA)) {
             accept(COMMA);
-            ASTStatementExpressionList rest = parseStatementExpressionList();
+            ASTListNode rest = parseStatementExpressionList();
             List<ASTNode> children = rest.getChildren();
             children.add(0, stmtExpr);
             node = new ASTStatementExpressionList(loc, rest.getChildren());
@@ -1120,7 +1163,9 @@ public class StatementsParser extends BasicParser {
             // Primary may already be a method invocation or class instance creation expression.
             // If so, retrieve and use it.
             ASTNode child = primary.getChildren().get(0);
-            if (child instanceof ASTMethodInvocation || child instanceof ASTClassInstanceCreationExpression) {
+            if (child instanceof ASTMethodInvocation ||
+                    (child instanceof ASTBinaryNode cice && cice.getOperation() == NEW) ||
+                    child instanceof ASTUnqualifiedClassInstanceCreationExpression) {
                 return new ASTStatementExpression(loc, Arrays.asList(child));
             }
             else {

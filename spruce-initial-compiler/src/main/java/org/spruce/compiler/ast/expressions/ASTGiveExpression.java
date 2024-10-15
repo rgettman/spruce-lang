@@ -11,7 +11,7 @@ import org.spruce.compiler.scanner.Location;
  * "give".</p>
  *
  * <em>
- * Expression:<br>
+ * GiveExpression:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Expression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;give Expression<br>
  * </em>

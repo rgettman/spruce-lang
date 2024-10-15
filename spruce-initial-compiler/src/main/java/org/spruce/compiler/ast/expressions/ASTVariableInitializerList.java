@@ -13,6 +13,7 @@ import org.spruce.compiler.scanner.Location;
  * <em>
  * VariableInitializerList:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;VariableInitializer {, VariableInitializer}
+ * </em>
  */
 public class ASTVariableInitializerList extends ASTParentNode {
     /**
