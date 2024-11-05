@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.expressions;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -20,23 +22,29 @@ import org.spruce.compiler.scanner.Location;
  * </em>
  */
 public class ASTClassLiteral extends ASTParentNode {
+    private final ASTDataType myDataType;
+
     /**
      * Constructs an <code>ASTClassLiteral</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTDataType</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param dataType An <code>ASTDataType</code>.
      */
-    public ASTClassLiteral(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTClassLiteral(Location location, ASTDataType dataType) {
+        super(location);
+        myDataType = dataType;
     }
 
-
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTDataType</code>.
+     * @return An <code>ASTDataType</code>.
      */
+    public ASTDataType getDataType() {
+        return myDataType;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myDataType);
     }
 }

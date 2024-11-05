@@ -4,7 +4,6 @@ import org.spruce.compiler.ast.literals.*;
 import org.spruce.compiler.parser.LiteralsParser;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
-import static org.spruce.compiler.test.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,10 +19,10 @@ public class ParserLiteralsTest {
     public void testLiteralOfInteger() {
         LiteralsParser parser = getLiteralsParser("1234");
         ASTLiteral node = parser.parseLiteral();
-        checkIs(node, ASTIntegerLiteral.class);
+        System.out.println(node);
+        assertInstanceOf(ASTIntegerLiteral.class, node);
         ASTIntegerLiteral integerLiteral = (ASTIntegerLiteral) node;
         assertEquals(1234, integerLiteral.getNumericValue());
-        node.print();
     }
 
     /**
@@ -33,10 +32,10 @@ public class ParserLiteralsTest {
     public void testLiteralOfFloatingPoint() {
         LiteralsParser parser = getLiteralsParser("1234.5");
         ASTLiteral node = parser.parseLiteral();
-        checkIs(node, ASTFloatingPointLiteral.class);
+        System.out.println(node);
+        assertInstanceOf(ASTFloatingPointLiteral.class, node);
         ASTFloatingPointLiteral floatingPointLiteral = (ASTFloatingPointLiteral) node;
         assertEquals(1234.5, floatingPointLiteral.getNumericValue());
-        node.print();
     }
 
     /**
@@ -46,10 +45,10 @@ public class ParserLiteralsTest {
     public void testLiteralOfCharacter() {
         LiteralsParser parser = getLiteralsParser("'c'");
         ASTLiteral node = parser.parseLiteral();
-        checkIs(node, ASTCharacterLiteral.class);
+        System.out.println(node);
+        assertInstanceOf(ASTCharacterLiteral.class, node);
         ASTCharacterLiteral charLiteral = (ASTCharacterLiteral) node;
         assertEquals('c', charLiteral.getCharacterValue());
-        node.print();
     }
 
     /**
@@ -59,10 +58,10 @@ public class ParserLiteralsTest {
     public void testLiteralOfStringNormal() {
         LiteralsParser parser = getLiteralsParser("\"s\\tring\"");
         ASTLiteral node = parser.parseLiteral();
-        checkIs(node, ASTStringLiteral.class);
+        System.out.println(node);
+        assertInstanceOf(ASTStringLiteral.class, node);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node;
         assertEquals("s\tring", strLiteral.getStringValue());
-        node.print();
     }
 
     /**
@@ -72,10 +71,10 @@ public class ParserLiteralsTest {
     public void testLiteralOfStringEmpty() {
         LiteralsParser parser = getLiteralsParser("\"\"");
         ASTLiteral node = parser.parseLiteral();
-        checkIs(node, ASTStringLiteral.class);
+        System.out.println(node);
+        assertInstanceOf(ASTStringLiteral.class, node);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node;
         assertEquals("", strLiteral.getStringValue());
-        node.print();
     }
 
     /**
@@ -89,10 +88,10 @@ public class ParserLiteralsTest {
                 """;
         LiteralsParser parser = getLiteralsParser(str);
         ASTLiteral node = parser.parseLiteral();
-        checkIs(node, ASTStringLiteral.class);
+        System.out.println(node);
+        assertInstanceOf(ASTStringLiteral.class, node);
         ASTStringLiteral strLiteral = (ASTStringLiteral) node;
         assertEquals("\"stri\\ng\"", strLiteral.getStringValue());
-        node.print();
     }
 
     /**
@@ -102,10 +101,10 @@ public class ParserLiteralsTest {
     public void testLiteralOfBooleanTrue() {
         LiteralsParser parser = getLiteralsParser("true");
         ASTLiteral node = parser.parseLiteral();
-        checkIs(node, ASTBooleanLiteral.class);
+        System.out.println(node);
+        assertInstanceOf(ASTBooleanLiteral.class, node);
         ASTBooleanLiteral boolLiteral = (ASTBooleanLiteral) node;
         assertTrue(boolLiteral.getBooleanValue());
-        node.print();
     }
 
     /**
@@ -115,10 +114,10 @@ public class ParserLiteralsTest {
     public void testLiteralOfBooleanFalse() {
         LiteralsParser parser = getLiteralsParser("false");
         ASTLiteral node = parser.parseLiteral();
-        checkIs(node, ASTBooleanLiteral.class);
+        System.out.println(node);
+        assertInstanceOf(ASTBooleanLiteral.class, node);
         ASTBooleanLiteral boolLiteral = (ASTBooleanLiteral) node;
         assertFalse(boolLiteral.getBooleanValue());
-        node.print();
     }
 
     /**

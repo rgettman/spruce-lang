@@ -2,8 +2,7 @@ package org.spruce.compiler.ast.classes;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,23 +14,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ElementValue {, ElementValue}
  * </em>
  */
-public class ASTElementValueList extends ASTParentNode {
+public final class ASTElementValueList extends ASTListNode<ASTElementValue> implements ASTElementValue {
     /**
-     * Constructs an <code>ASTElementValueList</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * Constructs an <code>ASTElementValueList</code> with a <code>Location</code>, a
+     * list of child nodes, and a list type.
+     *
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTElementValue</code>s.
      */
-    public ASTElementValueList(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTElementValueList(Location location, List<ASTElementValue> children) {
+        super(location, children, Type.ELEMENT_VALUES);
     }
 }

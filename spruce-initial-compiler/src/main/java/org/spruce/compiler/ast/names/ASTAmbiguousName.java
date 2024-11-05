@@ -2,8 +2,7 @@ package org.spruce.compiler.ast.names;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -17,24 +16,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
  * </em>
  */
-public class ASTAmbiguousName extends ASTParentNode {
+public class ASTAmbiguousName extends ASTListNode<ASTIdentifier> {
     /**
      * Constructs an <code>ASTAmbiguousName</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTIdentifier</code>s.
      */
-    public ASTAmbiguousName(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>false</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return false;
+    public ASTAmbiguousName(Location location, List<ASTIdentifier> children) {
+        super(location, children, Type.AMBIGUOUS_NAME_IDS);
     }
 
     /**
@@ -45,14 +35,6 @@ public class ASTAmbiguousName extends ASTParentNode {
      * @see ASTExpressionName#convertToTypeName
      */
     public ASTNamespaceOrTypeName convertToNamespaceOrTypeName() {
-        List<ASTNode> children = getChildren();
-        if (!children.isEmpty() && children.get(0) instanceof ASTAmbiguousName ambName)
-        {
-            ASTNamespaceOrTypeName portName = ambName.convertToNamespaceOrTypeName();
-            children.set(0, portName);
-        }
-        ASTNamespaceOrTypeName portName = new ASTNamespaceOrTypeName(getLocation(), children);
-        portName.setOperation(getOperation());
-        return portName;
+        return new ASTNamespaceOrTypeName(getLocation(), getTypedChildren());
     }
 }

@@ -1,15 +1,10 @@
 package org.spruce.compiler.parser;
 
-import java.util.List;
-
-import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.names.*;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 
-import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
@@ -33,15 +28,15 @@ public class NamesParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceName . Identifier
      * </em>
-     * @return An <code>ASTListNode</code> with type <code>NAMESPACE_IDS</code>.
+     * @return An <code>ASTNamespaceName</code>.
      */
-    public ASTListNode parseNamespaceName() {
+    public ASTNamespaceName parseNamespaceName() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
                 DOT,
                 this::parseIdentifier,
-                NAMESPACE_IDS
+                ASTNamespaceName::new
         );
     }
 
@@ -52,15 +47,15 @@ public class NamesParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceOrTypeName . Identifier
      * </em>
-     * @return An <code>ASTListNode</code> with type <code>TYPENAME_IDS</code>.
+     * @return An <code>ASTTypeName</code>.
      */
-    public ASTListNode parseTypeName() {
+    public ASTTypeName parseTypeName() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
                 DOT,
                 this::parseIdentifier,
-                TYPENAME_IDS
+                ASTTypeName::new
         );
     }
 
@@ -71,15 +66,15 @@ public class NamesParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceOrTypeName . Identifier<br>
      * </em>
-     * @return An <code>ASTListNode</code> with type <code>NAMESPACE_OR_TYPENAME_IDS</code>.
+     * @return An <code>ASTNamespaceOrTypeName</code>.
      */
-    public ASTListNode parseNamespaceOrTypeName() {
+    public ASTNamespaceOrTypeName parseNamespaceOrTypeName() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
                 DOT,
                 this::parseIdentifier,
-                NAMESPACE_OR_TYPENAME_IDS
+                ASTNamespaceOrTypeName::new
         );
     }
 
@@ -90,15 +85,15 @@ public class NamesParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
      * </em>
-     * @return An <code>ASTListNode</code> with type <code>EXPR_NAME_IDS</code>.
+     * @return An <code>ASTExpressionName</code>.
      */
-    public ASTListNode parseExpressionName() {
+    public ASTExpressionName parseExpressionName() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
                 DOT,
                 this::parseIdentifier,
-                EXPR_NAME_IDS
+                ASTExpressionName::new
         );
     }
 
@@ -109,15 +104,15 @@ public class NamesParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
      * </em>
-     * @return An <code>ASListNode</code> with type <code>AMBIGUOUS_NAME_IDS</code>.
+     * @return An <code>ASTAmbiguousName</code>.
      */
-    public ASTListNode parseAmbiguousName() {
+    public ASTAmbiguousName parseAmbiguousName() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected an identifier.",
                 DOT,
                 this::parseIdentifier,
-                AMBIGUOUS_NAME_IDS
+                ASTAmbiguousName::new
         );
     }
 
@@ -127,20 +122,30 @@ public class NamesParser extends BasicParser {
      * IdentifierList:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;Identifier {, Identifier}
      * </em>
-     * @return An <code>ASTListNode</code> with type <code>IDENTIFIERS</code>.
+     * @return An <code>ASTIdentifierList</code>.
      */
-    public ASTListNode parseIdentifierList() {
+    public ASTIdentifierList parseIdentifierList() {
         return parseList(
                 t -> test(t, IDENTIFIER),
                 "Expected identifier",
                 COMMA,
                 this::parseIdentifier,
-                IDENTIFIERS
+                ASTIdentifierList::new
         );
     }
 
     /**
-     * Parses an <code>ASTIdentifier</code>.
+     * Parses an <code>Identifier</code>.
+     * <em>
+     * Identifier:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;IdentifierStart [IdentifierPart]*<br>
+     * <br>
+     * IdentifierStart:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;JavaLetter<br>
+     * <br>
+     * IdentifierPart:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;JavaLetterOrDigit
+     * </em>
      * @return An <code>ASTIdentifier</code>.
      */
     public ASTIdentifier parseIdentifier() {
@@ -156,28 +161,20 @@ public class NamesParser extends BasicParser {
     /**
      * Converts an Expression Name to a TypeName.  Converts any child
      * <code>ASTAmbiguousName</code> to an <code>ASTNamespaceOrTypeName</code>.
-     * @return An <code>ASTListNode</code> representing a Type Name, with type
-     *     <code>TYPENAME_IDS</code>, with the same structure as the given Expression Name.
-     * @see NamesParser#convertToNamespaceOrTypeName
+     * @return An <code>ASTTypeName</code> with the same structure as the given Expression Name.
+     * @see #convertToNamespaceOrTypeName
      */
-    public ASTListNode convertToTypeName(ASTListNode exprName) {
-        List<ASTNode> children = exprName.getChildren();
-        if (!children.isEmpty() && children.get(0) instanceof ASTAmbiguousName ambName)
-        {
-            ASTNamespaceOrTypeName portName = ambName.convertToNamespaceOrTypeName();
-            children.set(0, portName);
-        }
-        ASTListNode typeName = new ASTListNode(exprName.getLocation(), children, TYPENAME_IDS);
-        return typeName;
+    public ASTTypeName convertToTypeName(ASTExpressionName exprName) {
+        return new ASTTypeName(exprName.getLocation(), exprName.getTypedChildren());
     }
 
     /**
      * Copies a list node representing a type name to a new list node
      * representing a namespace or type name.
-     * @param typeName An <code>ASTListNode</code> representing a type name.
-     * @return An <code>ASTListNode</code> with type <code>NAMESPACE_OR_TYPENAME_IDS</code>
+     * @param typeName An <code>ASTTypeName</code>.
+     * @return An <code>ASTNamespaceOrTypeName</code>.
      */
-    public ASTListNode convertToNamespaceOrTypeName(ASTListNode typeName) {
-        return new ASTListNode(typeName.getLocation(), typeName.getChildren(), NAMESPACE_OR_TYPENAME_IDS);
+    public ASTNamespaceOrTypeName convertToNamespaceOrTypeName(ASTTypeName typeName) {
+        return new ASTNamespaceOrTypeName(typeName.getLocation(), typeName.getTypedChildren());
     }
 }

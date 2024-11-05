@@ -1,14 +1,13 @@
 package org.spruce.compiler.ast.expressions;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.ASTParentNode;
-import org.spruce.compiler.ast.types.ASTTypeArguments;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.types.ASTTypeArgumentList;
 import org.spruce.compiler.scanner.Location;
-
-import static org.spruce.compiler.scanner.TokenType.NEW;
 
 /**
  * <p>An <code>ASTUnqualifiedClassInstanceCreationExpression</code> is "new"
@@ -21,22 +20,22 @@ import static org.spruce.compiler.scanner.TokenType.NEW;
  * </em>
  */
 public class ASTUnqualifiedClassInstanceCreationExpression extends ASTParentNode {
-    private final ASTTypeArguments myTypeArgs;
+    private final ASTTypeArgumentList myTypeArgs;
     private final ASTTypeToInstantiate myTti;
-    private final ASTListNode myArgumentList;
+    private final ASTArgumentList myArgumentList;
 
     /**
      * Constructs an <code>ASTUnqualifiedClassInstanceCreationExpression</code>
      * at the given <code>Location</code> with the given TypeToInstantiate and
      * the given ArgumentList.
      * @param location The <code>Location</code>.
-     * @param typeArgs An <code>ASTTypeArguments</code>.
+     * @param typeArgs An <code>ASTTypeArgumentList</code>.
      * @param tti An <code>ASTTypeToInstantiate</code>.
-     * @param argumentList An <code>ASTListNode</code> representing the argument list.
+     * @param argumentList An <code>ASTArgumentList</code>.
      */
-    public ASTUnqualifiedClassInstanceCreationExpression(Location location, ASTTypeArguments typeArgs,
-                                                         ASTTypeToInstantiate tti, ASTListNode argumentList) {
-        super(location, Arrays.asList(typeArgs, tti, argumentList), NEW);
+    public ASTUnqualifiedClassInstanceCreationExpression(Location location, ASTTypeArgumentList typeArgs,
+                                                         ASTTypeToInstantiate tti, ASTArgumentList argumentList) {
+        super(location);
         myTypeArgs = typeArgs;
         myTti = tti;
         myArgumentList = argumentList;
@@ -48,28 +47,20 @@ public class ASTUnqualifiedClassInstanceCreationExpression extends ASTParentNode
      * the given ArgumentList.
      * @param location The <code>Location</code>.
      * @param tti An <code>ASTTypeToInstantiate</code>.
-     * @param argumentList An <code>ASTListNode</code> representing the argument list.
+     * @param argumentList An <code>ASTArgumentList</code>.
      */
-    public ASTUnqualifiedClassInstanceCreationExpression(Location location, ASTTypeToInstantiate tti, ASTListNode argumentList) {
-        super(location, Arrays.asList(tti, argumentList), NEW);
+    public ASTUnqualifiedClassInstanceCreationExpression(Location location, ASTTypeToInstantiate tti, ASTArgumentList argumentList) {
+        super(location);
         myTypeArgs = null;
         myTti = tti;
         myArgumentList = argumentList;
     }
 
     /**
-     * TODO: For removal when removing collapsing.
+     * Returns an <code>ASTTypeArgumentList</code>, if it exists.
+     * @return An <code>Optional&lt;ASTTypeArgumentList&gt;</code>.
      */
-    @Override
-    public boolean isCollapsible() {
-        return false;
-    }
-
-    /**
-     * Returns an <code>ASTTypeArguments</code>, if it exists.
-     * @return An <code>Optional&lt;ASTTypeArguments&gt;</code>.
-     */
-    public Optional<ASTTypeArguments> getTypeArgs() {
+    public Optional<ASTTypeArgumentList> getTypeArgs() {
         return Optional.ofNullable(myTypeArgs);
     }
 
@@ -82,10 +73,21 @@ public class ASTUnqualifiedClassInstanceCreationExpression extends ASTParentNode
     }
 
     /**
-     * Returns an <code>ASTListNode</code> representing the argument list.
-     * @return An <code>ASTListNode</code> representing the argument list.
+     * Returns an <code>ASTArgumentList</code>.
+     * @return An <code>ASTArgumentList</code>.
      */
-    public ASTListNode getArgumentList() {
+    public ASTArgumentList getArgumentList() {
         return myArgumentList;
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(3);
+        if (myTypeArgs != null) {
+            children.add(myTypeArgs);
+        }
+        children.add(myTti);
+        children.add(myArgumentList);
+        return children;
     }
 }

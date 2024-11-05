@@ -1,5 +1,6 @@
 package org.spruce.compiler.test;
 
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.classes.*;
 import org.spruce.compiler.ast.expressions.*;
@@ -29,9 +30,16 @@ public class ParserClassesTest {
     @Test
     public void testAnnotationDeclarationSimple() {
         ClassesParser parser = getClassesParser("annotation Dummy {}");
-        ASTAnnotationDeclaration node = parser.parseAnnotationDeclaration();
-        node.print();
-        checkBinary(node, ANNOTATION, ASTIdentifier.class, ASTAnnotationBody.class);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTAnnotationDeclaration node = parser.parseAnnotationDeclaration(loc, null, genModList);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getInterfaceModList(), INTERFACE_MODIFIERS, ASTKeywordNode.class, 0);
+        ASTIdentifier name = node.getName();
+        assertEquals("Dummy", name.getValue());
+        checkList(node.getBody(), ANNOTATION_PARTS, ASTAnnotationPart.class, 0);
     }
 
     /**
@@ -44,9 +52,19 @@ public class ParserClassesTest {
                 String prop();
             }
             """);
-        ASTAnnotationDeclaration node = parser.parseAnnotationDeclaration();
-        node.print();
-        checkNary(node, ANNOTATION, ASTAccessModifier.class, ASTInterfaceModifierList.class, ASTIdentifier.class, ASTAnnotationBody.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTAnnotationDeclaration node = parser.parseAnnotationDeclaration(loc, accessMod, genModList);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        ASTKeywordNode am = ensureIsa(node.getAccessMod().get(), ASTKeywordNode.class);
+        assertEquals(PUBLIC, am.getKeyword());
+        checkList(node.getInterfaceModList(), INTERFACE_MODIFIERS, ASTKeywordNode.class, 1);
+        ASTIdentifier name = node.getName();
+        assertEquals("AFullTest", name.getValue());
+        checkList(node.getBody(), ANNOTATION_PARTS, ASTAnnotationPart.class, 1);
     }
 
     /**
@@ -55,9 +73,9 @@ public class ParserClassesTest {
     @Test
     public void testAnnotationBodyEmpty() {
         ClassesParser parser = getClassesParser("{}");
-        ASTAnnotationBody node = parser.parseAnnotationBody();
-        node.print();
-        checkEmpty(node, OPEN_BRACE);
+        ASTAnnotationPartList node = parser.parseAnnotationBody();
+        System.out.println(node);
+        checkList(node, ANNOTATION_PARTS, ASTAnnotationPart.class, 0);
     }
 
     /**
@@ -72,9 +90,9 @@ public class ParserClassesTest {
                     Integer getI() default 1;}
                 }
                 """);
-        ASTAnnotationBody node = parser.parseAnnotationBody();
-        node.print();
-        checkSimple(node, ASTListNode.class, OPEN_BRACE);
+        ASTAnnotationPartList node = parser.parseAnnotationBody();
+        System.out.println(node);
+        checkList(node, ANNOTATION_PARTS, ASTAnnotationPart.class, 3);
     }
 
     /**
@@ -83,8 +101,8 @@ public class ParserClassesTest {
     @Test
     public void testAnnotationPartListOfAnnotationPart() {
         ClassesParser parser = getClassesParser("constant Integer i = 1;");
-        ASTListNode node = parser.parseAnnotationPartList();
-        node.print();
+        ASTAnnotationPartList node = parser.parseAnnotationPartList();
+        System.out.println(node);
         checkList(node, ANNOTATION_PARTS, ASTAnnotationPart.class, 1);
     }
 
@@ -106,8 +124,8 @@ public class ParserClassesTest {
                     Goo() {}
                 }
                 """);
-        ASTListNode node = parser.parseAnnotationPartList();
-        node.print();
+        ASTAnnotationPartList node = parser.parseAnnotationPartList();
+        System.out.println(node);
         checkList(node, ANNOTATION_PARTS, ASTAnnotationPart.class, 8);
     }
 
@@ -120,23 +138,23 @@ public class ParserClassesTest {
             constant Integer i = 1;
             class Inner {}
             """);
-        ASTListNode node = parser.parseAnnotationPartList();
-        node.print();
+        ASTAnnotationPartList node = parser.parseAnnotationPartList();
+        System.out.println(node);
         checkList(node, ANNOTATION_PARTS, ASTAnnotationPart.class, 2);
     }
 
     /**
-     * Tests nested annotation part lists.
+     * Tests annotation part lists of multiple annotation parts.
      */
     @Test
-    public void testAnnotationPartListNested() {
+    public void testAnnotationPartListMultiple() {
         ClassesParser parser = getClassesParser("""
             constant Integer i = 1;
             class Inner {}
             Integer getI() default 1;
             """);
-        ASTListNode node = parser.parseAnnotationPartList();
-        node.print();
+        ASTAnnotationPartList node = parser.parseAnnotationPartList();
+        System.out.println(node);
         checkList(node, ANNOTATION_PARTS, ASTAnnotationPart.class, 3);
     }
 
@@ -147,8 +165,8 @@ public class ParserClassesTest {
     public void testAnnotationPartOfATED() {
         ClassesParser parser = getClassesParser("String element() default \"Test\";");
         ASTAnnotationPart node = parser.parseAnnotationPart();
-        node.print();
-        checkSimple(node, ASTAnnotationTypeElementDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTAnnotationTypeElementDeclaration.class, node);
     }
 
     /**
@@ -158,8 +176,8 @@ public class ParserClassesTest {
     public void testAnnotationPartOfConstantDeclaration() {
         ClassesParser parser = getClassesParser("constant String LANGUAGE = \"Spruce\";");
         ASTAnnotationPart node = parser.parseAnnotationPart();
-        node.print();
-        checkSimple(node, ASTConstantDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTConstantDeclaration.class, node);
     }
 
     /**
@@ -169,8 +187,8 @@ public class ParserClassesTest {
     public void testAnnotationPartOfClassDeclaration() {
         ClassesParser parser = getClassesParser("public shared class Nested {}");
         ASTAnnotationPart node = parser.parseAnnotationPart();
-        node.print();
-        checkSimple(node, ASTClassDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTClassDeclaration.class, node);
     }
 
     /**
@@ -180,8 +198,8 @@ public class ParserClassesTest {
     public void testAnnotationPartOfEnumDeclaration() {
         ClassesParser parser = getClassesParser("private enum Light {RED, YELLOW, GREEN}");
         ASTAnnotationPart node = parser.parseAnnotationPart();
-        node.print();
-        checkSimple(node, ASTEnumDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTEnumDeclaration.class, node);
     }
 
     /**
@@ -191,8 +209,8 @@ public class ParserClassesTest {
     public void testAnnotationPartOfInterfaceDeclaration() {
         ClassesParser parser = getClassesParser("private interface TrafficLight { Light getStatus(); }");
         ASTAnnotationPart node = parser.parseAnnotationPart();
-        node.print();
-        checkSimple(node, ASTInterfaceDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTInterfaceDeclaration.class, node);
     }
 
     /**
@@ -202,8 +220,8 @@ public class ParserClassesTest {
     public void testAnnotationPartOfAnnotationDeclaration() {
         ClassesParser parser = getClassesParser("public annotation Test { String getStatus() default \"SUCCESS\"; }");
         ASTAnnotationPart node = parser.parseAnnotationPart();
-        node.print();
-        checkSimple(node, ASTAnnotationDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTAnnotationDeclaration.class, node);
     }
 
     /**
@@ -213,8 +231,8 @@ public class ParserClassesTest {
     public void testAnnotationPartOfRecordDeclaration() {
         ClassesParser parser = getClassesParser("internal record Redacted(String byWhom) { }");
         ASTAnnotationPart node = parser.parseAnnotationPart();
-        node.print();
-        checkSimple(node, ASTRecordDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTRecordDeclaration.class, node);
     }
 
     /**
@@ -233,8 +251,8 @@ public class ParserClassesTest {
                 }
                 """);
         ASTAnnotationPart node = parser.parseAnnotationPart();
-        node.print();
-        checkSimple(node, ASTAdtDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTAdtDeclaration.class, node);
     }
 
     /**
@@ -244,8 +262,11 @@ public class ParserClassesTest {
     public void testATED() {
         ClassesParser parser = getClassesParser("String element();");
         ASTAnnotationTypeElementDeclaration node = parser.parseAnnotationTypeElementDeclaration();
-        node.print();
-        checkBinary(node, OPEN_PARENTHESIS, ASTDataType.class, ASTIdentifier.class);
+        System.out.println(node);
+
+        assertNotNull(node.getDataType());
+        assertEquals("element", node.getName().getValue());
+        assertFalse(node.getDefaultValue().isPresent());
     }
 
     /**
@@ -255,8 +276,11 @@ public class ParserClassesTest {
     public void testATEDDefaultValue() {
         ClassesParser parser = getClassesParser("String element() default \"DNE\";");
         ASTAnnotationTypeElementDeclaration node = parser.parseAnnotationTypeElementDeclaration();
-        node.print();
-        checkTrinary(node, OPEN_PARENTHESIS, ASTDataType.class, ASTIdentifier.class, ASTDefaultValue.class);
+        System.out.println(node);
+
+        assertNotNull(node.getDataType());
+        assertEquals("element", node.getName().getValue());
+        assertTrue(node.getDefaultValue().isPresent());
     }
 
     /**
@@ -265,9 +289,11 @@ public class ParserClassesTest {
     @Test
     public void testDefaultValue() {
         ClassesParser parser = getClassesParser("default {\"default\", \"value\"}");
-        ASTDefaultValue node = parser.parseDefaultValue();
-        node.print();
-        checkSimple(node, ASTElementValue.class, DEFAULT);
+        ASTElementValue node = parser.parseDefaultValue();
+        System.out.println(node);
+
+        ASTElementValueList elementValueArrayInit = ensureIsa(node, ASTElementValueList.class);
+        checkList(elementValueArrayInit, ELEMENT_VALUES, ASTElementValue.class, 2);
     }
 
     /**
@@ -277,11 +303,10 @@ public class ParserClassesTest {
     public void testAnnotationOfMarkerAnnotation() {
         ClassesParser parser = getClassesParser("@Test");
         ASTAnnotation node = parser.parseAnnotation();
-        node.print();
+        System.out.println(node);
 
-        checkSimple(node, ASTMarkerAnnotation.class, AT_SIGN);
-        ASTMarkerAnnotation ma = (ASTMarkerAnnotation) node.getChildren().get(0);
-        checkSimple(ma, ASTListNode.class, AT_SIGN);
+        ASTMarkerAnnotation ma = ensureIsa(node, ASTMarkerAnnotation.class);
+        assertNotNull(ma.getTypeName());
     }
 
     /**
@@ -291,11 +316,11 @@ public class ParserClassesTest {
     public void testAnnotationOfSingleElementAnnotation() {
         ClassesParser parser = getClassesParser("@Test(\"Test\")");
         ASTAnnotation node = parser.parseAnnotation();
-        node.print();
+        System.out.println(node);
 
-        checkSimple(node, ASTSingleElementAnnotation.class, AT_SIGN);
-        ASTSingleElementAnnotation sea = (ASTSingleElementAnnotation) node.getChildren().get(0);
-        checkBinary(sea, AT_SIGN, ASTListNode.class, ASTElementValue.class);
+        ASTSingleElementAnnotation sea = ensureIsa(node, ASTSingleElementAnnotation.class);
+        assertNotNull(sea.getTypeName());
+        assertNotNull(sea.getElementValue());
     }
 
     /**
@@ -305,11 +330,11 @@ public class ParserClassesTest {
     public void testAnnotationOfNormalAnnotationEmpty() {
         ClassesParser parser = getClassesParser("@Empty()");
         ASTAnnotation node = parser.parseAnnotation();
-        node.print();
+        System.out.println(node);
 
-        checkSimple(node, ASTNormalAnnotation.class, AT_SIGN);
-        ASTNormalAnnotation na = (ASTNormalAnnotation) node.getChildren().get(0);
-        checkSimple(na, ASTListNode.class, AT_SIGN);
+        ASTNormalAnnotation na = ensureIsa(node, ASTNormalAnnotation.class);
+        assertNotNull(na.getTypeName());
+        checkList(na.getElementValuePairList(), ELEMENT_VALUE_PAIRS, ASTElementValuePair.class, 0);
     }
 
     /**
@@ -319,11 +344,11 @@ public class ParserClassesTest {
     public void testAnnotationOfNormalAnnotationOfEVPL() {
         ClassesParser parser = getClassesParser("@Many(one = 1, two = \"two\", three = '3')");
         ASTAnnotation node = parser.parseAnnotation();
-        node.print();
+        System.out.println(node);
 
-        checkSimple(node, ASTNormalAnnotation.class, AT_SIGN);
-        ASTNormalAnnotation na = (ASTNormalAnnotation) node.getChildren().get(0);
-        checkBinary(na, AT_SIGN, ASTListNode.class, ASTListNode.class);
+        ASTNormalAnnotation na = ensureIsa(node, ASTNormalAnnotation.class);
+        assertNotNull(na.getTypeName());
+        checkList(na.getElementValuePairList(), ELEMENT_VALUE_PAIRS, ASTElementValuePair.class, 3);
     }
 
     /**
@@ -332,8 +357,8 @@ public class ParserClassesTest {
     @Test
     public void testEVPListOfEVP() {
         ClassesParser parser = getClassesParser("test = \"Test\"");
-        ASTListNode node = parser.parseElementValuePairList();
-        node.print();
+        ASTElementValuePairList node = parser.parseElementValuePairList();
+        System.out.println(node);
         checkList(node, ELEMENT_VALUE_PAIRS, ASTElementValuePair.class, 1);
     }
 
@@ -343,8 +368,8 @@ public class ParserClassesTest {
     @Test
     public void testEVPList() {
         ClassesParser parser = getClassesParser("one = 1, two = \"two\", three = '3'");
-        ASTListNode node = parser.parseElementValuePairList();
-        node.print();
+        ASTElementValuePairList node = parser.parseElementValuePairList();
+        System.out.println(node);
         checkList(node, ELEMENT_VALUE_PAIRS, ASTElementValuePair.class, 3);
     }
 
@@ -355,8 +380,9 @@ public class ParserClassesTest {
     public void testElementValuePairOfElementValue() {
         ClassesParser parser = getClassesParser("prop = \"Conditional Expression\"");
         ASTElementValuePair node = parser.parseElementValuePair();
-        node.print();
-        checkBinary(node, EQUAL, ASTIdentifier.class, ASTElementValue.class);
+        System.out.println(node);
+        assertNotNull(node.getElementName());
+        assertNotNull(node.getElementValue());
     }
 
     /**
@@ -365,9 +391,9 @@ public class ParserClassesTest {
     @Test
     public void testEVAIEmpty() {
         ClassesParser parser = getClassesParser("{}");
-        ASTElementValueArrayInitializer node = parser.parseElementValueArrayInitializer();
-        node.print();
-        checkEmpty(node, OPEN_BRACE);
+        ASTElementValueList node = parser.parseElementValueArrayInitializer();
+        System.out.println(node);
+        checkList(node, ELEMENT_VALUES, ASTElementValue.class, 0);
     }
 
     /**
@@ -376,9 +402,9 @@ public class ParserClassesTest {
     @Test
     public void testEVAIOfEVList() {
         ClassesParser parser = getClassesParser("{1, \"Two\", '3'}");
-        ASTElementValueArrayInitializer node = parser.parseElementValueArrayInitializer();
-        node.print();
-        checkSimple(node, ASTListNode.class, OPEN_BRACE);
+        ASTElementValueList node = parser.parseElementValueArrayInitializer();
+        System.out.println(node);
+        checkList(node, ELEMENT_VALUES, ASTElementValue.class, 3);
     }
 
     /**
@@ -387,8 +413,8 @@ public class ParserClassesTest {
     @Test
     public void testEVListOfEV() {
         ClassesParser parser = getClassesParser("\"Test\"");
-        ASTListNode node = parser.parseElementValueList();
-        node.print();
+        ASTElementValueList node = parser.parseElementValueList();
+        System.out.println(node);
         checkList(node, ELEMENT_VALUES, ASTElementValue.class, 1);
     }
 
@@ -398,8 +424,8 @@ public class ParserClassesTest {
     @Test
     public void testEVList() {
         ClassesParser parser = getClassesParser("1, \"two\", '3'");
-        ASTListNode node = parser.parseElementValueList();
-        node.print();
+        ASTElementValueList node = parser.parseElementValueList();
+        System.out.println(node);
         checkList(node, ELEMENT_VALUES, ASTElementValue.class, 3);
     }
 
@@ -410,8 +436,8 @@ public class ParserClassesTest {
     public void testElementValueOfConditionalExpression() {
         ClassesParser parser = getClassesParser("\"Conditional Expression\"");
         ASTElementValue node = parser.parseElementValue();
-        node.print();
-        checkSimple(node, ASTPrimary.class);
+        System.out.println(node);
+        assertInstanceOf(ASTPrimary.class, node);
     }
 
     /**
@@ -421,8 +447,8 @@ public class ParserClassesTest {
     public void testElementValueOfEVAI() {
         ClassesParser parser = getClassesParser("{\"Conditional Expression\"}");
         ASTElementValue node = parser.parseElementValue();
-        node.print();
-        checkSimple(node, ASTElementValueArrayInitializer.class);
+        System.out.println(node);
+        assertInstanceOf(ASTListNode.class, node);
     }
 
     /**
@@ -432,8 +458,8 @@ public class ParserClassesTest {
     public void testElementValueOfAnnotation() {
         ClassesParser parser = getClassesParser("@Foo");
         ASTElementValue node = parser.parseElementValue();
-        node.print();
-        checkSimple(node, ASTAnnotation.class);
+        System.out.println(node);
+        assertInstanceOf(ASTAnnotation.class, node);
     }
 
     /**
@@ -442,9 +468,18 @@ public class ParserClassesTest {
     @Test
     public void testInterfaceDeclarationSimple() {
         ClassesParser parser = getClassesParser("interface Dummy {}");
-        ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration();
-        node.print();
-        checkBinary(node, INTERFACE, ASTIdentifier.class, ASTInterfaceBody.class);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration(loc, null, genModList);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getInterfaceModifierList(), INTERFACE_MODIFIERS, ASTKeywordNode.class, 0);
+        assertEquals("Dummy", node.getName().getValue());
+        assertFalse(node.getTypeParams().isPresent());
+        assertFalse(node.getExtendsInterfaces().isPresent());
+        assertFalse(node.getPermits().isPresent());
+        checkList(node.getInterfaceParts(), INTERFACE_PARTS, ASTInterfacePart.class, 0);
     }
 
     /**
@@ -457,21 +492,19 @@ public class ParserClassesTest {
                 permits FinalTest, UnitTest, Test, Quiz, PopQuiz
             {}
             """);
-        ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration();
-        node.print();
-        checkNary(node, INTERFACE, ASTAccessModifier.class, ASTInterfaceModifierList.class, ASTIdentifier.class,
-                ASTTypeParameters.class, ASTExtendsInterfaces.class, ASTPermits.class, ASTInterfaceBody.class);
-    }
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration(loc, accessMod, genModList);
+        System.out.println(node);
 
-    /**
-     * Tests interface modifier list.
-     */
-    @Test
-    public void testInterfaceModifierList() {
-        ClassesParser parser = getClassesParser("shared sealed");
-        ASTInterfaceModifierList node = parser.parseInterfaceModifierList();
-        node.print();
-        checkList(node, null, ASTGeneralModifier.class, 2);
+        assertTrue(node.getAccessMod().isPresent());
+        checkList(node.getInterfaceModifierList(), INTERFACE_MODIFIERS, ASTKeywordNode.class, 1);
+        assertEquals("IFullTest", node.getName().getValue());
+        assertTrue(node.getTypeParams().isPresent());
+        assertTrue(node.getExtendsInterfaces().isPresent());
+        assertTrue(node.getPermits().isPresent());
+        checkList(node.getInterfaceParts(), INTERFACE_PARTS, ASTInterfacePart.class, 0);
     }
 
     /**
@@ -480,9 +513,9 @@ public class ParserClassesTest {
     @Test
     public void testExtendsInterfaces() {
         ClassesParser parser = getClassesParser("extends Copyable, Serializable");
-        ASTExtendsInterfaces node = parser.parseExtendsInterfaces();
-        node.print();
-        checkSimple(node, ASTListNode.class, EXTENDS);
+        ASTDataTypeNoArrayList node = parser.parseExtendsInterfaces();
+        System.out.println(node);
+        checkList(node, DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 2);
     }
 
     /**
@@ -491,9 +524,9 @@ public class ParserClassesTest {
     @Test
     public void testInterfaceBodyEmpty() {
         ClassesParser parser = getClassesParser("{}");
-        ASTInterfaceBody node = parser.parseInterfaceBody();
-        node.print();
-        checkEmpty(node, OPEN_BRACE);
+        ASTInterfacePartList node = parser.parseInterfaceBody();
+        System.out.println(node);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 0);
     }
 
     /**
@@ -510,9 +543,9 @@ public class ParserClassesTest {
                     }
                 }
                 """);
-        ASTInterfaceBody node = parser.parseInterfaceBody();
-        node.print();
-        checkSimple(node, ASTListNode.class, OPEN_BRACE);
+        ASTInterfacePartList node = parser.parseInterfaceBody();
+        System.out.println(node);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 3);
     }
 
     /**
@@ -536,8 +569,8 @@ public class ParserClassesTest {
                     Goo() {}
                 }
                 """);
-        ASTListNode node = parser.parseInterfacePartList();
-        node.print();
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        System.out.println(node);
         checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 9);
     }
 
@@ -547,8 +580,8 @@ public class ParserClassesTest {
     @Test
     public void testInterfacePartListOfInterfacePart() {
         ClassesParser parser = getClassesParser("constant Integer i = 1;");
-        ASTListNode node = parser.parseInterfacePartList();
-        node.print();
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        System.out.println(node);
         checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 1);
     }
 
@@ -561,23 +594,23 @@ public class ParserClassesTest {
             constant Integer i = 1;
             class Inner {}
             """);
-        ASTListNode node = parser.parseInterfacePartList();
-        node.print();
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        System.out.println(node);
         checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 2);
     }
 
     /**
-     * Tests nested interface part lists.
+     * Tests interface part lists of multiple interface parts.
      */
     @Test
-    public void testInterfacePartListNested() {
+    public void testInterfacePartListMultiple() {
         ClassesParser parser = getClassesParser("""
                 constant Integer i = 1;
                 class Inner {}
                 Integer getI();
                 """);
-        ASTListNode node = parser.parseInterfacePartList();
-        node.print();
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        System.out.println(node);
         checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 3);
     }
 
@@ -588,8 +621,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfMethodDeclarationVoidResult() {
         ClassesParser parser = getClassesParser("public void method();");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTInterfaceMethodDeclaration.class, node);
     }
 
     /**
@@ -599,8 +632,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfMethodDeclarationVoidResultTypeParameters() {
         ClassesParser parser = getClassesParser("public <T> void method(T param);");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTInterfaceMethodDeclaration.class, node);
     }
 
     /**
@@ -610,8 +643,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfMethodDeclarationDataTypeResult() {
         ClassesParser parser = getClassesParser("public String method();");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTInterfaceMethodDeclaration.class, node);
     }
 
     /**
@@ -621,8 +654,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfMethodDeclarationDataTypeResultTypeParameters() {
         ClassesParser parser = getClassesParser("public <T> T method(T param);");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTInterfaceMethodDeclaration.class, node);
     }
 
     /**
@@ -632,8 +665,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfMethodDeclarationConstResult() {
         ClassesParser parser = getClassesParser("mut String method(String param);");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTInterfaceMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTInterfaceMethodDeclaration.class, node);
     }
 
     /**
@@ -643,8 +676,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfConstantDeclaration() {
         ClassesParser parser = getClassesParser("constant String LANGUAGE = \"Spruce\";");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTConstantDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTConstantDeclaration.class, node);
     }
 
     /**
@@ -654,8 +687,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfClassDeclaration() {
         ClassesParser parser = getClassesParser("public shared class Nested {}");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTClassDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTClassDeclaration.class, node);
     }
 
     /**
@@ -665,8 +698,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfEnumDeclaration() {
         ClassesParser parser = getClassesParser("private enum Light {RED, YELLOW, GREEN}");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTEnumDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTEnumDeclaration.class, node);
     }
 
     /**
@@ -676,8 +709,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfInterfaceDeclaration() {
         ClassesParser parser = getClassesParser("private interface TrafficLight { Light getStatus(); }");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTInterfaceDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTInterfaceDeclaration.class, node);
     }
 
     /**
@@ -687,8 +720,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfAnnotationDeclaration() {
         ClassesParser parser = getClassesParser("public annotation Test { String getStatus() default \"SUCCESS\"; }");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTAnnotationDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTAnnotationDeclaration.class, node);
     }
 
     /**
@@ -698,8 +731,8 @@ public class ParserClassesTest {
     public void testInterfacePartOfRecordDeclaration() {
         ClassesParser parser = getClassesParser("internal record Redacted(String byWhom) { }");
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTRecordDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTRecordDeclaration.class, node);
     }
 
     /**
@@ -718,8 +751,8 @@ public class ParserClassesTest {
                 }
                 """);
         ASTInterfacePart node = parser.parseInterfacePart();
-        node.print();
-        checkSimple(node, ASTAdtDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTAdtDeclaration.class, node);
     }
 
     /**
@@ -728,9 +761,17 @@ public class ParserClassesTest {
     @Test
     public void testInterfaceMethodDeclarationSimple() {
         ClassesParser parser = getClassesParser("Boolean add(T element);");
-        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration();
-        node.print();
-        checkBinary(node, ASTMethodHeader.class, ASTMethodBody.class);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration(loc, null, genModList, varModList, dt);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getModifierList(), INTERFACE_METHOD_MODIFIERS, ASTKeywordNode.class, 0);
+        assertNotNull(node.getHeader());
+        assertNotNull(node.getBody());
     }
 
     /**
@@ -745,40 +786,44 @@ public class ParserClassesTest {
                 }
             }
             """);
-        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration();
-        node.print();
-        checkNary(node, null, ASTAccessModifier.class, ASTInterfaceMethodModifierList.class, ASTMethodHeader.class, ASTMethodBody.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration(loc, accessMod, genModList);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        assertEquals(PRIVATE, node.getAccessMod().get().getKeyword());
+        checkList(node.getModifierList(), INTERFACE_METHOD_MODIFIERS, ASTKeywordNode.class, 1);
+        assertNotNull(node.getHeader());
+        assertNotNull(node.getBody());
     }
 
     /**
-     * Tests interface method modifier list.
+     * Tests bad constant declaration, no "constant".
      */
     @Test
-    public void testInterfaceMethodModifierList() {
-        ClassesParser parser = getClassesParser("default override shared");
-        ASTInterfaceMethodModifierList node = parser.parseInterfaceMethodModifierList();
-        node.print();
-        checkList(node, null, ASTGeneralModifier.class, 3);
-    }
-
-    /**
-     * Tests bad interface method modifier list.
-     */
-    @Test
-    public void testErrorInterfaceMethodModifierListOfConst() {
-        ClassesParser parser = getClassesParser("final");
-        assertThrows(CompileException.class, parser::parseInterfaceMethodModifierList);
+    public void testConstantDeclaration() {
+        ClassesParser parser = getClassesParser("String test = \"Test\";");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class, () -> parser.parseConstantDeclaration(loc, null, genModList, dt),
+                "Expected 'constant'.");
     }
 
     /**
      * Tests constant declaration, no "constant".
      */
     @Test
-    public void testConstantDeclaration() {
-        ClassesParser parser = getClassesParser("String test = \"Test\";");
-        ASTConstantDeclaration node = parser.parseConstantDeclaration();
-        node.print();
-        checkBinary(node, ASTDataType.class, ASTListNode.class);
+    public void testConstantDeclarationAccessMod() {
+        ClassesParser parser = getClassesParser("public String test = \"Test\";");
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class, () -> parser.parseConstantDeclaration(loc, accessMod, genModList, dt),
+                "Expected 'constant'.");
     }
 
     /**
@@ -787,9 +832,16 @@ public class ParserClassesTest {
     @Test
     public void testConstantDeclarationOfConstant() {
         ClassesParser parser = getClassesParser("constant String test = \"Test\";");
-        ASTConstantDeclaration node = parser.parseConstantDeclaration();
-        node.print();
-        checkTrinary(node, null, ASTConstantModifier.class, ASTDataType.class, ASTListNode.class);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTConstantDeclaration node = parser.parseConstantDeclaration(loc, null, genModList, dt);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        assertNotNull(node.getConstantMod());
+        assertNotNull(node.getDataType());
+        assertNotNull(node.getVarDeclList());
     }
 
     /**
@@ -798,9 +850,9 @@ public class ParserClassesTest {
     @Test
     public void testConstantModifier() {
         ClassesParser parser = getClassesParser("constant");
-        ASTConstantModifier node = parser.parseConstantModifier();
-        node.print();
-        checkEmpty(node, CONSTANT);
+        ASTKeywordNode node = parser.parseConstantModifier();
+        System.out.println(node);
+        assertEquals(CONSTANT, node.getKeyword());
     }
 
     /**
@@ -834,11 +886,15 @@ public class ParserClassesTest {
                 public adt Optional<T> extends Bar { None() {}, Some(T value) {}}
                 """);
         ClassesParser parser = new Parser(scanner).getClassesParser();
-        ASTAccessModifier am = parser.parseAccessModifier();
-        ASTAdtDeclaration node = parser.parseAdtDeclaration(am.getLocation(), am);
-        node.print();
-        checkNary(node, ADT, ASTAccessModifier.class, ASTIdentifier.class, ASTTypeParameters.class,
-                ASTExtendsInterfaces.class, ASTAdtBody.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTAdtDeclaration node = parser.parseAdtDeclaration(accessMod.getLocation(), accessMod);
+        System.out.println(node);
+
+        assertTrue(node.getAccessModifier().isPresent());
+        assertEquals("Optional", node.getName().getValue());
+        assertTrue(node.getTypeParams().isPresent());
+        assertTrue(node.getExtendsInterfaces().isPresent());
+        assertNotNull(node.getAdtBody());
     }
 
     /**
@@ -850,8 +906,13 @@ public class ParserClassesTest {
         ClassesParser parser = new Parser(scanner).getClassesParser();
         Location loc = scanner.getCurrToken().getLocation();
         ASTAdtDeclaration node = parser.parseAdtDeclaration(loc, null);
-        node.print();
-        checkBinary(node, ADT, ASTIdentifier.class, ASTAdtBody.class);
+        System.out.println(node);
+
+        assertFalse(node.getAccessModifier().isPresent());
+        assertEquals("Optional", node.getName().getValue());
+        assertFalse(node.getTypeParams().isPresent());
+        assertFalse(node.getExtendsInterfaces().isPresent());
+        assertNotNull(node.getAdtBody());
     }
 
     /**
@@ -898,8 +959,10 @@ public class ParserClassesTest {
                 }
                 """);
         ASTAdtBody node = parser.parseAdtBody();
-        node.print();
-        checkBinary(node, ASTListNode.class, ASTAdtBodyDeclarations.class);
+        System.out.println(node);
+
+        assertNotNull(node.getVariantList());
+        assertNotNull(node.getBodyDecls());
     }
 
     /**
@@ -908,8 +971,8 @@ public class ParserClassesTest {
     @Test
     public void testVariantList() {
         ClassesParser parser = getClassesParser("Here, There(Location l) {}, Anywhere}");
-        ASTListNode node = parser.parseVariantList();
-        node.print();
+        ASTVariantList node = parser.parseVariantList();
+        System.out.println(node);
         checkList(node, VARIANTS, ASTVariant.class, 3);
     }
 
@@ -920,8 +983,8 @@ public class ParserClassesTest {
     public void testVariantOfCompactRecordDeclaration() {
         ClassesParser parser = getClassesParser("None() {}");
         ASTVariant node = parser.parseVariant();
-        node.print();
-        checkSimple(node, ASTCompactRecordDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTCompactRecordDeclaration.class, node);
     }
 
     /**
@@ -931,8 +994,8 @@ public class ParserClassesTest {
     public void testVariantOfDataType() {
         ClassesParser parser = getClassesParser("Elsewhere,");
         ASTVariant node = parser.parseVariant();
-        node.print();
-        checkSimple(node, ASTDataType.class);
+        System.out.println(node);
+        assertInstanceOf(ASTDataType.class, node);
     }
 
     /**
@@ -957,9 +1020,14 @@ public class ParserClassesTest {
                 }
                 """);
         ASTCompactRecordDeclaration node = parser.parseCompactRecordDeclaration();
-        node.print();
-        checkNary(node, null, ASTIdentifier.class, ASTTypeParameters.class, ASTRecordHeader.class,
-                ASTSuperinterfaces.class, ASTClassBody.class);
+        System.out.println(node);
+
+        assertEquals("Some", node.getName().getValue());
+        assertTrue(node.getTypeParams().isPresent());
+        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
+        assertTrue(node.getSuperinterfaces().isPresent());
+        checkList(node.getSuperinterfaces().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 1);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 1);
     }
 
     /**
@@ -969,8 +1037,12 @@ public class ParserClassesTest {
     public void testCompactRecordDeclarationSimple() {
         ClassesParser parser = getClassesParser("None() {}");
         ASTCompactRecordDeclaration node = parser.parseCompactRecordDeclaration();
-        node.print();
-        checkTrinary(node, null, ASTIdentifier.class, ASTRecordHeader.class, ASTClassBody.class);
+        System.out.println(node);
+        assertEquals("None", node.getName().getValue());
+        assertFalse(node.getTypeParams().isPresent());
+        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 0);
+        assertFalse(node.getSuperinterfaces().isPresent());
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -988,9 +1060,9 @@ public class ParserClassesTest {
     @Test
     public void testAdtBodyDeclarations() {
         ClassesParser parser = getClassesParser("; public T getValue();");
-        ASTAdtBodyDeclarations node = parser.parseAdtBodyDeclarations();
-        node.print();
-        checkSimple(node, ASTListNode.class);
+        ASTInterfacePartList node = parser.parseAdtBodyDeclarations();
+        System.out.println(node);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 1);
     }
 
     /**
@@ -1000,11 +1072,17 @@ public class ParserClassesTest {
     public void testRecordDeclarationFull() {
         Scanner scanner = new Scanner("public record Value<T>(T value) implements Comparable<T> {}");
         ClassesParser parser = new Parser(scanner).getClassesParser();
-        ASTAccessModifier am = parser.parseAccessModifier();
+        ASTKeywordNode am = parser.parseAccessModifier();
         ASTRecordDeclaration node = parser.parseRecordDeclaration(am.getLocation(), am);
-        node.print();
-        checkNary(node, RECORD, ASTAccessModifier.class, ASTIdentifier.class, ASTTypeParameters.class,
-                ASTRecordHeader.class, ASTSuperinterfaces.class, ASTClassBody.class);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        assertEquals("Value", node.getName().getValue());
+        assertTrue(node.getTypeParams().isPresent());
+        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
+        assertTrue(node.getSuperinterfaces().isPresent());
+        checkList(node.getSuperinterfaces().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 1);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -1016,8 +1094,14 @@ public class ParserClassesTest {
         ClassesParser parser = new Parser(scanner).getClassesParser();
         Location loc = scanner.getCurrToken().getLocation();
         ASTRecordDeclaration node = parser.parseRecordDeclaration(loc, null);
-        node.print();
-        checkTrinary(node, RECORD, ASTIdentifier.class, ASTRecordHeader.class, ASTClassBody.class);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        assertEquals("Person", node.getName().getValue());
+        assertFalse(node.getTypeParams().isPresent());
+        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 2);
+        assertFalse(node.getSuperinterfaces().isPresent());
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -1044,9 +1128,9 @@ public class ParserClassesTest {
     @Test
     public void testRecordHeader() {
         ClassesParser parser = getClassesParser("(String filename, Int lineNbr)");
-        ASTRecordHeader node = parser.parseRecordHeader();
-        node.print();
-        checkSimple(node, ASTListNode.class);
+        ASTFormalParameterList node = parser.parseRecordHeader();
+        System.out.println(node);
+        checkList(node, FORMAL_PARAMETERS, ASTFormalParameter.class, 2);
     }
 
     /**
@@ -1055,7 +1139,7 @@ public class ParserClassesTest {
     @Test
     public void testCompactConstructorDeclarationBad() {
         ClassesParser parser = getClassesParser("private { }");
-        ASTAccessModifier am = parser.parseAccessModifier();
+        ASTKeywordNode am = parser.parseAccessModifier();
         assertThrows(CompileException.class, () -> parser.parseCompactConstructorDeclaration(am.getLocation(), am));
     }
 
@@ -1070,10 +1154,12 @@ public class ParserClassesTest {
                     b /= 2;
                 }
                 """);
-        ASTAccessModifier am = parser.parseAccessModifier();
+        ASTKeywordNode am = parser.parseAccessModifier();
         ASTCompactConstructorDeclaration node = parser.parseCompactConstructorDeclaration(am.getLocation(), am);
-        node.print();
-        checkBinary(node, CONSTRUCTOR, ASTAccessModifier.class, ASTBlock.class);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        assertNotNull(node.getBlock());
     }
 
     /**
@@ -1090,8 +1176,10 @@ public class ParserClassesTest {
         ClassesParser parser = new Parser(scanner).getClassesParser();
         Location loc = scanner.getCurrToken().getLocation();
         ASTCompactConstructorDeclaration node = parser.parseCompactConstructorDeclaration(loc, null);
-        node.print();
-        checkSimple(node, ASTBlock.class, CONSTRUCTOR);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        assertNotNull(node.getBlock());
     }
 
     /**
@@ -1100,9 +1188,16 @@ public class ParserClassesTest {
     @Test
     public void testEnumDeclarationSimple() {
         ClassesParser parser = getClassesParser("enum Dummy {DUMMY}");
-        ASTEnumDeclaration node = parser.parseEnumDeclaration();
-        node.print();
-        checkBinary(node, ENUM, ASTIdentifier.class, ASTEnumBody.class);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTEnumDeclaration node = parser.parseEnumDeclaration(loc, null, genModList);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getClassModifierList(), CLASS_MODIFIERS, ASTKeywordNode.class, 0);
+        assertEquals("Dummy", node.getName().getValue());
+        assertFalse(node.getSuperinterfaces().isPresent());
+        assertNotNull(node.getEnumBody());
     }
 
     /**
@@ -1111,10 +1206,18 @@ public class ParserClassesTest {
     @Test
     public void testEnumDeclarationFull() {
         ClassesParser parser = getClassesParser("public shared enum FullEnumTest implements Serializable {QUIZ, TEST, FINAL}");
-        ASTEnumDeclaration node = parser.parseEnumDeclaration();
-        node.print();
-        checkNary(node, ENUM, ASTAccessModifier.class, ASTClassModifierList.class, ASTIdentifier.class,
-                ASTSuperinterfaces.class, ASTEnumBody.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTEnumDeclaration node = parser.parseEnumDeclaration(loc, accessMod, genModList);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        checkList(node.getClassModifierList(), CLASS_MODIFIERS, ASTKeywordNode.class, 1);
+        assertEquals("FullEnumTest", node.getName().getValue());
+        assertTrue(node.getSuperinterfaces().isPresent());
+        checkList(node.getSuperinterfaces().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 1);
+        assertNotNull(node.getEnumBody());
     }
 
     /**
@@ -1124,8 +1227,9 @@ public class ParserClassesTest {
     public void testEnumBodySimple() {
         ClassesParser parser = getClassesParser("{\nRED, YELLOW, GREEN\n}");
         ASTEnumBody node = parser.parseEnumBody();
-        node.print();
-        checkSimple(node, ASTListNode.class);
+        System.out.println(node);
+        checkList(node.getEnumConstants(), ENUM_CONSTANTS, ASTEnumConstant.class, 3);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -1135,8 +1239,9 @@ public class ParserClassesTest {
     public void testEnumBodyOfNothing() {
         ClassesParser parser = getClassesParser("{}");
         ASTEnumBody node = parser.parseEnumBody();
-        node.print();
-        checkEmpty(node, null);
+        System.out.println(node);
+        checkList(node.getEnumConstants(), ENUM_CONSTANTS, ASTEnumConstant.class, 0);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -1152,8 +1257,9 @@ public class ParserClassesTest {
                 }
                 """);
         ASTEnumBody node = parser.parseEnumBody();
-        node.print();
-        checkSimple(node, ASTEnumBodyDeclarations.class);
+        System.out.println(node);
+        checkList(node.getEnumConstants(), ENUM_CONSTANTS, ASTEnumConstant.class, 0);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 1);
     }
 
     /**
@@ -1170,8 +1276,9 @@ public class ParserClassesTest {
                 }
                 """);
         ASTEnumBody node = parser.parseEnumBody();
-        node.print();
-        checkBinary(node, ASTListNode.class, ASTEnumBodyDeclarations.class);
+        System.out.println(node);
+        checkList(node.getEnumConstants(), ENUM_CONSTANTS, ASTEnumConstant.class, 3);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 1);
     }
 
     /**
@@ -1183,9 +1290,9 @@ public class ParserClassesTest {
         ;
         constructor() {}
         """);
-        ASTEnumBodyDeclarations node = parser.parseEnumBodyDeclarations();
-        node.print();
-        checkSimple(node, ASTListNode.class, SEMICOLON);
+        ASTClassPartList node = parser.parseEnumBodyDeclarations();
+        System.out.println(node);
+        checkList(node, CLASS_PARTS, ASTClassPart.class, 1);
     }
 
     /**
@@ -1194,8 +1301,8 @@ public class ParserClassesTest {
     @Test
     public void testEnumConstantListOfEnumConstant() {
         ClassesParser parser = getClassesParser("SINGLETON");
-        ASTListNode node = parser.parseEnumConstantList();
-        node.print();
+        ASTEnumConstantList node = parser.parseEnumConstantList();
+        System.out.println(node);
         checkList(node, ENUM_CONSTANTS, ASTEnumConstant.class, 1);
     }
 
@@ -1205,8 +1312,8 @@ public class ParserClassesTest {
     @Test
     public void testEnumConstantList() {
         ClassesParser parser = getClassesParser("RED, YELLOW, GREEN");
-        ASTListNode node = parser.parseEnumConstantList();
-        node.print();
+        ASTEnumConstantList node = parser.parseEnumConstantList();
+        System.out.println(node);
         checkList(node, ENUM_CONSTANTS, ASTEnumConstant.class, 3);
     }
 
@@ -1217,8 +1324,11 @@ public class ParserClassesTest {
     public void testEnumConstantSimple() {
         ClassesParser parser = getClassesParser("RED");
         ASTEnumConstant node = parser.parseEnumConstant();
-        node.print();
-        checkSimple(node, ASTIdentifier.class);
+        System.out.println(node);
+
+        assertEquals("RED", node.getName().getValue());
+        checkList(node.getArgsList(), ARGUMENTS, ASTGiveExpression.class, 0);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -1228,8 +1338,11 @@ public class ParserClassesTest {
     public void testEnumConstantOfArgumentListClassBody() {
         ClassesParser parser = getClassesParser("RED(\"#F9152F\") { override String toString() { return \"Red Light\"; } }");
         ASTEnumConstant node = parser.parseEnumConstant();
-        node.print();
-        checkTrinary(node, null, ASTIdentifier.class, ASTListNode.class, ASTClassBody.class);
+        System.out.println(node);
+
+        assertEquals("RED", node.getName().getValue());
+        checkList(node.getArgsList(), ARGUMENTS, ASTGiveExpression.class, 1);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 1);
     }
 
     /**
@@ -1238,9 +1351,19 @@ public class ParserClassesTest {
     @Test
     public void testClassDeclarationSimple() {
         ClassesParser parser = getClassesParser("class Dummy {}");
-        ASTClassDeclaration node = parser.parseClassDeclaration();
-        node.print();
-        checkBinary(node, CLASS, ASTIdentifier.class, ASTClassBody.class);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTClassDeclaration node = parser.parseClassDeclaration(loc, null, genModList);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getClassModifierList(), CLASS_MODIFIERS, ASTKeywordNode.class, 0);
+        assertEquals("Dummy", node.getName().getValue());
+        assertFalse(node.getTypeParams().isPresent());
+        assertFalse(node.getSuperclass().isPresent());
+        assertFalse(node.getSuperinterfaces().isPresent());
+        assertFalse(node.getPermits().isPresent());
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -1253,10 +1376,23 @@ public class ParserClassesTest {
                 permits FinalTest, UnitTest, Test, Quiz, PopQuiz
             {}
             """);
-        ASTClassDeclaration node = parser.parseClassDeclaration();
-        node.print();
-        checkNary(node, CLASS, ASTAccessModifier.class, ASTClassModifierList.class, ASTIdentifier.class,
-                ASTTypeParameters.class, ASTSuperclass.class, ASTSuperinterfaces.class, ASTPermits.class, ASTClassBody.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTClassDeclaration node = parser.parseClassDeclaration(loc, accessMod, genModList);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        checkList(node.getClassModifierList(), CLASS_MODIFIERS, ASTKeywordNode.class, 1);
+        assertEquals("FullTest", node.getName().getValue());
+        assertTrue(node.getTypeParams().isPresent());
+        assertTrue(node.getSuperclass().isPresent());
+        checkList(node.getSuperclass().get(), SIMPLE_TYPES, ASTSimpleType.class, 1);
+        assertTrue(node.getSuperinterfaces().isPresent());
+        checkList(node.getSuperinterfaces().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 2);
+        assertTrue(node.getPermits().isPresent());
+        checkList(node.getPermits().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 5);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -1265,9 +1401,9 @@ public class ParserClassesTest {
     @Test
     public void testPermits() {
         ClassesParser parser = getClassesParser("permits Dog, Cat, Mouse");
-        ASTPermits node = parser.parsePermits();
-        node.print();
-        checkSimple(node, ASTListNode.class, PERMITS);
+        ASTDataTypeNoArrayList node = parser.parsePermits();
+        System.out.println(node);
+        checkList(node, DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 3);
     }
 
     /**
@@ -1276,9 +1412,9 @@ public class ParserClassesTest {
     @Test
     public void testSuperinterfaces() {
         ClassesParser parser = getClassesParser("implements Copyable");
-        ASTSuperinterfaces node = parser.parseSuperinterfaces();
-        node.print();
-        checkSimple(node, ASTListNode.class, IMPLEMENTS);
+        ASTDataTypeNoArrayList node = parser.parseSuperinterfaces();
+        System.out.println(node);
+        checkList(node, DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 1);
     }
 
     /**
@@ -1287,20 +1423,9 @@ public class ParserClassesTest {
     @Test
     public void testSuperclass() {
         ClassesParser parser = getClassesParser("extends Thread");
-        ASTSuperclass node = parser.parseSuperclass();
-        node.print();
-        checkSimple(node, ASTListNode.class, EXTENDS);
-    }
-
-    /**
-     * Tests class modifier list.
-     */
-    @Test
-    public void testClassModifierList() {
-        ClassesParser parser = getClassesParser("abstract final shared sealed");
-        ASTClassModifierList node = parser.parseClassModifierList();
-        node.print();
-        checkList(node, null, ASTGeneralModifier.class, 4);
+        ASTDataTypeNoArray node = parser.parseSuperclass();
+        System.out.println(node);
+        checkList(node, SIMPLE_TYPES, ASTSimpleType.class, 1);
     }
 
     /**
@@ -1309,9 +1434,9 @@ public class ParserClassesTest {
     @Test
     public void testClassBodyEmpty() {
         ClassesParser parser = getClassesParser("{}");
-        ASTClassBody node = parser.parseClassBody();
-        node.print();
-        checkEmpty(node, OPEN_BRACE);
+        ASTClassPartList node = parser.parseClassBody();
+        System.out.println(node);
+        checkList(node, CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -1328,9 +1453,9 @@ public class ParserClassesTest {
                     }
                 }
                 """);
-        ASTClassBody node = parser.parseClassBody();
-        node.print();
-        checkSimple(node, ASTListNode.class, OPEN_BRACE);
+        ASTClassPartList node = parser.parseClassBody();
+        System.out.println(node);
+        checkList(node, CLASS_PARTS, ASTClassPart.class, 3);
     }
 
     /**
@@ -1356,8 +1481,8 @@ public class ParserClassesTest {
                     Goo() {}
                 }
                 """);
-        ASTListNode node = parser.parseClassPartList();
-        node.print();
+        ASTClassPartList node = parser.parseClassPartList();
+        System.out.println(node);
         checkList(node, CLASS_PARTS, ASTClassPart.class, 11);
     }
 
@@ -1367,8 +1492,8 @@ public class ParserClassesTest {
     @Test
     public void testClassPartListOfClassPart() {
         ClassesParser parser = getClassesParser("private Integer i = 1;");
-        ASTListNode node = parser.parseClassPartList();
-        node.print();
+        ASTClassPartList node = parser.parseClassPartList();
+        System.out.println(node);
         checkList(node, CLASS_PARTS, ASTClassPart.class, 1);
     }
 
@@ -1381,16 +1506,16 @@ public class ParserClassesTest {
             private Integer i = 1;
             constructor(Integer i) { self.i = i; }
             """);
-        ASTListNode node = parser.parseClassPartList();
-        node.print();
+        ASTClassPartList node = parser.parseClassPartList();
+        System.out.println(node);
         checkList(node, CLASS_PARTS, ASTClassPart.class, 2);
     }
 
     /**
-     * Tests nested class part lists.
+     * Tests nested class part lists of multiple class parts.
      */
     @Test
-    public void testClassPartListNested() {
+    public void testClassPartListMultiple() {
         ClassesParser parser = getClassesParser("""
             private Integer i = 1;
             constructor(Integer i) { self.i = i; }
@@ -1398,8 +1523,8 @@ public class ParserClassesTest {
                 return i;
             }
             """);
-        ASTListNode node = parser.parseClassPartList();
-        node.print();
+        ASTClassPartList node = parser.parseClassPartList();
+        System.out.println(node);
         checkList(node, CLASS_PARTS, ASTClassPart.class, 3);
     }
 
@@ -1410,8 +1535,8 @@ public class ParserClassesTest {
     public void testClassPartOfSharedConstructor() {
         ClassesParser parser = getClassesParser("shared constructor() { sharedVar = reallyComplicatedLogic(); }");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTSharedConstructor.class);
+        System.out.println(node);
+        assertInstanceOf(ASTSharedConstructor.class, node);
     }
 
     /**
@@ -1421,8 +1546,8 @@ public class ParserClassesTest {
     public void testClassPartOfMethodDeclarationVoidResult() {
         ClassesParser parser = getClassesParser("public abstract void method();");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTMethodDeclaration.class, node);
     }
 
     /**
@@ -1432,8 +1557,8 @@ public class ParserClassesTest {
     public void testClassPartOfMethodDeclarationVoidResultTypeParameters() {
         ClassesParser parser = getClassesParser("public abstract <T> void method(T param);");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTMethodDeclaration.class, node);
     }
 
     /**
@@ -1443,8 +1568,8 @@ public class ParserClassesTest {
     public void testClassPartOfMethodDeclarationDataTypeResult() {
         ClassesParser parser = getClassesParser("public abstract String method();");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTMethodDeclaration.class, node);
     }
 
     /**
@@ -1454,8 +1579,8 @@ public class ParserClassesTest {
     public void testClassPartOfMethodDeclarationDataTypeResultTypeParameters() {
         ClassesParser parser = getClassesParser("public abstract <T> T method(T param);");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTMethodDeclaration.class, node);
     }
 
     /**
@@ -1465,8 +1590,19 @@ public class ParserClassesTest {
     public void testClassPartOfMethodDeclarationMutResult() {
         ClassesParser parser = getClassesParser("mut String method(String param);");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTMethodDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTMethodDeclaration.class, node);
+    }
+
+    /**
+     * Tests class part of method declaration with mut result.
+     */
+    @Test
+    public void testClassPartOfMethodDeclarationMutResultShared() {
+        ClassesParser parser = getClassesParser("shared mut String method(String param);");
+        ASTClassPart node = parser.parseClassPart();
+        System.out.println(node);
+        assertInstanceOf(ASTMethodDeclaration.class, node);
     }
 
     /**
@@ -1476,8 +1612,8 @@ public class ParserClassesTest {
     public void testClassPartOfFieldDeclaration() {
         ClassesParser parser = getClassesParser("private Int myVar = 1, myVar2 = 2;");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTFieldDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTFieldDeclaration.class, node);
     }
 
     /**
@@ -1487,8 +1623,8 @@ public class ParserClassesTest {
     public void testClassPartOfConstructorDeclaration() {
         ClassesParser parser = getClassesParser("constructor(String s) : constructor(s) {}");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTConstructorDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTConstructorDeclaration.class, node);
     }
 
     /**
@@ -1498,8 +1634,8 @@ public class ParserClassesTest {
     public void testClassPartOfClassDeclaration() {
         ClassesParser parser = getClassesParser("public shared class Nested {}");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTClassDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTClassDeclaration.class, node);
     }
 
     /**
@@ -1509,8 +1645,8 @@ public class ParserClassesTest {
     public void testClassPartOfEnumDeclaration() {
         ClassesParser parser = getClassesParser("private enum Light {RED, YELLOW, GREEN}");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTEnumDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTEnumDeclaration.class, node);
     }
 
     /**
@@ -1520,8 +1656,8 @@ public class ParserClassesTest {
     public void testClassPartOfInterfaceDeclaration() {
         ClassesParser parser = getClassesParser("private interface TrafficLight { Light getStatus(); }");
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTInterfaceDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTInterfaceDeclaration.class, node);
     }
 
     /**
@@ -1535,8 +1671,8 @@ public class ParserClassesTest {
                 }
                 """);
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTAnnotationDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTAnnotationDeclaration.class, node);
     }
 
     /**
@@ -1552,8 +1688,8 @@ public class ParserClassesTest {
                 }
                 """);
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTRecordDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTRecordDeclaration.class, node);
     }
 
     /**
@@ -1572,8 +1708,8 @@ public class ParserClassesTest {
                 }
                 """);
         ASTClassPart node = parser.parseClassPart();
-        node.print();
-        checkSimple(node, ASTAdtDeclaration.class);
+        System.out.println(node);
+        assertInstanceOf(ASTAdtDeclaration.class, node);
     }
 
     /**
@@ -1583,8 +1719,8 @@ public class ParserClassesTest {
     public void testSharedConstructor() {
         ClassesParser parser = getClassesParser("shared constructor() { sharedVar = reallyComplicatedLogic(); }");
         ASTSharedConstructor node = parser.parseSharedConstructor();
-        node.print();
-        checkSimple(node, ASTBlock.class, CONSTRUCTOR);
+        System.out.println(node);
+        assertNotNull(node.getBlock());
     }
 
     /**
@@ -1593,9 +1729,15 @@ public class ParserClassesTest {
     @Test
     public void testConstructorDeclarationOfAccessConstructorInvocation() {
         ClassesParser parser = getClassesParser("private constructor(String s) : super(s) { self.s = s; }");
-        ASTConstructorDeclaration node = parser.parseConstructorDeclaration();
-        node.print();
-        checkNary(node, CONSTRUCTOR, ASTAccessModifier.class,  ASTConstructorDeclarator.class, ASTConstructorInvocation.class, ASTBlock.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        Location loc = accessMod.getLocation();
+        ASTConstructorDeclaration node = parser.parseConstructorDeclaration(loc, accessMod);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        assertNotNull(node.getConstructorDecl());
+        assertTrue(node.getConstructorInvocation().isPresent());
+        assertNotNull(node.getBlock());
     }
 
     /**
@@ -1604,53 +1746,15 @@ public class ParserClassesTest {
     @Test
     public void testConstructorDeclarationSimple() {
         ClassesParser parser = getClassesParser("constructor(String s) { self.s = s; }");
-        ASTConstructorDeclaration node = parser.parseConstructorDeclaration();
-        node.print();
-        checkBinary(node, CONSTRUCTOR, ASTConstructorDeclarator.class, ASTBlock.class);
-    }
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTConstructorDeclaration node = parser.parseConstructorDeclaration(loc, null);
+        System.out.println(node);
 
-    /**
-     * Tests constructor invocation of primary, type arguments, and super.
-     */
-    @Test
-    public void testConstructorInvocationOfPrimaryTypeArgumentsSuper() {
-        ClassesParser parser = getClassesParser(": (primary).<T>super()");
-        ASTConstructorInvocation node = parser.parseConstructorInvocation();
-        node.print();
-        checkBinary(node, SUPER, ASTPrimary.class, ASTTypeArguments.class);
-    }
-
-    /**
-     * Tests constructor invocation of primary and super.
-     */
-    @Test
-    public void testConstructorInvocationOfPrimarySuper() {
-        ClassesParser parser = getClassesParser(": (primary).super()");
-        ASTConstructorInvocation node = parser.parseConstructorInvocation();
-        node.print();
-        checkSimple(node, ASTPrimary.class, SUPER);
-    }
-
-    /**
-     * Tests constructor invocation of expression name, type arguments, and super.
-     */
-    @Test
-    public void testConstructorInvocationOfExpressionNameTypeArgumentsSuper() {
-        ClassesParser parser = getClassesParser(": expr.name.<String>super()");
-        ASTConstructorInvocation node = parser.parseConstructorInvocation();
-        node.print();
-        checkBinary(node, SUPER, ASTListNode.class, ASTTypeArguments.class);
-    }
-
-    /**
-     * Tests constructor invocation of expression name and super.
-     */
-    @Test
-    public void testConstructorInvocationOfExpressionNameSuper() {
-        ClassesParser parser = getClassesParser(": expr.name.super()");
-        ASTConstructorInvocation node = parser.parseConstructorInvocation();
-        node.print();
-        checkSimple(node, ASTPrimary.class, SUPER);
+        assertFalse(node.getAccessMod().isPresent());
+        assertNotNull(node.getConstructorDecl());
+        assertFalse(node.getConstructorInvocation().isPresent());
+        assertNotNull(node.getBlock());
     }
 
     /**
@@ -1660,8 +1764,11 @@ public class ParserClassesTest {
     public void testConstructorInvocationOfSuperTypeArguments() {
         ClassesParser parser = getClassesParser(": <Integer>super(5)");
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
-        node.print();
-        checkBinary(node, SUPER, ASTTypeArguments.class, ASTListNode.class);
+        System.out.println(node);
+
+        assertTrue(node.getTypeArgs().isPresent());
+        assertEquals(SUPER, node.getConstructorKeyword().getKeyword());
+        checkList(node.getArgsList(), ARGUMENTS, ASTGiveExpression.class, 1);
     }
 
     /**
@@ -1671,8 +1778,11 @@ public class ParserClassesTest {
     public void testConstructorInvocationOfConstructorTypeArguments() {
         ClassesParser parser = getClassesParser(": <Integer>constructor()");
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
-        node.print();
-        checkSimple(node, ASTTypeArguments.class, CONSTRUCTOR);
+        System.out.println(node);
+
+        assertTrue(node.getTypeArgs().isPresent());
+        assertEquals(CONSTRUCTOR, node.getConstructorKeyword().getKeyword());
+        checkList(node.getArgsList(), ARGUMENTS, ASTGiveExpression.class, 0);
     }
 
     /**
@@ -1682,8 +1792,11 @@ public class ParserClassesTest {
     public void testConstructorInvocationOfConstructorSimple() {
         ClassesParser parser = getClassesParser(": constructor()");
         ASTConstructorInvocation node = parser.parseConstructorInvocation();
-        node.print();
-        checkEmpty(node, CONSTRUCTOR);
+        System.out.println(node);
+
+        assertFalse(node.getTypeArgs().isPresent());
+        assertEquals(CONSTRUCTOR, node.getConstructorKeyword().getKeyword());
+        checkList(node.getArgsList(), ARGUMENTS, ASTGiveExpression.class, 0);
     }
 
     /**
@@ -1693,8 +1806,10 @@ public class ParserClassesTest {
     public void testConstructorDeclaratorSimple() {
         ClassesParser parser = getClassesParser("constructor()");
         ASTConstructorDeclarator node = parser.parseConstructorDeclarator();
-        node.print();
-        checkEmpty(node, CONSTRUCTOR);
+        System.out.println(node);
+
+        assertFalse(node.getTypeParams().isPresent());
+        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 0);
     }
 
     /**
@@ -1704,8 +1819,10 @@ public class ParserClassesTest {
     public void testConstructorDeclaratorFull() {
         ClassesParser parser = getClassesParser("<T> constructor(T param)");
         ASTConstructorDeclarator node = parser.parseConstructorDeclarator();
-        node.print();
-        checkBinary(node, CONSTRUCTOR, ASTTypeParameters.class, ASTListNode.class);
+        System.out.println(node);
+
+        assertTrue(node.getTypeParams().isPresent());
+        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
     }
 
     /**
@@ -1714,9 +1831,18 @@ public class ParserClassesTest {
     @Test
     public void testFieldDeclaration() {
         ClassesParser parser = getClassesParser("public constant String aConstant = \"CONSTANT\";");
-        ASTFieldDeclaration node = parser.parseFieldDeclaration();
-        node.print();
-        checkNary(node, null, ASTAccessModifier.class, ASTFieldModifierList.class, ASTDataType.class, ASTListNode.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTFieldDeclaration node = parser.parseFieldDeclaration(loc, accessMod, genModList, varModList, dt);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        checkList(node.getFieldModList(), FIELD_MODIFIERS, ASTKeywordNode.class, 1);
+        assertNotNull(node.getDataType());
+        checkList(node.getVarDeclList(), VARIABLE_DECLARATORS, ASTVariableDeclarator.class, 1);
     }
 
     /**
@@ -1725,9 +1851,39 @@ public class ParserClassesTest {
     @Test
     public void testFieldDeclarationOfConstant() {
         ClassesParser parser = getClassesParser("public constant String aConstant = \"CONSTANT\";");
-        ASTFieldDeclaration node = parser.parseFieldDeclaration();
-        node.print();
-        checkNary(node, null, ASTAccessModifier.class, ASTFieldModifierList.class, ASTDataType.class, ASTListNode.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTFieldDeclaration node = parser.parseFieldDeclaration(loc, accessMod, genModList, varModList, dt);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        checkList(node.getFieldModList(), FIELD_MODIFIERS, ASTKeywordNode.class, 1);
+        checkList(node.getVarModList(), VARIABLE_MODIFIERS, ASTKeywordNode.class, 0);
+        assertNotNull(node.getDataType());
+        checkList(node.getVarDeclList(), VARIABLE_DECLARATORS, ASTVariableDeclarator.class, 1);
+    }
+
+    /**
+     * Tests field declaration with variable modifiers.
+     */
+    @Test
+    public void testFieldDeclarationVariableModifiers() {
+        ClassesParser parser = getClassesParser("mut String name = \"spruce\";");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTFieldDeclaration node = parser.parseFieldDeclaration(loc, null, genModList, varModList, dt);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getFieldModList(), FIELD_MODIFIERS, ASTKeywordNode.class, 0);
+        checkList(node.getVarModList(), VARIABLE_MODIFIERS, ASTKeywordNode.class, 1);
+        assertNotNull(node.getDataType());
+        checkList(node.getVarDeclList(), VARIABLE_DECLARATORS, ASTVariableDeclarator.class, 1);
     }
 
     /**
@@ -1736,29 +1892,18 @@ public class ParserClassesTest {
     @Test
     public void testFieldDeclarationSimple() {
         ClassesParser parser = getClassesParser("String name = \"spruce\";");
-        ASTFieldDeclaration node = parser.parseFieldDeclaration();
-        node.print();
-        checkBinary(node, ASTDataType.class, ASTListNode.class);
-    }
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTFieldDeclaration node = parser.parseFieldDeclaration(loc, null, genModList, varModList, dt);
+        System.out.println(node);
 
-    /**
-     * Tests field modifier list.
-     */
-    @Test
-    public void testFieldModifierList() {
-        ClassesParser parser = getClassesParser("constant var mut shared volatile");
-        ASTFieldModifierList node = parser.parseFieldModifierList();
-        node.print();
-        checkList(node, null, ASTGeneralModifier.class, 5);
-    }
-
-    /**
-     * Tests bad field modifier list.
-     */
-    @Test
-    public void testErrorFieldModifierListOfOverride() {
-        ClassesParser parser = getClassesParser("override");
-        assertThrows(CompileException.class, parser::parseFieldModifierList);
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getFieldModList(), FIELD_MODIFIERS, ASTKeywordNode.class, 0);
+        checkList(node.getVarModList(), VARIABLE_MODIFIERS, ASTKeywordNode.class, 0);
+        assertNotNull(node.getDataType());
+        checkList(node.getVarDeclList(), VARIABLE_DECLARATORS, ASTVariableDeclarator.class, 1);
     }
 
     /**
@@ -1771,9 +1916,17 @@ public class ParserClassesTest {
                     return self;
                 }
                 """);
-        ASTMethodDeclaration node = parser.parseMethodDeclaration();
-        node.print();
-        checkBinary(node, ASTMethodHeader.class, ASTMethodBody.class);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTMethodDeclaration node = parser.parseMethodDeclaration(loc, null, genModList, varModList, dt);
+        System.out.println(node);
+
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getMethodModList(), METHOD_MODIFIERS, ASTKeywordNode.class, 0);
+        assertNotNull(node.getHeader());
+        assertNotNull(node.getBody());
     }
 
     /**
@@ -1782,9 +1935,18 @@ public class ParserClassesTest {
     @Test
     public void testMethodDeclarationAccessModifierMethodModifier() {
         ClassesParser parser = getClassesParser("public abstract Foo abstractMethod();");
-        ASTMethodDeclaration node = parser.parseMethodDeclaration();
-        node.print();
-        checkNary(node, null, ASTAccessModifier.class, ASTMethodModifierList.class, ASTMethodHeader.class, ASTMethodBody.class);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTMethodDeclaration node = parser.parseMethodDeclaration(loc, accessMod, genModList, varModList, dt);
+        System.out.println(node);
+
+        assertTrue(node.getAccessMod().isPresent());
+        checkList(node.getMethodModList(), METHOD_MODIFIERS, ASTKeywordNode.class, 1);
+        assertNotNull(node.getHeader());
+        assertNotNull(node.getBody());
     }
 
     /**
@@ -1794,8 +1956,8 @@ public class ParserClassesTest {
     public void testMethodBodyOfSemicolon() {
         ClassesParser parser = getClassesParser(";");
         ASTMethodBody node = parser.parseMethodBody();
-        node.print();
-        checkEmpty(node, SEMICOLON);
+        System.out.println(node);
+        assertFalse(node.getBlock().isPresent());
     }
 
     /**
@@ -1805,29 +1967,8 @@ public class ParserClassesTest {
     public void testMethodBodyOfBlock() {
         ClassesParser parser = getClassesParser("{\n    out.println(\"Body!\");\n}");
         ASTMethodBody node = parser.parseMethodBody();
-        node.print();
-        checkSimple(node, ASTBlock.class);
-    }
-
-    /**
-     * Tests access modifier list of access modifier.
-     */
-    @Test
-    public void testAccessModifierListOfAccessModifier() {
-        ClassesParser parser = getClassesParser("final");
-        ASTMethodModifierList node = parser.parseMethodModifierList();
-        node.print();
-        checkSimple(node, ASTGeneralModifier.class);
-    }
-    /**
-     * Tests access modifier list of access modifiers.
-     */
-    @Test
-    public void testAccessModifierListOfAccessModifiers() {
-        ClassesParser parser = getClassesParser("final abstract shared");
-        ASTMethodModifierList node = parser.parseMethodModifierList();
-        node.print();
-        checkList(node, null, ASTGeneralModifier.class, 3);
+        System.out.println(node);
+        assertTrue(node.getBlock().isPresent());
     }
 
     /**
@@ -1836,9 +1977,9 @@ public class ParserClassesTest {
     @Test
     public void testAccessModifierOfPublic() {
         ClassesParser parser = getClassesParser("public");
-        ASTAccessModifier node = parser.parseAccessModifier();
-        node.print();
-        checkEmpty(node, PUBLIC);
+        ASTKeywordNode node = parser.parseAccessModifier();
+        System.out.println(node);
+        assertEquals(PUBLIC, node.getKeyword());
     }
 
     /**
@@ -1847,9 +1988,9 @@ public class ParserClassesTest {
     @Test
     public void testAccessModifierOfProtected() {
         ClassesParser parser = getClassesParser("protected");
-        ASTAccessModifier node = parser.parseAccessModifier();
-        node.print();
-        checkEmpty(node, PROTECTED);
+        ASTKeywordNode node = parser.parseAccessModifier();
+        System.out.println(node);
+        assertEquals(PROTECTED, node.getKeyword());
     }
 
     /**
@@ -1858,9 +1999,9 @@ public class ParserClassesTest {
     @Test
     public void testAccessModifierOfInternal() {
         ClassesParser parser = getClassesParser("internal");
-        ASTAccessModifier node = parser.parseAccessModifier();
-        node.print();
-        checkEmpty(node, INTERNAL);
+        ASTKeywordNode node = parser.parseAccessModifier();
+        System.out.println(node);
+        assertEquals(INTERNAL, node.getKeyword());
     }
 
     /**
@@ -1869,20 +2010,9 @@ public class ParserClassesTest {
     @Test
     public void testAccessModifierOfPrivate() {
         ClassesParser parser = getClassesParser("private");
-        ASTAccessModifier node = parser.parseAccessModifier();
-        node.print();
-        checkEmpty(node, PRIVATE);
-    }
-
-    /**
-     * Tests method modifier list.
-     */
-    @Test
-    public void testMethodModifierList() {
-        ClassesParser parser = getClassesParser("abstract final override shared");
-        ASTMethodModifierList node = parser.parseMethodModifierList();
-        node.print();
-        checkList(node, null, ASTGeneralModifier.class, 4);
+        ASTKeywordNode node = parser.parseAccessModifier();
+        System.out.println(node);
+        assertEquals(PRIVATE, node.getKeyword());
     }
 
     /**
@@ -1890,10 +2020,10 @@ public class ParserClassesTest {
      */
     @Test
     public void testGeneralModifierListOfMethodModifiers() {
-        ClassesParser parser = getClassesParser("abstract mut var override shared volatile");
-        ASTListNode node = parser.parseGeneralModifierList();
-        node.print();
-        checkList(node, GENERAL_MODIFIERS, ASTGeneralModifier.class, 6);
+        ClassesParser parser = getClassesParser("final abstract override shared");
+        ASTGeneralModifierList node = parser.parseGeneralModifierList();
+        System.out.println(node);
+        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 4);
     }
 
     /**
@@ -1902,9 +2032,9 @@ public class ParserClassesTest {
     @Test
     public void testGeneralModifierOfAbstract() {
         ClassesParser parser = getClassesParser("abstract");
-        ASTGeneralModifier node = parser.parseGeneralModifier();
-        node.print();
-        checkEmpty(node, ABSTRACT);
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        System.out.println(node);
+        assertEquals(ABSTRACT, node.getKeyword());
     }
 
     /**
@@ -1913,9 +2043,9 @@ public class ParserClassesTest {
     @Test
     public void testGeneralModifierOfConst() {
         ClassesParser parser = getClassesParser("mut");
-        ASTGeneralModifier node = parser.parseGeneralModifier();
-        node.print();
-        checkEmpty(node, MUT);
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        System.out.println(node);
+        assertEquals(MUT, node.getKeyword());
     }
 
     /**
@@ -1924,9 +2054,9 @@ public class ParserClassesTest {
     @Test
     public void testMethodModifierOfVar() {
         ClassesParser parser = getClassesParser("var");
-        ASTGeneralModifier node = parser.parseGeneralModifier();
-        node.print();
-        checkEmpty(node, VAR);
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        System.out.println(node);
+        assertEquals(VAR, node.getKeyword());
     }
 
     /**
@@ -1935,9 +2065,9 @@ public class ParserClassesTest {
     @Test
     public void testGeneralModifierOfOverride() {
         ClassesParser parser = getClassesParser("override");
-        ASTGeneralModifier node = parser.parseGeneralModifier();
-        node.print();
-        checkEmpty(node, OVERRIDE);
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        System.out.println(node);
+        assertEquals(OVERRIDE, node.getKeyword());
     }
 
     /**
@@ -1946,9 +2076,9 @@ public class ParserClassesTest {
     @Test
     public void testGeneralModifierOfShared() {
         ClassesParser parser = getClassesParser("shared");
-        ASTGeneralModifier node = parser.parseGeneralModifier();
-        node.print();
-        checkEmpty(node, SHARED);
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        System.out.println(node);
+        assertEquals(SHARED, node.getKeyword());
     }
 
     /**
@@ -1957,9 +2087,9 @@ public class ParserClassesTest {
     @Test
     public void testGeneralModifierOfVolatile() {
         ClassesParser parser = getClassesParser("volatile");
-        ASTGeneralModifier node = parser.parseGeneralModifier();
-        node.print();
-        checkEmpty(node, VOLATILE);
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        System.out.println(node);
+        assertEquals(VOLATILE, node.getKeyword());
     }
 
     /**
@@ -1969,8 +2099,11 @@ public class ParserClassesTest {
     public void testMethodHeaderSimple() {
         ClassesParser parser = getClassesParser("void toString() const");
         ASTMethodHeader node = parser.parseMethodHeader();
-        node.print();
-        checkBinary(node, ASTResult.class, ASTMethodDeclarator.class);
+        System.out.println(node);
+
+        assertFalse(node.getTypeParams().isPresent());
+        assertNotNull(node.getResult());
+        assertNotNull(node.getMethodDecl());
     }
 
     /**
@@ -1980,8 +2113,11 @@ public class ParserClassesTest {
     public void testMethodHeaderOfTypeParameters() {
         ClassesParser parser = getClassesParser("<T> T getItem() const");
         ASTMethodHeader node = parser.parseMethodHeader();
-        node.print();
-        checkTrinary(node, null, ASTTypeParameters.class, ASTResult.class, ASTMethodDeclarator.class);
+        System.out.println(node);
+
+        assertTrue(node.getTypeParams().isPresent());
+        assertNotNull(node.getResult());
+        assertNotNull(node.getMethodDecl());
     }
 
     /**
@@ -1991,8 +2127,11 @@ public class ParserClassesTest {
     public void testResultOfVoid() {
         ClassesParser parser = getClassesParser("void");
         ASTResult node = parser.parseResult();
-        node.print();
-        checkEmpty(node, VOID);
+        System.out.println(node);
+
+        assertFalse(node.getMutMod().isPresent());
+        assertFalse(node.getDataType().isPresent());
+        assertTrue(node.getVoidKeyword().isPresent());
     }
 
     /**
@@ -2002,19 +2141,25 @@ public class ParserClassesTest {
     public void testResultOfDataType() {
         ClassesParser parser = getClassesParser("Map<String, Integer>");
         ASTResult node = parser.parseResult();
-        node.print();
-        checkSimple(node, ASTDataType.class);
+        System.out.println(node);
+
+        assertFalse(node.getMutMod().isPresent());
+        assertTrue(node.getDataType().isPresent());
+        assertFalse(node.getVoidKeyword().isPresent());
     }
 
     /**
-     * Tests result of var modifier and data type.
+     * Tests result of mut modifier and data type.
      */
     @Test
-    public void testResultOfConstModifierDataType() {
+    public void testResultOfMutModifierDataType() {
         ClassesParser parser = getClassesParser("mut Map<String, Integer>");
         ASTResult node = parser.parseResult();
-        node.print();
-        checkBinary(node, ASTMutModifier.class, ASTDataType.class);
+        System.out.println(node);
+
+        assertTrue(node.getMutMod().isPresent());
+        assertTrue(node.getDataType().isPresent());
+        assertFalse(node.getVoidKeyword().isPresent());
     }
 
     /**
@@ -2024,8 +2169,11 @@ public class ParserClassesTest {
     public void testMethodDeclaratorSimple() {
         ClassesParser parser = getClassesParser("update()");
         ASTMethodDeclarator node = parser.parseMethodDeclarator();
-        node.print();
-        checkSimple(node, ASTIdentifier.class, OPEN_PARENTHESIS);
+        System.out.println(node);
+
+        assertEquals("update", node.getName().getValue());
+        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 0);
+        assertFalse(node.getMutModifier().isPresent());
     }
 
     /**
@@ -2035,8 +2183,11 @@ public class ParserClassesTest {
     public void testMethodDeclaratorOfParameterListConstModifier() {
         ClassesParser parser = getClassesParser("join(String sep) mut)");
         ASTMethodDeclarator node = parser.parseMethodDeclarator();
-        node.print();
-        checkTrinary(node, OPEN_PARENTHESIS, ASTIdentifier.class, ASTListNode.class, ASTMutModifier.class);
+        System.out.println(node);
+
+        assertEquals("join", node.getName().getValue());
+        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
+        assertTrue(node.getMutModifier().isPresent());
     }
 
     /**
@@ -2045,9 +2196,9 @@ public class ParserClassesTest {
     @Test
     public void testMutModifier() {
         ClassesParser parser = getClassesParser("mut");
-        ASTMutModifier node = parser.parseMutModifier();
-        node.print();
-        checkEmpty(node, MUT);
+        ASTKeywordNode node = parser.parseMutModifier();
+        System.out.println(node);
+        assertEquals(MUT, node.getKeyword());
     }
 
     /**
@@ -2056,8 +2207,8 @@ public class ParserClassesTest {
     @Test
     public void testFormalParameterListOfFormalParameter() {
         ClassesParser parser = getClassesParser("const Int a");
-        ASTListNode node = parser.parseFormalParameterList();
-        node.print();
+        ASTFormalParameterList node = parser.parseFormalParameterList();
+        System.out.println(node);
         checkList(node, FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
     }
 
@@ -2067,8 +2218,8 @@ public class ParserClassesTest {
     @Test
     public void testFormalParameterList() {
         ClassesParser parser = getClassesParser("String msg, Foo f, Bar b");
-        ASTListNode node = parser.parseFormalParameterList();
-        node.print();
+        ASTFormalParameterList node = parser.parseFormalParameterList();
+        System.out.println(node);
         checkList(node, FORMAL_PARAMETERS, ASTFormalParameter.class, 3);
     }
 
@@ -2078,8 +2229,8 @@ public class ParserClassesTest {
     @Test
     public void testFormalParameterListOfLastVarargs() {
         ClassesParser parser = getClassesParser("Point pt, Double... coordinates");
-        ASTListNode node = parser.parseFormalParameterList();
-        node.print();
+        ASTFormalParameterList node = parser.parseFormalParameterList();
+        System.out.println(node);
         checkList(node, FORMAL_PARAMETERS, ASTFormalParameter.class, 2);
     }
 
@@ -2099,8 +2250,13 @@ public class ParserClassesTest {
     public void testFormalParameterNoVMLEllipsis() {
         ClassesParser parser = getClassesParser("String... args");
         ASTFormalParameter node = parser.parseFormalParameter();
-        node.print();
-        checkBinary(node, THREE_DOTS, ASTDataType.class, ASTIdentifier.class);
+        System.out.println(node);
+
+        assertFalse(node.getTakeMod().isPresent());
+        checkList(node.getVarModList(), VARIABLE_MODIFIERS, ASTKeywordNode.class, 0);
+        assertNotNull(node.getDataType());
+        assertTrue(node.getEllipsisMod().isPresent());
+        assertEquals("args", node.getName().getValue());
     }
 
     /**
@@ -2110,8 +2266,13 @@ public class ParserClassesTest {
     public void testFormalParameterOfVMLEllipsis() {
         ClassesParser parser = getClassesParser("mut String... args");
         ASTFormalParameter node = parser.parseFormalParameter();
-        node.print();
-        checkTrinary(node, THREE_DOTS, ASTListNode.class, ASTDataType.class, ASTIdentifier.class);
+        System.out.println(node);
+
+        assertFalse(node.getTakeMod().isPresent());
+        checkList(node.getVarModList(), VARIABLE_MODIFIERS, ASTKeywordNode.class, 1);
+        assertNotNull(node.getDataType());
+        assertTrue(node.getEllipsisMod().isPresent());
+        assertEquals("args", node.getName().getValue());
     }
 
     /**
@@ -2121,8 +2282,13 @@ public class ParserClassesTest {
     public void testFormalParameterNoVMLNoEllipsis() {
         ClassesParser parser = getClassesParser("String[] args");
         ASTFormalParameter node = parser.parseFormalParameter();
-        node.print();
-        checkBinary(node, ASTDataType.class, ASTIdentifier.class);
+        System.out.println(node);
+
+        assertFalse(node.getTakeMod().isPresent());
+        checkList(node.getVarModList(), VARIABLE_MODIFIERS, ASTKeywordNode.class, 0);
+        assertNotNull(node.getDataType());
+        assertFalse(node.getEllipsisMod().isPresent());
+        assertEquals("args", node.getName().getValue());
     }
 
     /**
@@ -2132,8 +2298,29 @@ public class ParserClassesTest {
     public void testFormalParameterOfVMLNoEllipsis() {
         ClassesParser parser = getClassesParser("mut String[] args");
         ASTFormalParameter node = parser.parseFormalParameter();
-        node.print();
-        checkTrinary(node, null, ASTListNode.class, ASTDataType.class, ASTIdentifier.class);
+        System.out.println(node);
+
+        assertFalse(node.getTakeMod().isPresent());
+        checkList(node.getVarModList(), VARIABLE_MODIFIERS, ASTKeywordNode.class, 1);
+        assertNotNull(node.getDataType());
+        assertFalse(node.getEllipsisMod().isPresent());
+        assertEquals("args", node.getName().getValue());
+    }
+
+    /**
+     * Tests formal parameter of take.
+     */
+    @Test
+    public void testFormalParameterTake() {
+        ClassesParser parser = getClassesParser("take State state");
+        ASTFormalParameter node = parser.parseFormalParameter();
+        System.out.println(node);
+
+        assertTrue(node.getTakeMod().isPresent());
+        checkList(node.getVarModList(), VARIABLE_MODIFIERS, ASTKeywordNode.class, 0);
+        assertNotNull(node.getDataType());
+        assertFalse(node.getEllipsisMod().isPresent());
+        assertEquals("state", node.getName().getValue());
     }
 
     /**

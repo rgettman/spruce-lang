@@ -1,12 +1,11 @@
 package org.spruce.compiler.ast.expressions;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.scanner.Location;
 
@@ -19,9 +18,9 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataType ( [PatternList] )<br>
  * </em>
  */
-public class ASTRecordPattern extends ASTParentNode {
+public final class ASTRecordPattern extends ASTParentNode implements ASTPattern {
     private final ASTDataType myDataType;
-    private final ASTListNode myPatternList;
+    private final ASTPatternList myPatternList;
 
     /**
      * Constructs an <code>ASTRecordPattern</code> with the given Location,
@@ -30,7 +29,7 @@ public class ASTRecordPattern extends ASTParentNode {
      * @param dataType An <code>ASTDataType</code>.
      */
     public ASTRecordPattern(Location location, ASTDataType dataType) {
-        super(location, Arrays.asList(dataType));
+        super(location);
         myDataType = dataType;
         myPatternList = null;
     }
@@ -40,20 +39,12 @@ public class ASTRecordPattern extends ASTParentNode {
      * DataType, and PatternList.
      * @param location A <code>Location</code>.
      * @param dataType An <code>ASTDataType</code>.
-     * @param patternList An <code>ASTListNode</code>.
+     * @param patternList An <code>ASTPatternList</code>.
      */
-    public ASTRecordPattern(Location location, ASTDataType dataType, ASTListNode patternList) {
-        super(location, Arrays.asList(dataType, patternList));
+    public ASTRecordPattern(Location location, ASTDataType dataType, ASTPatternList patternList) {
+        super(location);
         myDataType = dataType;
         myPatternList = patternList;
-    }
-
-    /**
-     * TODO: For removal when removing collapsing.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return false;
     }
 
     /**
@@ -65,25 +56,20 @@ public class ASTRecordPattern extends ASTParentNode {
     }
 
     /**
-     * Returns the pattern list as an <code>ASTListNode</code> with type
-     * <code>PATTERNS</code>, if it exists.
-     * @return An <code>Optional&lt;ASTListNode&gt;</code>.
+     * Returns an <code>ASTPatternList</code>, if it exists.
+     * @return An <code>Optional&lt;ASTPatternList&gt;</code>.
      */
-    public Optional<ASTListNode> getPatternList() {
+    public Optional<ASTPatternList> getPatternList() {
         return Optional.ofNullable(myPatternList);
     }
 
-    /**
-     * Prints this node and its children to the output stream.
-     * @param prefix A string to indent the printing of this node.
-     * @param isTail Whether this node is last in its siblings (or the only child).
-     */
     @Override
-    public void print(String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? "└── " : "├── ") + toString());
-        myDataType.print(prefix + (isTail ? "    " : "|   "), myPatternList == null);
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(2);
+        children.add(myDataType);
         if (myPatternList != null) {
-            myPatternList.print(prefix + (isTail ? "    " : "│   "), true);
+            children.add(myPatternList);
         }
+        return children;
     }
 }

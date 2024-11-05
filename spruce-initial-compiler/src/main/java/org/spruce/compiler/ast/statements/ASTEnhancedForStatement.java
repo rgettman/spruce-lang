@@ -1,38 +1,72 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.expressions.ASTValueExpression;
 import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTEnhancedForStatement</code> is "for (", a local variable
- * declaration, a colon, a Conditional Expression, ")", and a block.  The local
+ * declaration, a colon, a Value Expression, ")", and a block.  The local
  * variable declaration must declare exactly one variable.</p>
  *
  * <em>
  * EnhancedForStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;for ( LocalVariableDeclaration : ConditionalExpression ) Block<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;for ( LocalVariableDeclaration : ValueExpression ) Block<br>
  * </em>
  */
-public class ASTEnhancedForStatement extends ASTParentNode {
+public final class ASTEnhancedForStatement extends ASTParentNode implements ASTForStatement {
+    private final ASTLocalVariableDeclaration myLocalVarDecl;
+    private final ASTValueExpression myValueExpr;
+    private final ASTBlock myBlock;
+
     /**
      * Constructs an <code>ASTEnhancedForStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTLocalVariableDeclaration</code>, the given
+     * <code>ASTNode</code> representing a Conditional Expression, and the
+     * given <code>ASTBlock</code> representing a Block.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param localVarDecl An <code>ASTLocalVariableDeclaration</code>.
+     * @param valueExpr An <code>ASTValueExpression</code>.
+     * @param block An <code>ASTBlock</code> of type <code>BLOCK</code>.
      */
-    public ASTEnhancedForStatement(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTEnhancedForStatement(Location location, ASTLocalVariableDeclaration localVarDecl,
+                                   ASTValueExpression valueExpr, ASTBlock block) {
+        super(location);
+        myLocalVarDecl = localVarDecl;
+        myValueExpr = valueExpr;
+        myBlock = block;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTLocalVariableDeclaration</code>.
+     * @return An <code>ASTLocalVariableDeclaration</code>.
      */
+    public ASTLocalVariableDeclaration getLocalVarDecl() {
+        return myLocalVarDecl;
+    }
+
+    /**
+     * Returns an <code>ASTValueExpression</code>.
+     * @return An <code>ASTValueExpression</code>.
+     */
+    public ASTValueExpression getCondExpr() {
+        return myValueExpr;
+    }
+
+    /**
+     * Returns an <code>ASTBlock</code>.
+     * @return An <code>ASTBlock</code>.
+     */
+    public ASTBlock getBlock() {
+        return myBlock;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myLocalVarDecl, myValueExpr, myBlock);
     }
 }

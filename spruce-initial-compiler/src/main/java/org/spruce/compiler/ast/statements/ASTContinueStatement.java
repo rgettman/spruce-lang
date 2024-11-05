@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -14,23 +16,30 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;continue ;<br>
  * </em>
  */
-public class ASTContinueStatement extends ASTParentNode {
+public final class ASTContinueStatement extends ASTParentNode implements ASTStatement {
+    private final ASTKeywordNode myContinueKeyword;
+
     /**
      * Constructs an <code>ASTContinueStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTKeywordNode</code> with keyword <code>continue</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param continueKeyword An <code>ASTKeywordNode</code> of keyword <code>continue</code>.
      */
-    public ASTContinueStatement(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTContinueStatement(Location location, ASTKeywordNode continueKeyword) {
+        super(location);
+        myContinueKeyword = continueKeyword;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTKeywordNode</code> of keyword <code>continue</code>.
+     * @return An <code>ASTKeywordNode</code> of keyword <code>continue</code>.
      */
+    public ASTKeywordNode getContinueKeyword() {
+        return myContinueKeyword;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myContinueKeyword);
     }
 }

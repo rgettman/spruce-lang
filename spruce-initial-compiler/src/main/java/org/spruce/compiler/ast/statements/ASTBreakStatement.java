@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -14,23 +16,30 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;break ;<br>
  * </em>
  */
-public class ASTBreakStatement extends ASTParentNode {
+public final class ASTBreakStatement extends ASTParentNode implements ASTStatement {
+    private final ASTKeywordNode myBreakKeyword;
+
     /**
      * Constructs an <code>ASTBreakStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTKeywordNode</code> with keyword <code>break</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param breakKeyword An <code>ASTKeywordNode</code> of keyword <code>break</code>.
      */
-    public ASTBreakStatement(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTBreakStatement(Location location, ASTKeywordNode breakKeyword) {
+        super(location);
+        myBreakKeyword = breakKeyword;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTKeywordNode</code> of keyword <code>break</code>.
+     * @return An <code>ASTKeywordNode</code> of keyword <code>break</code>.
      */
+    public ASTKeywordNode getBreakKeyword() {
+        return myBreakKeyword;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myBreakKeyword);
     }
 }

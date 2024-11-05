@@ -1,15 +1,12 @@
 package org.spruce.compiler.ast.statements;
 
-import java.util.List;
-
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.ast.ParentNode;
+import org.spruce.compiler.ast.expressions.ASTFieldAccess;
+import org.spruce.compiler.ast.names.ASTExpressionName;
 
 /**
- * <p>An <code>ASTResource</code> is a resource declaration, an expression
- * name, or a field access.</p>
- *
+ * An <code>ASTForStatement</code> is a particular kind of statement that is a
+ * BasicForStatement or an EnhancedForStatement.
  * <em>
  * Resource:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ResourceDeclaration<br>
@@ -17,23 +14,5 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess
  * </em>
  */
-public class ASTResource extends ASTParentNode {
-    /**
-     * Constructs an <code>ASTResource</code> at the given <code>Location</code>
-     * and with at least one node as its children.
-     * @param location The <code>Location</code>.
-     * @param children The child nodes.
-     */
-    public ASTResource(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
-    }
+public sealed interface ASTResource extends ParentNode permits ASTResourceDeclaration, ASTExpressionName, ASTFieldAccess {
 }

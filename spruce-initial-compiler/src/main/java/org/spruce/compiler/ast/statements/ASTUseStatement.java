@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.expressions.ASTExpression;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,23 +17,30 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;use Expression ;
  * </em>
  */
-public class ASTUseStatement extends ASTParentNode{
+public final class ASTUseStatement extends ASTParentNode implements ASTStatement {
+    private final ASTExpression myExpr;
+
     /**
      * Constructs an <code>ASTUseStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * given the <code>ASTNode </code> representing the Expression.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param expr <code>ASTExpression</code> representing the Expression.
      */
-    public ASTUseStatement(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTUseStatement(Location location, ASTExpression expr) {
+        super(location);
+        myExpr = expr;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTExpression</code>.
+     * @return An <code>ASTExpression</code>.
      */
+    public ASTExpression getExpr() {
+        return myExpr;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myExpr);
     }
 }

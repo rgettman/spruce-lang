@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.classes;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -14,23 +16,30 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;@ TypeName
  * </em>
  */
-public class ASTMarkerAnnotation extends ASTParentNode {
+public final class ASTMarkerAnnotation extends ASTParentNode implements ASTAnnotation {
+    private final ASTTypeName myTypeName;
+
     /**
      * Constructs an <code>ASTMarkerAnnotation</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * and an <code>ASTListNode</code> representing a TypeName.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param typeName An <code>ASTTypeName</code>.
      */
-    public ASTMarkerAnnotation(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTMarkerAnnotation(Location location, ASTTypeName typeName) {
+        super(location);
+        myTypeName = typeName;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTTypeName</code>.
+     * @return An <code>ASTTypeName</code>.
      */
+    public ASTTypeName getTypeName() {
+        return myTypeName;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myTypeName);
     }
 }

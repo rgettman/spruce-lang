@@ -2,8 +2,7 @@ package org.spruce.compiler.ast.expressions;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,23 +14,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;VariableInitializer {, VariableInitializer}
  * </em>
  */
-public class ASTVariableInitializerList extends ASTParentNode {
+public class ASTVariableInitializerList extends ASTListNode<ASTVariableInitializer> {
     /**
-     * Constructs an <code>ASTVariableInitializerList</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * list of child nodes, and a list type.
+     *
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTVariableInitializer</code>s.
      */
-    public ASTVariableInitializerList(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTVariableInitializerList(Location location, List<ASTVariableInitializer> children) {
+        super(location, children, Type.VARIABLE_INITIALIZERS);
     }
 }

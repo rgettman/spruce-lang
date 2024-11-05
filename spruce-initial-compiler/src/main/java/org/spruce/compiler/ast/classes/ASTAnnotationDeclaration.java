@@ -1,9 +1,13 @@
 package org.spruce.compiler.ast.classes;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,22 +19,90 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceModifierList] annotation Identifier AnnotationBody
  * </em>
  */
-public class ASTAnnotationDeclaration extends ASTParentNode {
+public final class ASTAnnotationDeclaration extends ASTParentNode implements ASTTypeDeclaration {
+    private final ASTKeywordNode myAccessMod;
+    private final ASTInterfaceModifierList myInterfaceModList;
+    private final ASTIdentifier myName;
+    private final ASTAnnotationPartList myBody;
+
     /**
-     * Constructs an <code>ASTAnnotationDeclaration</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * Constructs an <code>ASTAdtDeclaration</code> at the given <code>Location</code>
+     * with the given AccessModifier, InterfaceModifierList, Annotation Name, and
+     * Annotation Parts List.
+     * @param location The <code>Location</code>.
+     * @param accessMod A possibly null <code>ASTKeywordNode</code> representing an AccessModifier.
+     * @param interfaceModList An <code>ASTInterfaceModifierList</code>.
+     * @param name An <code>ASTIdentifier</code> representing the annotation name.
+     * @param body An <code>ASTAnnotationPartList</code>.
      */
-    public ASTAnnotationDeclaration(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTAnnotationDeclaration(Location location, ASTKeywordNode accessMod, ASTInterfaceModifierList interfaceModList,
+                                     ASTIdentifier name, ASTAnnotationPartList body) {
+        super(location);
+        myAccessMod = accessMod;
+        myInterfaceModList = interfaceModList;
+        myName = name;
+        myBody = body;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Constructs an <code>ASTAdtDeclaration</code> at the given <code>Location</code>
+     * with the given AccessModifier, InterfaceModifierList, Annotation Name, and
+     * Annotation Parts List.
+     * @param location The <code>Location</code>.
+     * @param interfaceModList An <code>ASTInterfaceModifierList</code>.
+     * @param name An <code>ASTIdentifier</code> representing the annotation name.
+     * @param body An <code>ASTAnnotationPartList</code>.
      */
+    public ASTAnnotationDeclaration(Location location, ASTInterfaceModifierList interfaceModList,
+                                    ASTIdentifier name, ASTAnnotationPartList body) {
+        super(location);
+        myAccessMod = null;
+        myInterfaceModList = interfaceModList;
+        myName = name;
+        myBody = body;
+    }
+
+    /**
+     * Returns an <code>ASTKeywordNode</code> representing the Access Modifier, if it exists.
+     * @return An <code>Optional&lt;ASTListNode&gt;</code>.
+     */
+    public Optional<ASTKeywordNode> getAccessMod() {
+        return Optional.ofNullable(myAccessMod);
+    }
+
+    /**
+     * Returns an <code>ASTInterfaceModifierList</code>.
+     * @return An <code>ASTInterfaceModifierList</code>.
+     */
+    public ASTInterfaceModifierList getInterfaceModList() {
+        return myInterfaceModList;
+    }
+
+    /**
+     * Returns an <code>ASTIdentifier</code> representing the annotation name.
+     * @return An <code>ASTIdentifier</code> representing the annotation name.
+     */
+    public ASTIdentifier getName() {
+        return myName;
+    }
+
+    /**
+     * Returns an <code>ASTAnnotationPartList</code>.
+     * @return An <code>ASTAnnotationPartList</code>.
+     */
+    public ASTAnnotationPartList getBody() {
+        return myBody;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(4);
+        if (myAccessMod != null) {
+            children.add(myAccessMod);
+        }
+        children.add(myInterfaceModList);
+        children.add(myName);
+        children.add(myBody);
+        return children;
     }
 }

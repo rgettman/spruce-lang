@@ -1,9 +1,13 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.ParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -11,28 +15,10 @@ import org.spruce.compiler.scanner.Location;
  * or a statement expression list.</p>
  *
  * <em>
- * BlockStatement:<br>
+ * Init:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;LocalVariableDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;StatementExpressionList
  * </em>
  */
-public class ASTInit extends ASTParentNode {
-    /**
-     * Constructs an <code>ASTInit</code> at the given <code>Location</code>
-     * and with at least one node as its children.
-     * @param location The <code>Location</code>.
-     * @param children The child nodes.
-     */
-    public ASTInit(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
-    }
+public sealed interface ASTInit extends ParentNode permits ASTLocalVariableDeclaration, ASTStatementExpressionList {
 }

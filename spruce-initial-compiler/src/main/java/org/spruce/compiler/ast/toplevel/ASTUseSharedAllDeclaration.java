@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.toplevel;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,23 +17,31 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . * ;
  * </em>
  */
-public class ASTUseSharedAllDeclaration extends ASTParentNode {
+public final class ASTUseSharedAllDeclaration extends ASTParentNode implements ASTUseDeclaration {
+    private final ASTTypeName myTypename;
+
     /**
      * Constructs an <code>ASTUseSharedAllDeclaration</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * with the given <code>ASTTypeName</code>.
+     * @param location The <code>Location</code>.
+     * @param typeName An <code>ASTTypeName</code>.
      */
-    public ASTUseSharedAllDeclaration(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTUseSharedAllDeclaration(Location location, ASTTypeName typeName) {
+        super(location);
+        myTypename = typeName;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTTypeName</code>.
+     * @return An <code>ASTTypeName</code>.
      */
+    public ASTTypeName getTypename() {
+        return myTypename;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myTypename);
     }
 }
 

@@ -1,9 +1,10 @@
 package org.spruce.compiler.ast.expressions;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -11,26 +12,33 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * DimExpr:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[ ConditionalExpression ]
+ * &nbsp;&nbsp;&nbsp;&nbsp;[ ValueExpression ]
  * </em>
  */
 public class ASTDimExpr extends ASTParentNode {
+    private final ASTValueExpression myValueExpr;
+
     /**
      * Constructs an <code>ASTDimExpr</code> at the given <code>Location</code>
-     * and with possibly a node as its child.
+     * with the given <code>ASTValueExpression</code> representing the dimensional size.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param valueExpr An <code>ASTValueExpression</code> representing the dimensional size.
      */
-    public ASTDimExpr(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTDimExpr(Location location, ASTValueExpression valueExpr) {
+        super(location);
+        myValueExpr = valueExpr;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTValueExpression</code> representing the dimensional size.
+     * @return An <code>ASTValueExpression</code> representing the dimensional size.
      */
+    public ASTValueExpression getValueExpr() {
+        return myValueExpr;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myValueExpr);
     }
 }

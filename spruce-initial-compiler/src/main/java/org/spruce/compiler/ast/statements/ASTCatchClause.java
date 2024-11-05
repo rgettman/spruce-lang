@@ -1,9 +1,10 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,22 +17,41 @@ import org.spruce.compiler.scanner.Location;
  * </em>
  */
 public class ASTCatchClause extends ASTParentNode {
+    private final ASTCatchFormalParameter myCatchFormalParam;
+    private final ASTBlock myBlock;
+
     /**
      * Constructs an <code>ASTCatchClause</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTCatchFormalParameter</code> and the given
+     * <code>ASTBlock</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param catchFormalParameter An <code>ASTCatchFormalParameter</code>.
+     * @param block An <code>ASTBlock</code>.
      */
-    public ASTCatchClause(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTCatchClause(Location location, ASTCatchFormalParameter catchFormalParameter, ASTBlock block) {
+        super(location);
+        myCatchFormalParam = catchFormalParameter;
+        myBlock = block;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTCatchFormalParameter</code>.
+     * @return An <code>ASTCatchFormalParameter</code>.
      */
+    public ASTCatchFormalParameter getCatchFormalParam() {
+        return myCatchFormalParam;
+    }
+
+    /**
+     * Returns an <code>ASTBlock</code>.
+     * @return An <code>ASTBlock</code>.
+     */
+    public ASTBlock getBlock() {
+        return myBlock;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myCatchFormalParam, myBlock);
     }
 }

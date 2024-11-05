@@ -1,8 +1,5 @@
 package org.spruce.compiler.ast.literals;
 
-import java.util.Collections;
-
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTValueNode;
 import org.spruce.compiler.scanner.Location;
 

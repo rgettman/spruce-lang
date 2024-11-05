@@ -1,16 +1,19 @@
 package org.spruce.compiler.ast.expressions;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTParentNode;
-import org.spruce.compiler.ast.names.ASTIdentifier;
-import org.spruce.compiler.ast.types.ASTDataType;
-import org.spruce.compiler.ast.types.ASTTypeArguments;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.ast.ASTKeywordNode;
 
-import static org.spruce.compiler.scanner.TokenType.DOUBLE_COLON;
+import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTExpressionName;
+import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.names.ASTTypeName;
+import org.spruce.compiler.ast.types.ASTDataType;
+import org.spruce.compiler.ast.types.ASTTypeArgumentList;
+import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTMethodReference</code> is a reference to a method or constructor.
@@ -29,29 +32,29 @@ import static org.spruce.compiler.scanner.TokenType.DOUBLE_COLON;
  * </em>
  */
 public class ASTMethodReference extends ASTParentNode {
-    private final ASTListNode myTypeName;
-    private final ASTSuper mySooper;
-    private final ASTListNode myExprName;
+    private final ASTTypeName myTypeName;
+    private final ASTKeywordNode mySooper;
+    private final ASTExpressionName myExprName;
     private final ASTDataType myDataType;
     private final ASTPrimary myPrimary;
-    private final ASTTypeArguments myTypeArgs;
+    private final ASTTypeArgumentList myTypeArgs;
     private final ASTIdentifier myIdentifier;
 
     /**
      * Constructs an <code>ASTMethodReference</code> at the given <code>Location</code>
      * with arguments supplied by the <code>Builder</code>.
      * @param location The <code>Location</code>.
-     * @param typeName A possibly null <code>ASTListNode</code> representing a Type Name.
-     * @param sooper A possibly null <code>ASTSuper</code>.
-     * @param exprName A possibly null <code>ASTListNode</code> representing an Expression Name.
+     * @param typeName A possibly null <code>ASTTypeName</code>.
+     * @param sooper A possibly null <code>ASTKeywordNode</code> of keyword <code>super</code>.
+     * @param exprName A possibly null <code>ASTExpressionName</code>.
      * @param dataType A possibly null <code>ASTDataType</code>.
      * @param primary A possibly null <code>ASTPrimary</code>.
-     * @param typeArgs A possibly null <code>ASTTypeArguments</code>.
+     * @param typeArgs A possibly null <code>ASTTypeArgumentList</code>.
      * @param identifier A possibly null <code>ASTIdentifier</code>.
      */
-    private ASTMethodReference(Location location, ASTListNode typeName, ASTSuper sooper, ASTListNode exprName,
-                               ASTDataType dataType, ASTPrimary primary, ASTTypeArguments typeArgs, ASTIdentifier identifier) {
-        super(location, Arrays.asList(), DOUBLE_COLON);
+    private ASTMethodReference(Location location, ASTTypeName typeName, ASTKeywordNode sooper, ASTExpressionName exprName,
+                               ASTDataType dataType, ASTPrimary primary, ASTTypeArgumentList typeArgs, ASTIdentifier identifier) {
+        super(location);
         myTypeName = typeName;
         mySooper = sooper;
         myExprName = exprName;
@@ -68,12 +71,12 @@ public class ASTMethodReference extends ASTParentNode {
      */
     public static class Builder {
         private Location myLocation;
-        private ASTSuper mySooper;
-        private ASTListNode myExprName;
+        private ASTKeywordNode mySooper;
+        private ASTExpressionName myExprName;
         private ASTDataType myDataType;
         private ASTPrimary myPrimary;
-        private ASTListNode myTypeName;
-        private ASTTypeArguments myTypeArgs;
+        private ASTTypeName myTypeName;
+        private ASTTypeArgumentList myTypeArgs;
         private ASTIdentifier myIdentifier;
 
         /**
@@ -87,21 +90,21 @@ public class ASTMethodReference extends ASTParentNode {
         }
 
         /**
-         * Sets the <code>ASTSuper</code>.
-         * @param sooper An <code>ASTSuper</code>.
+         * Sets the <code>ASTKeywordNode</code> of type <code>super</code>.
+         * @param sooper An <code>ASTKeywordNode</code> of type <code>super</code>.
          * @return This <code>Builder</code>.
          */
-        public Builder setSuper(ASTSuper sooper) {
+        public Builder setSuper(ASTKeywordNode sooper) {
             mySooper = sooper;
             return this;
         }
 
         /**
-         * Sets the <code>ASTListNode</code> representing an Expression Name.
-         * @param exprName An <code>ASTListNode</code> representing an Expression Name.
+         * Sets the <code>ASTExpressionName</code>.
+         * @param exprName An <code>ASTExpressionName</code>.
          * @return This <code>Builder</code>.
          */
-        public Builder setExprName(ASTListNode exprName) {
+        public Builder setExprName(ASTExpressionName exprName) {
             this.myExprName = exprName;
             return this;
         }
@@ -127,21 +130,21 @@ public class ASTMethodReference extends ASTParentNode {
         }
 
         /**
-         * Sets the <code>ASTListNode</code> representing a Type Name.
-         * @param typeName An <code>ASTListNode</code>.
+         * Sets the <code>ASTTypeName</code>.
+         * @param typeName An <code>ASTTypeName</code>.
          * @return This <code>Builder</code>.
          */
-        public Builder setTypeName(ASTListNode typeName) {
+        public Builder setTypeName(ASTTypeName typeName) {
             this.myTypeName = typeName;
             return this;
         }
 
         /**
-         * Sets the <code>ASTTypeArguments</code>.
-         * @param typeArgs An <code>ASTTypeArguments</code>.
+         * Sets the <code>ASTTypeArgumentList</code>.
+         * @param typeArgs An <code>ASTTypeArgumentList</code>.
          * @return This <code>Builder</code>.
          */
-        public Builder setTypeArguments(ASTTypeArguments typeArgs) {
+        public Builder setTypeArguments(ASTTypeArgumentList typeArgs) {
             this.myTypeArgs = typeArgs;
             return this;
         }
@@ -218,34 +221,26 @@ public class ASTMethodReference extends ASTParentNode {
     }
 
     /**
-     * TODO: For removal when removing collapsing.
+     * Returns an <code>ASTTypeName</code>, if it exists.
+     * @return An <code>Optional&lt;ASTTypeName&gt;</code>.
      */
-    @Override
-    public boolean isCollapsible() {
-        return false;
-    }
-
-    /**
-     * Returns an <code>ASTListNode</code> representing a Type Name, if it exists.
-     * @return An <code>Optional&lt;ASTListNode&gt;</code>.
-     */
-    public Optional<ASTListNode> getTypeName() {
+    public Optional<ASTTypeName> getTypeName() {
         return Optional.ofNullable(myTypeName);
     }
 
     /**
-     * Returns an <code>ASTSuper</code>, if it exists.
-     * @return An <code>Optional&lt;ASTSuper&gt;</code>.
+     * Returns an <code>ASTKeywordNode</code> of type <code>super</code>, if it exists.
+     * @return An <code>Optional&lt;ASTKeywordNode&gt;</code> of type <code>super</code>.
      */
-    public Optional<ASTSuper> getSooper() {
+    public Optional<ASTKeywordNode> getSooper() {
         return Optional.ofNullable(mySooper);
     }
 
     /**
-     * Returns an <code>ASTListNode</code> representing an Expression Name., if it exists.
-     * @return An <code>Optional&lt;ASTListNode&gt;</code>.
+     * Returns an <code>ASTExpressionName</code>, if it exists.
+     * @return An <code>Optional&lt;ASTExpressionName&gt;</code>.
      */
-    public Optional<ASTListNode> getExprName() {
+    public Optional<ASTExpressionName> getExprName() {
         return Optional.ofNullable(myExprName);
     }
 
@@ -266,10 +261,10 @@ public class ASTMethodReference extends ASTParentNode {
     }
 
     /**
-     * Returns an <code>ASTTypeArguments</code>, if it exists.
-     * @return An <code>Optional&lt;ASTTypeArguments&gt;</code>.
+     * Returns an <code>ASTTypeArgumentList</code>, if it exists.
+     * @return An <code>Optional&lt;ASTTypeArgumentList&gt;</code>.
      */
-    public Optional<ASTTypeArguments> getTypeArgs() {
+    public Optional<ASTTypeArgumentList> getTypeArgs() {
         return Optional.ofNullable(myTypeArgs);
     }
 
@@ -281,34 +276,30 @@ public class ASTMethodReference extends ASTParentNode {
         return Optional.ofNullable(myIdentifier);
     }
 
-    /**
-     * Prints this node and its children to the output stream.
-     * @param prefix A string to indent the printing of this node.
-     * @param isTail Whether this node is last in its siblings (or the only child).
-     */
     @Override
-    public void print(String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? "└── " : "├── ") + toString());
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>();
         if (myTypeName != null) {
-            myTypeName.print(prefix + (isTail ? "    " : "|   "), false);
+            children.add(myTypeName);
         }
         if (mySooper != null) {
-            mySooper.print(prefix + (isTail ? "    " : "|   "), false);
+            children.add(mySooper);
         }
         if (myExprName != null) {
-            myExprName.print(prefix + (isTail ? "    " : "|   "), false);
+            children.add(myExprName);
         }
         if (myPrimary != null) {
-            myPrimary.print(prefix + (isTail ? "    " : "|   "), false);
+            children.add(myPrimary);
         }
         if (myDataType != null) {
-            myDataType.print(prefix + (isTail ? "    " : "|   "), myTypeArgs == null && myIdentifier == null);
+            children.add(myDataType);
         }
         if (myTypeArgs != null) {
-            myTypeArgs.print(prefix + (isTail ? "    " : "|   "), myIdentifier == null);
+            children.add(myTypeArgs);
         }
         if (myIdentifier != null) {
-            myIdentifier.print(prefix + (isTail ? "    " : "|   "), true);
+            children.add(myIdentifier);
         }
+        return children;
     }
 }

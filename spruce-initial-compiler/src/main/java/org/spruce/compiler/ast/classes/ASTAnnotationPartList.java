@@ -2,8 +2,7 @@ package org.spruce.compiler.ast.classes;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -14,22 +13,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationPart {AnnotationPart}
  * </em>
  */
-public class ASTAnnotationPartList extends ASTParentNode {
+public class ASTAnnotationPartList extends ASTListNode<ASTAnnotationPart> {
     /**
-     * Constructs an <code>ASTAnnotationPartList</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * list of child nodes, and a list type.
+     *
+     * @param location The <code>Location</code>.
+     * @param children A <code>List</code> of <code>ASTAnnotationPart</code>s.
      */
-    public ASTAnnotationPartList(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTAnnotationPartList(Location location, List<ASTAnnotationPart> children) {
+        super(location, children, Type.ANNOTATION_PARTS);
     }
 }

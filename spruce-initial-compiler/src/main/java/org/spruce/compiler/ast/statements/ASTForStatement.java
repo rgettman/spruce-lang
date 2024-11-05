@@ -1,38 +1,23 @@
 package org.spruce.compiler.ast.statements;
 
-import java.util.List;
-
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.ast.ParentNode;
+import org.spruce.compiler.ast.expressions.ASTBinaryExpression;
+import org.spruce.compiler.ast.expressions.ASTCastExpression;
+import org.spruce.compiler.ast.expressions.ASTConditionalExpression;
+import org.spruce.compiler.ast.expressions.ASTExpression;
+import org.spruce.compiler.ast.expressions.ASTIsaExpression;
+import org.spruce.compiler.ast.expressions.ASTPrimary;
+import org.spruce.compiler.ast.expressions.ASTSwitchExpression;
+import org.spruce.compiler.ast.expressions.ASTUnaryExpression;
 
 /**
- * <p>An <code>ASTForStatement</code> is either a basic for statement or an
- * enhanced for statement.</p>
- *
+ * An <code>ASTForStatement</code> is a particular kind of statement that is a
+ * BasicForStatement or an EnhancedForStatement.
  * <em>
- * ForStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;BasicForStatement<br>
+ * ForStatement:
+ * &nbsp;&nbsp;&nbsp;&nbsp;BasicForStatement
  * &nbsp;&nbsp;&nbsp;&nbsp;EnhancedForStatement
  * </em>
  */
-public class ASTForStatement extends ASTParentNode {
-    /**
-     * Constructs an <code>ASTStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
-     * @param location The <code>Location</code>.
-     * @param children The child nodes.
-     */
-    public ASTForStatement(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
-    }
+public sealed interface ASTForStatement extends ParentNode, ASTStatement permits ASTBasicForStatement, ASTEnhancedForStatement {
 }

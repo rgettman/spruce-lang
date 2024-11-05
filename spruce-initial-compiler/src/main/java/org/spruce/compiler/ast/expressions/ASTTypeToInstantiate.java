@@ -1,12 +1,11 @@
 package org.spruce.compiler.ast.expressions;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.ast.types.ASTTypeArgumentsOrDiamond;
 import org.spruce.compiler.scanner.Location;
@@ -21,16 +20,16 @@ import org.spruce.compiler.scanner.Location;
  * </em>
  */
 public class ASTTypeToInstantiate extends ASTParentNode {
-    private final ASTListNode myTypeName;
+    private final ASTTypeName myTypeName;
     private final ASTTypeArgumentsOrDiamond myTaod;
 
     /**
      * Constructs an <code>ASTTypeToInstantiate</code> given a type name.
      * @param location A <code>Location</code>.
-     * @param typeName An <code>ASTListNode</code> of type <code>TYPENAME_IDS</code>.
+     * @param typeName An <code>ASTTypeName</code>.
      */
-    public ASTTypeToInstantiate(Location location, ASTListNode typeName) {
-        super(location, Arrays.asList(typeName));
+    public ASTTypeToInstantiate(Location location, ASTTypeName typeName) {
+        super(location);
         myTypeName = typeName;
         myTaod = null;
     }
@@ -39,28 +38,20 @@ public class ASTTypeToInstantiate extends ASTParentNode {
      * Constructs an <code>ASTTypeToInstantiate</code> given a type name and a
      * type-arguments-or-diamond.
      * @param location A <code>Location</code>.
-     * @param typeName An <code>ASTListNode</code> of type <code>TYPENAME_IDS</code>.
+     * @param typeName An <code>ASTTypeName</code>.
      * @param taod An <code>ASTTypeArgumentsOrDiamond</code>.
      */
-    public ASTTypeToInstantiate(Location location, ASTListNode typeName, ASTTypeArgumentsOrDiamond taod) {
-        super(location, Arrays.asList(typeName, taod));
+    public ASTTypeToInstantiate(Location location, ASTTypeName typeName, ASTTypeArgumentsOrDiamond taod) {
+        super(location);
         myTypeName = typeName;
         myTaod = taod;
     }
 
     /**
-     * TODO: For removal when removing collapsing.
+     * Returns an <code>ASTTypeName</code>.
+     * @return An <code>ASTTypeName</code>.
      */
-    @Override
-    public boolean isCollapsible() {
-        return false;
-    }
-
-    /**
-     * Returns an <code>ASTListNode</code> representing a type name.
-     * @return An <code>ASTListNode</code> of type <code>TYPENAME_IDS</code>.
-     */
-    public ASTListNode getTypeName() {
+    public ASTTypeName getTypeName() {
         return myTypeName;
     }
 
@@ -70,5 +61,15 @@ public class ASTTypeToInstantiate extends ASTParentNode {
      */
     public Optional<ASTTypeArgumentsOrDiamond> getTaod() {
         return Optional.ofNullable(myTaod);
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(2);
+        children.add(myTypeName);
+        if (myTaod != null) {
+            children.add(myTaod);
+        }
+        return children;
     }
 }

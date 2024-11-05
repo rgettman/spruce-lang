@@ -2,8 +2,8 @@ package org.spruce.compiler.ast.classes;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -22,26 +22,16 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;GeneralModifier {GeneralModifier}
  * </em>
  */
-public class ASTMethodModifierList extends ASTParentNode
+public class ASTMethodModifierList extends ASTListNode<ASTKeywordNode>
 {
     /**
      * Constructs an <code>ASTMethodModifierList</code> at the given <code>Location</code>
      * and with possibly a node as its child.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTKeywordNode</code>s.
      */
-    public ASTMethodModifierList(Location location, List<ASTNode> children)
+    public ASTMethodModifierList(Location location, List<ASTKeywordNode> children)
     {
-        super(location, children);
-    }
-
-    /**
-     * This node is NOT collapsible.
-     * @return <code>false</code>.
-     */
-    @Override
-    public boolean isCollapsible()
-    {
-        return false;
+        super(location, children, Type.METHOD_MODIFIERS);
     }
 }

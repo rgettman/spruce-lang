@@ -3,18 +3,11 @@ package org.spruce.compiler.ast.expressions;
 import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTBinaryNode;
-import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
-import org.spruce.compiler.ast.ASTUnaryNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
-import org.spruce.compiler.scanner.TokenType;
-
-import static org.spruce.compiler.ast.ASTListNode.Type.EXPR_NAME_IDS;
-import static org.spruce.compiler.scanner.TokenType.OPEN_BRACKET;
 
 /**
  * <p>An <code>ASTPrimary</code> is a simple expression.</p>
@@ -35,27 +28,43 @@ import static org.spruce.compiler.scanner.TokenType.OPEN_BRACKET;
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodReference
  * </em>
  */
-public class ASTPrimary extends ASTUnaryNode {
+public final class ASTPrimary extends ASTParentNode implements ASTValueExpression {
+    public enum Type {
+        LITERAL, CLASS_LITERAL, EXPR_NAME, SELF, TYPENAME_SELF, PAREN_EXPR, ELEMENT_ACCESS,
+        METHOD_INVOCATION, ARRAY_CREATION_EXPR, CLASS_INSTANCE_CREATION_EXPR, FIELD_ACCESS, METHOD_REFERENCE
+    }
+    private final Node myChild;
+    private final Type myType;
 
     /**
      * Constructs an <code>ASTPrimary</code> at the given <code>Location</code>
-     * and the given child.
+     * with the given <code>ASTNode</code> as its child, and with the given
+     * <code>Type</code>.
      * @param location The <code>Location</code>.
-     * @param first The only child node.
+     * @param child The child <code>Node</code>.
+     * @param type The <code>Type</code> of primary.
      */
-    public ASTPrimary(Location location, ASTNode first) {
-        super(location, first);
+    public ASTPrimary(Location location, Node child, Type type) {
+        super(location);
+        myChild = child;
+        myType = type;
     }
 
     /**
-     * Constructs an <code>ASTPrimary</code> at the given <code>Location</code>,
-     * the given child, and the given operation.
-     * @param location The <code>Location</code>.
-     * @param first The only child node.
-     * @param operation The operation, as a <code>TokenType</code>.
+     * Returns an <code>Node</code> as the child.
+     * @return An <code>Node</code>.
      */
-    public ASTPrimary(Location location, ASTNode first, TokenType operation) {
-        super(location, operation, first);
+    public Node getChild() {
+        return myChild;
+    }
+
+    /**
+     * Returns the <code>Type</code> of this primary that can be used
+     * to identify the type of child.
+     * @return The <code>Type</code>.
+     */
+    public Type getType() {
+        return myType;
     }
 
     /**
@@ -68,15 +77,27 @@ public class ASTPrimary extends ASTUnaryNode {
      *     <code>ASTLeftHandSide</code>.
      */
     public ASTLeftHandSide getLeftHandSide() {
-        Location loc = getFirst().getLocation();
-        return switch (getFirst()) {
-            case ASTListNode exprName when exprName.getType() == EXPR_NAME_IDS ->
-                new ASTLeftHandSide(loc, Arrays.asList(exprName));
-            case ASTBinaryNode elementAccess when elementAccess.getOperation() == OPEN_BRACKET ->
-                new ASTLeftHandSide(loc, Arrays.asList(elementAccess));
-            case ASTFieldAccess fieldAccess ->
-                new ASTLeftHandSide(loc, Arrays.asList(fieldAccess));
+        Location loc = myChild.getLocation();
+        return switch (myChild) {
+            case ASTExpressionName exprName -> new ASTLeftHandSide(loc, exprName);
+            case ASTElementAccess elementAccess -> new ASTLeftHandSide(loc, elementAccess);
+            case ASTFieldAccess fieldAccess -> new ASTLeftHandSide(loc, fieldAccess);
             default -> throw new CompileException(getLocation(), "Expected variable or element access.");
         };
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        return Arrays.asList(myChild);
+    }
+
+    /**
+     * Returns the first line of the string representation of this node in the
+     * format "ClassSimpleName(type) at Location".
+     * @return A header line for this node.
+     */
+    @Override
+    public String getHeaderValue() {
+        return getClass().getSimpleName() + ("(" + myType + ")")  + " at " + getLocation();
     }
 }

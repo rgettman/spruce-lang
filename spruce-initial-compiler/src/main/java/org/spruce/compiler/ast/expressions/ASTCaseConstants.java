@@ -2,8 +2,7 @@ package org.spruce.compiler.ast.expressions;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -12,26 +11,18 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * CaseConstants:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ConditionalExpression {, ConditionalExpression}
+ * &nbsp;&nbsp;&nbsp;&nbsp;ValueExpression {, ValueExpression}
  * </em>
  */
-public class ASTCaseConstants extends ASTParentNode {
+public class ASTCaseConstants extends ASTListNode<ASTValueExpression> {
     /**
-     * Constructs an <code>ASTCaseConstants</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * list of child nodes, and a list type.
+     *
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTValueExpression</code>s.
      */
-    public ASTCaseConstants(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTCaseConstants(Location location, List<ASTValueExpression> children) {
+        super(location, children, Type.CASE_CONSTANTS);
     }
 }

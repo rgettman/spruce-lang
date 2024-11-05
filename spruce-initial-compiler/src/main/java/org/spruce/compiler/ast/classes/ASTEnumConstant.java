@@ -1,11 +1,13 @@
 package org.spruce.compiler.ast.classes;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.expressions.ASTArgumentList;
+import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.scanner.Location;
-import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTEnumConstant</code> is an identifier with an optional argument list
@@ -17,21 +19,50 @@ import org.spruce.compiler.scanner.TokenType;
  * </em>
  */
 public class ASTEnumConstant extends ASTParentNode {
+    private final ASTIdentifier myName;
+    private final ASTArgumentList myArgsList;
+    private final ASTClassPartList myClassParts;
+
     /**
      * Constructs an <code>ASTEnumConstant</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * with the given <code>ASTArgumentList</code> and the given <code>ASTClassPartList</code>.
+     * @param location The <code>Location</code>.
+     * @param argsList An <code>ASTArgumentList</code>.
+     * @param classParts An <code>ASTClassPartList</code>.
      */
-    public ASTEnumConstant(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTEnumConstant(Location location, ASTIdentifier name, ASTArgumentList argsList, ASTClassPartList classParts) {
+        super(location);
+        myName = name;
+        myArgsList = argsList;
+        myClassParts = classParts;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTIdentifier</code> representing the enum constant name.
+     * @return An <code>ASTIdentifier</code>.
      */
+    public ASTIdentifier getName() {
+        return myName;
+    }
+
+    /**
+     * Returns an <code>ASTArgumentList</code>.
+     * @return An <code>ASTArgumentList</code>.
+     */
+    public ASTArgumentList getArgsList() {
+        return myArgsList;
+    }
+
+    /**
+     * Returns an <code>ASTClassPartList</code>.
+     * @return An <code>ASTClassPartList</code>.
+     */
+    public ASTClassPartList getClassParts() {
+        return myClassParts;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myName, myArgsList, myClassParts);
     }
 }

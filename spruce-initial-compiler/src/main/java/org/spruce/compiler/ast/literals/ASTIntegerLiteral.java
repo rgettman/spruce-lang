@@ -1,6 +1,5 @@
 package org.spruce.compiler.ast.literals;
 
-import org.spruce.compiler.ast.ASTValueNode;
 import org.spruce.compiler.scanner.Location;
 
 /**

@@ -1,14 +1,16 @@
 package org.spruce.compiler.ast.expressions;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTListNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.names.ASTTypeName;
+import org.spruce.compiler.ast.statements.ASTResource;
 import org.spruce.compiler.scanner.Location;
-
-import static org.spruce.compiler.scanner.TokenType.DOT;
 
 /**
  * <p>An <code>ASTFieldAccess</code> is primary, "super", or TypeName "." "super"
@@ -21,9 +23,9 @@ import static org.spruce.compiler.scanner.TokenType.DOT;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . super . Identifier
  * </em>
  */
-public class ASTFieldAccess extends ASTParentNode {
-    private final ASTListNode myTypeName;
-    private final ASTSuper mySooper;
+public final class ASTFieldAccess extends ASTParentNode implements ASTResource {
+    private final ASTTypeName myTypeName;
+    private final ASTKeywordNode mySooper;
     private final ASTPrimary myPrimary;
     private final ASTIdentifier myIdentifier;
 
@@ -34,7 +36,7 @@ public class ASTFieldAccess extends ASTParentNode {
      * @param identifier An <code>ASTIdentifier</code>.
      */
     public ASTFieldAccess(Location location, ASTPrimary primary, ASTIdentifier identifier) {
-        super(location, Arrays.asList(primary, identifier), DOT);
+        super(location);
         myTypeName = null;
         mySooper = null;
         myPrimary = primary;
@@ -44,11 +46,11 @@ public class ASTFieldAccess extends ASTParentNode {
     /**
      * Constructs an <code>ASTFieldAccess</code> given a Primary and an Identifier.
      * @param location A <code>Location</code>.
-     * @param sooper An <code>ASTSuper</code>.
+     * @param sooper An <code>ASTKeywordNode</code> of type <code>super</code>.
      * @param identifier An <code>ASTIdentifier</code>.
      */
-    public ASTFieldAccess(Location location, ASTSuper sooper, ASTIdentifier identifier) {
-        super(location, Arrays.asList(sooper, identifier), DOT);
+    public ASTFieldAccess(Location location, ASTKeywordNode sooper, ASTIdentifier identifier) {
+        super(location);
         myTypeName = null;
         mySooper = sooper;
         myPrimary = null;
@@ -58,12 +60,12 @@ public class ASTFieldAccess extends ASTParentNode {
     /**
      * Constructs an <code>ASTFieldAccess</code> given a Primary and an Identifier.
      * @param location A <code>Location</code>.
-     * @param typeName An <code>ASTListNode</code> representing a Type Name.
-     * @param sooper An <code>ASTSuper</code>.
+     * @param typeName An <code>ASTTypeName</code>.
+     * @param sooper An <code>ASTKeywordNode</code> of type <code>super</code>.
      * @param identifier An <code>ASTIdentifier</code>.
      */
-    public ASTFieldAccess(Location location, ASTListNode typeName, ASTSuper sooper, ASTIdentifier identifier) {
-        super(location, Arrays.asList(typeName, sooper, identifier), DOT);
+    public ASTFieldAccess(Location location, ASTTypeName typeName, ASTKeywordNode sooper, ASTIdentifier identifier) {
+        super(location);
         myTypeName = typeName;
         mySooper = sooper;
         myPrimary = null;
@@ -71,26 +73,18 @@ public class ASTFieldAccess extends ASTParentNode {
     }
 
     /**
-     * TODO: For removal when removing collapsing.
+     * Returns an <code>ASTTypeName</code>, if it exists.
+     * @return An <code>Optional&lt;ASTTypeName&gt;</code>.
      */
-    @Override
-    public boolean isCollapsible() {
-        return false;
-    }
-
-    /**
-     * Returns an <code>ASTListNode</code> representing a Type Name, if it exists.
-     * @return An <code>Optional&lt;ASTListNode&gt;</code>.
-     */
-    public Optional<ASTListNode> getTypeName() {
+    public Optional<ASTTypeName> getTypeName() {
         return Optional.ofNullable(myTypeName);
     }
 
     /**
-     * Returns an <code>ASTSuper</code>, if it exists.
-     * @return An <code>Optional&lt;ASTSuper&gt;</code>.
+     * Returns an <code>ASTKeywordNode</code> of type <code>super</code>, if it exists.
+     * @return An <code>Optional&lt;ASTKeywordNode&gt;</code> of type <code>super</code>.
      */
-    public Optional<ASTSuper> getSooper() {
+    public Optional<ASTKeywordNode> getSooper() {
         return Optional.ofNullable(mySooper);
     }
 
@@ -108,5 +102,21 @@ public class ASTFieldAccess extends ASTParentNode {
      */
     public ASTIdentifier getIdentifier() {
         return myIdentifier;
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(3);
+        if (myPrimary != null) {
+            children.add(myPrimary);
+        }
+        if (myTypeName != null) {
+            children.add(myTypeName);
+        }
+        if (mySooper != null) {
+            children.add(mySooper);
+        }
+        children.add(myIdentifier);
+        return children;
     }
 }

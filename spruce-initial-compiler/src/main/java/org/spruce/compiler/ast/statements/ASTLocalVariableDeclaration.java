@@ -1,9 +1,10 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,23 +17,53 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;LocalVariableType VariableDeclaratorList
  * </em>
  */
-public class ASTLocalVariableDeclaration extends ASTParentNode {
+public final class ASTLocalVariableDeclaration extends ASTParentNode implements ASTInit {
+    private final ASTVariableModifierList myVarModifierList;
+    private final ASTLocalVariableType myLocalVarType;
+    private final ASTVariableDeclaratorList myVarDeclList;
+
     /**
-     * Constructs an <code>ASTLocalVariableDeclaration</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * Constructs an <code>ASTLocalVariableDeclaration</code> at the given <code>Location</code>,
+     * with the given Variable Modifier List, Local Variable Type, and Variable Declarator List.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param varModifierList An <code>ASTVariableModifierList</code>.
+     * @param localVarType An <code>ASTLocalVariableType</code>.
+     * @param varDeclList An <code>ASTVariableDeclaratorList</code>.
      */
-    public ASTLocalVariableDeclaration(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTLocalVariableDeclaration(Location location, ASTVariableModifierList varModifierList,
+                                       ASTLocalVariableType localVarType, ASTVariableDeclaratorList varDeclList) {
+        super(location);
+        myVarModifierList = varModifierList;
+        myLocalVarType = localVarType;
+        myVarDeclList = varDeclList;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTVariableModifierList</code>.
+     * @return An <code>ASTVariableModifierList</code>.
      */
+    public ASTVariableModifierList getVarModifierList() {
+        return myVarModifierList;
+    }
+
+    /**
+     * Returns an <code>ASTLocalVariableType</code>.
+     * @return An <code>ASTLocalVariableType</code>.
+     */
+    public ASTLocalVariableType getLocalVarType() {
+        return myLocalVarType;
+    }
+
+    /**
+     * Returns an <code>ASTVariableDeclaratorList</code>.
+     * @return An <code>ASTVariableDeclaratorList</code>.
+     */
+    public ASTVariableDeclaratorList getVarDeclList() {
+        return myVarDeclList;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myVarModifierList, myLocalVarType, myVarDeclList);
     }
 }

@@ -28,21 +28,11 @@ public class ASTValueNode extends ASTNode {
     }
 
     /**
-     * Prints this node to the output stream.
-     * @param prefix A string to indent the printing of this node.
-     * @param isTail Whether this node is last in its siblings (or the only child).
+     * Returns the value as a header value.
+     * @return A header value for this node.
      */
     @Override
-    public void print(String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? "└── " : "├── ") + toString());
-    }
-
-    /**
-     * Returns a string of the format "ClassSimpleName(value) at Location".
-     * @return A string representation of this node.
-     */
-    @Override
-    public String toString() {
+    public String getHeaderValue() {
         return getClass().getSimpleName() + "(" + getValue() + ") at " + getLocation();
     }
 }

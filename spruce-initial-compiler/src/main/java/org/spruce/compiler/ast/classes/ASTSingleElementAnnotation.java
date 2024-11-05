@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.classes;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,23 +17,42 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;@ TypeName ( ElementValue )
  * </em>
  */
-public class ASTSingleElementAnnotation extends ASTParentNode {
+public final class ASTSingleElementAnnotation extends ASTParentNode implements ASTAnnotation {
+    private final ASTTypeName myTypeName;
+    private final ASTElementValue myElementValue;
+
     /**
      * Constructs an <code>ASTSingleElementAnnotation</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTTypeName</code> and the given <code>ASTNode</code>
+     * representing the ElementValue.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param typeName An <code>ASTTypeName</code>.
+     * @param elementValue An <code>ASTElementValue</code>.
      */
-    public ASTSingleElementAnnotation(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTSingleElementAnnotation(Location location, ASTTypeName typeName, ASTElementValue elementValue) {
+        super(location);
+        myTypeName = typeName;
+        myElementValue = elementValue;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTTypeName</code>.
+     * @return An <code>ASTTypeName</code>.
      */
+    public ASTTypeName getTypeName() {
+        return myTypeName;
+    }
+
+    /**
+     * Returns an <code>ASTElementValue</code>.
+     * @return An <code>ASTElementValue</code>.
+     */
+    public ASTElementValue getElementValue() {
+        return myElementValue;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myTypeName, myElementValue);
     }
 }

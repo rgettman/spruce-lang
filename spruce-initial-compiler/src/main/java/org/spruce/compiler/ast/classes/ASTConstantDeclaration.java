@@ -1,36 +1,110 @@
 package org.spruce.compiler.ast.classes;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.statements.ASTVariableDeclaratorList;
+import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTConstantDeclaration</code> is an optional ConstantModifier, a
- * DataType, and a VariableDeclaratorList.</p>
+ * <p>An <code>ASTConstantDeclaration</code> is an optional AccessModifier, a
+ * ConstantModifier, a DataType, and a VariableDeclaratorList.</p>
  *
  * <em>
  * ConstantDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[ConstantModifier] DataType VariableDeclaratorList
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] ConstantModifier DataType VariableDeclaratorList
  * </em>
  */
-public class ASTConstantDeclaration extends ASTParentNode {
+public final class ASTConstantDeclaration extends ASTParentNode implements ASTAnnotationPart, ASTInterfacePart {
+    private final ASTKeywordNode myAccessMod;
+    private final ASTKeywordNode myConstantMod;
+    private final ASTDataType myDataType;
+    private final ASTVariableDeclaratorList myVarDeclList;
+
     /**
      * Constructs an <code>ASTConstantDeclaration</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * with the given <code>ASTKeywordNode</code> representing a ConstantModifier,
+     * the given <code>ASTDataType</code>, and the given <code>ASTVariableDeclaratorList</code>.
+     * @param location    The child nodes.
+     * @param constantMod An <code>ASTKeywordNode</code> of keyword <code>constant</code>.
+     * @param dataType    An <code>ASTDataType</code>.
+     * @param varDeclList An <code>ASTVariableDeclaratorList</code>.
      */
-    public ASTConstantDeclaration(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTConstantDeclaration(Location location, ASTKeywordNode constantMod, ASTDataType dataType, ASTVariableDeclaratorList varDeclList) {
+        super(location);
+        myAccessMod = null;
+        myConstantMod = constantMod;
+        myDataType = dataType;
+        myVarDeclList = varDeclList;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Constructs an <code>ASTConstantDeclaration</code> at the given <code>Location</code>
+     * with the given <code>ASTKeywordNode</code> representing an AccessModifier,
+     * the given <code>ASTKeywordNode</code> representing a ConstantModifier,
+     * the given <code>ASTDataType</code>, and the given <code>ASTVariableDeclaratorList</code>.
+     * @param location    The child nodes.
+     * @param accessMod   An <code>ASTKeywordNode</code> representing an AccessModifier.
+     * @param constantMod An <code>ASTKeywordNode</code> of keyword <code>constant</code>.
+     * @param dataType    An <code>ASTDataType</code>.
+     * @param varDeclList An <code>ASTVariableDeclaratorList</code>.
      */
+    public ASTConstantDeclaration(Location location, ASTKeywordNode accessMod, ASTKeywordNode constantMod,
+                                  ASTDataType dataType, ASTVariableDeclaratorList varDeclList) {
+        super(location);
+        myAccessMod = accessMod;
+        myConstantMod = constantMod;
+        myDataType = dataType;
+        myVarDeclList = varDeclList;
+    }
+
+    /**
+     * Returns an <code>ASTKeywordNode</code> representing an AccessModifier, if it exists.
+     * @return An <code>Optional&lt;ASTKeywordNode&gt;</code> representing an AccessModifier.
+     */
+    public Optional<ASTKeywordNode> getAccessMod() {
+        return Optional.ofNullable(myAccessMod);
+    }
+
+    /**
+     * Returns an <code>ASTKeywordNode</code> representing a ConstantModifier.
+     * @return An <code>ASTKeywordNode</code> of keyword <code>CONSTANT</code>.
+     */
+    public ASTKeywordNode getConstantMod() {
+        return myConstantMod;
+    }
+
+    /**
+     * Returns an <code>ASTDataType</code>.
+     * @return An <code>ASTDataType</code>.
+     */
+    public ASTDataType getDataType() {
+        return myDataType;
+    }
+
+    /**
+     * Returns an <code>ASTVariableDeclaratorList</code>.
+     * @return An <code>ASTVariableDeclaratorList</code>.
+     */
+    public ASTVariableDeclaratorList getVarDeclList() {
+        return myVarDeclList;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(4);
+        if (myAccessMod != null) {
+            children.add(myAccessMod);
+        }
+        children.add(myConstantMod);
+        children.add(myDataType);
+        children.add(myVarDeclList);
+        return children;
     }
 }
+

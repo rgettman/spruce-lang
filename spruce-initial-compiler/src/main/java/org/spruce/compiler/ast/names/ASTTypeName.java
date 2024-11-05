@@ -2,6 +2,7 @@ package org.spruce.compiler.ast.names;
 
 import java.util.List;
 
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
@@ -16,24 +17,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceOrTypeName . Identifier
  * </em>
  */
-public class ASTTypeName extends ASTParentNode {
+public class ASTTypeName extends ASTListNode<ASTIdentifier> {
     /**
      * Constructs an <code>ASTTypeName</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTIdentifier</code>s.
      */
-    public ASTTypeName(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>false</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return false;
+    public ASTTypeName(Location location, List<ASTIdentifier> children) {
+        super(location, children, Type.TYPENAME_IDS);
     }
 
     /**
@@ -41,8 +33,6 @@ public class ASTTypeName extends ASTParentNode {
      * @return A package or type name.
      */
     public ASTNamespaceOrTypeName convertToNamespaceOrTypeName() {
-        ASTNamespaceOrTypeName notn = new ASTNamespaceOrTypeName(getLocation(), getChildren());
-        notn.setOperation(getOperation());
-        return notn;
+        return new ASTNamespaceOrTypeName(getLocation(), getTypedChildren());
     }
 }

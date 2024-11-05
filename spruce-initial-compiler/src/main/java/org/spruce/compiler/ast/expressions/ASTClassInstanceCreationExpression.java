@@ -1,14 +1,17 @@
 package org.spruce.compiler.ast.expressions;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.statements.ASTStatementExpression;
 import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTClassInstanceCreationExpression</code> is an unqualified
- * class instance creation expression that may be preceded by a primary and ".".
+ * class instance creation expression that may be preceded by a primary and ".".</p>
  *
  * <em>
  * ClassInstanceCreationExpression:<br>
@@ -16,23 +19,61 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;Primary . UnqualifiedClassInstanceCreationExpression
  * </em>
  */
-public class ASTClassInstanceCreationExpression extends ASTParentNode {
+public final class ASTClassInstanceCreationExpression extends ASTParentNode implements ASTStatementExpression {
+    private final ASTPrimary myPrimary;
+    private final ASTUnqualifiedClassInstanceCreationExpression myUcice;
+
     /**
      * Constructs an <code>ASTClassInstanceCreationExpression</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTPrimary</code> and the given
+     * <code>ASTUnqualifiedClassInstanceCreationExpression</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param primary An <code>ASTPrimary</code>.
+     * @param ucice An <code>ASTUnqualifiedClassInstanceCreationExpression</code>.
      */
-    public ASTClassInstanceCreationExpression(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTClassInstanceCreationExpression(Location location, ASTPrimary primary,
+                                              ASTUnqualifiedClassInstanceCreationExpression ucice) {
+        super(location);
+        myPrimary = primary;
+        myUcice = ucice;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Constructs an <code>ASTClassInstanceCreationExpression</code> at the given <code>Location</code>
+     * with the given <code>ASTUnqualifiedClassInstanceCreationExpression</code>.
+     * @param location The <code>Location</code>.
+     * @param ucice An <code>ASTUnqualifiedClassInstanceCreationExpression</code>.
      */
+    public ASTClassInstanceCreationExpression(Location location,
+                                              ASTUnqualifiedClassInstanceCreationExpression ucice) {
+        super(location);
+        myPrimary = null;
+        myUcice = ucice;
+    }
+
+    /**
+     * Returns an <code>ASTPrimary</code>, if it exists.
+     * @return An <code>Optional&lt;Primary&gt;</code>.
+     */
+    public Optional<ASTPrimary> getPrimary() {
+        return Optional.ofNullable(myPrimary);
+    }
+
+    /**
+     * Returns an <code>ASTUnqualifiedClassInstanceCreationExpression</code>.
+     * @return An <code>ASTUnqualifiedClassInstanceCreationExpression</code>.
+     */
+    public ASTUnqualifiedClassInstanceCreationExpression getUcice() {
+        return myUcice;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(2);
+        if (myPrimary != null) {
+            children.add(myPrimary);
+        }
+        children.add(myUcice);
+        return children;
     }
 }

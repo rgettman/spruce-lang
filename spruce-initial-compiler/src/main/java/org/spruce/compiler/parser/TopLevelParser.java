@@ -1,21 +1,20 @@
 package org.spruce.compiler.parser;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.classes.ASTAccessModifier;
+import org.spruce.compiler.ast.ASTKeywordNode;
+import org.spruce.compiler.ast.classes.ASTGeneralModifierList;
+import org.spruce.compiler.ast.classes.ASTTypeDeclaration;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.names.ASTIdentifierList;
 import org.spruce.compiler.ast.names.ASTNamespaceOrTypeName;
+import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.ast.toplevel.*;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 
-import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.spruce.compiler.scanner.TokenType.*;
 
 /**
@@ -34,27 +33,30 @@ public class TopLevelParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTOrdinaryCompilationUnit</code>.
+     * Parses an <code>OrdinaryCompilationUnit</code>.
+     *
      * @return An <code>ASTOrdinaryCompilationUnit</code>.
      */
     public ASTOrdinaryCompilationUnit parseOrdinaryCompilationUnit() {
         Location loc = curr().getLocation();
-        List<ASTNode> children = new ArrayList<>(3);
+        ASTNamespaceDeclaration namespaceDecl = null;
         if (isCurr(NAMESPACE)) {
-            children.add(parseNamespaceDeclaration());
+            namespaceDecl = parseNamespaceDeclaration();
         }
-        if (isCurr(USE)) {
-            children.add(parseUseDeclarationList());
+        ASTUseDeclarationList useDeclList = parseUseDeclarationList();
+        ASTTypeDeclarationList typeDeclList = parseTypeDeclarationList();
+        if (namespaceDecl != null) {
+            return new ASTOrdinaryCompilationUnit(loc, namespaceDecl, useDeclList, typeDeclList);
         }
-        if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE, ABSTRACT, SHARED,
-                CLASS, ENUM, INTERFACE, ANNOTATION)) != null) {
-            children.add(parseTypeDeclarationList());
-        }
-        return new ASTOrdinaryCompilationUnit(loc, children);
+        return new ASTOrdinaryCompilationUnit(loc, useDeclList, typeDeclList);
     }
 
     /**
-     * Parses an <code>ASTNamespaceDeclaration</code>.
+     * Parses a <code>NamespaceDeclaration</code>.
+     * <em>
+     * NamespaceDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;namespace NamespaceName
+     * </em>
      * @return An <code>ASTNamespaceDeclaration</code>.
      */
     public ASTNamespaceDeclaration parseNamespaceDeclaration() {
@@ -62,11 +64,10 @@ public class TopLevelParser extends BasicParser {
         if (accept(NAMESPACE) == null) {
             throw new CompileException(curr().getLocation(), "Expected namespace.");
         }
-        ASTNamespaceDeclaration node = new ASTNamespaceDeclaration(loc, Collections.singletonList(getNamesParser().parseNamespaceName()));
+        ASTNamespaceDeclaration node = new ASTNamespaceDeclaration(loc, getNamesParser().parseNamespaceName());
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
-        node.setOperation(NAMESPACE);
         return node;
     }
 
@@ -76,20 +77,29 @@ public class TopLevelParser extends BasicParser {
      * UseDeclarationList:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;UseDeclaration {UseDeclaration}
      * </em>
-     * @return An <code>ASTListNode</code> with type <code>USE_DECLARATIONS</code>.
+     * @return An <code>ASTUseDeclarationList</code>.
      */
-    public ASTListNode parseUseDeclarationList() {
+    public ASTUseDeclarationList parseUseDeclarationList() {
         return parseMultiple(
                 t -> test(t, USE),
                 "Expected use declaration.",
                 this::parseUseDeclaration,
-                USE_DECLARATIONS,
+                ASTUseDeclarationList::new,
                 false
         );
     }
 
     /**
-     * Parses an <code>ASTUseDeclaration</code>.
+     * Parses a <code>UseDeclaration</code>.
+     * <em>
+     * UseDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UseTypeDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UseMultDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UseAllDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UseSharedTypeDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UseSharedMultDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UseSharedAllDeclaration
+     * </em>
      * @return An <code>ASTUseDeclaration</code>.
      */
     public ASTUseDeclaration parseUseDeclaration() {
@@ -102,148 +112,159 @@ public class TopLevelParser extends BasicParser {
             accept(SHARED);
             isShared = true;
         }
-        ASTListNode tn = getNamesParser().parseTypeName();
+        ASTTypeName tn = getNamesParser().parseTypeName();
         if (isShared) {
             if (isCurr(DOT) && isNext(OPEN_BRACE)) {
-                return new ASTUseDeclaration(loc, Collections.singletonList(parseUseSharedMultDeclaration(loc, tn)));
+                return parseUseSharedMultDeclaration(loc, tn);
             }
             else if (isCurr(DOT) && isNext(STAR)) {
-                return new ASTUseDeclaration(loc, Collections.singletonList(parseUseSharedAllDeclaration(loc, tn)));
+                return parseUseSharedAllDeclaration(loc, tn);
             }
             else {
-                return new ASTUseDeclaration(loc, Collections.singletonList(parseUseSharedTypeDeclaration(loc, tn)));
+                return parseUseSharedTypeDeclaration(loc, tn);
             }
         }
         else {
             if (isCurr(DOT) && isNext(OPEN_BRACE)) {
-                return new ASTUseDeclaration(loc, Collections.singletonList(parseUseMultDeclaration(loc, tn)));
+                return parseUseMultDeclaration(loc, tn);
             }
             else if (isCurr(DOT) && isNext(STAR)) {
-                return new ASTUseDeclaration(loc, Collections.singletonList(parseUseAllDeclaration(loc, tn)));
+                return parseUseAllDeclaration(loc, tn);
             }
             else {
-                return new ASTUseDeclaration(loc, Collections.singletonList(parseUseTypeDeclaration(loc, tn)));
+                return parseUseTypeDeclaration(loc, tn);
             }
         }
     }
 
     /**
-     * Parses an <code>ASTUseSharedMultDeclaration</code>, given an already
+     * Parses a <code>UseSharedMultDeclaration</code>, given an already
      * parsed type name.
-     * @param tn An already parsed <code>ASTListNode</code> as a type name.
+     * <em>
+     * UseSharedMultDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . { IdentifierList } ;
+     * </em>
+     * @param tn An already parsed <code>ASTTypeName</code>.
      * @return An <code>ASTUseSharedMultDeclaration</code>.
      */
-    public ASTUseSharedMultDeclaration parseUseSharedMultDeclaration(Location loc, ASTListNode tn) {
-        List<ASTNode> children = new ArrayList<>(2);
-        children.add(tn);
+    public ASTUseSharedMultDeclaration parseUseSharedMultDeclaration(Location loc, ASTTypeName tn) {
         if (accept(DOT) == null || accept(OPEN_BRACE) == null) {
             throw new CompileException(curr().getLocation(), "Expected dot then '{'.");
         }
-        children.add(getNamesParser().parseIdentifierList());
+        ASTIdentifierList identifierList = getNamesParser().parseIdentifierList();
         if (accept(CLOSE_BRACE) == null) {
             throw new CompileException(curr().getLocation(), "Expected '}'");
         }
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
-        ASTUseSharedMultDeclaration node = new ASTUseSharedMultDeclaration(loc, children);
-        node.setOperation(USE);
-        return node;
+        return new ASTUseSharedMultDeclaration(loc, tn, identifierList);
     }
 
     /**
-     * Parses an <code>ASTUseMultDeclaration</code>, given an already
+     * Parses a <code>UseMultDeclaration</code>, given an already
      * parsed type name.
-     * @param tn An already parsed <code>ASTListNode</code> as a type name.
+     * <em>
+     * UseMultDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;use NamespaceOrTypeName . { IdentifierList } ;
+     * </em>
+     * @param tn An already parsed <code>ASTTypeName</code>.
      * @return An <code>ASTUseMultDeclaration</code>.
      */
-    public ASTUseMultDeclaration parseUseMultDeclaration(Location loc, ASTListNode tn) {
-        List<ASTNode> children = new ArrayList<>(2);
-        children.add(getNamesParser().convertToNamespaceOrTypeName(tn));
+    public ASTUseMultDeclaration parseUseMultDeclaration(Location loc, ASTTypeName tn) {
+        ASTNamespaceOrTypeName namespaceOrTypeName = getNamesParser().convertToNamespaceOrTypeName(tn);
         if (accept(DOT) == null || accept(OPEN_BRACE) == null) {
             throw new CompileException(curr().getLocation(), "Expected dot then '{'.");
         }
-        children.add(getNamesParser().parseIdentifierList());
+        ASTIdentifierList identifiers = getNamesParser().parseIdentifierList();
         if (accept(CLOSE_BRACE) == null) {
             throw new CompileException(curr().getLocation(), "Expected '}'");
         }
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
-        ASTUseMultDeclaration node = new ASTUseMultDeclaration(loc, children);
-        node.setOperation(USE);
-        return node;
+        return new ASTUseMultDeclaration(loc, namespaceOrTypeName, identifiers);
     }
 
     /**
-     * Parses an <code>ASTUseSharedAllDeclaration</code>, given an already
+     * Parses a <code>UseSharedAllDeclaration</code>, given an already
      * parsed type name.
-     * @param tn An already parsed <code>ASTListNode</code>.
+     * <em>
+     * UseSharedAllDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . * ;
+     * </em>
+     * @param tn An already parsed <code>ASTTypeName</code>.
      * @return An <code>ASTUseSharedAllDeclaration</code>.
      */
-    public ASTUseSharedAllDeclaration parseUseSharedAllDeclaration(Location loc, ASTListNode tn) {
-        ASTUseSharedAllDeclaration node = new ASTUseSharedAllDeclaration(loc, Collections.singletonList(tn));
+    public ASTUseSharedAllDeclaration parseUseSharedAllDeclaration(Location loc, ASTTypeName tn) {
+        ASTUseSharedAllDeclaration node = new ASTUseSharedAllDeclaration(loc, tn);
         if (accept(DOT) == null || accept(STAR) == null) {
             throw new CompileException(curr().getLocation(), "Expected dot, star.");
         }
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
-        node.setOperation(USE);
         return node;
     }
 
     /**
-     * Parses an <code>ASTUseAllDeclaration</code>, given an already
+     * Parses a <code>UseAllDeclaration</code>, given an already
      * parsed type name.
-     * @param tn An already parsed <code>ASTListNode</code> as a type name.
+     * <em>
+     * UseAllDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;use NamespaceOrTypeName . * ;
+     * </em>
+     * @param tn An already parsed <code>ASTTypeName</code>.
      * @return An <code>ASTUseAllDeclaration</code>.
      */
-    public ASTUseAllDeclaration parseUseAllDeclaration(Location loc, ASTListNode tn) {
-        ASTUseAllDeclaration node = new ASTUseAllDeclaration(loc, Collections.singletonList(getNamesParser().convertToNamespaceOrTypeName(tn)));
+    public ASTUseAllDeclaration parseUseAllDeclaration(Location loc, ASTTypeName tn) {
+        ASTUseAllDeclaration node = new ASTUseAllDeclaration(loc, getNamesParser().convertToNamespaceOrTypeName(tn));
         if (accept(DOT) == null || accept(STAR) == null) {
             throw new CompileException(curr().getLocation(), "Expected dot, star.");
         }
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
-        node.setOperation(USE);
         return node;
     }
 
     /**
-     * Parses an <code>ASTUseSharedTypeDeclaration</code>, given an already
+     * Parses a <code>UseSharedTypeDeclaration</code>, given an already
      * parsed type name.
-     * @param tn An already parsed <code>ASTListNode</code> as a type name.
+     * <em>
+     * UseSharedTypeDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . Identifier;
+     * </em>
+     * @param tn An already parsed <code>ASTTypeName</code> as a type name.
      * @return An <code>ASTUseSharedTypeDeclaration</code>.
      */
-    public ASTUseSharedTypeDeclaration parseUseSharedTypeDeclaration(Location loc, ASTListNode tn) {
+    public ASTUseSharedTypeDeclaration parseUseSharedTypeDeclaration(Location loc, ASTTypeName tn) {
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         // Extract identifier, last child of type name.
-        List<ASTNode> children = tn.getChildren();
-        ASTIdentifier identifier = (ASTIdentifier) children.get(children.size() - 1);
+        List<ASTIdentifier> children = tn.getTypedChildren();
+        ASTIdentifier identifier = children.get(children.size() - 1);
         children.remove(children.size() - 1);
-        ASTListNode actual = new ASTListNode(tn.getLocation(), children, TYPENAME_IDS);
-        ASTUseSharedTypeDeclaration node = new ASTUseSharedTypeDeclaration(loc, Arrays.asList(actual, identifier));
-        node.setOperation(USE);
-        return node;
+        ASTTypeName actual = new ASTTypeName(tn.getLocation(), children);
+        return new ASTUseSharedTypeDeclaration(loc, actual, identifier);
     }
 
     /**
-     * Parses an <code>ASTUseTypeDeclaration</code>, given an already
+     * Parses a <code>UseTypeDeclaration</code>, given an already
      * parsed type name.
-     * @param tn An already parsed <code>ASTListNode</code> as a type name.
+     * <em>
+     * UseTypeDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;use TypeName ;
+     * </em>
+     * @param tn An already parsed <code>ASTTypeName</code>.
      * @return An <code>ASTUseTypeDeclaration</code>.
      */
-    public ASTUseTypeDeclaration parseUseTypeDeclaration(Location loc, ASTListNode tn) {
+    public ASTUseTypeDeclaration parseUseTypeDeclaration(Location loc, ASTTypeName tn) {
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
-        ASTUseTypeDeclaration node = new ASTUseTypeDeclaration(loc, Collections.singletonList(tn));
-        node.setOperation(USE);
-        return node;
+        return new ASTUseTypeDeclaration(loc, tn);
     }
 
     /**
@@ -252,50 +273,58 @@ public class TopLevelParser extends BasicParser {
      * TypeDeclarationList:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration {TypeDeclaration}
      * </em>
-     * @return An <code>ASTListNode</code> of type <code>TYPE_DECLARATIONS</code>.
+     * @return An <code>ASTTypeDeclarationList</code>.
      */
-    public ASTListNode parseTypeDeclarationList() {
+    public ASTTypeDeclarationList parseTypeDeclarationList() {
         return parseMultiple(
                 t -> Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE, ABSTRACT, SHARED,
                         CLASS, ENUM, INTERFACE, ANNOTATION, RECORD).contains(t.getType()),
                 "Expected class, enum, interface, annotation, or record declaration.",
                 this::parseTypeDeclaration,
-                TYPE_DECLARATIONS,
+                ASTTypeDeclarationList::new,
                 false
         );
     }
 
     /**
-     * Parses an <code>ASTTypeDeclaration</code>.
+     * Parses a <code>TypeDeclaration</code>.
+     * <em>
+     * TypeDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
+     * </em>
      * @return An <code>ASTTypeDeclaration</code>.
      */
     public ASTTypeDeclaration parseTypeDeclaration() {
         Location loc = curr().getLocation();
         ClassesParser cp = getClassesParser();
-        ASTAccessModifier accessMod = null;
+        ASTKeywordNode accessMod = null;
         if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null) {
             accessMod = cp.parseAccessModifier();
         }
-        ASTListNode genModList = null;
-        if (isAcceptedOperator(Arrays.asList(ABSTRACT, SHARED)) != null) {
-            genModList = cp.parseGeneralModifierList();
-        }
+        ASTGeneralModifierList genModList = cp.parseGeneralModifierList();
         return switch (curr().getType()) {
-            case CLASS ->
-                    new ASTTypeDeclaration(loc, Collections.singletonList(cp.parseClassDeclaration(loc, accessMod, genModList)));
-            case ENUM ->
-                    new ASTTypeDeclaration(loc, Collections.singletonList(cp.parseEnumDeclaration(loc, accessMod, genModList)));
-            case INTERFACE ->
-                    new ASTTypeDeclaration(loc, Collections.singletonList(cp.parseInterfaceDeclaration(loc, accessMod, genModList)));
-            case ANNOTATION ->
-                    new ASTTypeDeclaration(loc, Collections.singletonList(cp.parseAnnotationDeclaration(loc, accessMod, genModList)));
+            case CLASS -> cp.parseClassDeclaration(loc, accessMod, genModList);
+            case ENUM -> cp.parseEnumDeclaration(loc, accessMod, genModList);
+            case INTERFACE -> cp.parseInterfaceDeclaration(loc, accessMod, genModList);
+            case ANNOTATION -> cp.parseAnnotationDeclaration(loc, accessMod, genModList);
             case RECORD -> {
-                if (genModList != null) {
+                if (!genModList.getChildren().isEmpty()) {
                     throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
                 }
-                yield new ASTTypeDeclaration(loc, Collections.singletonList(cp.parseRecordDeclaration(loc, accessMod)));
+                yield cp.parseRecordDeclaration(loc, accessMod);
             }
-            default -> throw new CompileException(curr().getLocation(), "Expected class, enum, interface, annotation, or record.");
+            case ADT -> {
+                if (!genModList.getChildren().isEmpty()) {
+                    throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+                }
+                yield cp.parseAdtDeclaration(loc, accessMod);
+            }
+            default -> throw new CompileException(curr().getLocation(), "Expected class, enum, interface, annotation, record, or adt.");
         };
     }
 }

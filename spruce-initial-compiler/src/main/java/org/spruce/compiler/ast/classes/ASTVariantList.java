@@ -2,8 +2,7 @@ package org.spruce.compiler.ast.classes;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -14,23 +13,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;Variant {, Variant}
  * </em>
  */
-public class ASTVariantList extends ASTParentNode {
+public class ASTVariantList extends ASTListNode<ASTVariant> {
     /**
-     * Constructs an <code>ASTVariantList</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * list of child nodes, and a list type.
+     *
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTVariant</code>s.
      */
-    public ASTVariantList(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTVariantList(Location location, List<ASTVariant> children) {
+        super(location, children, Type.VARIANTS);
     }
 }

@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.toplevel;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTNamespaceName;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,22 +18,30 @@ import org.spruce.compiler.scanner.Location;
  * </em>
  */
 public class ASTNamespaceDeclaration extends ASTParentNode {
+    private final ASTNamespaceName myNamespace;
+
     /**
      * Constructs an <code>ASTNamespaceDeclaration</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * with the given <code>ASTNamespaceName</code>.
+     * @param location The <code>Location</code>.
+     * @param namespace An <code>ASTNamespaceName</code>.
      */
-    public ASTNamespaceDeclaration(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTNamespaceDeclaration(Location location, ASTNamespaceName namespace) {
+        super(location);
+        myNamespace = namespace;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTNamespaceName</code>.
+     * @return An <code>ASTNamespaceName</code>.
      */
+    public ASTNamespaceName getNamespace() {
+        return myNamespace;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myNamespace);
     }
 }
 

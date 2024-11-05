@@ -2,8 +2,8 @@ package org.spruce.compiler.ast.names;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
+import org.spruce.compiler.ast.statements.ASTResource;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,26 +16,16 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
  * </em>
  */
-public class ASTExpressionName extends ASTParentNode {
+public final class ASTExpressionName extends ASTListNode<ASTIdentifier> implements ASTResource {
     /**
      * Constructs an <code>ASTExpressionName</code> at the given <code>Location</code>
      * and with at least one node as its children.
      *
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTIdentifier</code>s.
      */
-    public ASTExpressionName(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     *
-     * @return <code>false</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return false;
+    public ASTExpressionName(Location location, List<ASTIdentifier> children) {
+        super(location, children, Type.EXPR_NAME_IDS);
     }
 
     /**
@@ -46,14 +36,6 @@ public class ASTExpressionName extends ASTParentNode {
      * @see ASTAmbiguousName#convertToNamespaceOrTypeName
      */
     public ASTTypeName convertToTypeName() {
-        List<ASTNode> children = getChildren();
-        if (!children.isEmpty() && children.get(0) instanceof ASTAmbiguousName ambName)
-        {
-            ASTNamespaceOrTypeName portName = ambName.convertToNamespaceOrTypeName();
-            children.set(0, portName);
-        }
-        ASTTypeName typeName = new ASTTypeName(getLocation(), children);
-        typeName.setOperation(getOperation());
-        return typeName;
+        return new ASTTypeName(getLocation(), getTypedChildren());
     }
 }

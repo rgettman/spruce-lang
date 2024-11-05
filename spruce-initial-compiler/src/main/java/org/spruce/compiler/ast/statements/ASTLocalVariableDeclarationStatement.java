@@ -1,9 +1,10 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,23 +16,30 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;LocalVariableDeclaration ;
  * </em>
  */
-public class ASTLocalVariableDeclarationStatement extends ASTParentNode {
+public final class ASTLocalVariableDeclarationStatement extends ASTParentNode implements ASTBlockStatement {
+    private final ASTLocalVariableDeclaration myLocalVarDecl;
+
     /**
      * Constructs an <code>ASTLocalVariableDeclarationStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTLocalVariableDeclaration</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param localVarDecl An <code>ASTLocalVariableDeclaration</code>.
      */
-    public ASTLocalVariableDeclarationStatement(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTLocalVariableDeclarationStatement(Location location, ASTLocalVariableDeclaration localVarDecl) {
+        super(location);
+        myLocalVarDecl = localVarDecl;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTLocalVariableDeclaration</code>.
+     * @return An <code>ASTLocalVariableDeclaration</code>.
      */
+    public ASTLocalVariableDeclaration getLocalVarDecl() {
+        return myLocalVarDecl;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myLocalVarDecl);
     }
 }

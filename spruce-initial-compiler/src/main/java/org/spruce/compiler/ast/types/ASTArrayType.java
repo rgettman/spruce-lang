@@ -1,9 +1,10 @@
 package org.spruce.compiler.ast.types;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -14,23 +15,41 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray Dims
  * </em>
  */
-public class ASTArrayType extends ASTParentNode {
+public final class ASTArrayType extends ASTParentNode implements ASTDataType {
+    private final ASTDataTypeNoArray myDataTypeNoArray;
+    private final ASTDims myDims;
+
     /**
      * Constructs an <code>ASTArrayType</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTDataTypeNoArray</code> and the given <code>ASTDims</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param dataTypeNoArray An <code>ASTDataTypeNoArray</code>.
+     * @param dims An <code>ASTDims</code>.
      */
-    public ASTArrayType(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTArrayType(Location location, ASTDataTypeNoArray dataTypeNoArray, ASTDims dims) {
+        super(location);
+        myDataTypeNoArray = dataTypeNoArray;
+        myDims = dims;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>false</code>.
+     * Returns an <code>ASTDataTypeNoArray</code>.
+     * @return An <code>ASTDataTypeNoArray</code>.
      */
+    public ASTDataTypeNoArray getDataTypeNoArray() {
+        return myDataTypeNoArray;
+    }
+
+    /**
+     * Returns an <code>ASTDims</code>.
+     * @return An <code>ASTDims</code>.
+     */
+    public ASTDims getDims() {
+        return myDims;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return false;
+    public List<Node> getChildren() {
+        return Arrays.asList(myDataTypeNoArray, myDims);
     }
 }

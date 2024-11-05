@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.classes;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.statements.ASTBlock;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,22 +17,30 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;shared constructor ( ) Block
  * </em>
  */
-public class ASTSharedConstructor extends ASTParentNode {
+public final class ASTSharedConstructor extends ASTParentNode implements ASTClassPart {
+    private final ASTBlock myBlock;
+
     /**
      * Constructs an <code>ASTSharedConstructor</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * with the given <code>ASTBlock</code>.
+     * @param location The <code>Location</code>.
+     * @param block An <code>ASTBlock</code>.
      */
-    public ASTSharedConstructor(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTSharedConstructor(Location location, ASTBlock block) {
+        super(location);
+        myBlock = block;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTBlock</code>.
+     * @return An <code>ASTBlock</code>.
      */
+    public ASTBlock getBlock() {
+        return myBlock;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myBlock);
     }
 }

@@ -1,9 +1,13 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,22 +20,58 @@ import org.spruce.compiler.scanner.Location;
  * </em>
  */
 public class ASTLocalVariableType extends ASTParentNode {
+    private final ASTDataType myDataType;
+    private final ASTKeywordNode myKeyword;
+
     /**
      * Constructs an <code>ASTLocalVariableType</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTDataType</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param dataType An <code>ASTDataType</code>.
      */
-    public ASTLocalVariableType(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTLocalVariableType(Location location, ASTDataType dataType) {
+        super(location);
+        myDataType = dataType;
+        myKeyword = null;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Constructs an <code>ASTLocalVariableType</code> at the given <code>Location</code>
+     * with the given <code>TokenType</code> as the operation.
+     * @param location The <code>Location</code>.
+     * @param autoKeyword An <code>ASTKeywordNode</code> with the keyword <code>AUTO</code>.
      */
+    public ASTLocalVariableType(Location location, ASTKeywordNode autoKeyword) {
+        super(location);
+        myDataType = null;
+        myKeyword = autoKeyword;
+    }
+
+    /**
+     * Returns an <code>ASTDataType</code>, if it exists.
+     * @return An <code>Optional&lt;ASTDataType&gt;</code>.
+     */
+    public Optional<ASTDataType> getDataType() {
+        return Optional.ofNullable(myDataType);
+    }
+
+    /**
+     * Returns an <code>ASTKeywordNode</code> representing "auto", if it exists.
+     * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
+     */
+    public Optional<ASTKeywordNode> getAutoKeyword() {
+        return Optional.ofNullable(myKeyword);
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(1);
+        if (myDataType != null) {
+            children.add(myDataType);
+        }
+        else {
+            children.add(myKeyword);
+        }
+        return children;
     }
 }

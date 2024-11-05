@@ -2,8 +2,8 @@ package org.spruce.compiler.ast.statements;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
+import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -14,23 +14,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataType {| DataType}
  * </em>
  */
-public class ASTCatchType extends ASTParentNode {
+public class ASTCatchType extends ASTListNode<ASTDataType> {
     /**
-     * Constructs an <code>ASTCatchType</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * list of child nodes, and a list type.
+     *
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTDataType</code>s.
      */
-    public ASTCatchType(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTCatchType(Location location, List<ASTDataType> children) {
+        super(location, children, Type.CATCH_CLAUSES);
     }
 }

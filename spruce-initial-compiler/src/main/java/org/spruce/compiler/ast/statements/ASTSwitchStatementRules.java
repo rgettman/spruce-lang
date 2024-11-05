@@ -2,8 +2,7 @@ package org.spruce.compiler.ast.statements;
 
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -14,23 +13,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatementRule {SwitchStatementRule}<br>
  * </em>
  */
-public class ASTSwitchStatementRules extends ASTParentNode {
+public class ASTSwitchStatementRules extends ASTListNode<ASTSwitchStatementRule> {
     /**
-     * Constructs an <code>ASTSwitchStatementRules</code> at the given <code>Location</code>
-     * and with possibly a node as its child.
+     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * list of child nodes, and a list type.
+     *
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param children A <code>List</code> of <code>ASTSwitchStatementRule</code>s.
      */
-    public ASTSwitchStatementRules(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTSwitchStatementRules(Location location, List<ASTSwitchStatementRule> children) {
+        super(location, children, Type.SWITCH_STMT_RULES);
     }
 }

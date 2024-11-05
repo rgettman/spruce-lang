@@ -1,9 +1,13 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.expressions.ASTExpression;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,23 +20,40 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;return Expression ;
  * </em>
  */
-public class ASTReturnStatement extends ASTParentNode{
+public final class ASTReturnStatement extends ASTParentNode implements ASTStatement {
+    private final ASTExpression myExpr;
+
     /**
      * Constructs an <code>ASTReturnStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTNode</code> representing an Expression.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param expr An <code>ASTExpression</code>.
      */
-    public ASTReturnStatement(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTReturnStatement(Location location, ASTExpression expr) {
+        super(location);
+        myExpr = expr;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Constructs an <code>ASTReturnStatement</code> at the given <code>Location</code>
+     * with no Expression.
+     * @param location The <code>Location</code>.
      */
+    public ASTReturnStatement(Location location) {
+        super(location);
+        myExpr = null;
+    }
+
+    /**
+     * Returns an <code>ASTExpression</code>, if it exists.
+     * @return An <code>Optional&lt;ASTExpression&gt;</code>.
+     */
+    public Optional<ASTExpression> getExpr() {
+        return Optional.ofNullable(myExpr);
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return myExpr != null ? Arrays.asList(myExpr) : Collections.emptyList();
     }
 }

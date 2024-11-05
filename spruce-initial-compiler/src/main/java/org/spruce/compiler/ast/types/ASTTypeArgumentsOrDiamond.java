@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.types;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -19,22 +21,60 @@ import org.spruce.compiler.scanner.Location;
  * </em>
  */
 public class ASTTypeArgumentsOrDiamond extends ASTParentNode {
+    private final ASTTypeArgumentList myTypeArgs;
+
     /**
      * Constructs an <code>ASTTypeArgumentsOrDiamond</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with an <code>ASTListNode</code> representing the TypeArguments.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param typeArgs An <code>ASTTypeArgumentList</code>.
      */
-    public ASTTypeArgumentsOrDiamond(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTTypeArgumentsOrDiamond(Location location, ASTTypeArgumentList typeArgs) {
+        super(location);
+        myTypeArgs = typeArgs;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Constructs an <code>ASTTypeArgumentsOrDiamond</code> at the given <code>Location</code>
+     * representing the "diamond".
+     * @param location The <code>Location</code>.
+     */
+    public ASTTypeArgumentsOrDiamond(Location location) {
+        super(location);
+        myTypeArgs = null;
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(1);
+        if (myTypeArgs != null) {
+            children.add(myTypeArgs);
+        }
+        return children;
+    }
+
+    /**
+     * Returns an <code>ASTTypeArgumentList</code>, if it exists.
+     * @return An <code>Optional&lt;ASTTypeArgumentList&gt;</code>.
+     */
+    public Optional<ASTTypeArgumentList> getTypeArgs() {
+        return Optional.ofNullable(myTypeArgs);
+    }
+
+    /**
+     * Helper method to create a string representation of this node.  It takes
+     * into account where in the tree this node is.
+     * @param prefix A string to indent the printing of this node.
+     * @param isTail Whether this node is last in its siblings (or the only child).
+     * @return The String representation of this node.
      */
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public String toString(String prefix, boolean isTail) {
+        StringBuilder buf = new StringBuilder();
+        buf.append(prefix).append(isTail ? "└── " : "├── ").append(getHeaderValue()).append("\n");
+        if (myTypeArgs != null) {
+            buf.append(myTypeArgs.toString(prefix + (isTail ? "    " : "|   "), true)).append("\n");
+        }
+        return buf.toString();
     }
 }

@@ -1,11 +1,14 @@
 package org.spruce.compiler.ast.classes;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.scanner.Location;
-import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTMethodDeclarator</code> is an identifier followed by an
@@ -18,21 +21,74 @@ import org.spruce.compiler.scanner.TokenType;
  * </em>
  */
 public class ASTMethodDeclarator extends ASTParentNode {
+    private final ASTIdentifier myName;
+    private final ASTFormalParameterList myFormalParamList;
+    private final ASTKeywordNode myMutModifier;
+
     /**
      * Constructs an <code>ASTMethodDeclarator</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * with the given <code>ASTIdentifier</code> representing the method name,
+     * the given <code>ASTFormalParameterList</code>,
+     * and the given <code>ASTKeywordNode</code> representing the MutModifier.
+     * @param location The <code>Location</code>.
+     * @param name An <code>ASTIdentifier</code> representing the method name.
+     * @param formalParamList An <code>ASTFormalParameterList</code>.
+     * @param mutMod An <code>ASTKeywordNode</code> of keyword <code>mut</code>.
      */
-    public ASTMethodDeclarator(Location location, List<ASTNode> children) {
-        super(location, children, TokenType.OPEN_PARENTHESIS);
+    public ASTMethodDeclarator(Location location, ASTIdentifier name, ASTFormalParameterList formalParamList, ASTKeywordNode mutMod) {
+        super(location);
+        myName = name;
+        myFormalParamList = formalParamList;
+        myMutModifier = mutMod;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Constructs an <code>ASTMethodDeclarator</code> at the given <code>Location</code>
+     * with the given <code>ASTIdentifier</code> representing the method name, and
+     * the given <code>ASTFormalParameterList</code>.
+     * @param location The <code>Location</code>.
+     * @param name An <code>ASTIdentifier</code> representing the method name.
+     * @param formalParamList An <code>ASTFormalParameterList</code>.
      */
+    public ASTMethodDeclarator(Location location, ASTIdentifier name, ASTFormalParameterList formalParamList) {
+        super(location);
+        myName = name;
+        myFormalParamList = formalParamList;
+        myMutModifier = null;
+    }
+
+    /**
+     * Returns an <code>ASTIdentifier</code> representing the method name.
+     * @return An <code>ASTIdentifier</code> representing the method name.
+     */
+    public ASTIdentifier getName() {
+        return myName;
+    }
+
+    /**
+     * Returns an <code>ASTFormalParameterList</code>.
+     * @return An <code>ASTFormalParameterList</code>.
+     */
+    public ASTFormalParameterList getFormalParamList() {
+        return myFormalParamList;
+    }
+
+    /**
+     * Returns an <code>ASTKeywordNode</code> representing the MutModifier, if it exists.
+     * @return An <code>Optional&lt;ASTKeywordNode&gt;</code> of keyword <code>mut</code>.
+     */
+    public Optional<ASTKeywordNode> getMutModifier() {
+        return Optional.ofNullable(myMutModifier);
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(3);
+        children.add(myName);
+        children.add(myFormalParamList);
+        if (myMutModifier != null) {
+            children.add(myMutModifier);
+        }
+        return children;
     }
 }

@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.expressions.ASTLambdaBody;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,23 +18,30 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;{ BlockStatements }
  * </em>
  */
-public class ASTBlock extends ASTParentNode {
+public final class ASTBlock extends ASTParentNode implements ASTLambdaBody, ASTStatement {
+    private final ASTBlockStatements myBlockStmts;
+
     /**
-     * Constructs an <code>ASTBlockStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * Constructs an <code>ASTBlock</code> at the given <code>Location</code>
+     * with the given <code>ASTBlockStatements</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param blockStmts An <code>ASTBlockStatements</code>.
      */
-    public ASTBlock(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTBlock(Location location, ASTBlockStatements blockStmts) {
+        super(location);
+        myBlockStmts = blockStmts;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTBlockStatements</code>.
+     * @return An <code>ASTBlockStatements</code>.
      */
+    public ASTBlockStatements getBlockStmts() {
+        return myBlockStmts;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myBlockStmts);
     }
 }

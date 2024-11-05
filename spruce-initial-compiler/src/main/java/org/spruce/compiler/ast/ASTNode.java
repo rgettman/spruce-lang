@@ -5,7 +5,7 @@ import org.spruce.compiler.scanner.Location;
 /**
  * The top-level class for abstract syntax tree nodes.
  */
-public abstract class ASTNode {
+public abstract class ASTNode implements Node {
     private final Location myLocation;
 
     /**
@@ -20,22 +20,28 @@ public abstract class ASTNode {
      * Returns the <code>Location</code>.
      * @return The <code>Location</code>.
      */
+    @Override
     public Location getLocation() {
         return myLocation;
     }
 
     /**
-     * Prints this node to the output stream.
+     * Returns the String representation of this node.
+     * @return The String representation of this node.
      */
-    public void print() {
-        print("", true);
+    @Override
+    public String toString() {
+        return toString("", true);
     }
 
     /**
-     * Helper method to print this node.  Takes into account where in the tree
-     * this node is.
+     * Helper method to create a string representation of this node.  It takes
+     * into account where in the tree this node is.
      * @param prefix A string to indent the printing of this node.
      * @param isTail Whether this node is last in its siblings (or the only child).
+     * @return The String representation of this node.
      */
-    protected abstract void print(String prefix, boolean isTail);
+    public String toString(String prefix, boolean isTail) {
+        return prefix + (isTail ? "└── " : "├── ") + getClass().getSimpleName() + "(" + getHeaderValue() + ") at " + getLocation();
+    }
 }

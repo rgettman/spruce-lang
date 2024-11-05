@@ -1,37 +1,57 @@
 package org.spruce.compiler.ast.statements;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.expressions.ASTValueExpression;
 import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTCriticalStatement</code> is a "critical statement".
- * It is "critical" followed by a conditional expression and a block.</p>
+ * It is "critical" followed by a value expression and a block.</p>
  *
  * <em>
  * CriticalStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;critical ConditionalExpression Block
+ * &nbsp;&nbsp;&nbsp;&nbsp;critical ValueExpression Block
  * </em>
  */
-public class ASTCriticalStatement extends ASTParentNode {
+public final class ASTCriticalStatement extends ASTParentNode implements ASTStatement {
+    private final ASTValueExpression myValueExpr;
+    private final ASTBlock myBlock;
+
     /**
-     * Constructs an <code>ASTSynchronizedStatement</code> at the given <code>Location</code>
+     * Constructs an <code>ASTCriticalStatement</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param valueExpr An <code>ASTValueExpression</code>.
+     * @param block An <code>ASTBlock</code>.
      */
-    public ASTCriticalStatement(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTCriticalStatement(Location location, ASTValueExpression valueExpr, ASTBlock block) {
+        super(location);
+        myValueExpr = valueExpr;
+        myBlock = block;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTValueExpression</code>.
+     * @return An <code>ASTValueExpression</code>.
      */
+    public ASTValueExpression getValueExpr() {
+        return myValueExpr;
+    }
+
+    /**
+     * Returns an <code>ASTBlock</code>.
+     * @return An <code>ASTBlock</code>.
+     */
+    public ASTBlock getBlock() {
+        return myBlock;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myValueExpr, myBlock);
     }
 }

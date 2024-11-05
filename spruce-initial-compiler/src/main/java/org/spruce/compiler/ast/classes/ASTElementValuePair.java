@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.classes;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,22 +18,40 @@ import org.spruce.compiler.scanner.Location;
  * </em>
  */
 public class ASTElementValuePair extends ASTParentNode {
+    private final ASTIdentifier myElementName;
+    private final ASTElementValue myElementValue;
+
     /**
      * Constructs an <code>ASTElementValuePair</code> at the given <code>Location</code>
      * and with at least one node as its children.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param elementName An <code>ASTIdentifier</code> representing the element name.
+     * @param elementValue An <code>ASTElementValue</code>.
      */
-    public ASTElementValuePair(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTElementValuePair(Location location, ASTIdentifier elementName, ASTElementValue elementValue) {
+        super(location);
+        myElementName = elementName;
+        myElementValue = elementValue;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTIdentifier</code> representing the element name.
+     * @return An <code>ASTIdentifier</code> representing the element name.
      */
+    public ASTIdentifier getElementName() {
+        return myElementName;
+    }
+
+    /**
+     * Returns an <code>ASTElementValue</code>.
+     * @return An <code>ASTElementValue</code>.
+     */
+    public ASTElementValue getElementValue() {
+        return myElementValue;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myElementName, myElementValue);
     }
 }

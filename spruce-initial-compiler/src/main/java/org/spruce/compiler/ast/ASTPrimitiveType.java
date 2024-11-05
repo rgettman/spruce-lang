@@ -1,8 +1,7 @@
 package org.spruce.compiler.ast;
 
-import java.util.Collections;
-
 import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTPrimitiveType</code> is a node representing a primitive type.</p>
@@ -19,23 +18,15 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;double<br>
  * </em>
  */
-public class ASTPrimitiveType extends ASTParentNode {
+public class ASTPrimitiveType extends ASTKeywordNode {
     /**
      * Constructs an <code>ASTPrimitiveType</code> at the given <code>Location</code>
      * and with one child as its node.
      * @param location The <code>Location</code>.
-     * @param child The child node.
+     * @param primitiveTypeKeyword The <code>TokenType/code> representing
+     *                             the primitive type.
      */
-    public ASTPrimitiveType(Location location, ASTNode child) {
-        super(location, Collections.singletonList(child));
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
+    public ASTPrimitiveType(Location location, TokenType primitiveTypeKeyword) {
+        super(location, primitiveTypeKeyword);
     }
 }

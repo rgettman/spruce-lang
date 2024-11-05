@@ -1,41 +1,57 @@
 package org.spruce.compiler.ast.expressions;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.types.ASTIntersectionType;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTCastExpression</code> is a unary expression or
- * another cast expression, "as", and an intersection type, which may be as
- * simple as a data type.</p>
- *
- * <p>The operators associated with cast expressions are left-associative.</p>
- *
+ * An <code>ASTCastExpression</code> is an Expression followed by "as",
+ * followed by an IntersectionType.
  * <em>
- * CastExpression:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression as IntersectionType<br>
+ * CastExpression:
+ * &nbsp;&nbsp;&nbsp;&nbsp;Expression as IntersectionType
  * </em>
  */
-public class ASTCastExpression extends ASTParentNode {
+public final class ASTCastExpression extends ASTParentNode implements ASTValueExpression {
+    private final ASTExpression myExpr;
+    private final ASTIntersectionType myIntersectionType;
+
     /**
      * Constructs an <code>ASTCastExpression</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTExpression</code> and the given <code>ASTListNode</code>
+     * representing an IntersectionType.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param expr An <code>ASTExpression</code>.
+     * @param intersectionType An <code>ASTIntersectionType</code>.
      */
-    public ASTCastExpression(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTCastExpression(Location location, ASTExpression expr, ASTIntersectionType intersectionType) {
+        super(location);
+        myExpr = expr;
+        myIntersectionType = intersectionType;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTExpression</code>.
+     * @return An <code>ASTExpression</code>.
      */
+    public ASTExpression getExpr() {
+        return myExpr;
+    }
+
+    /**
+     * Returns an <code>ASTIntersectionType</code>.
+     * @return An <code>ASTIntersectionType</code>.
+     */
+    public ASTIntersectionType getIntersectionType() {
+        return myIntersectionType;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myExpr, myIntersectionType);
     }
 }

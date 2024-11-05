@@ -1,13 +1,13 @@
 package org.spruce.compiler.ast.expressions;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.statements.ASTVariableModifierList;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.scanner.Location;
 
@@ -21,8 +21,8 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataType Identifier<br>
  * </em>
  */
-public class ASTTypePattern extends ASTParentNode {
-    private final ASTListNode myVarModList;
+public final class ASTTypePattern extends ASTParentNode implements ASTPattern {
+    private final ASTVariableModifierList myVarModList;
     private final ASTDataType myDataType;
     private final ASTIdentifier myIdentifier;
 
@@ -34,8 +34,8 @@ public class ASTTypePattern extends ASTParentNode {
      * @param dataType An <code>ASTDataType</code>.
      * @param identifier An <code>ASTIdentifier</code>.
      */
-    public ASTTypePattern(Location location, ASTListNode varModList, ASTDataType dataType, ASTIdentifier identifier) {
-        super(location, Arrays.asList(varModList, dataType, identifier));
+    public ASTTypePattern(Location location, ASTVariableModifierList varModList, ASTDataType dataType, ASTIdentifier identifier) {
+        super(location);
         myVarModList = varModList;
         myDataType = dataType;
         myIdentifier = identifier;
@@ -49,25 +49,17 @@ public class ASTTypePattern extends ASTParentNode {
      * @param identifier An <code>ASTIdentifier</code>.
      */
     public ASTTypePattern(Location location, ASTDataType dataType, ASTIdentifier identifier) {
-        super(location, Arrays.asList(dataType, identifier));
+        super(location);
         myVarModList = null;
         myDataType = dataType;
         myIdentifier = identifier;
     }
 
     /**
-     * TODO: For removal when removing collapsing.
+     * Returns the <code>ASTVariableModifierList</code>, if it exists.
+     * @return An <code>Optional&lt;ASTVariableModifierList&gt;</code>.
      */
-    @Override
-    public boolean isCollapsible() {
-        return false;
-    }
-
-    /**
-     * Returns the <code>VariableModifierList</code>, if it exists.
-     * @return An <code>Optional&lt;ASTListNode&gt;</code>.
-     */
-    public Optional<ASTListNode> getVarModList() {
+    public Optional<ASTVariableModifierList> getVarModList() {
         return Optional.ofNullable(myVarModList);
     }
 
@@ -87,18 +79,14 @@ public class ASTTypePattern extends ASTParentNode {
         return myIdentifier;
     }
 
-    /**
-     * Prints this node and its children to the output stream.
-     * @param prefix A string to indent the printing of this node.
-     * @param isTail Whether this node is last in its siblings (or the only child).
-     */
     @Override
-    public void print(String prefix, boolean isTail) {
-        System.out.println(prefix + (isTail ? "└── " : "├── ") + toString());
+    public List<Node> getChildren() {
+        List<Node> children = new ArrayList<>(3);
         if (myVarModList != null) {
-            myVarModList.print(prefix + (isTail ? "    " : "|   "), false);
+            children.add(myVarModList);
         }
-        myDataType.print(prefix + (isTail ? "    " : "|   "), false);
-        myIdentifier.print(prefix + (isTail ? "    " : "│   "), true);
+        children.add(myDataType);
+        children.add(myIdentifier);
+        return children;
     }
 }

@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.toplevel;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTNamespaceOrTypeName;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,24 +17,31 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;use NamespaceOrTypeName . * ;
  * </em>
  */
-public class ASTUseAllDeclaration extends ASTParentNode
-{
+public final class ASTUseAllDeclaration extends ASTParentNode implements ASTUseDeclaration {
+    private final ASTNamespaceOrTypeName myNamespaceOrTypeName;
+
     /**
      * Constructs an <code>ASTUseAllDeclaration</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * with the given <code>ASTNamespaceOrTypeName</code>.
+     * @param location The <code>Location</code>.
+     * @param namespaceOrTypeName An <code>ASTNamespaceOrTypeName</code>.
      */
-    public ASTUseAllDeclaration(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTUseAllDeclaration(Location location, ASTNamespaceOrTypeName namespaceOrTypeName) {
+        super(location);
+        myNamespaceOrTypeName = namespaceOrTypeName;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTNamespaceOrTypeName</code>.
+     * @return An <code>ASTNamespaceOrTypeName</code>.
      */
+    public ASTNamespaceOrTypeName getNamespaceOrTypeName() {
+        return myNamespaceOrTypeName;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myNamespaceOrTypeName);
     }
 }
 

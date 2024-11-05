@@ -1,37 +1,57 @@
 package org.spruce.compiler.ast.expressions;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTSwitchExpression</code> is "switch", followed by an expression,
- * followed by a Switch Expression Block.</p>
+ * <p>An <code>ASTSwitchExpression</code> is "switch", followed by a
+ * conditional expression, followed by a Switch Expression Block.</p>
  *
  * <em>
  * SwitchStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;switch Expression SwitchExpressionBlock
+ * &nbsp;&nbsp;&nbsp;&nbsp;switch VariableExpression SwitchExpressionBlock
  * </em>
  */
-public class ASTSwitchExpression extends ASTParentNode {
+public final class ASTSwitchExpression extends ASTParentNode implements ASTValueExpression {
+    private final ASTValueExpression myCondExpr;
+    private final ASTSwitchExpressionRules mySwitchExprRules;
+
     /**
      * Constructs an <code>ASTSwitchStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
+     * with the given <code>ASTNode</code> representing a Condition Expression
+     * and the given <code>ASTSwitchExpressionRules</code>.
      * @param location The <code>Location</code>.
-     * @param children The child nodes.
+     * @param condExpr An <code>ASTValueExpression</code>.
+     * @param switchExprRules An <code>ASTSwitchExpressionRules</code>.
      */
-    public ASTSwitchExpression(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTSwitchExpression(Location location, ASTValueExpression condExpr, ASTSwitchExpressionRules switchExprRules) {
+        super(location);
+        myCondExpr = condExpr;
+        mySwitchExprRules = switchExprRules;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTValueExpression</code>.
+     * @return An <code>ASTValueExpression</code>.
      */
+    public ASTValueExpression getCondExpr() {
+        return myCondExpr;
+    }
+
+    /**
+     * Returns an <code>ASTSwitchExpressionRules</code>.
+     * @return An <code>ASTSwitchExpressionRules</code>.
+     */
+    public ASTSwitchExpressionRules getSwitchExprRules() {
+        return mySwitchExprRules;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myCondExpr, mySwitchExprRules);
     }
 }

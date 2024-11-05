@@ -1,9 +1,12 @@
 package org.spruce.compiler.ast.toplevel;
 
+import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifierList;
+import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -16,23 +19,43 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . { IdentifierList } ;
  * </em>
  */
-public class ASTUseSharedMultDeclaration extends ASTParentNode {
+public final class ASTUseSharedMultDeclaration extends ASTParentNode implements ASTUseDeclaration {
+    private final ASTTypeName myTypeName;
+    private final ASTIdentifierList myIdentifierList;
+
     /**
      * Constructs an <code>ASTUseSharedMultDeclaration</code> at the given <code>Location</code>
-     * and with the base and the index as its children.
-     * @param children The child nodes.
+     * with the given <code>ASTTypeName</code> and the given
+     * <code>ASTIdentifierList</code>.
+     * @param location The <code>Location</code>.
+     * @param typeName An <code>ASTListNode</code>.
+     * @param identifierList An <code>ASTIdentifierList</code>.
      */
-    public ASTUseSharedMultDeclaration(Location location, List<ASTNode> children) {
-        super(location, children);
+    public ASTUseSharedMultDeclaration(Location location, ASTTypeName typeName, ASTIdentifierList identifierList) {
+        super(location);
+        myTypeName = typeName;
+        myIdentifierList = identifierList;
     }
 
     /**
-     * This node is collapsible.
-     * @return <code>true</code>.
+     * Returns an <code>ASTTypeName</code>.
+     * @return An <code>ASTTypeName</code>.
      */
+    public ASTTypeName getTypeName() {
+        return myTypeName;
+    }
+
+    /**
+     * Returns an <code>ASTIdentifierList</code>.
+     * @return An <code>ASTIdentifierList</code>.
+     */
+    public ASTIdentifierList getIdentifierList() {
+        return myIdentifierList;
+    }
+
     @Override
-    public boolean isCollapsible() {
-        return true;
+    public List<Node> getChildren() {
+        return Arrays.asList(myTypeName, myIdentifierList);
     }
 }
 

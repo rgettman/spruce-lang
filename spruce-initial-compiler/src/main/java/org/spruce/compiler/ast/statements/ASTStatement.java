@@ -1,25 +1,18 @@
 package org.spruce.compiler.ast.statements;
 
-import java.util.List;
-
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.ast.ParentNode;
 
 /**
- * <p>An <code>ASTStatement</code> is an expression statement, if-then, if-then-else,
- * while, for statement, block, assert, switch, do-while, break, continue,
- * fallthrough, return, synchronized, throw, or try statement.</p>
- *
- * <p>At this time, the design poses no empty statement or labeled statement.</p>
- *
+ * An <code>ASTStatement</code> is a particular kind of statement that is a
+ * BasicForStatement or an EnhancedForStatement.
  * <em>
  * Statement:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Block<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;StatementExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;BreakStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ContinueStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;FallthroughStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;AssertStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ReturnStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ThrowStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;IfStatement<br>
@@ -28,26 +21,13 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;CriticalStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ForStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;TryStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatement
+ * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;YieldStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;UseStatement
  * </em>
  */
-public class ASTStatement extends ASTParentNode {
-    /**
-     * Constructs an <code>ASTStatement</code> at the given <code>Location</code>
-     * and with at least one node as its children.
-     * @param location The <code>Location</code>.
-     * @param children The child nodes.
-     */
-    public ASTStatement(Location location, List<ASTNode> children) {
-        super(location, children);
-    }
-
-    /**
-     * This node is collapsible.
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCollapsible() {
-        return true;
-    }
+public sealed interface ASTStatement extends ParentNode, ASTBlockStatement permits ASTBlock, ASTExpressionStatement, ASTBreakStatement,
+        ASTContinueStatement, ASTFallthroughStatement, ASTAssertStatement, ASTReturnStatement, ASTThrowStatement,
+        ASTIfStatement, ASTWhileStatement, ASTDoStatement, ASTCriticalStatement, ASTForStatement, ASTTryStatement,
+        ASTSwitchStatement, ASTYieldStatement, ASTUseStatement {
 }
