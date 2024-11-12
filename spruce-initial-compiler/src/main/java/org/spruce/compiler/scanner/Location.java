@@ -1,7 +1,5 @@
 package org.spruce.compiler.scanner;
 
-import java.io.File;
-
 /**
  * A <code>Location</code> describes where a <code>Token</code> can be found in
  * source code.  It consists of a filename, a line number (1-based), a

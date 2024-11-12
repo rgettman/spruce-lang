@@ -78,7 +78,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * @param location A <code>Location</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTInterfaceDeclaration.Builder setLocation(Location location) {
+        public Builder setLocation(Location location) {
             this.myLocation = location;
             return this;
         }
@@ -88,7 +88,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * @param accessMod An <code>ASTKeywordNode</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTInterfaceDeclaration.Builder setAccessMod(ASTKeywordNode accessMod) {
+        public Builder setAccessMod(ASTKeywordNode accessMod) {
             this.myAccessMod = accessMod;
             return this;
         }
@@ -98,7 +98,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * @param interfaceModifierList An <code>ASTInterfaceModifierList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTInterfaceDeclaration.Builder setInterfaceModifierList(ASTInterfaceModifierList interfaceModifierList) {
+        public Builder setInterfaceModifierList(ASTInterfaceModifierList interfaceModifierList) {
             this.myInterfaceModifierList = interfaceModifierList;
             return this;
         }
@@ -108,7 +108,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * @param name An <code>ASTIdentifier</code> representing the class name.
          * @return This <code>Builder</code>.
          */
-        public ASTInterfaceDeclaration.Builder setName(ASTIdentifier name) {
+        public Builder setName(ASTIdentifier name) {
             this.myName = name;
             return this;
         }
@@ -118,7 +118,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * @param typeParams An <code>ASTTypeParameterList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTInterfaceDeclaration.Builder setTypeParams(ASTTypeParameterList typeParams) {
+        public Builder setTypeParams(ASTTypeParameterList typeParams) {
             this.myTypeParams = typeParams;
             return this;
         }
@@ -128,7 +128,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * @param extendsInterfaces An <code>ASTDataTypeNoArrayList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTInterfaceDeclaration.Builder setExtendsInterfaces(ASTDataTypeNoArrayList extendsInterfaces) {
+        public Builder setExtendsInterfaces(ASTDataTypeNoArrayList extendsInterfaces) {
             this.myExtendsInterfaces = extendsInterfaces;
             return this;
         }
@@ -138,7 +138,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * @param permits An <code>ASTDataTypeNoArrayList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTInterfaceDeclaration.Builder setPermits(ASTDataTypeNoArrayList permits) {
+        public Builder setPermits(ASTDataTypeNoArrayList permits) {
             this.myPermits = permits;
             return this;
         }
@@ -148,7 +148,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * @param interfaceParts An <code>ASTInterfacePartList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTInterfaceDeclaration.Builder setInterfaceParts(ASTInterfacePartList interfaceParts) {
+        public Builder setInterfaceParts(ASTInterfacePartList interfaceParts) {
             this.myInterfaceParts = interfaceParts;
             return this;
         }

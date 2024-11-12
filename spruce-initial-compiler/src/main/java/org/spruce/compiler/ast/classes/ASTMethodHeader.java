@@ -88,23 +88,4 @@ public class ASTMethodHeader extends ASTParentNode {
         children.add(myMethodDecl);
         return children;
     }
-
-    /**
-     * Helper method to create a string representation of this node.  It takes
-     * into account where in the tree this node is.
-     * @param prefix A string to indent the printing of this node.
-     * @param isTail Whether this node is last in its siblings (or the only child).
-     * @return The String representation of this node.
-     */
-    @Override
-    public String toString(String prefix, boolean isTail) {
-        StringBuilder buf = new StringBuilder();
-        buf.append(prefix).append(isTail ? "└── " : "├── ").append(getHeaderValue()).append("\n");
-        if (myTypeParams != null) {
-            buf.append(myTypeParams.toString(prefix + (isTail ? "    " : "|   "), false)).append("\n");
-        }
-        buf.append(myResult.toString(prefix + (isTail ? "    " : "|   "), false)).append("\n");
-        buf.append(myMethodDecl.toString(prefix + (isTail ? "    " : "|   "), true)).append("\n");
-        return buf.toString();
-    }
 }

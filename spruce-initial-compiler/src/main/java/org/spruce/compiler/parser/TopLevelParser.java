@@ -34,7 +34,11 @@ public class TopLevelParser extends BasicParser {
 
     /**
      * Parses an <code>OrdinaryCompilationUnit</code>.
-     *
+     * <em>
+     * OrdinaryCompilationUnit:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceDeclaration UseDeclarationList TypeDeclarationList<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UseDeclarationList TypeDeclarationList
+     * </em>
      * @return An <code>ASTOrdinaryCompilationUnit</code>.
      */
     public ASTOrdinaryCompilationUnit parseOrdinaryCompilationUnit() {
@@ -172,7 +176,7 @@ public class TopLevelParser extends BasicParser {
      * @return An <code>ASTUseMultDeclaration</code>.
      */
     public ASTUseMultDeclaration parseUseMultDeclaration(Location loc, ASTTypeName tn) {
-        ASTNamespaceOrTypeName namespaceOrTypeName = getNamesParser().convertToNamespaceOrTypeName(tn);
+        ASTNamespaceOrTypeName namespaceOrTypeName = tn.convertToNamespaceOrTypeName();
         if (accept(DOT) == null || accept(OPEN_BRACE) == null) {
             throw new CompileException(curr().getLocation(), "Expected dot then '{'.");
         }
@@ -218,7 +222,7 @@ public class TopLevelParser extends BasicParser {
      * @return An <code>ASTUseAllDeclaration</code>.
      */
     public ASTUseAllDeclaration parseUseAllDeclaration(Location loc, ASTTypeName tn) {
-        ASTUseAllDeclaration node = new ASTUseAllDeclaration(loc, getNamesParser().convertToNamespaceOrTypeName(tn));
+        ASTUseAllDeclaration node = new ASTUseAllDeclaration(loc, tn.convertToNamespaceOrTypeName());
         if (accept(DOT) == null || accept(STAR) == null) {
             throw new CompileException(curr().getLocation(), "Expected dot, star.");
         }

@@ -8,8 +8,6 @@ import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.expressions.ASTArgumentList;
-import org.spruce.compiler.ast.expressions.ASTPrimary;
-import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.ast.types.ASTTypeArgumentList;
 import org.spruce.compiler.scanner.Location;
 
@@ -30,8 +28,6 @@ import org.spruce.compiler.scanner.Location;
  * </em>
  */
 public class ASTConstructorInvocation extends ASTParentNode {
-    private final ASTExpressionName myExprName;
-    private final ASTPrimary myPrimary;
     private final ASTTypeArgumentList myTypeArgs;
     private final ASTKeywordNode myConstructorKeyword;
     private final ASTArgumentList myArgsList;
@@ -40,18 +36,14 @@ public class ASTConstructorInvocation extends ASTParentNode {
      * Constructs an <code>ASTMethodInvocation</code> at the given <code>Location</code>
      * with arguments supplied by the <code>Builder</code>.
      * @param location The <code>Location</code>.
-     * @param exprName A possibly null <code>ASTExpressionName</code>.
-     * @param primary A possibly null <code>ASTPrimary</code>.
      * @param typeArgs A possibly null <code>ASTTypeArgumentList</code>.
      * @param constructorKeyword An <code>ASTKeywordNode</code> with keyword <code>CONSTRUCTOR</code>
      *                           or <code>SUPER</code>.
      * @param argsList An <code>ASTArgumentList</code>.
      */
-    private ASTConstructorInvocation(Location location, ASTExpressionName exprName, ASTPrimary primary,
-                                     ASTTypeArgumentList typeArgs, ASTKeywordNode constructorKeyword, ASTArgumentList argsList) {
+    private ASTConstructorInvocation(Location location, ASTTypeArgumentList typeArgs, ASTKeywordNode constructorKeyword,
+                                     ASTArgumentList argsList) {
         super(location);
-        myExprName = exprName;
-        myPrimary = primary;
         myTypeArgs = typeArgs;
         myConstructorKeyword = constructorKeyword;
         myArgsList = argsList;
@@ -64,8 +56,6 @@ public class ASTConstructorInvocation extends ASTParentNode {
      */
     public static class Builder {
         private Location myLocation;
-        private ASTExpressionName myExprName;
-        private ASTPrimary myPrimary;
         private ASTTypeArgumentList myTypeArgs;
         private ASTKeywordNode myConstructorKeyword;
         private ASTArgumentList myArgsList;
@@ -77,26 +67,6 @@ public class ASTConstructorInvocation extends ASTParentNode {
          */
         public Builder setLocation(Location location) {
             this.myLocation = location;
-            return this;
-        }
-
-        /**
-         * Sets the <code>ASTExpressionName</code> .
-         * @param exprName An <code>ASTExpressionName</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setExprName(ASTExpressionName exprName) {
-            this.myExprName = exprName;
-            return this;
-        }
-
-        /**
-         * Sets the <code>ASTPrimary</code>.
-         * @param primary An <code>ASTPrimary</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setPrimary(ASTPrimary primary) {
-            this.myPrimary = primary;
             return this;
         }
 
@@ -149,43 +119,12 @@ public class ASTConstructorInvocation extends ASTParentNode {
                 throw new IllegalStateException("No argument list given!");
             }
             switch (myConstructorKeyword.getKeyword()) {
-                case CONSTRUCTOR -> {
-                    // [TypeArguments] constructor ( ArgumentList )
-                    if (myExprName != null) {
-                        throw new IllegalStateException("Can't supply an Expression Name with 'constructor'!");
-                    }
-                    if (myPrimary != null) {
-                        throw new IllegalStateException("Can't supply a Primary with 'constructor'!");
-                    }
-                }
-                case SUPER -> {
-                    // [TypeArguments] super ( ArgumentList )
-                    // ExpressionName . [TypeArguments] super ( ArgumentList )
-                    // Primary . [TypeArguments] super ( ArgumentList )
-                    if (myExprName != null && myPrimary != null) {
-                        throw new IllegalStateException("Can't supply both an Expression Name and a Primary!");
-                    }
+                case CONSTRUCTOR, SUPER -> {
                 }
                 default -> throw new IllegalStateException("The constructor keyword must be 'constructor' or 'super'!");
             }
-            return new ASTConstructorInvocation(myLocation, myExprName, myPrimary, myTypeArgs, myConstructorKeyword, myArgsList);
+            return new ASTConstructorInvocation(myLocation, myTypeArgs, myConstructorKeyword, myArgsList);
         }
-    }
-
-    /**
-     * Returns an <code>ASTExpressionName</code>, if it exists.
-     * @return An <code>Optional&lt;ASTExpressionName&gt;</code>.
-     */
-    public Optional<ASTExpressionName> getExprName() {
-        return Optional.ofNullable(myExprName);
-    }
-
-    /**
-     * Returns an <code>ASTPrimary</code>, if it exists.
-     * @return An <code>Optional&lt;ASTPrimary&gt;</code>.
-     */
-    public Optional<ASTPrimary> getPrimary() {
-        return Optional.ofNullable(myPrimary);
     }
 
     /**
@@ -217,12 +156,6 @@ public class ASTConstructorInvocation extends ASTParentNode {
     @Override
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(5);
-        if (myExprName != null) {
-            children.add(myExprName);
-        }
-        if (myPrimary != null) {
-            children.add(myPrimary);
-        }
         if (myTypeArgs != null) {
             children.add(myTypeArgs);
         }

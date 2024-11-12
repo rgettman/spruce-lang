@@ -12,8 +12,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;FloatingPointLiteral<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;CharacterLiteral<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;StringLiteral<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;BooleanLiteral<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;NullLiteral
+ * &nbsp;&nbsp;&nbsp;&nbsp;BooleanLiteral
  * </em>
  */
 public class ASTLiteral extends ASTValueNode {

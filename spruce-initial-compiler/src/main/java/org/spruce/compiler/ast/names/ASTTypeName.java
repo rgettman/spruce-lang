@@ -3,8 +3,6 @@ package org.spruce.compiler.ast.names;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.scanner.Location;
 
 /**

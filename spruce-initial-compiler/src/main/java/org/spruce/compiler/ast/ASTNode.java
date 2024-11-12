@@ -42,6 +42,7 @@ public abstract class ASTNode implements Node {
      * @return The String representation of this node.
      */
     public String toString(String prefix, boolean isTail) {
-        return prefix + (isTail ? "└── " : "├── ") + getClass().getSimpleName() + "(" + getHeaderValue() + ") at " + getLocation();
+        return prefix + (isTail ? "└── " : "├── ") + getClass().getSimpleName() + "(" + getHeaderValue() + ") at "
+                + getLocation() + "\n";
     }
 }

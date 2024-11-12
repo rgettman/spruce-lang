@@ -3,6 +3,7 @@ package org.spruce.compiler.ast.names;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
+import org.spruce.compiler.ast.expressions.ASTLeftHandSide;
 import org.spruce.compiler.ast.statements.ASTResource;
 import org.spruce.compiler.scanner.Location;
 
@@ -16,7 +17,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
  * </em>
  */
-public final class ASTExpressionName extends ASTListNode<ASTIdentifier> implements ASTResource {
+public final class ASTExpressionName extends ASTListNode<ASTIdentifier> implements ASTResource, ASTLeftHandSide {
     /**
      * Constructs an <code>ASTExpressionName</code> at the given <code>Location</code>
      * and with at least one node as its children.

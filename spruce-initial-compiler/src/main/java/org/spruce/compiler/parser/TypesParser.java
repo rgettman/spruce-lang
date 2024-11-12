@@ -1,11 +1,9 @@
 package org.spruce.compiler.parser;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.*;
 import org.spruce.compiler.exception.CompileException;
@@ -141,7 +139,7 @@ public class TypesParser extends BasicParser {
     public ASTDataType parseDataType() {
         Location loc = curr().getLocation();
         ASTDataTypeNoArray dtna = parseDataTypeNoArray();
-        if (isCurr(OPEN_CLOSE_BRACKET)) {
+        if (isCurr(OPEN_CLOSE_BRACKET) || (isCurr(OPEN_BRACKET) && isNext(CLOSE_BRACKET)) ) {
             ASTDims dims = parseDims();
             return new ASTArrayType(loc, dtna, dims);
         }
@@ -162,7 +160,7 @@ public class TypesParser extends BasicParser {
         Location loc = curr().getLocation();
         if (isCurr(IDENTIFIER)) {
             ASTDataTypeNoArray dtna = parseDataTypeNoArray();
-            if (isCurr(OPEN_CLOSE_BRACKET)) {
+            if (isCurr(OPEN_CLOSE_BRACKET) || isCurr(OPEN_BRACKET)) {
                 ASTDims dims = parseDims();
                 return new ASTArrayType(loc, dtna, dims);
             }
@@ -185,7 +183,7 @@ public class TypesParser extends BasicParser {
      * @return An <code>ASTDims</code>.
      */
     public ASTDims parseDims() {
-        return parseMultiple(t -> test(t, OPEN_CLOSE_BRACKET),
+        return parseMultiple(t -> List.of(OPEN_CLOSE_BRACKET, OPEN_BRACKET).contains(t.getType()),
                 "Expected [].",
                 this::parseDim,
                 ASTDims::new
@@ -202,7 +200,13 @@ public class TypesParser extends BasicParser {
      */
     public ASTKeywordNode parseDim() {
         Location loc = curr().getLocation();
-        if (accept(OPEN_CLOSE_BRACKET) != null) {
+        if (isCurr(OPEN_CLOSE_BRACKET)) {
+            accept(OPEN_CLOSE_BRACKET);
+            return new ASTKeywordNode(loc, OPEN_CLOSE_BRACKET);
+        }
+        else if (isCurr(OPEN_BRACKET) && isNext(CLOSE_BRACKET)) {
+            accept(OPEN_BRACKET);
+            accept(CLOSE_BRACKET);
             return new ASTKeywordNode(loc, OPEN_CLOSE_BRACKET);
         }
         else {
@@ -429,39 +433,5 @@ public class TypesParser extends BasicParser {
                 "Expected \"<:\" or \":>\".",
                 ASTKeywordNode::new);
         return new ASTWildcardBounds(loc, boundKeyword, parseDataType());
-    }
-
-    /**
-     * Converts a Data Type into an Expression Name.
-     * @param dt A <code>ASTDataType</code>.
-     * @return An <code>ASTExpressionName</code>.
-     */
-    public ASTExpressionName convertToExpressionName(ASTDataType dt) {
-        switch(dt) {
-            case ASTDataTypeNoArray dtna -> {
-                List<ASTIdentifier> exprNameChildren = convertChildren(dtna);
-                return new ASTExpressionName(dt.getLocation(), exprNameChildren);
-            }
-            case ASTArrayType ignored -> throw new CompileException(dt.getLocation(), "Expected variable.");
-        }
-    }
-
-    /**
-     * Converts the children from (DTNA, SimpleType) to (AmbiguousName, Identifier)
-     * or (SimpleType) to (Identifier).
-     * @param dtna An <code>ASTDataTypeNoArray</code>.
-     * @return A <code>List</code> of <code>ASTIdentifier</code> nodes suitable for an
-     *     Ambiguous Name or an Expression Name.
-     */
-    public List<ASTIdentifier> convertChildren(ASTDataTypeNoArray dtna) {
-        List<ASTSimpleType> children = dtna.getTypedChildren();
-        List<ASTIdentifier> convertedChildren = new ArrayList<>(children.size());
-        for (ASTSimpleType st : children) {
-            if (st.getTypeArgs().isPresent()) {
-                throw new CompileException(st.getLocation(), "Variable declarator expected after type.");
-            }
-            convertedChildren.add(st.getName());
-        }
-        return convertedChildren;
     }
 }

@@ -72,7 +72,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
          * @param location A <code>Location</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTRecordDeclaration.Builder setLocation(Location location) {
+        public Builder setLocation(Location location) {
             this.myLocation = location;
             return this;
         }
@@ -82,7 +82,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
          * @param accessMod An <code>ASTKeywordNode</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTRecordDeclaration.Builder setAccessMod(ASTKeywordNode accessMod) {
+        public Builder setAccessMod(ASTKeywordNode accessMod) {
             this.myAccessMod = accessMod;
             return this;
         }
@@ -92,7 +92,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
          * @param name An <code>ASTIdentifier</code> representing the record name.
          * @return This <code>Builder</code>.
          */
-        public ASTRecordDeclaration.Builder setName(ASTIdentifier name) {
+        public Builder setName(ASTIdentifier name) {
             this.myName = name;
             return this;
         }
@@ -102,7 +102,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
          * @param typeParams An <code>ASTTypeParameterList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTRecordDeclaration.Builder setTypeParams(ASTTypeParameterList typeParams) {
+        public Builder setTypeParams(ASTTypeParameterList typeParams) {
             this.myTypeParams = typeParams;
             return this;
         }
@@ -112,7 +112,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
          * @param formalParamList An <code>ASTFormalParameterList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTRecordDeclaration.Builder setFormalParamList(ASTFormalParameterList formalParamList) {
+        public Builder setFormalParamList(ASTFormalParameterList formalParamList) {
             this.myFormalParamList = formalParamList;
             return this;
         }
@@ -122,7 +122,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
          * @param superinterfaces An <code>ASTDataTypeNoArrayList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTRecordDeclaration.Builder setSuperinterfaces(ASTDataTypeNoArrayList superinterfaces) {
+        public Builder setSuperinterfaces(ASTDataTypeNoArrayList superinterfaces) {
             this.mySuperinterfaces = superinterfaces;
             return this;
         }
@@ -132,7 +132,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
          * @param classParts An <code>ASTClassPartList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTRecordDeclaration.Builder setClassParts(ASTClassPartList classParts) {
+        public Builder setClassParts(ASTClassPartList classParts) {
             this.myClassParts = classParts;
             return this;
         }

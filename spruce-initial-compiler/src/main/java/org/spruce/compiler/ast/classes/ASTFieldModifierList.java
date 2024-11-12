@@ -13,8 +13,6 @@ import org.spruce.compiler.scanner.Location;
  * <ul>
  *     <li>constant</li>
  *     <li>shared</li>
- *     <li>mut</li>
- *     <li>var</li>
  *     <li>volatile</li>
  * </ul>
  *

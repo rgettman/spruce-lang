@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTExpressionName;
+import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -51,5 +54,15 @@ public final class ASTArrayType extends ASTParentNode implements ASTDataType {
     @Override
     public List<Node> getChildren() {
         return Arrays.asList(myDataTypeNoArray, myDims);
+    }
+
+    /**
+     * An Array type does not convert into an Expression Name.
+     * @return An <code>ASTExpressionName</code>.
+     * @throws CompileException Inconvertible.
+     */
+    @Override
+    public ASTExpressionName convertToExpressionName() {
+        throw new CompileException(getLocation(), "Expected variable.");
     }
 }

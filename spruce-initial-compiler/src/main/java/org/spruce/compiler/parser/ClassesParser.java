@@ -45,7 +45,7 @@ public class ClassesParser extends BasicParser {
      * @param loc The <code>Location</code>.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an Access Modifier, if it was found.
      * @param genModList An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
-     * @return An <code>ASTParentNode</code> of the appropriate type, e.g. <code>ASTClassDeclaration</code>.
+     * @return An <code>ASTTypeDeclaration</code> of the appropriate type, e.g. <code>ASTClassDeclaration</code>.
      */
     private ASTTypeDeclaration parseNestedType(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList genModList) {
         return switch (curr().getType()) {
@@ -196,21 +196,6 @@ public class ClassesParser extends BasicParser {
             }
             return parseConstantDeclaration(loc, accessMod, genModList, dt);
         }
-    }
-
-    /**
-     * Parses an <code>AnnotationTypeElementDeclaration</code>.
-     * <em>
-     * AnnotationTypeElementDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataType Identifier ( ) ;<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataType Identifier ( ) DefaultValue ;
-     * </em>
-     * @return An <code>ASTAnnotationTypeElementDeclaration</code>.
-     */
-    public ASTAnnotationTypeElementDeclaration parseAnnotationTypeElementDeclaration() {
-        Location loc = curr().getLocation();
-        ASTDataType dataType = getTypesParser().parseDataType();
-        return parseAnnotationTypeElementDeclaration(loc, dataType);
     }
 
     /**
@@ -705,7 +690,7 @@ public class ClassesParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
      * </em>
-     * @return An <code>ASTParentNode</code> representing one of the above productions.
+     * @return An <code>ASTInterfacePart</code> representing one of the above productions.
      */
     public ASTInterfacePart parseInterfacePart() {
         Location loc = curr().getLocation();

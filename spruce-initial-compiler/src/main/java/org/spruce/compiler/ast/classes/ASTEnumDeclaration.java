@@ -66,7 +66,7 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
          * @param location A <code>Location</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTEnumDeclaration.Builder setLocation(Location location) {
+        public Builder setLocation(Location location) {
             this.myLocation = location;
             return this;
         }
@@ -76,7 +76,7 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
          * @param accessMod An <code>ASTKeywordNode</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTEnumDeclaration.Builder setAccessMod(ASTKeywordNode accessMod) {
+        public Builder setAccessMod(ASTKeywordNode accessMod) {
             this.myAccessMod = accessMod;
             return this;
         }
@@ -86,7 +86,7 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
          * @param classModifierList An <code>ASTClassModifierList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTEnumDeclaration.Builder setClassModifierList(ASTClassModifierList classModifierList) {
+        public Builder setClassModifierList(ASTClassModifierList classModifierList) {
             this.myClassModifierList = classModifierList;
             return this;
         }
@@ -96,7 +96,7 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
          * @param name An <code>ASTIdentifier</code> representing the class name.
          * @return This <code>Builder</code>.
          */
-        public ASTEnumDeclaration.Builder setName(ASTIdentifier name) {
+        public Builder setName(ASTIdentifier name) {
             this.myName = name;
             return this;
         }
@@ -106,7 +106,7 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
          * @param superinterfaces An <code>ASTDataTypeNoArrayList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTEnumDeclaration.Builder setSuperinterfaces(ASTDataTypeNoArrayList superinterfaces) {
+        public Builder setSuperinterfaces(ASTDataTypeNoArrayList superinterfaces) {
             this.mySuperinterfaces = superinterfaces;
             return this;
         }
@@ -116,7 +116,7 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
          * @param enumBody An <code>ASTEnumBody</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTEnumDeclaration.Builder setEnumBody(ASTEnumBody enumBody) {
+        public Builder setEnumBody(ASTEnumBody enumBody) {
             this.myEnumBody = enumBody;
             return this;
         }
@@ -199,28 +199,5 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
         }
         children.add(myEnumBody);
         return children;
-    }
-
-    /**
-     * Helper method to create a string representation of this node.  It takes
-     * into account where in the tree this node is.
-     * @param prefix A string to indent the printing of this node.
-     * @param isTail Whether this node is last in its siblings (or the only child).
-     * @return The String representation of this node.
-     */
-    @Override
-    public String toString(String prefix, boolean isTail) {
-        StringBuilder buf = new StringBuilder();
-        buf.append(prefix).append(isTail ? "└── " : "├── ").append(getHeaderValue()).append("\n");
-        if (myAccessMod != null) {
-            buf.append(myAccessMod.toString(prefix + (isTail ? "    " : "|   "), false)).append("\n");
-        }
-        buf.append(myClassModifierList.toString(prefix + (isTail ? "    " : "|   "), false)).append("\n");
-        buf.append(myName.toString(prefix + (isTail ? "    " : "|   "), false)).append("\n");
-        if (mySuperinterfaces != null) {
-            buf.append(mySuperinterfaces.toString(prefix + (isTail ? "    " : "|   "), false)).append("\n");
-        }
-        buf.append(myEnumBody.toString(prefix + (isTail ? "    " : "|   "), true)).append("\n");
-        return buf.toString();
     }
 }

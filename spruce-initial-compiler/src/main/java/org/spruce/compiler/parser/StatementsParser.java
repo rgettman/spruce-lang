@@ -104,7 +104,7 @@ public class StatementsParser extends BasicParser {
             }
             else {
                 // Convert to Expression Name.
-                ASTExpressionName exprName = getTypesParser().convertToExpressionName(dt);
+                ASTExpressionName exprName = dt.convertToExpressionName();
                 // There may be more or a Primary to parse, e.g. method
                 // invocation, element access, and/or qualified class instance
                 // creation.
@@ -348,7 +348,7 @@ public class StatementsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;SwitchStatement
      * </em>
      * @param primary An already parsed <code>ASTPrimary</code>.
-     * @return An <code>ASTParentNode</code> representing an ExpressionStatement.
+     * @return An <code>ASTStatement</code> representing an ExpressionStatement.
      */
     public ASTStatement parseStatement(ASTPrimary primary) {
         return parseExpressionStatement(primary);
@@ -539,7 +539,7 @@ public class StatementsParser extends BasicParser {
             }
             else {
                 // Convert to Expression Name.
-                ASTExpressionName exprName = getTypesParser().convertToExpressionName(dt);
+                ASTExpressionName exprName = dt.convertToExpressionName();
                 // There may be more or a Primary to parse, e.g. method
                 // invocation, element access, and/or qualified class instance
                 // creation.
@@ -710,10 +710,10 @@ public class StatementsParser extends BasicParser {
     public ASTForStatement parseForStatement() {
         Location loc = curr().getLocation();
         if (accept(FOR) == null) {
-            System.out.println("Expected for.");
+            throw new CompileException(loc, "Expected for.");
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            System.out.println("Expected '('.");
+            throw new CompileException(curr().getLocation(), "Expected '('.");
         }
         if (isCurr(SEMICOLON)) {
             return parseBasicForStatement(loc);
@@ -976,19 +976,20 @@ public class StatementsParser extends BasicParser {
      * exactly one child.  Expects:
      * <em>keyword child ;</em>
      * @param keyword A <code>TokenType</code> representing the keyword to parse first.
-     * @param childParser A <code>Supplier</code> that parses the child.
+     * @param childParser A <code>Supplier</code> that parses the child, some kind of expression.
      * @param stmtConstructor A <code>BiFunction</code> representing a constructor
      *                        of the statement type to create.
      * @param <T> The type of statement to create.
-     * @return An <code>ASTParentNode</code> of type <code>T</code>.
+     * @param <E> The type of expression.
+     * @return An <code>ASTStatement</code> of type <code>T</code>.
      */
-    private <T extends ASTParentNode, P extends ParentNode> T parseUnaryStatement(
-            TokenType keyword, Supplier<P> childParser, BiFunction<Location, P, T> stmtConstructor) {
+    private <T extends ASTStatement, E extends ASTExpression> T parseUnaryStatement(
+            TokenType keyword, Supplier<E> childParser, BiFunction<Location, E, T> stmtConstructor) {
         Location loc = curr().getLocation();
         if (accept(keyword) == null) {
             throw new CompileException(curr().getLocation(), "Expected " + keyword.getRepresentation() + ".");
         }
-        P child = childParser.get();
+        E child = childParser.get();
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
@@ -1066,9 +1067,9 @@ public class StatementsParser extends BasicParser {
      * @param stmtConstructor A <code>Function</code> representing a constructor
      *                        of the statement type to create.
      * @param <T> The type of statement to create.
-     * @return An <code>ASTParentNode</code> of type <code>T</code>.
+     * @return An <code>ASTStatement</code> of type <code>T</code>.
      */
-    private <T extends ASTParentNode> T parseKeywordStatement(TokenType keyword, BiFunction<Location, ASTKeywordNode, T> stmtConstructor) {
+    private <T extends ASTStatement> T parseKeywordStatement(TokenType keyword, BiFunction<Location, ASTKeywordNode, T> stmtConstructor) {
         Location loc = curr().getLocation();
         if (!isCurr(keyword)) {
             throw new CompileException(curr().getLocation(), "Expected " + keyword.getRepresentation() + ".");
@@ -1173,7 +1174,7 @@ public class StatementsParser extends BasicParser {
             }
             else {
                 // Convert to Expression Name.
-                ASTExpressionName exprName = getTypesParser().convertToExpressionName(dt);
+                ASTExpressionName exprName = dt.convertToExpressionName();
                 // There may be more or a Primary to parse, e.g. method
                 // invocation, element access, and/or qualified class instance
                 // creation.
@@ -1265,7 +1266,7 @@ public class StatementsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;ClassInstanceCreationExpression
      * </em>
      * @param primary An already parsed <code>ASTPrimary</code>.
-     * @return An <code>ASTParentNode</code> representing either an Assignment,
+     * @return An <code>ASTStatementExpression</code> representing either an Assignment,
      *     a PostFix, a Method Invocation Expression, or a Class Instance Creation Expression.
      */
     public ASTStatementExpression parseStatementExpression(ASTPrimary primary) {

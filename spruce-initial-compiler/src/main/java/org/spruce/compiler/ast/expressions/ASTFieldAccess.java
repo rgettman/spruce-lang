@@ -23,7 +23,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . super . Identifier
  * </em>
  */
-public final class ASTFieldAccess extends ASTParentNode implements ASTResource {
+public final class ASTFieldAccess extends ASTParentNode implements ASTResource, ASTLeftHandSide {
     private final ASTTypeName myTypeName;
     private final ASTKeywordNode mySooper;
     private final ASTPrimary myPrimary;

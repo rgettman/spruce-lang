@@ -171,6 +171,15 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests bad lambda parameters, no second pipe.
+     */
+    @Test
+    public void testLambdaParametersNoSecondPipe() {
+        ExpressionsParser parser = getExpressionsParser("|a, b");
+        assertThrows(CompileException.class, parser::parseLambdaParameters, "Expected '|'.");
+    }
+
+    /**
      * Tests lambda parameter list of formal parameter list.
      */
     @Test
@@ -247,10 +256,10 @@ public class ParserExpressionsTest {
     }
 
     /**
-     * Tests conditional expression of logical or expression.
+     * Tests value expression of logical or expression.
      */
     @Test
-    public void testConditionalExpressionOfLogicalOrExpression() {
+    public void testValueExpressionOfLogicalOrExpression() {
         ExpressionsParser parser = getExpressionsParser("a || b");
         ASTValueExpression node = parser.parseValueExpression();
         System.out.println(node);
@@ -290,6 +299,15 @@ public class ParserExpressionsTest {
         ASTConditionalExpression inner = ensureIsa(middle.getExprIfFalse(), ASTConditionalExpression.class);
         compareClasses(Arrays.asList(ASTBinaryExpression.class, ASTPrimary.class, ASTPrimary.class),
                 Arrays.asList(inner.getCondition(), inner.getExprIfTrue(), inner.getExprIfFalse()));
+    }
+
+    /**
+     * Tests bad conditional expression with question mark but no colon.
+     */
+    @Test
+    public void testConditionalExpressionNoColon() {
+        ExpressionsParser parser = getExpressionsParser("condition ? valueIfTrue valueIfFalse");
+        assertThrows(CompileException.class, parser::parseValueExpression, "Expected ':'.");
     }
 
     /**
@@ -1123,6 +1141,18 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests bad switch expression rule, no semicolon after expression.
+     */
+    @Test
+    public void testSwitchExpressionRuleOfExpressionNoSemicolon() {
+        ExpressionsParser parser = getExpressionsParser("""
+                case 1 -> a + 1
+                case 2 -> b + 2
+                """);
+        assertThrows(CompileException.class, parser::parseSwitchExpressionRule, "Expected ';'.");
+    }
+
+    /**
      * Tests Switch Label of Pattern and Guard.
      */
     @Test
@@ -1240,6 +1270,15 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests bad pattern.
+     */
+    @Test
+    public void testPatternBad() {
+        ExpressionsParser parser = getExpressionsParser("6.76e-11");
+        assertThrows(CompileException.class, parser::parsePattern, "Expected a record pattern or a type pattern.");
+    }
+
+    /**
      * Tests nested Record Patterns.
      */
     @Test
@@ -1278,6 +1317,26 @@ public class ParserExpressionsTest {
         assertTrue(node.getPatternList().isPresent());
         ASTPatternList patternList = node.getPatternList().get();
         checkList(patternList, PATTERNS, ASTPattern.class, 2);
+    }
+
+    /**
+     * Tests bad record pattern of no open paren.
+     */
+    @Test
+    public void testRecordPatternNoOpenParen() {
+        ExpressionsParser parser = getExpressionsParser("Person String first, String last)");
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class, () -> parser.parseRecordPattern(dt), "Expected \"(\".");
+    }
+
+    /**
+     * Tests bad record pattern of no close paren.
+     */
+    @Test
+    public void testRecordPatternNoCloseParen() {
+        ExpressionsParser parser = getExpressionsParser("Person(String first, String last;");
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class, () -> parser.parseRecordPattern(dt), "Expected \")\".");
     }
 
     /**
@@ -1324,10 +1383,10 @@ public class ParserExpressionsTest {
     }
 
     /**
-     * Tests argument list of nested argument lists (here, just multiple arguments).
+     * Tests argument list of multiple arguments.
      */
     @Test
-    public void testArgumentListNested() {
+    public void testArgumentListMultiple() {
         ExpressionsParser parser = getExpressionsParser("a, 1, b + c");
         ASTArgumentList node = parser.parseArgumentList();
         System.out.println(node);
@@ -1428,10 +1487,13 @@ public class ParserExpressionsTest {
         System.out.println(node);
         checkPrimary(node, ASTPrimary.Type.ELEMENT_ACCESS, ASTElementAccess.class);
         ASTElementAccess outer = ensureIsa(node.getChild(), ASTElementAccess.class);
+        assertNotNull(outer.getIndexExpr());
         assertTrue(outer.getElementAccess().isPresent());
         ASTElementAccess middle = ensureIsa(outer.getElementAccess().get(), ASTElementAccess.class);
+        assertNotNull(middle.getIndexExpr());
         assertTrue(middle.getElementAccess().isPresent());
         ASTElementAccess inner = ensureIsa(middle.getElementAccess().get(), ASTElementAccess.class);
+        assertNotNull(inner.getIndexExpr());
         assertTrue(inner.getPrimary().isPresent());
     }
 
@@ -1489,6 +1551,28 @@ public class ParserExpressionsTest {
                 false, false);
         ASTExpressionName exprName = mi.getExprName().orElseThrow();
         checkList(exprName, EXPR_NAME_IDS, ASTIdentifier.class, 2);
+    }
+
+    /**
+     * Tests bad method invocation, no close paren.
+     */
+    @Test
+    public void testMethodInvocationNoCloseParen() {
+        ExpressionsParser parser = getExpressionsParser("methodName(a class");
+        ASTIdentifier identifier = parser.getNamesParser().parseIdentifier();
+        assertThrows(CompileException.class, () -> parser.parseMethodInvocation(identifier),
+                "Expected ')'.");
+    }
+
+    /**
+     * Tests bad method invocation, no open paren.
+     */
+    @Test
+    public void testMethodInvocationNoOpenParen() {
+        ExpressionsParser parser = getExpressionsParser("super.methodName arg");
+        ASTKeywordNode sooper = parser.parseSuper();
+        assertThrows(CompileException.class, () -> parser.parseMethodInvocationSuper(sooper),
+                "Expected ')'.");
     }
 
     /**
@@ -1691,6 +1775,17 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests bad method reference of bad referent.
+     */
+    @Test
+    public void testMethodReferenceBadReferent() {
+        ExpressionsParser parser = getExpressionsParser("type.Name::for");
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class, () -> parser.parseMethodReference(dt),
+                "Expected identifier or new.");
+    }
+
+    /**
      * Tests nested primary expressions, including Class Instance Creation
      * Expressions, Method Invocations, Field Accesses, and Element Accesses.
      */
@@ -1749,6 +1844,61 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests bad primary of something that's not a primary.
+     */
+    @Test
+    public void testPrimaryBad() {
+        ExpressionsParser parser = getExpressionsParser("public int x = 2;");
+        assertThrows(CompileException.class, parser::parsePrimary,
+                "Expected: literal, expression name, or array or class instance creation expression.");
+    }
+
+    /**
+     * Tests bad primary of no dot after super.
+     */
+    @Test
+    public void testPrimarySuperBad() {
+        ExpressionsParser parser = getExpressionsParser("super methodName()");
+        assertThrows(CompileException.class, parser::parsePrimary,"Expected '.'.");
+    }
+
+    /**
+     * Tests bad primary of no close paren after open paren.
+     */
+    @Test
+    public void testPrimaryParenBad() {
+        ExpressionsParser parser = getExpressionsParser("(a*a + b*b;");
+        assertThrows(CompileException.class, parser::parsePrimary,"Expected ')'.");
+    }
+
+    /**
+     * Tests bad primary of new, identifier, malformed instantiation.
+     */
+    @Test
+    public void testPrimaryNewIdentifierBad() {
+        ExpressionsParser parser = getExpressionsParser("new Bad 2.71828");
+        assertThrows(CompileException.class, parser::parsePrimary,"Malformed array or class instance creation expression.");
+    }
+
+    /**
+     * Tests bad primary of new not followed by type arguments or identifier.
+     */
+    @Test
+    public void testPrimaryNewBad() {
+        ExpressionsParser parser = getExpressionsParser("new interface");
+        assertThrows(CompileException.class, parser::parsePrimary,"Type arguments or type to instantiate expected after new.");
+    }
+
+    /**
+     * Tests bad primary of expression name, dot, super, not followed by double colon or dot.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSuperDotBad() {
+        ExpressionsParser parser = getExpressionsParser("expr.name.super bad");
+        assertThrows(CompileException.class, parser::parsePrimary,"Expected method reference (::), method invocation, or field access (.).");
+    }
+
+    /**
      * Tests unqualified class instance creation expression of type arguments and type to instantiate.
      */
     @Test
@@ -1764,12 +1914,37 @@ public class ParserExpressionsTest {
      * creation expression.
      */
     @Test
-    public void testClassInstanceCreationExpressionOfUCICE() {
-        ExpressionsParser parser = getExpressionsParser("new MyClass(1, \"one\")");
+    public void testCICEOfUCICE() {
+        ExpressionsParser parser = getExpressionsParser("new MyClass<String>(1, \"one\")");
         ASTClassInstanceCreationExpression node = parser.parseClassInstanceCreationExpression();
         System.out.println(node);
         assertFalse(node.getPrimary().isPresent());
         assertNotNull(node.getUcice());
+    }
+
+    /**
+     * Tests class instance creation expression when the type to instantiate
+     * is parsed first.
+     */
+    @Test
+    public void testCICEOfTypeToInstantiate() {
+        ExpressionsParser parser = getExpressionsParser("MyClass(1, \"one\")");
+        ASTTypeToInstantiate tti = parser.parseTypeToInstantiate();
+        ASTClassInstanceCreationExpression node = parser.parseClassInstanceCreationExpression(tti);
+        System.out.println(node);
+        assertFalse(node.getPrimary().isPresent());
+        assertNotNull(node.getUcice());
+    }
+
+    /**
+     * Tests bad class instance creation expression of primary but no dot-new.
+     */
+    @Test
+    public void testCICEPrimaryNoDotNew() {
+        ExpressionsParser parser = getExpressionsParser("getEnclosing();");
+        ASTPrimary primary = parser.parsePrimary();
+        assertThrows(CompileException.class, () -> parser.parseClassInstanceCreationExpression(primary),
+                "Expected . new");
     }
 
     /**
@@ -1781,6 +1956,26 @@ public class ParserExpressionsTest {
         ASTUnqualifiedClassInstanceCreationExpression node = parser.parseUnqualifiedClassInstanceCreationExpression();
         System.out.println(node);
         checkUcice(node, false);
+    }
+
+    /**
+     * Tests bad unqualified class instance creation expression of no open paren.
+     */
+    @Test
+    public void testUnqualifiedClassInstanceCreationExpressionNoOpenParen() {
+        ExpressionsParser parser = getExpressionsParser("new MyClass 1, \"one\")");
+        assertThrows(CompileException.class, parser::parseUnqualifiedClassInstanceCreationExpression,
+                "Expected \"(\".");
+    }
+
+    /**
+     * Tests bad unqualified class instance creation expression of no close paren.
+     */
+    @Test
+    public void testUnqualifiedClassInstanceCreationExpressionNoCloseParen() {
+        ExpressionsParser parser = getExpressionsParser("new MyClass(1, \"one\";");
+        assertThrows(CompileException.class, parser::parseUnqualifiedClassInstanceCreationExpression,
+                "Expected \")\".");
     }
 
     /**
@@ -1819,6 +2014,15 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests bad array creation expression of dim exprs and array initializer.
+     */
+    @Test
+    public void testArrayCreationExpressionDimExprsArrayInitializer() {
+        ExpressionsParser parser = getExpressionsParser("new Integer[3][] {1, 2, 3}");
+        assertThrows(CompileException.class, parser::parseArrayCreationExpression, "Array initializer not expected with dimension expressions.");
+    }
+
+    /**
      * Tests array creation expression of dim exprs and dims.
      */
     @Test
@@ -1841,6 +2045,25 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests bad element access, no open bracket.
+     */
+    @Test
+    public void testElementAccessNoOpenBracket() {
+        ExpressionsParser parser = getExpressionsParser("element 1]");
+        ASTPrimary primary = parser.parsePrimary();
+        assertThrows(CompileException.class, () -> parser.parseElementAccess(primary.getLocation(), primary),
+                "Expected '['.");
+    }
+    /**
+     * Tests bad element access, no close bracket.
+     */
+    @Test
+    public void testElementAccessNoCloseBracket() {
+        ExpressionsParser parser = getExpressionsParser("element[0 = 1");
+        assertThrows(CompileException.class, parser::parsePrimary, "Expected ']'.");
+    }
+
+    /**
      * Tests dim exprs of dim expr.
      */
     @Test
@@ -1852,15 +2075,55 @@ public class ParserExpressionsTest {
     }
 
     /**
-     * Tests dim expr of expression.
+     * Tests dim exprs of dim expr with dim afterward.
      */
     @Test
-    public void testDimExprOfExpression() {
+    public void testDimExprsOfDimExprWithDimAfter() {
+        ExpressionsParser parser = getExpressionsParser("[x+y][]");
+        ASTDimExprs node = parser.parseDimExprs();
+        System.out.println(node);
+        checkList(node, DIM_EXPRS, ASTDimExpr.class, 1);
+    }
+
+    /**
+     * Tests dim exprs of dim expr with dim afterward.
+     */
+    @Test
+    public void testDimExprsOfDimExprWithDimAfter2() {
+        ExpressionsParser parser = getExpressionsParser("[x+y][ ]");
+        ASTDimExprs node = parser.parseDimExprs();
+        System.out.println(node);
+        checkList(node, DIM_EXPRS, ASTDimExpr.class, 1);
+    }
+
+    /**
+     * Tests dim expr of value expression.
+     */
+    @Test
+    public void testDimExprOfValueExpression() {
         ExpressionsParser parser = getExpressionsParser("[x+y]");
         ASTDimExpr node = parser.parseDimExpr();
         System.out.println(node);
         ASTValueExpression expr = node.getValueExpr();
         assertInstanceOf(ASTBinaryExpression.class, expr);
+    }
+
+    /**
+     * Tests bad dim expression of no open bracket.
+     */
+    @Test
+    public void testDimExprNoOpenBracket() {
+        ExpressionsParser parser = getExpressionsParser("i]");
+        assertThrows(CompileException.class, parser::parseDimExpr, "Expected \"[\".");
+    }
+
+    /**
+     * Tests bad dim expression of no close bracket.
+     */
+    @Test
+    public void testDimExprNoCloseBracket() {
+        ExpressionsParser parser = getExpressionsParser("[i");
+        assertThrows(CompileException.class, parser::parseDimExpr, "Expected \"]\".");
     }
 
     /**
@@ -1885,6 +2148,24 @@ public class ParserExpressionsTest {
         System.out.println(node);
         assertNotNull(node.getVarInitializers());
         checkList(node.getVarInitializers(), VARIABLE_INITIALIZERS, ASTVariableInitializer.class, 2);
+    }
+
+    /**
+     * Tests bad array initializer, no open brace.
+     */
+    @Test
+    public void testArrayInitializerNoOpenBrace() {
+        ExpressionsParser parser = getExpressionsParser("\"Needs\", \"Open\", \"Brace\"");
+        assertThrows(CompileException.class, parser::parseArrayInitializer, "Expected '{'.");
+    }
+
+    /**
+     * Tests bad array initializer, no close brace.
+     */
+    @Test
+    public void testArrayInitializerNoCloseBrace() {
+        ExpressionsParser parser = getExpressionsParser("{\"Needs\", \"Close\", \"Brace\" class");
+        assertThrows(CompileException.class, parser::parseArrayInitializer, "Expected '{'.");
     }
 
     /**
@@ -1952,6 +2233,16 @@ public class ParserExpressionsTest {
         ASTClassLiteral node = parser.parseClassLiteral(dataType);
         System.out.println(node);
         assertNotNull(node.getDataType());
+    }
+
+    /**
+     * Tests bad class literal of no dot-class.
+     */
+    @Test
+    public void testClassLiteralNoDotClass() {
+        ExpressionsParser parser = getExpressionsParser("Outer.Inner if");
+        ASTDataType dataType = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class, () -> parser.parseClassLiteral(dataType), "Expected .class");
     }
 
     /**

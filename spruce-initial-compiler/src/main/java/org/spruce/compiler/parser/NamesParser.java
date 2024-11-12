@@ -157,24 +157,4 @@ public class NamesParser extends BasicParser {
             throw new CompileException(curr().getLocation(), "Expected an identifier.");
         }
     }
-
-    /**
-     * Converts an Expression Name to a TypeName.  Converts any child
-     * <code>ASTAmbiguousName</code> to an <code>ASTNamespaceOrTypeName</code>.
-     * @return An <code>ASTTypeName</code> with the same structure as the given Expression Name.
-     * @see #convertToNamespaceOrTypeName
-     */
-    public ASTTypeName convertToTypeName(ASTExpressionName exprName) {
-        return new ASTTypeName(exprName.getLocation(), exprName.getTypedChildren());
-    }
-
-    /**
-     * Copies a list node representing a type name to a new list node
-     * representing a namespace or type name.
-     * @param typeName An <code>ASTTypeName</code>.
-     * @return An <code>ASTNamespaceOrTypeName</code>.
-     */
-    public ASTNamespaceOrTypeName convertToNamespaceOrTypeName(ASTTypeName typeName) {
-        return new ASTNamespaceOrTypeName(typeName.getLocation(), typeName.getTypedChildren());
-    }
 }

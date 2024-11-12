@@ -66,7 +66,7 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
          * @param location A <code>Location</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTCompactRecordDeclaration.Builder setLocation(Location location) {
+        public Builder setLocation(Location location) {
             this.myLocation = location;
             return this;
         }
@@ -76,7 +76,7 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
          * @param name An <code>ASTIdentifier</code> representing the record name.
          * @return This <code>Builder</code>.
          */
-        public ASTCompactRecordDeclaration.Builder setName(ASTIdentifier name) {
+        public Builder setName(ASTIdentifier name) {
             this.myName = name;
             return this;
         }
@@ -86,7 +86,7 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
          * @param typeParams An <code>ASTTypeParameterList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTCompactRecordDeclaration.Builder setTypeParams(ASTTypeParameterList typeParams) {
+        public Builder setTypeParams(ASTTypeParameterList typeParams) {
             this.myTypeParams = typeParams;
             return this;
         }
@@ -96,7 +96,7 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
          * @param formalParamList An <code>ASTFormalParameterList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTCompactRecordDeclaration.Builder setFormalParamList(ASTFormalParameterList formalParamList) {
+        public Builder setFormalParamList(ASTFormalParameterList formalParamList) {
             this.myFormalParamList = formalParamList;
             return this;
         }
@@ -106,7 +106,7 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
          * @param superinterfaces An <code>ASTDataTypeNoArrayList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTCompactRecordDeclaration.Builder setSuperinterfaces(ASTDataTypeNoArrayList superinterfaces) {
+        public Builder setSuperinterfaces(ASTDataTypeNoArrayList superinterfaces) {
             this.mySuperinterfaces = superinterfaces;
             return this;
         }
@@ -116,7 +116,7 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
          * @param classParts An <code>ASTClassPartList</code>.
          * @return This <code>Builder</code>.
          */
-        public ASTCompactRecordDeclaration.Builder setClassParts(ASTClassPartList classParts) {
+        public Builder setClassParts(ASTClassPartList classParts) {
             this.myClassParts = classParts;
             return this;
         }

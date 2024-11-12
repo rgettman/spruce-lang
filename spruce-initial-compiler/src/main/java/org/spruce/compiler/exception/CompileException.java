@@ -46,7 +46,7 @@ public class CompileException extends RuntimeException {
      * proceed.  However, at this point, TypeArguments have already been
      * parsed.  Store them here so parseConstructorInvocation can use them.
      * @return A List of already parsed ASTNodes.
-     * @see ExpressionsParser#parseMethodInvocationExprName(org.spruce.compiler.ast.ASTListNode).
+     * @see ExpressionsParser#parseMethodInvocationExprName(org.spruce.compiler.ast.names.ASTExpressionName).
      * @see ExpressionsParser#parseMethodInvocation(org.spruce.compiler.ast.expressions.ASTPrimary)
      * @see ClassesParser#parseConstructorInvocation
      */

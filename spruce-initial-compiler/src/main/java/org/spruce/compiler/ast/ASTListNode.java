@@ -1,11 +1,8 @@
 package org.spruce.compiler.ast;
 
-import java.util.HashSet;
 import java.util.List;
 
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
-import org.spruce.compiler.scanner.TokenType;
 
 /**
  * An <code>ASTListNode</code> is an <code>ASTParentNode</code> that has a variable
@@ -95,33 +92,5 @@ public class ASTListNode<T extends Node> extends ASTParentNode {
     @Override
     public String getHeaderValue() {
         return myType.toString();
-    }
-
-    /**
-     * Converts this general modifier list to a more specific modifier list,
-     * giving an error if a found modifier is not in a more specific
-     * list, or if there are duplicate modifiers.
-     * @param errorMessage The error message expected.
-     * @param expectedModifiers A List of expected modifiers (token types).
-     * @param type The target <code>ASTListNode.Type</code>.
-     * @return A new <code>ASTListNode</code> of the given type.
-     * @throws CompileException If there is a general modifier not in the more
-     *     specific list, or if there are duplicate modifiers.
-     */
-    public ASTListNode convertToSpecificList(String errorMessage, List<TokenType> expectedModifiers, ASTListNode.Type type) {
-        // Dupe check.
-        HashSet<TokenType> seen = new HashSet<>();
-        List<Node> children = getChildren();
-        for (Node child : children) {
-            ASTKeywordNode mod = (ASTKeywordNode) child;
-            TokenType modifier = mod.getKeyword();
-            if (!seen.add(modifier)) {
-                throw new CompileException(mod.getLocation(), "Duplicate modifier found: " + modifier.getRepresentation());
-            }
-            if (!expectedModifiers.contains(modifier)) {
-                throw new CompileException(mod.getLocation(), errorMessage);
-            }
-        }
-        return new ASTListNode(getLocation(), children, type);
     }
 }

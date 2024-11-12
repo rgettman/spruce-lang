@@ -1,11 +1,6 @@
 package org.spruce.compiler.ast.classes;
 
-import java.util.List;
-
-import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.ParentNode;
-import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTAnnotationPart</code> is an annotation type

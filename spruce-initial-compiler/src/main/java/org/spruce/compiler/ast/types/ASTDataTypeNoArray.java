@@ -1,8 +1,12 @@
 package org.spruce.compiler.ast.types;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
+import org.spruce.compiler.ast.names.ASTExpressionName;
+import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -25,5 +29,33 @@ public final class ASTDataTypeNoArray extends ASTListNode<ASTSimpleType> impleme
      */
     public ASTDataTypeNoArray(Location location, List<ASTSimpleType> children) {
         super(location, children, Type.SIMPLE_TYPES);
+    }
+
+    /**
+     * Converts to an Expression Name.
+     * @return An <code>ASTExpressionName</code>.
+     */
+    @Override
+    public ASTExpressionName convertToExpressionName() {
+        List<ASTIdentifier> exprNameChildren = convertChildren();
+        return new ASTExpressionName(getLocation(), exprNameChildren);
+    }
+
+    /**
+     * Converts the children from (DTNA, SimpleType) to (AmbiguousName, Identifier)
+     * or (SimpleType) to (Identifier).
+     * @return A <code>List</code> of <code>ASTIdentifier</code> nodes suitable for an
+     *     Ambiguous Name or an Expression Name.
+     */
+    private List<ASTIdentifier> convertChildren() {
+        List<ASTSimpleType> children = getTypedChildren();
+        List<ASTIdentifier> convertedChildren = new ArrayList<>(children.size());
+        for (ASTSimpleType st : children) {
+            if (st.getTypeArgs().isPresent()) {
+                throw new CompileException(st.getLocation(), "Variable declarator expected after type.");
+            }
+            convertedChildren.add(st.getName());
+        }
+        return convertedChildren;
     }
 }

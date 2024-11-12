@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.ast.names.*;
+import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.parser.NamesParser;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
@@ -221,6 +222,25 @@ public class ParserNamesTest {
             ASTIdentifier id = (ASTIdentifier) node.getChildren().get(i);
             assertEquals(expectedValues.get(i), id.getValue(), "Mismatch on child " + i);
         }
+    }
+
+    /**
+     * Tests identifier.
+     */
+    @Test
+    public void testIdentifier() {
+        NamesParser parser = getNamesParser("x");
+        ASTIdentifier node = parser.parseIdentifier();
+        assertEquals("x", node.getValue());
+    }
+
+    /**
+     * Tests bad identifier.
+     */
+    @Test
+    public void testIdentifierBad() {
+        NamesParser parser = getNamesParser("12x");
+        assertThrows(CompileException.class, parser::parseIdentifier, "Expected an identifier.");
     }
 
     /**

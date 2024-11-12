@@ -68,6 +68,23 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad annotation declaration of bad annotation modifier.
+     */
+    @Test
+    public void testAnnotationDeclarationBadAnnotationMod() {
+        ClassesParser parser = getClassesParser("""
+            public constant annotation ABadAnnotation {
+                String prop();
+            }
+            """);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        assertThrows(CompileException.class,
+                () -> parser.parseAnnotationDeclaration(loc, accessMod, genModList), "Unexpected annotation modifier.");
+    }
+
+    /**
      * Tests empty annotation body.
      */
     @Test
@@ -256,12 +273,61 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad annotation part of annotation type element declaration with type parameters.
+     */
+    @Test
+    public void testAnnotationPartTypeParamsOnATED() {
+        ClassesParser parser = getClassesParser("""
+                <T> String value();
+                """);
+        assertThrows(CompileException.class, parser::parseAnnotationPart,
+                "Type parameters not allowed on annotation element declaration.");
+    }
+
+    /**
+     * Tests bad annotation part of annotation type element declaration with a general modifier.
+     */
+    @Test
+    public void testAnnotationPartGenModOnATED() {
+        ClassesParser parser = getClassesParser("""
+                shared String value();
+                """);
+        assertThrows(CompileException.class, parser::parseAnnotationPart,
+                "Method modifiers not allowed on annotation element declaration.");
+    }
+
+    /**
+     * Tests bad annotation part of annotation type element declaration with an access modifier.
+     */
+    @Test
+    public void testAnnotationPartAccessModOnATED() {
+        ClassesParser parser = getClassesParser("""
+                private String value();
+                """);
+        assertThrows(CompileException.class, parser::parseAnnotationPart,
+                "Access modifiers not allowed on annotation element declaration.");
+    }
+
+    /**
+     * Tests bad annotation part of constant declaration with a type parameter.
+     */
+    @Test
+    public void testAnnotationPartTypeParamsOnConstantDeclaration() {
+        ClassesParser parser = getClassesParser("""
+                <T> constant TEST = "test";
+                """);
+        assertThrows(CompileException.class, parser::parseAnnotationPart,
+                "Type parameters not allowed on constant declaration.");
+    }
+
+    /**
      * Tests annotation type element declaration.
      */
     @Test
     public void testATED() {
         ClassesParser parser = getClassesParser("String element();");
-        ASTAnnotationTypeElementDeclaration node = parser.parseAnnotationTypeElementDeclaration();
+        ASTDataType dataType = parser.getTypesParser().parseDataType();
+        ASTAnnotationTypeElementDeclaration node = parser.parseAnnotationTypeElementDeclaration(dataType.getLocation(), dataType);
         System.out.println(node);
 
         assertNotNull(node.getDataType());
@@ -275,12 +341,49 @@ public class ParserClassesTest {
     @Test
     public void testATEDDefaultValue() {
         ClassesParser parser = getClassesParser("String element() default \"DNE\";");
-        ASTAnnotationTypeElementDeclaration node = parser.parseAnnotationTypeElementDeclaration();
+        ASTDataType dataType = parser.getTypesParser().parseDataType();
+        ASTAnnotationTypeElementDeclaration node = parser.parseAnnotationTypeElementDeclaration(dataType.getLocation(), dataType);
         System.out.println(node);
 
         assertNotNull(node.getDataType());
         assertEquals("element", node.getName().getValue());
         assertTrue(node.getDefaultValue().isPresent());
+    }
+
+    /**
+     * Tests bad annotation type element declaration of no open parenthesis.
+     */
+    @Test
+    public void testATEDNoOpenParen() {
+        ClassesParser parser = getClassesParser("String bad default \"DNE\";");
+        ASTDataType dataType = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class,
+                () -> parser.parseAnnotationTypeElementDeclaration(dataType.getLocation(), dataType),
+                "Expected '('");
+    }
+
+    /**
+     * Tests bad annotation type element declaration of no close parenthesis.
+     */
+    @Test
+    public void testATEDNoCloseParen() {
+        ClassesParser parser = getClassesParser("String bad( default \"DNE\";");
+        ASTDataType dataType = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class,
+                () -> parser.parseAnnotationTypeElementDeclaration(dataType.getLocation(), dataType),
+                "Expected ')'");
+    }
+
+    /**
+     * Tests bad annotation type element declaration of no semicolon.
+     */
+    @Test
+    public void testATEDNoSemicolon() {
+        ClassesParser parser = getClassesParser("String bad() default \"DNE\"}");
+        ASTDataType dataType = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class,
+                () -> parser.parseAnnotationTypeElementDeclaration(dataType.getLocation(), dataType),
+                "Expected ';'");
     }
 
     /**
@@ -324,6 +427,15 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad annotation of bad single element annotation, no close parenthesis.
+     */
+    @Test
+    public void testAnnotationOfSingleElementAnnotationNoCloseParen() {
+        ClassesParser parser = getClassesParser("@Test(\"Test\"}");
+        assertThrows(CompileException.class, parser::parseAnnotation, "Expected ')'.");
+    }
+
+    /**
      * Tests annotation of normal annotation, empty.
      */
     @Test
@@ -349,6 +461,15 @@ public class ParserClassesTest {
         ASTNormalAnnotation na = ensureIsa(node, ASTNormalAnnotation.class);
         assertNotNull(na.getTypeName());
         checkList(na.getElementValuePairList(), ELEMENT_VALUE_PAIRS, ASTElementValuePair.class, 3);
+    }
+
+    /**
+     * Tests bad annotation of bad normal annotation, no close parenthesis.
+     */
+    @Test
+    public void testAnnotationOfNormalAnnotationNoCloseParen() {
+        ClassesParser parser = getClassesParser("@Test(test = \"Test\"}");
+        assertThrows(CompileException.class, parser::parseAnnotation, "Expected ')'.");
     }
 
     /**
@@ -378,11 +499,20 @@ public class ParserClassesTest {
      */
     @Test
     public void testElementValuePairOfElementValue() {
-        ClassesParser parser = getClassesParser("prop = \"Conditional Expression\"");
+        ClassesParser parser = getClassesParser("prop = \"Value Expression\"");
         ASTElementValuePair node = parser.parseElementValuePair();
         System.out.println(node);
         assertNotNull(node.getElementName());
         assertNotNull(node.getElementValue());
+    }
+
+    /**
+     * Tests bad element value pair of bad assignment.
+     */
+    @Test
+    public void testElementValuePairOfBadAssignment() {
+        ClassesParser parser = getClassesParser("prop -> \"Value Expression\"");
+        assertThrows(CompileException.class, parser::parseElementValuePair, "Expected assignment operator '='.");
     }
 
     /**
@@ -430,11 +560,11 @@ public class ParserClassesTest {
     }
 
     /**
-     * Tests element value of conditional expression.
+     * Tests element value of value expression.
      */
     @Test
-    public void testElementValueOfConditionalExpression() {
-        ClassesParser parser = getClassesParser("\"Conditional Expression\"");
+    public void testElementValueOfValueExpression() {
+        ClassesParser parser = getClassesParser("\"Value Expression\"");
         ASTElementValue node = parser.parseElementValue();
         System.out.println(node);
         assertInstanceOf(ASTPrimary.class, node);
@@ -445,7 +575,7 @@ public class ParserClassesTest {
      */
     @Test
     public void testElementValueOfEVAI() {
-        ClassesParser parser = getClassesParser("{\"Conditional Expression\"}");
+        ClassesParser parser = getClassesParser("{\"Value Expression\"}");
         ASTElementValue node = parser.parseElementValue();
         System.out.println(node);
         assertInstanceOf(ASTListNode.class, node);
@@ -508,6 +638,22 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad interface declaration of bad modifier.
+     */
+    @Test
+    public void testInterfaceDeclarationBadMod() {
+        ClassesParser parser = getClassesParser("""
+            public volatile interface Bad {
+            }
+            """);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        assertThrows(CompileException.class, () -> parser.parseInterfaceDeclaration(loc, accessMod, genModList),
+                "Unexpected interface modifier.");
+    }
+
+    /**
      * Tests extends interfaces (extends clause on interface).
      */
     @Test
@@ -546,6 +692,38 @@ public class ParserClassesTest {
         ASTInterfacePartList node = parser.parseInterfaceBody();
         System.out.println(node);
         checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 3);
+    }
+
+    /**
+     * Tests bad interface body with no open brace.
+     */
+    @Test
+    public void testInterfaceBodyNoOpenBrace() {
+        ClassesParser parser = getClassesParser("""
+                    constant Integer i = 1;
+                    class Inner{}
+                    default Integer getI() {
+                        return i;
+                    }
+                }
+                """);
+        assertThrows(CompileException.class, parser::parseInterfaceBody, "Expected '{'.");
+    }
+
+    /**
+     * Tests bad interface body with no close brace.
+     */
+    @Test
+    public void testInterfaceBodyNoCloseBrace() {
+        ClassesParser parser = getClassesParser("""
+                {
+                    constant Integer i = 1;
+                    class Inner{}
+                    default Integer getI() {
+                        return i;
+                    }
+                """);
+        assertThrows(CompileException.class, parser::parseInterfaceBody, "Expected '}'.");
     }
 
     /**
@@ -756,6 +934,15 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad interface part of bad constant of variable modifier.
+     */
+    @Test
+    public void testInterfacePartBadConstant() {
+        ClassesParser parser = getClassesParser("public constant var String BAD_CONSTANT = \"Bad!\"");
+        assertThrows(CompileException.class, parser::parseInterfacePart, "Unexpected variable modifier.");
+    }
+
+    /**
      * Tests simple interface method declaration.
      */
     @Test
@@ -797,6 +984,25 @@ public class ParserClassesTest {
         checkList(node.getModifierList(), INTERFACE_METHOD_MODIFIERS, ASTKeywordNode.class, 1);
         assertNotNull(node.getHeader());
         assertNotNull(node.getBody());
+    }
+
+    /**
+     * Tests bad interface method declaration of bad modifier.
+     */
+    @Test
+    public void testInterfaceMethodDeclarationBadMod() {
+        ClassesParser parser = getClassesParser("""
+            private volatile void addAll(Collection<T> other) {
+                for (T element : other) {
+                    add(other);
+                }
+            }
+            """);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        assertThrows(CompileException.class, () -> parser.parseInterfaceMethodDeclaration(loc, accessMod, genModList),
+                "Unexpected interface method modifier.");
     }
 
     /**
@@ -842,6 +1048,20 @@ public class ParserClassesTest {
         assertNotNull(node.getConstantMod());
         assertNotNull(node.getDataType());
         assertNotNull(node.getVarDeclList());
+    }
+
+    /**
+     * Tests bad constant declaration of no semicolon.
+     */
+    @Test
+    public void testConstantDeclarationNoSemicolon() {
+        ClassesParser parser = getClassesParser("constant String noSemicolon = \"Test\"}");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class,
+                () -> parser.parseConstantDeclaration(loc, null, genModList, dt),
+                "Expected semicolon.");
     }
 
     /**
@@ -966,6 +1186,24 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests adt body without body declarations.
+     */
+    @Test
+    public void testAdtBodyNoBodyDeclarations() {
+        ClassesParser parser = getClassesParser("""
+                {
+                    None() {},
+                    Some(T value) {}
+                }
+                """);
+        ASTAdtBody node = parser.parseAdtBody();
+        System.out.println(node);
+
+        assertNotNull(node.getVariantList());
+        assertNotNull(node.getBodyDecls());
+    }
+
+    /**
      * Tests variant list.
      */
     @Test
@@ -996,6 +1234,15 @@ public class ParserClassesTest {
         ASTVariant node = parser.parseVariant();
         System.out.println(node);
         assertInstanceOf(ASTDataType.class, node);
+    }
+
+    /**
+     * Tests bad variant of no identifier.
+     */
+    @Test
+    public void testVariantNoIdentifier() {
+        ClassesParser parser = getClassesParser("public");
+        assertThrows(CompileException.class, parser::parseVariant, "Expected an identifier.");
     }
 
     /**
@@ -1043,6 +1290,15 @@ public class ParserClassesTest {
         checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 0);
         assertFalse(node.getSuperinterfaces().isPresent());
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
+    }
+
+    /**
+     * Tests bad compact record declaration of no identifier.
+     */
+    @Test
+    public void testCompactRecordDeclarationNoIdentifier() {
+        ClassesParser parser = getClassesParser("public() {}");
+        assertThrows(CompileException.class, parser::parseCompactRecordDeclaration, "Expected an identifier.");
     }
 
     /**
@@ -1221,6 +1477,19 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad enum declaration of bad enum modifier.
+     */
+    @Test
+    public void testEnumDeclarationBadGenMod() {
+        ClassesParser parser = getClassesParser("public volatile enum BadEnumTest {VOLATILE}");
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        assertThrows(CompileException.class, () -> parser.parseEnumDeclaration(loc, accessMod, genModList),
+                "Unexpected enum modifier.");
+    }
+
+    /**
      * Tests simple enum body.
      */
     @Test
@@ -1279,6 +1548,38 @@ public class ParserClassesTest {
         System.out.println(node);
         checkList(node.getEnumConstants(), ENUM_CONSTANTS, ASTEnumConstant.class, 3);
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 1);
+    }
+
+    /**
+     * Tests bad enum body of no open brace.
+     */
+    @Test
+    public void testEnumBodyNoOpenBrace() {
+        ClassesParser parser = getClassesParser("SATURDAY, SUNDAY}");
+        assertThrows(CompileException.class, parser::parseEnumBody, "Expected '{'.");
+    }
+
+    /**
+     * Tests bad enum body of no close brace.
+     */
+    @Test
+    public void testEnumBodyNoCloseBrace() {
+        ClassesParser parser = getClassesParser("{SATURDAY, SUNDAY");
+        assertThrows(CompileException.class, parser::parseEnumBody, "Expected '}'.");
+    }
+
+    /**
+     * Tests bad enum body of no semicolon but enum body declarations.
+     */
+    @Test
+    public void testEnumBodyNoSemicolon() {
+        ClassesParser parser = getClassesParser("""
+                {
+                    SATURDAY, SUNDAY
+                    constant FUN_DAY = SUNDAY;
+                }
+                """);
+        assertThrows(CompileException.class, parser::parseEnumBody, "Expected semicolon.");
     }
 
     /**
@@ -1346,6 +1647,15 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad enum constant of no close parenthesis.
+     */
+    @Test
+    public void testEnumConstantNoCloseParen() {
+        ClassesParser parser = getClassesParser("RED(\"#F9152F\" { override String toString() { return \"Red Light\"; } }");
+        assertThrows(CompileException.class, parser::parseEnumConstant, "Expected ')'.");
+    }
+
+    /**
      * Tests simple class declaration.
      */
     @Test
@@ -1393,6 +1703,22 @@ public class ParserClassesTest {
         assertTrue(node.getPermits().isPresent());
         checkList(node.getPermits().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 5);
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
+    }
+
+    /**
+     * Tests bad class declaration of bad class modifier.
+     */
+    @Test
+    public void testClassDeclarationBadClassMod() {
+        ClassesParser parser = getClassesParser("""
+            public constant class BadClassMod {
+            }
+            """);
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        assertThrows(CompileException.class, () -> parser.parseClassDeclaration(loc, accessMod, genModList),
+                "Unexpected class modifier.");
     }
 
     /**
@@ -1713,6 +2039,30 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad class part of constructor with type parameters but a general modifier.
+     */
+    @Test
+    public void testClassPartBadConstructorTypeParamsGeneralModifier() {
+        ClassesParser parser = getClassesParser("""
+                public override <T> constructor() {
+                }
+                """);
+        assertThrows(CompileException.class, parser::parseClassPart, "Unexpected modifier: 'override'.");
+    }
+
+    /**
+     * Tests bad class part of constructor but with a general modifier.
+     */
+    @Test
+    public void testClassPartBadConstructorGeneralModifier() {
+        ClassesParser parser = getClassesParser("""
+                public override constructor() {
+                }
+                """);
+        assertThrows(CompileException.class, parser::parseClassPart, "Unexpected modifier: 'override'.");
+    }
+
+    /**
      * Tests shared constructor.
      */
     @Test
@@ -1721,6 +2071,24 @@ public class ParserClassesTest {
         ASTSharedConstructor node = parser.parseSharedConstructor();
         System.out.println(node);
         assertNotNull(node.getBlock());
+    }
+
+    /**
+     * Tests bad shared constructor of no open parenthesis.
+     */
+    @Test
+    public void testSharedConstructorNoOpenParen() {
+        ClassesParser parser = getClassesParser("shared constructor ) { sharedVar = reallyComplicatedLogic(); }");
+        assertThrows(CompileException.class, parser::parseSharedConstructor, "Expected '('.");
+    }
+
+    /**
+     * Tests bad shared constructor of no close parenthesis.
+     */
+    @Test
+    public void testSharedConstructorNoCloseParen() {
+        ClassesParser parser = getClassesParser("shared constructor( { sharedVar = reallyComplicatedLogic(); }");
+        assertThrows(CompileException.class, parser::parseSharedConstructor, "Expected '('.");
     }
 
     /**
@@ -1800,6 +2168,33 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad constructor invocation of not constructor or super.
+     */
+    @Test
+    public void testConstructorInvocationNotConstructorOrSuper() {
+        ClassesParser parser = getClassesParser(": class()");
+        assertThrows(CompileException.class, parser::parseConstructorInvocation, "Expected 'constructor' or 'super'.");
+    }
+
+    /**
+     * Tests bad constructor invocation of no open parenthesis.
+     */
+    @Test
+    public void testConstructorInvocationNoOpenParen() {
+        ClassesParser parser = getClassesParser(": constructor String str)");
+        assertThrows(CompileException.class, parser::parseConstructorInvocation, "Expected '('.");
+    }
+
+    /**
+     * Tests bad constructor invocation of no close parenthesis.
+     */
+    @Test
+    public void testConstructorInvocationNoCloseParen() {
+        ClassesParser parser = getClassesParser(": constructor(String str {");
+        assertThrows(CompileException.class, parser::parseConstructorInvocation, "Expected ')'.");
+    }
+
+    /**
      * Tests simple constructor declarator.
      */
     @Test
@@ -1823,6 +2218,24 @@ public class ParserClassesTest {
 
         assertTrue(node.getTypeParams().isPresent());
         checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
+    }
+
+    /**
+     * Tests constructor declarator of no open parenthesis.
+     */
+    @Test
+    public void testConstructorDeclaratorNoOpenParen() {
+        ClassesParser parser = getClassesParser("constructor Integer param)");
+        assertThrows(CompileException.class, parser::parseConstructorDeclarator, "Expected '('.");
+    }
+
+    /**
+     * Tests constructor declarator of no close parenthesis.
+     */
+    @Test
+    public void testConstructorDeclaratorNoCloseParen() {
+        ClassesParser parser = getClassesParser("constructor(String param {");
+        assertThrows(CompileException.class, parser::parseConstructorDeclarator, "Expected ')'.");
     }
 
     /**
@@ -1907,6 +2320,34 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad field declaration of bad field modifier.
+     */
+    @Test
+    public void testFieldDeclarationBadModifier() {
+        ClassesParser parser = getClassesParser("abstract String name = \"bad\";");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        Location loc = genModList.getLocation();
+        assertThrows(CompileException.class, () -> parser.parseFieldDeclaration(loc, null, genModList, varModList, dt),
+                "Unexpected field modifier.");
+    }
+
+    /**
+     * Tests bad field declaration of no semicolon.
+     */
+    @Test
+    public void testFieldDeclarationNoSemicolon() {
+        ClassesParser parser = getClassesParser("shared String name = \"bad\"}");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        ASTVariableModifierList varModList = parser.getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        Location loc = genModList.getLocation();
+        assertThrows(CompileException.class, () -> parser.parseFieldDeclaration(loc, null, genModList, varModList, dt),
+                "Expected semicolon.");
+    }
+
+    /**
      * Tests simple method declaration.
      */
     @Test
@@ -1950,6 +2391,19 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests bad method declaration of bad modifier.
+     */
+    @Test
+    public void testMethodDeclarationBadModifier() {
+        ClassesParser parser = getClassesParser("public volatile Foo abstractMethod();");
+        ASTKeywordNode accessMod = parser.parseAccessModifier();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = accessMod.getLocation();
+        assertThrows(CompileException.class, () -> parser.parseMethodDeclaration(loc, accessMod, genModList),
+                "");
+    }
+
+    /**
      * Tests method body of semicolon.
      */
     @Test
@@ -1969,6 +2423,15 @@ public class ParserClassesTest {
         ASTMethodBody node = parser.parseMethodBody();
         System.out.println(node);
         assertTrue(node.getBlock().isPresent());
+    }
+
+    /**
+     * Tests bad method body of block or semicolon.
+     */
+    @Test
+    public void testMethodBodyOfNoBlockOrSemicolon() {
+        ClassesParser parser = getClassesParser("public");
+        assertThrows(CompileException.class, parser::parseMethodBody, "Expected block for method body.");
     }
 
     /**
@@ -2188,6 +2651,33 @@ public class ParserClassesTest {
         assertEquals("join", node.getName().getValue());
         checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
         assertTrue(node.getMutModifier().isPresent());
+    }
+
+    /**
+     * Tests bad method declarator of no identifier.
+     */
+    @Test
+    public void testMethodDeclaratorNoIdentifier() {
+        ClassesParser parser = getClassesParser("(String sep) mut)");
+        assertThrows(CompileException.class, parser::parseMethodDeclarator, "Identifier expected.");
+    }
+
+    /**
+     * Tests bad method declarator of no open parenthesis.
+     */
+    @Test
+    public void testMethodDeclaratorNoOpenParen() {
+        ClassesParser parser = getClassesParser("test String sep) mut)");
+        assertThrows(CompileException.class, parser::parseMethodDeclarator, "Expected '('.");
+    }
+
+    /**
+     * Tests bad method declarator of no close parenthesis.
+     */
+    @Test
+    public void testMethodDeclaratorNoCloseParen() {
+        ClassesParser parser = getClassesParser("test(String sep  mut)");
+        assertThrows(CompileException.class, parser::parseMethodDeclarator, "Expected ')'.");
     }
 
     /**

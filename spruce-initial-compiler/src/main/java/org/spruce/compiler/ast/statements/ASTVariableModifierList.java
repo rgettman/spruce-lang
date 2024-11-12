@@ -3,7 +3,6 @@ package org.spruce.compiler.ast.statements;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTListNode;

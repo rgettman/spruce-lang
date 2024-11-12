@@ -54,18 +54,4 @@ public class ASTEnumBody extends ASTParentNode {
     public List<Node> getChildren() {
         return Arrays.asList(myEnumConstants, myClassParts);
     }
-
-    /**
-     * Helper method to create a string representation of this node.  It takes
-     * into account where in the tree this node is.
-     * @param prefix A string to indent the printing of this node.
-     * @param isTail Whether this node is last in its siblings (or the only child).
-     * @return The String representation of this node.
-     */
-    @Override
-    public String toString(String prefix, boolean isTail) {
-        return prefix + (isTail ? "└── " : "├── ") + getHeaderValue() + "\n" +
-                myEnumConstants.toString(prefix + (isTail ? "    " : "|   "), false) + "\n" +
-                myClassParts.toString(prefix + (isTail ? "    " : "|   "), true) + "\n";
-    }
 }

@@ -34,9 +34,9 @@ public abstract class ASTParentNode extends ASTNode implements ParentNode {
     public String toString(String prefix, boolean isTail) {
         StringBuilder buf = new StringBuilder();
         List<Node> children = getChildren();
-        buf.append(prefix).append(super.toString(prefix, isTail)).append("\n");
+        buf.append(super.toString(prefix, isTail));
         for (int i = 0; i < children.size(); i++) {
-            buf.append(children.get(i).toString(prefix + (isTail ? "    " : "|   "), (i < children.size() - 1))).append("\n");
+            buf.append(children.get(i).toString(prefix + (isTail ? "    " : "|   "), (i == children.size() - 1)));
         }
         return buf.toString();
     }

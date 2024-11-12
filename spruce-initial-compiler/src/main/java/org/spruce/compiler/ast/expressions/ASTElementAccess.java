@@ -20,7 +20,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess [ ValueExpression ]<br>
  * </em>
  */
-public class ASTElementAccess extends ASTParentNode {
+public final class ASTElementAccess extends ASTParentNode implements ASTLeftHandSide {
     private final ASTPrimary myPrimary;
     private final ASTElementAccess myElementAccess;
     private final ASTValueExpression myIndexExpr;

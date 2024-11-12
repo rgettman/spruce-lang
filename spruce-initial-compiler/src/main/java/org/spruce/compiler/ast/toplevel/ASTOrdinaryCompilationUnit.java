@@ -41,7 +41,6 @@ public class ASTOrdinaryCompilationUnit extends ASTParentNode {
         myTypeDeclList = typeDeclList;
     }
 
-
     /**
      * Constructs an <code>ASTOrdinaryCompilationUnit</code> at the given <code>Location</code>
      * with the given <code>ASTNamespaceDeclaration</code>, the given

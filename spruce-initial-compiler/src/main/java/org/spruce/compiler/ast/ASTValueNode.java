@@ -33,6 +33,6 @@ public class ASTValueNode extends ASTNode {
      */
     @Override
     public String getHeaderValue() {
-        return getClass().getSimpleName() + "(" + getValue() + ") at " + getLocation();
+        return getValue();
     }
 }

@@ -77,11 +77,10 @@ public final class ASTPrimary extends ASTParentNode implements ASTValueExpressio
      *     <code>ASTLeftHandSide</code>.
      */
     public ASTLeftHandSide getLeftHandSide() {
-        Location loc = myChild.getLocation();
         return switch (myChild) {
-            case ASTExpressionName exprName -> new ASTLeftHandSide(loc, exprName);
-            case ASTElementAccess elementAccess -> new ASTLeftHandSide(loc, elementAccess);
-            case ASTFieldAccess fieldAccess -> new ASTLeftHandSide(loc, fieldAccess);
+            case ASTExpressionName exprName -> exprName;
+            case ASTElementAccess elementAccess -> elementAccess;
+            case ASTFieldAccess fieldAccess -> fieldAccess;
             default -> throw new CompileException(getLocation(), "Expected variable or element access.");
         };
     }

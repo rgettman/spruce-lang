@@ -3,6 +3,7 @@ package org.spruce.compiler.test;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.*;
+import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.parser.TypesParser;
 import org.spruce.compiler.scanner.Scanner;
@@ -98,6 +99,26 @@ public class ParserTypesTest {
     }
 
     /**
+     * Tests dims of separate open bracket and close bracket.
+     */
+    @Test
+    public void testDimsSeparateTokens() {
+        TypesParser parser = getTypesParser("[ ][ ][ ]");
+        ASTDims node = parser.parseDims();
+        System.out.println(node);
+        checkList(node, DIMS, ASTKeywordNode.class, 3);
+    }
+
+    /**
+     * Tests bad dims of expression before close bracket.
+     */
+    @Test
+    public void testDimsBad() {
+        TypesParser parser = getTypesParser("[0]");
+        assertThrows(CompileException.class, parser::parseDims, "Expected '[]'.");
+    }
+
+    /**
      * Tests data type (no array) of simple type.
      */
     @Test
@@ -134,7 +155,7 @@ public class ParserTypesTest {
      * Tests simple type of identifier.
      */
     @Test
-    public void testSimpleTypeIdentifier() {
+    public void testSimpleTypeOfIdentifier() {
         TypesParser parser = getTypesParser("Simple");
         ASTSimpleType node = parser.parseSimpleType();
         System.out.println(node);
@@ -336,6 +357,15 @@ public class ParserTypesTest {
         ASTTypeArgument node = parser.parseTypeArgument();
         System.out.println(node);
         assertInstanceOf(ASTDataType.class, node);
+    }
+
+    /**
+     * Tests bad type argument.
+     */
+    @Test
+    public void testTypeArgumentBad() {
+        TypesParser parser = getTypesParser("20");
+        assertThrows(CompileException.class, parser::parseTypeArgument, "Expected wildcard or data type.");
     }
 
     /**

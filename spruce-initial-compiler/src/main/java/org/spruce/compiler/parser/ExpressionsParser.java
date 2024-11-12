@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.expressions.*;
 import org.spruce.compiler.ast.literals.ASTLiteral;
 import org.spruce.compiler.ast.names.ASTExpressionName;
@@ -237,7 +236,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseLogicalOrExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(PIPE_COLON, DOUBLE_PIPE),
                 this::parseLogicalXorExpression
         );
@@ -256,7 +254,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseLogicalXorExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(CARET_COLON),
                 this::parseLogicalAndExpression
         );
@@ -276,7 +273,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseLogicalAndExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(AMPERSAND_COLON, DOUBLE_AMPERSAND),
                 this::parseRelationalExpression
         );
@@ -359,7 +355,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseBitwiseOrExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(PIPE),
                 this::parseBitwiseXorExpression
         );
@@ -378,7 +373,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseBitwiseXorExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(CARET),
                 this::parseBitwiseAndExpression
         );
@@ -397,7 +391,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseBitwiseAndExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(AMPERSAND),
                 this::parseShiftExpression
         );
@@ -417,7 +410,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseShiftExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(SHIFT_LEFT, SHIFT_RIGHT),
                 this::parseAdditiveExpression
         );
@@ -437,7 +429,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseAdditiveExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(PLUS, MINUS),
                 this::parseMultiplicativeExpression
         );
@@ -458,7 +449,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTValueExpression parseMultiplicativeExpression() {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isPrimary,
-                "Expected a literal or expression name.",
                 Arrays.asList(STAR, SLASH, PERCENT),
                 this::parseCastExpression
         );
@@ -711,7 +701,7 @@ public class ExpressionsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTListNode</code>, <code>ASTParentNode</code>s,
+     * Parses an <code>ASTListNode</code>, <code>ASTPattern</code>s,
      * separated by a comma, that are either <code>ASTTypePattern</code>s or
      * <code>ASTRecordPattern</code>s.
      * <em>
@@ -841,7 +831,7 @@ public class ExpressionsParser extends BasicParser {
                     // ClassLiteral
                     return new ASTPrimary(loc, parseClassLiteral(dataType), CLASS_LITERAL);
                 }
-                ASTExpressionName exprName = getTypesParser().convertToExpressionName(dataType);
+                ASTExpressionName exprName = dataType.convertToExpressionName();
                 primary = parsePrimary(exprName);
             }
         }
@@ -885,7 +875,7 @@ public class ExpressionsParser extends BasicParser {
         else if (isCurr(NEW)) {
             if (isNext(LESS_THAN)) {
                 // ClassInstanceCreationExpression
-                ASTParentNode cice = parseClassInstanceCreationExpression();
+                ASTClassInstanceCreationExpression cice = parseClassInstanceCreationExpression();
                 primary = new ASTPrimary(loc, cice, ASTPrimary.Type.CLASS_INSTANCE_CREATION_EXPR);
             }
             else if (isNext(IDENTIFIER)) {
@@ -1191,7 +1181,7 @@ public class ExpressionsParser extends BasicParser {
     public ASTMethodInvocation parseMethodInvocationSuper(ASTExpressionName exprName, ASTKeywordNode sooper) {
         ASTMethodInvocation.Builder builder = new ASTMethodInvocation.Builder()
                 .setLocation(exprName.getLocation())
-                .setTypeName(getNamesParser().convertToTypeName(exprName))
+                .setTypeName(exprName.convertToTypeName())
                 .setSooper(sooper);
         if (isCurr(LESS_THAN)) {
             builder.setTypeArgs(getTypesParser().parseTypeArguments());
@@ -1390,10 +1380,10 @@ public class ExpressionsParser extends BasicParser {
                     .setLocation(loc);
             try {
                 // ExpressionName :: [TypeArguments] Identifier
-                ASTExpressionName exprName = getTypesParser().convertToExpressionName(dataType);
+                ASTExpressionName exprName = dataType.convertToExpressionName();
                 builder.setExprName(exprName);
             }
-            catch (CompileException tryExpressionName) {
+            catch (CompileException tryDataType) {
                 // DataType :: [TypeArguments] Identifier
                 builder.setDataType(dataType);
             }
@@ -1665,7 +1655,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTDimExprs parseDimExprs() {
         return parseMultiple(
-                t -> test(t, OPEN_BRACKET),
+                t -> test(t, OPEN_BRACKET) && !isNext(CLOSE_BRACKET),
                 "Expected \"[\".",
                 this::parseDimExpr,
                 ASTDimExprs::new
@@ -1838,7 +1828,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTFieldAccess parseFieldAccessSuper(ASTExpressionName exprName, ASTKeywordNode sooper) {
         Location loc = exprName.getLocation();
-        return new ASTFieldAccess(loc, getNamesParser().convertToTypeName(exprName), sooper, getNamesParser().parseIdentifier());
+        return new ASTFieldAccess(loc, exprName.convertToTypeName(), sooper, getNamesParser().parseIdentifier());
     }
 
     /**

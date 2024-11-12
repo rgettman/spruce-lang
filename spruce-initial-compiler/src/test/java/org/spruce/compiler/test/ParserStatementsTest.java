@@ -28,7 +28,7 @@ public class ParserStatementsTest {
      * Test block of block.
      */
     @Test
-    public void testNestedBlocks() {
+    public void testBlocksNested() {
         StatementsParser parser = getStatementsParser("""
             {
                 {
@@ -74,6 +74,27 @@ public class ParserStatementsTest {
         System.out.println(node);
         ASTBlockStatements blockStmts = ensureIsa(node.getBlockStmts(), ASTBlockStatements.class);
         checkList(blockStmts, BLOCK_STMTS, ASTBlockStatement.class, 3);
+    }
+
+    /**
+     * Tests bad block of no open brace.
+     */
+    @Test
+    public void testBlockBadNoOpenBrace() {
+        StatementsParser parser = getStatementsParser("int i = 0;");
+        assertThrows(CompileException.class, parser::parseBlock, "Expected '{'.");
+    }
+
+    /**
+     * Tests bad block of no close brace.
+     */
+    @Test
+    public void testBlockBadNoCloseBrace() {
+        StatementsParser parser = getStatementsParser("""
+                {
+                    int i = 0;
+                """);
+        assertThrows(CompileException.class, parser::parseBlock, "Expected '}'.");
     }
 
     /**
@@ -177,12 +198,22 @@ public class ParserStatementsTest {
     }
 
     /**
-     * Tests bad local variable declaration statement.
+     * Tests bad local variable declaration statement of no semicolon.
      */
     @Test
-    public void testLocalVariableDeclarationStatementBad() {
+    public void testLocalVariableDeclarationStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("Integer[] values = {1, 2, 3} return;");
+        assertThrows(CompileException.class, parser::parseLocalVariableDeclarationStatement, "Missing semicolon.");
+    }
+
+    /**
+     * Tests bad local variable declaration statement of bad assignment.
+     */
+    @Test
+    public void testLocalVariableDeclarationStatementBadAssignment() {
         StatementsParser parser = getStatementsParser("Integer[] values := {1, 2, 3};");
-        assertThrows(CompileException.class, parser::parseLocalVariableDeclarationStatement, "Error: Use '=' for assignment, not ':='.");
+        assertThrows(CompileException.class, parser::parseLocalVariableDeclarationStatement,
+                "Error: Use '=' for assignment, not ':='.");
     }
 
     /**
@@ -203,13 +234,14 @@ public class ParserStatementsTest {
      */
     @Test
     public void testLocalVariableDeclarationOfModifiers() {
-        StatementsParser parser = getStatementsParser("mut Boolean result = true, var done = false");
+        StatementsParser parser = getStatementsParser("mut Boolean result = true, done = false");
         ASTLocalVariableDeclaration node = parser.parseLocalVariableDeclaration();
         System.out.println(node);
         ASTVariableModifierList varModifierList = node.getVarModifierList();
         checkList(varModifierList, VARIABLE_MODIFIERS, ASTKeywordNode.class, 1);
         ASTKeywordNode modifier = ensureIsa(varModifierList.getChildren().get(0), ASTKeywordNode.class);
         assertEquals(MUT, modifier.getKeyword());
+        checkList(node.getVarDeclList(), VARIABLE_DECLARATORS, ASTVariableDeclarator.class, 2);
     }
 
     /**
@@ -499,7 +531,9 @@ public class ParserStatementsTest {
         """);
         ASTStatement node = parser.parseStatement();
         System.out.println(node);
-        assertInstanceOf(ASTCriticalStatement.class, node);
+        ASTCriticalStatement criticalStatement = ensureIsa(node, ASTCriticalStatement.class);
+        assertNotNull(criticalStatement.getValueExpr());
+        assertNotNull(criticalStatement.getBlock());
     }
 
     /**
@@ -558,6 +592,82 @@ public class ParserStatementsTest {
         ASTStatement node = parser.parseStatement();
         System.out.println(node);
         assertInstanceOf(ASTSwitchStatement.class, node);
+    }
+
+    /**
+     * Tests Switch Statement Rules.
+     */
+    @Test
+    public void testSwitchStatementRules() {
+        StatementsParser parser = getStatementsParser("""
+                case 1 -> out.println("One");
+                case 2 -> out.println("Two");
+                default -> out.println("Unexpected");
+                """);
+        ASTSwitchStatementRules node = parser.parseSwitchStatementRules();
+        System.out.println(node);
+        checkList(node, SWITCH_STMT_RULES, ASTSwitchStatementRule.class, 3);
+    }
+
+    /**
+     * Tests switch statement rule of switch label and expression statement.
+     */
+    @Test
+    public void testSwitchStatementRuleOfExprStmt() {
+        StatementsParser parser = getStatementsParser("""
+                case 1 -> out.println("One");
+                """);
+        ASTSwitchStatementRule node = parser.parseSwitchStatementRule();
+        System.out.println(node);
+        assertNotNull(node.getSwitchLabel());
+        assertTrue(node.getExprStmt().isPresent());
+        assertFalse(node.getBlock().isPresent());
+        assertFalse(node.getThrowStmt().isPresent());
+    }
+
+    /**
+     * Tests switch statement rule of switch label and block.
+     */
+    @Test
+    public void testSwitchStatementRuleOfBlock() {
+        StatementsParser parser = getStatementsParser("""
+                case 1 -> {
+                    out.println("One");
+                }
+                """);
+        ASTSwitchStatementRule node = parser.parseSwitchStatementRule();
+        System.out.println(node);
+        assertNotNull(node.getSwitchLabel());
+        assertFalse(node.getExprStmt().isPresent());
+        assertTrue(node.getBlock().isPresent());
+        assertFalse(node.getThrowStmt().isPresent());
+    }
+
+    /**
+     * Tests switch statement rule of switch label and throw statement.
+     */
+    @Test
+    public void testSwitchStatementRuleOfThrowStmt() {
+        StatementsParser parser = getStatementsParser("""
+                case 1 -> throw new TestException("Test");
+                """);
+        ASTSwitchStatementRule node = parser.parseSwitchStatementRule();
+        System.out.println(node);
+        assertNotNull(node.getSwitchLabel());
+        assertFalse(node.getExprStmt().isPresent());
+        assertFalse(node.getBlock().isPresent());
+        assertTrue(node.getThrowStmt().isPresent());
+    }
+
+    /**
+     * Tests bad switch statement of no arrow.
+     */
+    @Test
+    public void testSwitchStatementRuleNoArrow() {
+        StatementsParser parser = getStatementsParser("""
+                case 1 throw new TestException("Test");
+                """);
+        assertThrows(CompileException.class, parser::parseSwitchStatementRule, "Expected arrow (->).");
     }
 
     /**
@@ -673,6 +783,20 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Test bad try statement without a resource specification, a catches, or
+     * a "finally".
+     */
+    @Test
+    public void testTryStatementBad() {
+        StatementsParser parser = getStatementsParser("""
+            try {
+                br.readLine();
+            }
+            """);
+        assertThrows(CompileException.class, parser::parseTryStatement, "Expected 'catch' and/or 'finally' block.");
+    }
+
+    /**
      * Tests resource specification of resource list.
      */
     @Test
@@ -751,6 +875,15 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Test bad resource of primary not of field access or expression name.
+     */
+    @Test
+    public void testResourceOfBadPrimary() {
+        StatementsParser parser = getStatementsParser("Foo::bar");
+        assertThrows(CompileException.class, parser::parseResource, "Expected resource declaration or variable.");
+    }
+
+    /**
      * Test resource declaration, no variable modifiers.
      */
     @Test
@@ -787,6 +920,25 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad resource declaration of no equals (variable modifier).
+     */
+    @Test
+    public void testResourceDeclarationVarModifierNoEquals() {
+        StatementsParser parser = getStatementsParser("var BufferedReader br;");
+        assertThrows(CompileException.class, parser::parseResourceDeclaration, "Expected '='.");
+    }
+
+    /**
+     * Tests bad resource declaration of no equals (no variable modifier).
+     */
+    @Test
+    public void testResourceDeclarationNoEquals() {
+        StatementsParser parser = getStatementsParser("BufferedReader br;");
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        assertThrows(CompileException.class, () -> parser.parseResourceDeclaration(dt), "Expected '='.");
+    }
+
+    /**
      * Test catches of catch clauses.
      */
     @Test
@@ -817,6 +969,24 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad catch clause of no open parenthesis.
+     */
+    @Test
+    public void testCatchClauseNoOpenParen() {
+        StatementsParser parser = getStatementsParser("catch CompileException ce) { out.println(ce.getMessage()); }");
+        assertThrows(CompileException.class, parser::parseCatchClause, "Expected '('");
+    }
+
+    /**
+     * Tests bad catch clause of no close parenthesis.
+     */
+    @Test
+    public void testCatchClauseNoCloseParen() {
+        StatementsParser parser = getStatementsParser("catch (CompileException ce { out.println(ce.getMessage()); }");
+        assertThrows(CompileException.class, parser::parseCatchClause, "Expected ')'");
+    }
+
+    /**
      * Tests catch type of data type.
      */
     @Test
@@ -824,7 +994,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("Exception");
         ASTCatchType node = parser.parseCatchType();
         System.out.println(node);
-        checkList(node, CATCH_CLAUSES, ASTDataType.class, 1);
+        checkList(node, INTERSECTION_TYPES, ASTDataType.class, 1);
     }
 
     /**
@@ -838,7 +1008,7 @@ public class ParserStatementsTest {
         ASTVariableModifierList varModifierList = node.getVarModifierList();
         checkList(varModifierList, VARIABLE_MODIFIERS, ASTKeywordNode.class, 0);
         ASTCatchType catchType = node.getCatchType();
-        checkList(catchType, CATCH_CLAUSES, ASTDataType.class, 1);
+        checkList(catchType, INTERSECTION_TYPES, ASTDataType.class, 1);
         ASTIdentifier varName = node.getVarName();
         assertEquals("e", varName.getValue());
     }
@@ -856,7 +1026,7 @@ public class ParserStatementsTest {
         ASTKeywordNode modifierVar = ensureIsa(varModifierList.getChildren().get(0), ASTKeywordNode.class);
         assertEquals(VAR, modifierVar.getKeyword());
         ASTCatchType catchType = node.getCatchType();
-        checkList(catchType, CATCH_CLAUSES, ASTDataType.class, 1);
+        checkList(catchType, INTERSECTION_TYPES, ASTDataType.class, 1);
         ASTIdentifier varName = node.getVarName();
         assertEquals("ce", varName.getValue());
     }
@@ -869,7 +1039,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("IOException | SQLException");
         ASTCatchType node = parser.parseCatchType();
         System.out.println(node);
-        checkList(node, CATCH_CLAUSES, ASTDataType.class, 2);
+        checkList(node, INTERSECTION_TYPES, ASTDataType.class, 2);
     }
 
     /**
@@ -880,7 +1050,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("ArrayIndexOutOfBoundsException | NullPointerException | IllegalArgumentException");
         ASTCatchType node = parser.parseCatchType();
         System.out.println(node);
-        checkList(node, CATCH_CLAUSES, ASTDataType.class, 3);
+        checkList(node, INTERSECTION_TYPES, ASTDataType.class, 3);
     }
 
     /**
@@ -994,6 +1164,33 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Test bad if statement of no close brace after init.
+     */
+    @Test
+    public void testIfStatementBadInitNoCloseBrace() {
+        StatementsParser parser = getStatementsParser("""
+            if {String line = br.readLine() line != null {
+                out.println("Test passed.");
+            }
+            """);
+        assertThrows(CompileException.class, parser::parseIfStatement, "Expected '}'.");
+    }
+
+    /**
+     * Test bad if statement of bad else clause.
+     */
+    @Test
+    public void testIfStatementBadElse() {
+        StatementsParser parser = getStatementsParser("""
+            if result {
+                out.println("Test passed.");
+            }
+            else out.println("Test failed.");
+            """);
+        assertThrows(CompileException.class, parser::parseIfStatement, "Expected 'if' or a block.");
+    }
+
+    /**
      * Tests simple while statement.
      */
     @Test
@@ -1037,6 +1234,19 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Test bad while statement of no close brace after init.
+     */
+    @Test
+    public void testWhileStatementBadInitNoCloseBrace() {
+        StatementsParser parser = getStatementsParser("""
+            while {String line = br.readLine() line != null {
+                out.println("Test passed.");
+            }
+            """);
+        assertThrows(CompileException.class, parser::parseWhileStatement, "Expected '}'.");
+    }
+
+    /**
      * Tests do statement.
      */
     @Test
@@ -1046,6 +1256,54 @@ public class ParserStatementsTest {
         System.out.println(node);
         assertNotNull(node.getValueExpr());
         assertNotNull(node.getBlock());
+    }
+
+    /**
+     * Tests bad do statement of no while.
+     */
+    @Test
+    public void testDoStatementNoWhile() {
+        StatementsParser parser = getStatementsParser("do { something(); };");
+        assertThrows(CompileException.class, parser::parseDoStatement, "Expected while.");
+    }
+
+    /**
+     * Tests bad do statement of no semicolon.
+     */
+    @Test
+    public void testDoStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("""
+                do { something(); }
+                while (condition)
+                return;
+                """);
+        assertThrows(CompileException.class, parser::parseDoStatement, "Expected semicolon.");
+    }
+
+    /**
+     * Tests bad for statement of no open parenthesis.
+     */
+    @Test
+    public void testForStatementNoOpenParen() {
+        StatementsParser parser = getStatementsParser("""
+                for Int i = 0; i < 10; i++) {
+                    out.println(i);
+                }
+                """);
+        assertThrows(CompileException.class, parser::parseForStatement, "Expected '('.");
+    }
+
+    /**
+     * Tests bad for statement of no semicolon or colon.
+     */
+    @Test
+    public void testForStatementNoSemicolonOrColon() {
+        StatementsParser parser = getStatementsParser("""
+                for (Int i = 0) {
+                    out.println(i);
+                }
+                """);
+        assertThrows(CompileException.class, parser::parseForStatement, "Expected semicolon or colon.");
     }
 
     /**
@@ -1090,6 +1348,45 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad basic for statement of no first semicolon.
+     */
+    @Test
+    public void testBasicForStatementBadNoFirstSemicolon() {
+        StatementsParser parser = getStatementsParser("""
+        for (Integer i = 0) {
+            out.println("Hello world!");
+        }
+        """);
+        assertThrows(CompileException.class, parser::parseForStatement, "Expected semicolon.");
+    }
+
+    /**
+     * Tests bad basic for statement of no second semicolon.
+     */
+    @Test
+    public void testBasicForStatementBadNoSecondSemicolon() {
+        StatementsParser parser = getStatementsParser("""
+        for (Integer i = 0; i < length) {
+            out.println("Hello world!");
+        }
+        """);
+        assertThrows(CompileException.class, parser::parseForStatement, "Expected second semicolon.");
+    }
+
+    /**
+     * Tests bad basic for statement of no close parenthesis.
+     */
+    @Test
+    public void testBasicForStatementBadNoCloseParen() {
+        StatementsParser parser = getStatementsParser("""
+        for (Integer i = 0; i < length; i++ {
+            out.println("Hello world!");
+        }
+        """);
+        assertThrows(CompileException.class, parser::parseForStatement, "Expected ')'.");
+    }
+
+    /**
      * Tests for statement of enhanced for statement.
      */
     @Test
@@ -1108,6 +1405,33 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad enhanced for statement of no close parenthesis.
+     */
+    @Test
+    public void testEnhancedForStatementNoCloseParen() {
+        StatementsParser parser = getStatementsParser("""
+                for (Int i : array {
+                    sum += i;
+                }
+                """);
+        assertThrows(CompileException.class, parser::parseForStatement, "Expected ')'.");
+    }
+
+    /**
+     * Tests bad enhanced for statement of bad init of statement expression list.
+     */
+    @Test
+    public void testEnhancedForStatementBadInitOfStatementExprList() {
+        StatementsParser parser = getStatementsParser("""
+                for (i = 0, j = 0 : array {
+                    sum += i;
+                }
+                """);
+        assertThrows(CompileException.class, parser::parseForStatement,
+                "Enhanced for loop requires a variable declaration before the colon.");
+    }
+
+    /**
      * Tests yield statement.
      */
     @Test
@@ -1119,6 +1443,15 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad yield statement of no semicolon.
+     */
+    @Test
+    public void testYieldStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("yield x.y + 2}");
+        assertThrows(CompileException.class, parser::parseYieldStatement, "Missing semicolon.");
+    }
+
+    /**
      * Tests use statement.
      */
     @Test
@@ -1127,6 +1460,15 @@ public class ParserStatementsTest {
         ASTUseStatement node = parser.parseUseStatement();
         System.out.println(node);
         assertNotNull(node.getExpr());
+    }
+
+    /**
+     * Tests bad use statement of no semicolon.
+     */
+    @Test
+    public void testUseStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("use x.y + 2}");
+        assertThrows(CompileException.class, parser::parseUseStatement, "Missing semicolon.");
     }
 
     /**
@@ -1152,6 +1494,24 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad return statement of no semicolon.
+     */
+    @Test
+    public void testReturnStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("return}");
+        assertThrows(CompileException.class, parser::parseReturnStatement, "Missing semicolon.");
+    }
+
+    /**
+     * Tests bad return statement with expression of no semicolon.
+     */
+    @Test
+    public void testReturnStatementWithExpressionNoSemicolon() {
+        StatementsParser parser = getStatementsParser("return false}");
+        assertThrows(CompileException.class, parser::parseReturnStatement, "Missing semicolon.");
+    }
+
+    /**
      * Tests throw statement with expression.
      */
     @Test
@@ -1163,6 +1523,15 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad throw statement of no semicolon.
+     */
+    @Test
+    public void testThrowStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("throw new Exception()}");
+        assertThrows(CompileException.class, parser::parseThrowStatement, "Missing semicolon.");
+    }
+
+    /**
      * Tests break statement.
      */
     @Test
@@ -1170,6 +1539,16 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("break;");
         ASTBreakStatement node = parser.parseBreakStatement();
         System.out.println(node);
+        assertEquals(BREAK, node.getBreakKeyword().getKeyword());
+    }
+
+    /**
+     * Tests bad break statement of no semicolon.
+     */
+    @Test
+    public void testBreakStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("break}");
+        assertThrows(CompileException.class, parser::parseBreakStatement, "Missing semicolon.");
     }
 
     /**
@@ -1180,6 +1559,16 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("continue;");
         ASTContinueStatement node = parser.parseContinueStatement();
         System.out.println(node);
+        assertEquals(CONTINUE, node.getContinueKeyword().getKeyword());
+    }
+
+    /**
+     * Tests bad continue statement of no semicolon.
+     */
+    @Test
+    public void testContinueStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("continue}");
+        assertThrows(CompileException.class, parser::parseBreakStatement, "Missing semicolon.");
     }
 
     /**
@@ -1190,6 +1579,16 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("fallthrough;");
         ASTFallthroughStatement node = parser.parseFallthroughStatement();
         System.out.println(node);
+        assertEquals(FALLTHROUGH, node.getFallthroughKeyword().getKeyword());
+    }
+
+    /**
+     * Tests bad fallthrough statement of no semicolon.
+     */
+    @Test
+    public void testFallthroughStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("fallthrough}");
+        assertThrows(CompileException.class, parser::parseBreakStatement, "Missing semicolon.");
     }
 
     /**
@@ -1218,6 +1617,15 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad assert statement of no semicolon.
+     */
+    @Test
+    public void testAssertStatementNoSemicolon() {
+        StatementsParser parser = getStatementsParser("assert whether : \"Missing semicolon!\"");
+        assertThrows(CompileException.class, parser::parseAssertStatement, "Missing semicolon.");
+    }
+
+    /**
      * Tests expression statement of statement expression.
      */
     @Test
@@ -1226,6 +1634,39 @@ public class ParserStatementsTest {
         ASTExpressionStatement node = parser.parseExpressionStatement();
         System.out.println(node);
         assertInstanceOf(ASTPostfix.class, node.getStmtExpr());
+    }
+
+    /**
+     * Tests bad expression statement of no semicolon.
+     */
+    @Test
+    public void testExpressionStatementOfNoSemicolon() {
+        StatementsParser parser = getStatementsParser("x++ return");
+        assertThrows(CompileException.class, parser::parseExpressionStatement, "Semicolon expected.");
+    }
+
+    /**
+     * Tests postfix of increment.
+     */
+    @Test
+    public void testPostfixIncrement() {
+        StatementsParser parser = getStatementsParser("a++;");
+        ASTLeftHandSide lhs = parser.getExpressionsParser().parsePrimary().getLeftHandSide();
+        ASTPostfix node = parser.parsePostfix(lhs.getLocation(), lhs);
+        assertNotNull(node.getLeftHandSide());
+        assertEquals(INCREMENT, node.getOperator());
+    }
+
+    /**
+     * Tests postfix of decrement.
+     */
+    @Test
+    public void testPostfixDecrement() {
+        StatementsParser parser = getStatementsParser("b--;");
+        ASTLeftHandSide lhs = parser.getExpressionsParser().parsePrimary().getLeftHandSide();
+        ASTPostfix node = parser.parsePostfix(lhs.getLocation(), lhs);
+        assertNotNull(node.getLeftHandSide());
+        assertEquals(DECREMENT, node.getOperator());
     }
 
     /**
@@ -1297,6 +1738,17 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests statement expression of assignment of left hand side of element access.
+     */
+    @Test
+    public void testStatementExpressionOfAssignmentOfLhsOfElementAccess() {
+        StatementsParser parser = getStatementsParser("x[i] = 0");
+        ASTStatementExpression node = parser.parseStatementExpression();
+        System.out.println(node);
+        assertInstanceOf(ASTAssignment.class, node);
+    }
+
+    /**
      * Tests statement expression of postfix expression.
      */
     @Test
@@ -1327,6 +1779,76 @@ public class ParserStatementsTest {
         ASTStatementExpression node = parser.parseStatementExpression();
         System.out.println(node);
         assertInstanceOf(ASTClassInstanceCreationExpression.class, node);
+    }
+
+    /**
+     * Tests bad statement expression of bad left hand side of literal.
+     */
+    @Test
+    public void testStatementExpressionBadLhsOfLiteral() {
+        StatementsParser parser = getStatementsParser("1 = 1");
+        assertThrows(CompileException.class, parser::parseStatementExpression,
+                "Expected variable or element access.");
+    }
+
+    /**
+     * Tests bad statement expression of bad left hand side of class literal.
+     */
+    @Test
+    public void testStatementExpressionBadLhsOfClassLiteral() {
+        StatementsParser parser = getStatementsParser("Bad.class = 1");
+        assertThrows(CompileException.class, parser::parseStatementExpression,
+                "Expected variable or element access.");
+    }
+
+    /**
+     * Tests bad statement expression of bad left hand side of self.
+     */
+    @Test
+    public void testStatementExpressionBadLhsOfSelf() {
+        StatementsParser parser = getStatementsParser("self = other");
+        assertThrows(CompileException.class, parser::parseStatementExpression,
+                "Expected variable or element access.");
+    }
+
+    /**
+     * Tests bad statement expression of bad left hand side of typename dot self.
+     */
+    @Test
+    public void testStatementExpressionBadLhsOfTypenameSelf() {
+        StatementsParser parser = getStatementsParser("Enclosing.self = other");
+        assertThrows(CompileException.class, parser::parseStatementExpression,
+                "Expected variable or element access.");
+    }
+
+    /**
+     * Tests bad statement expression of bad left hand side of parenthesized expression.
+     */
+    @Test
+    public void testStatementExpressionBadLhsOfParenthesizedExpression() {
+        StatementsParser parser = getStatementsParser("(a, b) = (1, 2)");
+        assertThrows(CompileException.class, parser::parseStatementExpression,
+                "Expected variable or element access.");
+    }
+
+    /**
+     * Tests bad statement expression of bad left hand side of array creation expression.
+     */
+    @Test
+    public void testStatementExpressionBadLhsOfArrayCreationExpression() {
+        StatementsParser parser = getStatementsParser("new Integer[3] = 3");
+        assertThrows(CompileException.class, parser::parseStatementExpression,
+                "Expected variable or element access.");
+    }
+
+    /**
+     * Tests bad statement expression of bad left hand side of method reference.
+     */
+    @Test
+    public void testStatementExpressionBadLhsOfMethodReference() {
+        StatementsParser parser = getStatementsParser("Foo::bar = 3");
+        assertThrows(CompileException.class, parser::parseStatementExpression,
+                "Expected variable or element access.");
     }
 
     /**
@@ -1497,6 +2019,19 @@ public class ParserStatementsTest {
         assertEquals(CARET_EQUALS, node.getOperator());
         assertNotNull(node.getLeftHandSide());
         assertNotNull(node.getExpr());
+    }
+
+    /**
+     * Tests bad assignment of bad assignment operator.
+     */
+    @Test
+    public void testAssignmentBadOperator() {
+        StatementsParser parser = getStatementsParser("a + 1");
+        ExpressionsParser exprParser = parser.getExpressionsParser();
+        ASTPrimary primary = exprParser.parsePrimary();
+        ASTLeftHandSide lhs = primary.getLeftHandSide();
+        assertThrows(CompileException.class, () -> parser.parseAssignment(lhs.getLocation(), lhs),
+                "Expected assignment operator.");
     }
 
     /**

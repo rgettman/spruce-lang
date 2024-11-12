@@ -223,17 +223,16 @@ public class BasicParser {
     /**
      * Helper method to avoid duplicating code for parsing binary expressions
      * that are left associative.
+     *
      * @param isOnInitialToken Determines whether a given token is a valid
-     *      token on which to start parsing the desired node.
-     * @param initialErrorMessage If the initial token is not a valid token,
-     *      the <code>CompilerException</code> thrown has this message.
-     * @param acceptedTokens A <code>List</code> of accepted <code>TokenTypes</code>
-     *      that can serve as operators.
-     * @param childParser Parses and returns the child node (operand).
+     *                         token on which to start parsing the desired node.
+     * @param acceptedTokens   A <code>List</code> of accepted <code>TokenTypes</code>
+     *                         that can serve as operators.
+     * @param childParser      Parses and returns the child node (operand).
      * @return Either an <code>ASTNode</code> of the child type or an
      *     <code>ASTBinaryExpression</code> containing left-associative children.
      */
-    protected ASTValueExpression parseBinaryExpressionLeftAssociative(Predicate<Token> isOnInitialToken, String initialErrorMessage,
+    protected ASTValueExpression parseBinaryExpressionLeftAssociative(Predicate<Token> isOnInitialToken,
                                                                       List<TokenType> acceptedTokens, Supplier<? extends ASTValueExpression> childParser) {
         if (isOnInitialToken.test(curr())) {
             Location loc = curr().getLocation();
@@ -246,7 +245,7 @@ public class BasicParser {
             return result;
         }
         else {
-            throw new CompileException(curr().getLocation(), initialErrorMessage);
+            throw new CompileException(curr().getLocation(), "Expected a literal or expression name.");
         }
     }
 

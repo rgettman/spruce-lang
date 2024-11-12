@@ -1,7 +1,6 @@
 package org.spruce.compiler.ast.statements;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTKeywordNode;

@@ -60,21 +60,4 @@ public class ASTTypeArgumentsOrDiamond extends ASTParentNode {
     public Optional<ASTTypeArgumentList> getTypeArgs() {
         return Optional.ofNullable(myTypeArgs);
     }
-
-    /**
-     * Helper method to create a string representation of this node.  It takes
-     * into account where in the tree this node is.
-     * @param prefix A string to indent the printing of this node.
-     * @param isTail Whether this node is last in its siblings (or the only child).
-     * @return The String representation of this node.
-     */
-    @Override
-    public String toString(String prefix, boolean isTail) {
-        StringBuilder buf = new StringBuilder();
-        buf.append(prefix).append(isTail ? "└── " : "├── ").append(getHeaderValue()).append("\n");
-        if (myTypeArgs != null) {
-            buf.append(myTypeArgs.toString(prefix + (isTail ? "    " : "|   "), true)).append("\n");
-        }
-        return buf.toString();
-    }
 }

@@ -1,14 +1,6 @@
 package org.spruce.compiler.ast.statements;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
-import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTParentNode;
-import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.ParentNode;
-import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTInit</code> is a local variable declaration

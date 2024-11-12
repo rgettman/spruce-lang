@@ -84,7 +84,7 @@ public class ASTSwitchStatementRule extends ASTParentNode {
      * Returns an <code>ASTExpressionStatement</code>, if it exists.
      * @return An <code>Optional&lt;ASTExpressionStatement&gt;</code>.
      */
-    public Optional<ASTExpressionStatement> getExpr() {
+    public Optional<ASTExpressionStatement> getExprStmt() {
         return Optional.ofNullable(myExprStmt);
     }
 

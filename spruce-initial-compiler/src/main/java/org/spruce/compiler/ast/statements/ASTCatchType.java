@@ -23,6 +23,6 @@ public class ASTCatchType extends ASTListNode<ASTDataType> {
      * @param children A <code>List</code> of <code>ASTDataType</code>s.
      */
     public ASTCatchType(Location location, List<ASTDataType> children) {
-        super(location, children, Type.CATCH_CLAUSES);
+        super(location, children, Type.INTERSECTION_TYPES);
     }
 }
