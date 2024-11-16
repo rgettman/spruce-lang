@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
@@ -13,16 +13,17 @@ import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTRecordDeclaration</code> is an optional AccessModifier followed by
- * an optional ClassModifierList, then "record", an Identifier, optional Type Arguments,
- * then a RecordHeader, then optional Superinterfaces, then a ClassBody.</p>
+ * <p>An <code>ASTRecordDeclaration</code> is an optional AnnotationList, followed
+ * by an optional AccessModifier, followed by an optional ClassModifierList,
+ * then "record", an Identifier, optional Type Arguments, then a RecordHeader,
+ * then optional Superinterfaces, then a ClassBody.</p>
  *
  * <em>
  * RecordDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] record Identifier [TypeParameters] RecordHeader [Superinterfaces] ClassBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] record Identifier [TypeParameters] RecordHeader [Superinterfaces] ClassBody
  * </em>
  */
-public final class ASTRecordDeclaration extends ASTParentNode implements ASTTypeDeclaration {
+public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTTypeDeclaration {
     private final ASTKeywordNode myAccessMod;
     private final ASTIdentifier myName;
     private final ASTTypeParameterList myTypeParams;
@@ -34,6 +35,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
      * Constructs an <code>ASTRecordDeclaration</code> with arguments supplied by
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
      * @param name An <code>ASTIdentifier</code> representing the record name.
      * @param typeParams A possibly null <code>ASTTypeParameterList</code>.
@@ -42,10 +44,10 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
      *                   representing the list of superinterfaces.
      * @param classParts A possibly null <code>ASTClassPartList</code> representing the record body.
      */
-    private ASTRecordDeclaration(Location location, ASTKeywordNode accessMod,
+    private ASTRecordDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod,
                                  ASTIdentifier name, ASTTypeParameterList typeParams, ASTFormalParameterList formalParamList,
                                  ASTDataTypeNoArrayList superinterfaces, ASTClassPartList classParts) {
-        super(location);
+        super(location, annList);
         myAccessMod = accessMod;
         myName = name;
         myTypeParams = typeParams;
@@ -58,8 +60,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
      * Because of the 8 possible cases, use this <code>Builder</code> to build
      * an instance of <code>ASTRecordDeclaration</code>.
      */
-    public static class Builder {
-        private Location myLocation;
+    public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTKeywordNode myAccessMod;
         private ASTIdentifier myName;
         private ASTTypeParameterList myTypeParams;
@@ -67,13 +68,8 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
         private ASTDataTypeNoArrayList mySuperinterfaces;
         private ASTClassPartList myClassParts;
 
-        /**
-         * Sets the <code>Location</code>.
-         * @param location A <code>Location</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setLocation(Location location) {
-            this.myLocation = location;
+        @Override
+        protected Builder getThis() {
             return this;
         }
 
@@ -144,9 +140,13 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
          * is thrown.
          * @return An <code>ASTRecordDeclaration</code>.
          */
+        @Override
         public ASTRecordDeclaration build() {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
+            }
+            if (myAnnList == null) {
+                throw new IllegalStateException("No Annotation List given (can be empty)!");
             }
             if (myName == null) {
                 throw new IllegalStateException("No Name given!");
@@ -157,7 +157,7 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
             if (myClassParts == null) {
                 throw new IllegalStateException("No Record Body given!");
             }
-            return new ASTRecordDeclaration(myLocation, myAccessMod, myName, myTypeParams,
+            return new ASTRecordDeclaration(myLocation, myAnnList, myAccessMod, myName, myTypeParams,
                     myFormalParamList, mySuperinterfaces, myClassParts);
         }
     }
@@ -212,7 +212,8 @@ public final class ASTRecordDeclaration extends ASTParentNode implements ASTType
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(6);
+        List<Node> children = new ArrayList<>(7);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }

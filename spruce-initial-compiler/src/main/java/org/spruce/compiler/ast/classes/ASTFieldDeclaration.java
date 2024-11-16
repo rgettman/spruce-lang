@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.statements.ASTVariableDeclaratorList;
 import org.spruce.compiler.ast.statements.ASTVariableModifierList;
@@ -13,16 +13,16 @@ import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTFieldDeclaration</code> is an optional AccessModifier followed by
- * an optional FieldModifierList, an optional VariableModifierList, a DataType,
- * and a VariableDeclaratorList.</p>
+ * <p>An <code>ASTFieldDeclaration</code> is an optional AnnotationList followed
+ * by AccessModifier followed by an optional FieldModifierList, an optional
+ * VariableModifierList, a DataType, and a VariableDeclaratorList.</p>
  *
  * <em>
  * FieldDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [FieldModifierList] [VariableModifierList] DataType VariableDeclaratorList
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [FieldModifierList] [VariableModifierList] DataType VariableDeclaratorList
  * </em>
  */
-public final class ASTFieldDeclaration extends ASTParentNode implements ASTClassPart {
+public final class ASTFieldDeclaration extends ASTAnnotatedNode implements ASTClassPart {
     private final ASTKeywordNode myAccessMod;
     private final ASTFieldModifierList myFieldModList;
     private final ASTVariableModifierList myVarModList;
@@ -31,19 +31,22 @@ public final class ASTFieldDeclaration extends ASTParentNode implements ASTClass
 
     /**
      * Constructs an <code>ASTFieldDeclaration</code> at the given <code>Location</code>
-     * with the given <code>ASTKeywordNode</code> representing an AccessModifier,
-     * the given <code>ASTFieldModifierList</code>, the given <code>ASTVariableModifierList</code>,
+     * with the given <code>ASTAnnotationList</code>, the given
+     * <code>ASTKeywordNode</code> representing an AccessModifier, the given
+     * <code>ASTFieldModifierList</code>, the given <code>ASTVariableModifierList</code>,
      * the given <code>ASTDataType</code>, and the given <code>ASTVariableDeclaratorList</code>.
      * @param location The <code>Location</code>.
+     * @param annList An <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An <code>ASTKeywordNode</code> representing the AccessModifier.
      * @param fieldModList An <code>ASTFieldModifierList</code>.
      * @param varModList An <code>ASTVariableModifierList</code>.
      * @param dataType An <code>ASTDataType</code>.
      * @param varDeclList An <code>ASTVariableDeclaratorList</code>.
      */
-    public ASTFieldDeclaration(Location location, ASTKeywordNode accessMod, ASTFieldModifierList fieldModList,
-                               ASTVariableModifierList varModList, ASTDataType dataType, ASTVariableDeclaratorList varDeclList) {
-        super(location);
+    public ASTFieldDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                               ASTFieldModifierList fieldModList, ASTVariableModifierList varModList,
+                               ASTDataType dataType, ASTVariableDeclaratorList varDeclList) {
+        super(location, annList);
         myAccessMod = accessMod;
         myFieldModList = fieldModList;
         myVarModList = varModList;
@@ -53,17 +56,19 @@ public final class ASTFieldDeclaration extends ASTParentNode implements ASTClass
 
     /**
      * Constructs an <code>ASTFieldDeclaration</code> at the given <code>Location</code>
-     * with the given <code>ASTFieldModifierList</code>, the given <code>ASTVariableModifierList</code>,
+     * with the given <code>ASTAnnotationList</code>, the given
+     * <code>ASTFieldModifierList</code>, the given <code>ASTVariableModifierList</code>,
      * the given <code>ASTDataType</code>, and the given <code>ASTVariableDeclaratorList</code>.
      * @param location The <code>Location</code>.
+     * @param annList An <code>ASTAnnotationList</code>, possibly empty.
      * @param fieldModList An <code>ASTFieldModifierList</code>.
      * @param varModList An <code>ASTVariableModifierList</code>.
      * @param dataType An <code>ASTDataType</code>.
      * @param varDeclList An <code>ASTVariableDeclaratorList</code>.
      */
-    public ASTFieldDeclaration(Location location, ASTFieldModifierList fieldModList,
+    public ASTFieldDeclaration(Location location, ASTAnnotationList annList, ASTFieldModifierList fieldModList,
                                ASTVariableModifierList varModList, ASTDataType dataType, ASTVariableDeclaratorList varDeclList) {
-        super(location);
+        super(location, annList);
         myAccessMod = null;
         myFieldModList = fieldModList;
         myVarModList = varModList;
@@ -113,7 +118,8 @@ public final class ASTFieldDeclaration extends ASTParentNode implements ASTClass
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(4);
+        List<Node> children = new ArrayList<>(5);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }

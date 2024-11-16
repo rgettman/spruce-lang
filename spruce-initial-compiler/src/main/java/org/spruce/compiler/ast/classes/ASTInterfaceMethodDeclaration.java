@@ -4,21 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTInterfaceMethodDeclaration</code> is an optional AccessModifier followed by
- * an optional InterfaceMethodModifierList, then a MethodHeader and a MethodBody.</p>
+ * <p>An <code>ASTInterfaceMethodDeclaration</code> is an optional AnnotationList,
+ * followed by an optional AccessModifier, followed by an optional InterfaceMethodModifierList,
+ * then a MethodHeader and a MethodBody.</p>
  *
  * <em>
  * InterfaceMethodDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
  * </em>
  */
-public final class ASTInterfaceMethodDeclaration extends ASTParentNode implements ASTInterfacePart {
+public final class ASTInterfaceMethodDeclaration extends ASTAnnotatedNode implements ASTInterfacePart {
     private final ASTKeywordNode myAccessMod;
     private final ASTInterfaceMethodModifierList myModifierList;
     private final ASTMethodHeader myHeader;
@@ -26,18 +27,20 @@ public final class ASTInterfaceMethodDeclaration extends ASTParentNode implement
 
     /**
      * Constructs an <code>ASTInterfaceMethodDeclaration</code> at the given <code>Location</code>
-     * with the given <code>ASTKeywordNode</code> representing an AccessModifier,
-     * the given <code>ASTInterfaceMethodModifierList</code>,
+     * with the given <code>ASTAnnotationList</code>, the given <code>ASTKeywordNode</code>
+     * representing an AccessModifier, the given <code>ASTInterfaceMethodModifierList</code>,
      * the given <code>ASTMethodHeader</code>, and the given <code>ASTMethodBody</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod An <code>ASTKeywordNode</code> representing an AccessModifier.
      * @param modifierList An <code>ASTInterfaceMethodModifierList</code>.
      * @param header An <code>ASTMethodHeader</code>.
      * @param body An <code>ASTMethodBody</code>.
      */
-    public ASTInterfaceMethodDeclaration(Location location, ASTKeywordNode accessMod, ASTInterfaceMethodModifierList modifierList,
+    public ASTInterfaceMethodDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                                         ASTInterfaceMethodModifierList modifierList,
                                          ASTMethodHeader header, ASTMethodBody body) {
-        super(location);
+        super(location, annList);
         myAccessMod = accessMod;
         myModifierList = modifierList;
         myHeader = header;
@@ -46,16 +49,18 @@ public final class ASTInterfaceMethodDeclaration extends ASTParentNode implement
 
     /**
      * Constructs an <code>ASTInterfaceMethodDeclaration</code> at the given <code>Location</code>
-     * with the given <code>ASTInterfaceMethodModifierList</code>,
+     * with the given <code>ASTAnnotationList</code>, the given <code>ASTInterfaceMethodModifierList</code>,
      * the given <code>ASTMethodHeader</code>, and the given <code>ASTMethodBody</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param modifierList An <code>ASTInterfaceMethodModifierList</code>.
      * @param header An <code>ASTMethodHeader</code>.
      * @param body An <code>ASTMethodBody</code>.
      */
-    public ASTInterfaceMethodDeclaration(Location location, ASTInterfaceMethodModifierList modifierList,
+    public ASTInterfaceMethodDeclaration(Location location, ASTAnnotationList annList,
+                                         ASTInterfaceMethodModifierList modifierList,
                                          ASTMethodHeader header, ASTMethodBody body) {
-        super(location);
+        super(location, annList);
         myAccessMod = null;
         myModifierList = modifierList;
         myHeader = header;
@@ -96,7 +101,8 @@ public final class ASTInterfaceMethodDeclaration extends ASTParentNode implement
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(4);
+        List<Node> children = new ArrayList<>(5);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }

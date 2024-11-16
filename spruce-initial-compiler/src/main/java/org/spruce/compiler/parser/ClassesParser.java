@@ -43,31 +43,33 @@ public class ClassesParser extends BasicParser {
      * code repetition because many different "part" nodes can contain any of
      * the same list of nested types.
      * @param loc The <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an Access Modifier, if it was found.
      * @param genModList An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @return An <code>ASTTypeDeclaration</code> of the appropriate type, e.g. <code>ASTClassDeclaration</code>.
      */
-    private ASTTypeDeclaration parseNestedType(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList genModList) {
+    private ASTTypeDeclaration parseNestedType(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                                               ASTGeneralModifierList genModList) {
         return switch (curr().getType()) {
             case CLASS ->
-                    parseClassDeclaration(loc, accessMod, genModList);
+                    parseClassDeclaration(loc, annList, accessMod, genModList);
             case ENUM ->
-                    parseEnumDeclaration(loc, accessMod, genModList);
+                    parseEnumDeclaration(loc, annList, accessMod, genModList);
             case INTERFACE ->
-                    parseInterfaceDeclaration(loc, accessMod, genModList);
+                    parseInterfaceDeclaration(loc, annList, accessMod, genModList);
             case ANNOTATION ->
-                    parseAnnotationDeclaration(loc, accessMod, genModList);
+                    parseAnnotationDeclaration(loc, annList, accessMod, genModList);
             case RECORD -> {
                 if (!genModList.getChildren().isEmpty()) {
                     throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
                 }
-                yield parseRecordDeclaration(loc, accessMod);
+                yield parseRecordDeclaration(loc, annList, accessMod);
             }
             case ADT -> {
                 if (!genModList.getChildren().isEmpty()) {
                     throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
                 }
-                yield parseAdtDeclaration(loc, accessMod);
+                yield parseAdtDeclaration(loc, annList, accessMod);
             }
             default -> throw new CompileException(loc, "Expected a type declaration.");
         };
@@ -75,18 +77,20 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>AnnotationDeclaration</code>, given an already parsed
-     * AccessModifier, and an <code>ASTGeneralModifierList</code>.
+     * AnnotationList, AccessModifier, and GeneralModifierList.
      * <em>
      * AnnotationDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceModifierList] annotation Identifier AnnotationBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceModifierList] annotation Identifier AnnotationBody
      * </em>
      * @param loc The <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing
      *                  an Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @return An <code>ASTAnnotationDeclaration</code>.
      */
-    public ASTAnnotationDeclaration parseAnnotationDeclaration(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
+    public ASTAnnotationDeclaration parseAnnotationDeclaration(Location loc, ASTAnnotationList annList,
+                                                               ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
         ASTInterfaceModifierList interfaceModList = gms.convertToSpecificList(
                     "Unexpected annotation modifier.",
                     Arrays.asList(ABSTRACT, SHARED),
@@ -98,9 +102,9 @@ public class ClassesParser extends BasicParser {
         ASTIdentifier name = getNamesParser().parseIdentifier();
         ASTAnnotationPartList body = parseAnnotationBody();
         if (accessMod != null) {
-            return new ASTAnnotationDeclaration(loc, accessMod, interfaceModList, name, body);
+            return new ASTAnnotationDeclaration(loc, annList, accessMod, interfaceModList, name, body);
         }
-        return new ASTAnnotationDeclaration(loc, interfaceModList, name, body);
+        return new ASTAnnotationDeclaration(loc, annList, interfaceModList, name, body);
     }
 
     /**
@@ -133,7 +137,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTAnnotationPartList parseAnnotationPartList() {
         return parseMultiple(
-                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
+                t -> Arrays.asList(AT_SIGN, PUBLIC, PRIVATE, INTERNAL, PROTECTED,
                         ABSTRACT, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
                         CONSTANT, IDENTIFIER)
                         .contains(t.getType()),
@@ -161,6 +165,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTAnnotationPart parseAnnotationPart() {
         Location loc = curr().getLocation();
+        ASTAnnotationList annList = parseAnnotationList();
         ASTKeywordNode accessMod = null;
         if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null) {
             accessMod = parseAccessModifier();
@@ -169,7 +174,7 @@ public class ClassesParser extends BasicParser {
 
         switch(curr().getType()) {
         case CLASS, ENUM, INTERFACE, ANNOTATION, RECORD, ADT:
-            return parseNestedType(loc, accessMod, genModList);
+            return parseNestedType(loc, annList, accessMod, genModList);
         }
 
         ASTTypeParameterList typeParams = null;
@@ -188,29 +193,31 @@ public class ClassesParser extends BasicParser {
             if (accessMod != null) {
                 throw new CompileException(curr().getLocation(), "Access modifiers not allowed on annotation element declaration.");
             }
-            return parseAnnotationTypeElementDeclaration(loc, dt);
+            return parseAnnotationTypeElementDeclaration(loc, annList, dt);
         }
         else {
             if (typeParams != null) {
                 throw new CompileException(curr().getLocation(), "Type parameters not allowed on constant declaration.");
             }
-            return parseConstantDeclaration(loc, accessMod, genModList, dt);
+            return parseConstantDeclaration(loc, annList, accessMod, genModList, dt);
         }
     }
 
     /**
      * Parses an <code>AnnotationTypeElementDeclaration</code>, given an
-     * already parsed <code>ASTDataType</code>.
+     * already parsed AnnotationList and DataType.
      * <em>
      * AnnotationTypeElementDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataType Identifier ( ) ;<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataType Identifier ( ) DefaultValue ;
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] DataType Identifier ( ) ;<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] DataType Identifier ( ) DefaultValue ;
      * </em>
      * @param loc The <code>Location</code>.
+     * @param annList An <code>ASTAnnotationList</code>, possibly empty.
      * @param dt The <code>ASTDataType</code>.
      * @return An <code>ASTAnnotationTypeElementDeclaration</code>.
      */
-    public ASTAnnotationTypeElementDeclaration parseAnnotationTypeElementDeclaration(Location loc, ASTDataType dt) {
+    public ASTAnnotationTypeElementDeclaration parseAnnotationTypeElementDeclaration(Location loc,
+                   ASTAnnotationList annList, ASTDataType dt) {
         ASTIdentifier name = getNamesParser().parseIdentifier();
         ASTElementValue defaultValue = null;
         if (accept(OPEN_PARENTHESIS) == null) {
@@ -226,10 +233,10 @@ public class ClassesParser extends BasicParser {
             throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
         if (defaultValue == null) {
-            return new ASTAnnotationTypeElementDeclaration(loc, dt, name);
+            return new ASTAnnotationTypeElementDeclaration(loc, annList, dt, name);
         }
         else {
-            return new ASTAnnotationTypeElementDeclaration(loc, dt, name, defaultValue);
+            return new ASTAnnotationTypeElementDeclaration(loc, annList, dt, name, defaultValue);
         }
     }
 
@@ -247,6 +254,25 @@ public class ClassesParser extends BasicParser {
             throw new CompileException(curr().getLocation(), "Expected default.");
         }
         return parseElementValue();
+    }
+
+    /**
+     * Parses an <code>AnnotationList</code>.
+     * <em>
+     * AnnotationList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;Annotation {, Annotation}
+     * </em>
+     * @return An <code>ASTAnnotationList</code>.
+     */
+    public ASTAnnotationList parseAnnotationList() {
+        return parseMultiple(
+                t -> Arrays.asList(AT_SIGN)
+                        .contains(t.getType()),
+                "Expected an annotation.",
+                this::parseAnnotation,
+                ASTAnnotationList::new,
+                false
+        );
     }
 
     /**
@@ -441,19 +467,21 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>AdtDeclaration</code>, given an already parsed
-     * Access Modifier.
+     * Annotation List and Access Modifier.
      * <em>
      * AdtDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] adt Identifier [TypeParameters] [ExtendsInterfaces] AdtBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] adt Identifier [TypeParameters] [ExtendsInterfaces] AdtBody
      * </em>
      * @param loc The <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  Access Modifier.  If not present, <code>null</code>.
      * @return An <code>ASTAdtDeclaration</code>.
      */
-    public ASTAdtDeclaration parseAdtDeclaration(Location loc, ASTKeywordNode accessMod) {
+    public ASTAdtDeclaration parseAdtDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod) {
         ASTAdtDeclaration.Builder builder = new ASTAdtDeclaration.Builder()
-                .setLocation(loc);
+                .setLocation(loc)
+                .setAnnList(annList);
         if (accessMod != null) {
             builder.setAccessModifier(accessMod);
         }
@@ -515,41 +543,60 @@ public class ClassesParser extends BasicParser {
      * Parses a <code>Variant</code>.
      * <em>
      * Variant:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataType<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;VariantType<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;CompactRecordDeclaration<br>
      * </em>
      * @return An <code>ASTVariant</code>.
      */
     public ASTVariant parseVariant() {
         Location loc = curr().getLocation();
+        ASTAnnotationList annList = parseAnnotationList();
         if (!isCurr(IDENTIFIER)) {
             throw new CompileException(loc, "Expected an identifier.");
         }
         switch(next().getType()) {
             case DOT, COMMA, SEMICOLON, CLOSE_BRACE -> {
-                return getTypesParser().parseDataType();
+                return parseVariantType(annList);
             }
             default -> {
-                return parseCompactRecordDeclaration();
+                return parseCompactRecordDeclaration(annList);
             }
         }
     }
 
     /**
-     * Parses a <code>CompactRecordDeclaration</code>.
+     * Parses a <code>VariantType</code>, given an already parsed
+     * AnnotationList.
+     * <em>
+     * VariantType:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] DataTypeNoArray
+     * </em>
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
+     * @return An <code>ASTVariantType</code>.
+     */
+    public ASTVariantType parseVariantType(ASTAnnotationList annList) {
+        Location loc = curr().getLocation();
+        return new ASTVariantType(loc, annList, getTypesParser().parseDataTypeNoArray());
+    }
+
+    /**
+     * Parses a <code>CompactRecordDeclaration</code>, given an already parsed
+     * AnnotationList.
      * <em>
      * CompactRecordDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Identifier [TypeArguments] RecordHeader [Superinterfaces] ClassBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] Identifier [TypeArguments] RecordHeader [Superinterfaces] ClassBody
      * </em>
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @return An <code>ASTCompactRecordDeclaration</code>.
      */
-    public ASTCompactRecordDeclaration parseCompactRecordDeclaration() {
+    public ASTCompactRecordDeclaration parseCompactRecordDeclaration(ASTAnnotationList annList) {
         Location loc = curr().getLocation();
         if (!isCurr(IDENTIFIER)) {
             throw new CompileException(loc, "Expected an identifier.");
         }
         ASTCompactRecordDeclaration.Builder builder = new ASTCompactRecordDeclaration.Builder()
                 .setLocation(loc)
+                .setAnnList(annList)
                 .setName(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
             builder.setTypeParams(getTypesParser().parseTypeParameters());
@@ -583,20 +630,23 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses an <code>InterfaceDeclaration</code>, given an already parsed
-     * Access Modifier and general modifier list.
+     * AnnotationList, Access Modifier, and general modifier list.
      * <em>
      * InterfaceDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceModifierList] interface Identifier [TypeParameters] [ExtendsInterfaces] [Permits] InterfaceBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceModifierList] interface Identifier [TypeParameters] [ExtendsInterfaces] [Permits] InterfaceBody
      * </em>
      * @param loc The <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing
      *                  an Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @return An <code>ASTInterfaceDeclaration</code>.
      */
-    public ASTInterfaceDeclaration parseInterfaceDeclaration(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
+    public ASTInterfaceDeclaration parseInterfaceDeclaration(Location loc, ASTAnnotationList annList,
+                                                             ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
         ASTInterfaceDeclaration.Builder builder = new ASTInterfaceDeclaration.Builder()
-                .setLocation(loc);
+                .setLocation(loc)
+                .setAnnList(annList);
         if (accessMod != null) {
             builder.setAccessMod(accessMod);
         }
@@ -666,7 +716,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTInterfacePartList parseInterfacePartList() {
         return parseMultiple(
-                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED,
+                t -> Arrays.asList(AT_SIGN, PUBLIC, PRIVATE, INTERNAL, PROTECTED,
                         ABSTRACT, OVERRIDE, SHARED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
                         DEFAULT, MUT, CONSTANT, VOID, IDENTIFIER, LESS_THAN)
                         .contains(t.getType()),
@@ -694,6 +744,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTInterfacePart parseInterfacePart() {
         Location loc = curr().getLocation();
+        ASTAnnotationList annList = parseAnnotationList();
         ASTKeywordNode accessMod = null;
         if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null) {
             accessMod = parseAccessModifier();
@@ -702,25 +753,25 @@ public class ClassesParser extends BasicParser {
 
         switch(curr().getType()) {
         case CLASS, ENUM, INTERFACE, ANNOTATION, RECORD, ADT:
-            return parseNestedType(loc, accessMod, genModList);
+            return parseNestedType(loc, annList, accessMod, genModList);
         }
 
         if (isCurr(LESS_THAN)) {
             // TypeParameters mut|void|identifier
             ASTTypeParameterList typeParams = getTypesParser().parseTypeParameters();
-            return parseInterfaceMethodDeclaration(loc, accessMod, genModList, typeParams);
+            return parseInterfaceMethodDeclaration(loc, annList, accessMod, genModList, typeParams);
         }
         // No type parameters:
         if (isCurr(VOID)) {
             // Result(void) ...
-            return parseInterfaceMethodDeclaration(loc, accessMod, genModList);
+            return parseInterfaceMethodDeclaration(loc, annList, accessMod, genModList);
         }
         else {
             ASTVariableModifierList varModList = getStatementsParser().parseVariableModifierList();
             ASTDataType dt = getTypesParser().parseDataType();
             if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS)) {
                 // [mut] DataType identifier (
-                return parseInterfaceMethodDeclaration(loc, accessMod, genModList, varModList, dt);
+                return parseInterfaceMethodDeclaration(loc, annList, accessMod, genModList, varModList, dt);
             }
             else {
                 if (!varModList.getChildren().isEmpty()) {
@@ -728,28 +779,29 @@ public class ClassesParser extends BasicParser {
                     throw new CompileException(bad.getLocation(), "Unexpected variable modifier.");
                 }
                 // [VariableModifierList] DataType ...
-                return parseConstantDeclaration(loc, accessMod, genModList, dt);
+                return parseConstantDeclaration(loc, annList, accessMod, genModList, dt);
             }
         }
     }
 
     /**
      * Parses an <code>InterfaceMethodDeclaration</code>, given optionally already
-     * parsed productions: AccessModifier, a GeneralModifierList, and an
-     * <code>ASTTypeParameterList</code>.
+     * parsed productions: AnnotationList, AccessModifier, a GeneralModifierList,
+     * and a TypeParameterList.
      * <em>
      * InterfaceMethodDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
      * </em>
      * @param loc The starting <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing
      *                  an Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @param tps An already parsed <code>ASTTypeParameterList</code>.
      * @return An <code>ASTInterfaceMethodDeclaration</code>.
      */
-    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTKeywordNode accessMod,
-                   ASTGeneralModifierList gms, ASTTypeParameterList tps) {
+    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAnnotationList annList,
+                   ASTKeywordNode accessMod, ASTGeneralModifierList gms, ASTTypeParameterList tps) {
         ASTInterfaceMethodModifierList interfaceMethodModifiers = gms.convertToSpecificList(
                     "Unexpected interface method modifier.",
                     Arrays.asList(ABSTRACT, DEFAULT, OVERRIDE, SHARED),
@@ -758,26 +810,27 @@ public class ClassesParser extends BasicParser {
         ASTMethodHeader header = parseMethodHeader(tps);
         ASTMethodBody body = parseMethodBody();
         if (accessMod != null) {
-            return new ASTInterfaceMethodDeclaration(loc, accessMod, interfaceMethodModifiers, header, body);
+            return new ASTInterfaceMethodDeclaration(loc, annList, accessMod, interfaceMethodModifiers, header, body);
         }
-        return new ASTInterfaceMethodDeclaration(loc, interfaceMethodModifiers, header, body);
+        return new ASTInterfaceMethodDeclaration(loc, annList, interfaceMethodModifiers, header, body);
     }
 
     /**
      * Parses an <code>InterfaceMethodDeclaration</code>, given optionally already
-     * parsed productions: AccessModifier and a GeneralModifierList.
+     * parsed productions: AnnotationList, AccessModifier, and a GeneralModifierList.
      * <em>
      * InterfaceMethodDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
      * </em>
      * @param loc The starting <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing
      *                  an Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @return An <code>ASTInterfaceMethodDeclaration</code>.
      */
-    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTKeywordNode accessMod,
-                                                                         ASTGeneralModifierList gms) {
+    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAnnotationList annList,
+                      ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
         ASTInterfaceMethodModifierList interfaceMethodModifiers = gms.convertToSpecificList(
                 "Unexpected interface method modifier.",
                 Arrays.asList(ABSTRACT, DEFAULT, OVERRIDE, SHARED),
@@ -786,19 +839,20 @@ public class ClassesParser extends BasicParser {
         ASTMethodHeader header = parseMethodHeader();
         ASTMethodBody body = parseMethodBody();
         if (accessMod != null) {
-            return new ASTInterfaceMethodDeclaration(loc, accessMod, interfaceMethodModifiers, header, body);
+            return new ASTInterfaceMethodDeclaration(loc, annList, accessMod, interfaceMethodModifiers, header, body);
         }
-        return new ASTInterfaceMethodDeclaration(loc, interfaceMethodModifiers, header, body);
+        return new ASTInterfaceMethodDeclaration(loc, annList, interfaceMethodModifiers, header, body);
     }
 
     /**
      * Parses an <code>InterfaceMethodDeclaration</code>, given optionally already
-     * parsed productions: AccessModifier and a GeneralModifierList.
+     * parsed productions: AnnotationList, AccessModifier, and a GeneralModifierList.
      * <em>
      * InterfaceMethodDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
      * </em>
      * @param loc The starting <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing
      *                  an Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
@@ -806,8 +860,8 @@ public class ClassesParser extends BasicParser {
      * @param dt An already parsed <code>ASTDataType</code>.
      * @return An <code>ASTInterfaceMethodDeclaration</code>.
      */
-    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTKeywordNode accessMod,
-                  ASTGeneralModifierList gms, ASTVariableModifierList varModList, ASTDataType dt) {
+    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAnnotationList annList,
+                  ASTKeywordNode accessMod, ASTGeneralModifierList gms, ASTVariableModifierList varModList, ASTDataType dt) {
         ASTInterfaceMethodModifierList interfaceMethodModifiers = gms.convertToSpecificList(
                 "Unexpected interface method modifier.",
                 Arrays.asList(ABSTRACT, DEFAULT, OVERRIDE, SHARED),
@@ -823,20 +877,20 @@ public class ClassesParser extends BasicParser {
         }
         ASTMethodBody body = parseMethodBody();
         if (accessMod != null) {
-            return new ASTInterfaceMethodDeclaration(loc, accessMod, interfaceMethodModifiers, header, body);
+            return new ASTInterfaceMethodDeclaration(loc, annList, accessMod, interfaceMethodModifiers, header, body);
         }
-        return new ASTInterfaceMethodDeclaration(loc, interfaceMethodModifiers, header, body);
+        return new ASTInterfaceMethodDeclaration(loc, annList, interfaceMethodModifiers, header, body);
     }
 
     /**
      * Parses a <code>ConstantDeclaration</code>, given an already parsed
-     * AccessModifier, GeneralModifierList, and
-     * <code>ASTDataType</code>.
+     * AnnotationList, AccessModifier, GeneralModifierList, and DataType.
      * <em>
      * ConstantDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] ConstantModifier DataType VariableDeclaratorList
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] AccessModifier] ConstantModifier DataType VariableDeclaratorList
      * </em>
      * @param loc The given <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  AccessModifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
@@ -844,8 +898,8 @@ public class ClassesParser extends BasicParser {
      * @param dt An already parsed <code>ASTKeywordNode</code>, present.
      * @return An <code>ASTConstantDeclaration</code>.
      */
-    public ASTConstantDeclaration parseConstantDeclaration(Location loc, ASTKeywordNode accessMod,
-                                                           ASTGeneralModifierList gms, ASTDataType dt) {
+    public ASTConstantDeclaration parseConstantDeclaration(Location loc, ASTAnnotationList annList,
+                ASTKeywordNode accessMod, ASTGeneralModifierList gms, ASTDataType dt) {
         ASTConstantModifierList constantModifiers = gms.convertToSpecificList(
                     "Unexpected modifier for a constant.",
                     Collections.singletonList(CONSTANT),
@@ -860,9 +914,9 @@ public class ClassesParser extends BasicParser {
             throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         if (accessMod != null) {
-            return new ASTConstantDeclaration(loc, accessMod, constantMod, dt, varDeclList);
+            return new ASTConstantDeclaration(loc, annList, accessMod, constantMod, dt, varDeclList);
         }
-        return new ASTConstantDeclaration(loc, constantMod, dt, varDeclList);
+        return new ASTConstantDeclaration(loc, annList, constantMod, dt, varDeclList);
     }
 
     /**
@@ -883,19 +937,21 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses a <code>RecordDeclaration</code>, given an already parsed
-     * AccessModifier.
+     * AnnotationList and AccessModifier.
      * <em>
      * RecordDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [ClassModifierList] record Identifier [TypeParameters] RecordHeader [Superinterfaces] ClassBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [ClassModifierList] record Identifier [TypeParameters] RecordHeader [Superinterfaces] ClassBody
      * </em>
      * @param loc The <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  AccessModifier.  If not present, <code>null</code>.
      * @return An <code>ASTRecordDeclaration</code>.
      */
-    public ASTRecordDeclaration parseRecordDeclaration(Location loc, ASTKeywordNode accessMod) {
+    public ASTRecordDeclaration parseRecordDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod) {
         ASTRecordDeclaration.Builder builder = new ASTRecordDeclaration.Builder()
-                .setLocation(loc);
+                .setLocation(loc)
+                .setAnnList(annList);
         if (accessMod != null) {
             builder.setAccessMod(accessMod);
         }
@@ -933,46 +989,51 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses a <code>CompactConstructorDeclaration</code> given a <code>Location</code>
-     * and possibly an already parsed AccessModifier.
+     * Parses a <code>CompactConstructorDeclaration</code> given a <code>Location</code>,
+     * an already parsed AnnotationList, and possibly an already parsed AccessModifier.
      * <em>
      * CompactConstructorDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] constructor Block
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] constructor Block
      * </em>
      * @param loc A <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  AccessModifier.  If not present, <code>null</code>.
      * @return An <code>ASTCompactConstructorDeclaration</code>.
      */
-    public ASTCompactConstructorDeclaration parseCompactConstructorDeclaration(Location loc, ASTKeywordNode accessMod) {
+    public ASTCompactConstructorDeclaration parseCompactConstructorDeclaration(Location loc, ASTAnnotationList annList,
+                                                                               ASTKeywordNode accessMod) {
         if (accept(CONSTRUCTOR) == null) {
             throw new CompileException(curr().getLocation(), "Expected 'constructor'.");
         }
         ASTBlock block = getStatementsParser().parseBlock();
         if (accessMod != null) {
-            return new ASTCompactConstructorDeclaration(loc, accessMod, block);
+            return new ASTCompactConstructorDeclaration(loc, annList, accessMod, block);
         }
         else {
-            return new ASTCompactConstructorDeclaration(loc, block);
+            return new ASTCompactConstructorDeclaration(loc, annList, block);
         }
     }
 
     /**
      * Parses an <code>EnumDeclaration</code>, given an already parsed
-     * AccessModifier and GeneralModifierList.
+     * AnnotationList, AccessModifier, and GeneralModifierList.
      * <em>
      * EnumDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [ClassModifierList] enum Identifier [Superinterfaces] EnumBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [ClassModifierList] enum Identifier [Superinterfaces] EnumBody
      * </em>
      * @param loc The <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  AccessModifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @return An <code>ASTEnumDeclaration</code>.
      */
-    public ASTEnumDeclaration parseEnumDeclaration(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
+    public ASTEnumDeclaration parseEnumDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                                                   ASTGeneralModifierList gms) {
         ASTEnumDeclaration.Builder builder = new ASTEnumDeclaration.Builder()
-                .setLocation(loc);
+                .setLocation(loc)
+                .setAnnList(annList);
         if (accessMod != null) {
             builder.setAccessMod(accessMod);
         }
@@ -1039,7 +1100,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTEnumConstantList parseEnumConstantList() {
         return parseList(
-                t -> test(t, IDENTIFIER),
+                t -> test(t, IDENTIFIER, AT_SIGN),
                 "Expected enum constant identifier.",
                 COMMA,
                 this::parseEnumConstant,
@@ -1052,11 +1113,12 @@ public class ClassesParser extends BasicParser {
      * Parses an <code>EnumConstant</code>.
      * <em>
      * EnumConstant:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Identifier [( ArgumentList )] [ClassBody]
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] Identifier [( ArgumentList )] [ClassBody]
      * </em>
      * @return An <code>ASTEnumConstant</code>.
      */
     public ASTEnumConstant parseEnumConstant() {
+        ASTAnnotationList annList = parseAnnotationList();
         Location loc = curr().getLocation();
         ASTIdentifier name = getNamesParser().parseIdentifier();
         ASTArgumentList argsList;
@@ -1071,9 +1133,9 @@ public class ClassesParser extends BasicParser {
             argsList = new ASTArgumentList(curr().getLocation(), Collections.emptyList());
         }
         if (isCurr(OPEN_BRACE)) {
-            return new ASTEnumConstant(loc, name, argsList, parseClassBody());
+            return new ASTEnumConstant(loc, annList, name, argsList, parseClassBody());
         }
-        return new ASTEnumConstant(loc, name, argsList, new ASTClassPartList(
+        return new ASTEnumConstant(loc, annList, name, argsList, new ASTClassPartList(
                 curr().getLocation(),
                 Collections.emptyList()
                 ));
@@ -1081,20 +1143,23 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses a <code>ClassDeclaration</code>, given an already parsed
-     * AccessModifier and GeneralModifierList.
+     * AnnotationList, AccessModifier, and GeneralModifierList.
      * <em>
      * ClassDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [ClassModifierList] class Identifier [TypeParameters] [Superclass] [Superinterfaces] [Permits] ClassBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [ClassModifierList] class Identifier [TypeParameters] [Superclass] [Superinterfaces] [Permits] ClassBody
      * </em>
      * @param loc The <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> as an
      *                  AccessModifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @return An <code>ASTClassDeclaration</code>.
      */
-    public ASTClassDeclaration parseClassDeclaration(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
+    public ASTClassDeclaration parseClassDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                                                     ASTGeneralModifierList gms) {
         ASTClassDeclaration.Builder builder = new ASTClassDeclaration.Builder()
-                .setLocation(loc);
+                .setLocation(loc)
+                .setAnnList(annList);
         if (accessMod != null) {
             builder.setAccessMod(accessMod);
         }
@@ -1197,7 +1262,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTClassPartList parseClassPartList() {
         return parseMultiple(
-                t -> Arrays.asList(PUBLIC, PRIVATE, INTERNAL, PROTECTED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
+                t -> Arrays.asList(AT_SIGN, PUBLIC, PRIVATE, INTERNAL, PROTECTED, CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,
                         ABSTRACT, OVERRIDE, SHARED, VOLATILE,
                         CONSTRUCTOR, MUT, CONSTANT, VOID, IDENTIFIER, LESS_THAN)
                         .contains(t.getType()),
@@ -1230,6 +1295,7 @@ public class ClassesParser extends BasicParser {
         if (isCurr(SHARED) && isNext(CONSTRUCTOR)) {
             return parseSharedConstructor();
         }
+        ASTAnnotationList annList = parseAnnotationList();
         ASTKeywordNode accessMod = null;
         if (isAcceptedOperator(Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE)) != null) {
             accessMod = parseAccessModifier();
@@ -1238,7 +1304,7 @@ public class ClassesParser extends BasicParser {
 
         switch(curr().getType()) {
         case CLASS, ENUM, INTERFACE, ANNOTATION, RECORD, ADT:
-            return parseNestedType(loc, accessMod, genModList);
+            return parseNestedType(loc, annList, accessMod, genModList);
         }
 
         if (isCurr(LESS_THAN)) {
@@ -1250,17 +1316,17 @@ public class ClassesParser extends BasicParser {
                             modifier.getKeyword().getRepresentation() + "'.");
                 }
                 // TypeParameters constructor ...
-                return parseConstructorDeclaration(loc, accessMod, typeParams);
+                return parseConstructorDeclaration(loc, annList, accessMod, typeParams);
             }
             else {
                 // TypeParameters mut|void|identifier
-                return parseMethodDeclaration(loc, accessMod, genModList, typeParams);
+                return parseMethodDeclaration(loc, annList, accessMod, genModList, typeParams);
             }
         }
         // No type parameters:
         if (isCurr(VOID)) {
             // Result(void) ...
-            return parseMethodDeclaration(loc, accessMod, genModList);
+            return parseMethodDeclaration(loc, annList, accessMod, genModList);
         }
         else if (isCurr(CONSTRUCTOR)) {
             if (!genModList.getChildren().isEmpty()) {
@@ -1270,11 +1336,11 @@ public class ClassesParser extends BasicParser {
             }
             if (isNext(OPEN_BRACE)) {
                 // constructor {
-                return parseCompactConstructorDeclaration(loc, accessMod);
+                return parseCompactConstructorDeclaration(loc, annList, accessMod);
             }
             else {
                 // constructor (
-                return parseConstructorDeclaration(loc, accessMod);
+                return parseConstructorDeclaration(loc, annList, accessMod);
             }
         }
         else {
@@ -1282,11 +1348,11 @@ public class ClassesParser extends BasicParser {
             ASTDataType dt = getTypesParser().parseDataType();
             if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS)) {
                 // [mut] DataType identifier (
-                return parseMethodDeclaration(loc, accessMod, genModList, varModList, dt);
+                return parseMethodDeclaration(loc, annList, accessMod, genModList, varModList, dt);
             }
             else {
                 // [VariableModifierList] DataType ...
-                return parseFieldDeclaration(loc, accessMod, genModList, varModList, dt);
+                return parseFieldDeclaration(loc, annList, accessMod, genModList, varModList, dt);
             }
         }
     }
@@ -1318,21 +1384,24 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses a <code>ConstructorDeclaration</code>, given optionally already
-     * parsed productions: AccessModifier, GeneralModifierList,
-     * <code>ASTTypeParameterList</code>.
+     * parsed productions: AnnotationList, AccessModifier, GeneralModifierList,
+     * TypeParameterList.
      * <em>
      * ConstructorDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] ConstructorDeclarator [ConstructorInvocation] Block
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] ConstructorDeclarator [ConstructorInvocation] Block
      * </em>
      * @param loc The starting <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  Access Modifier.  If not present, <code>null</code>.
      * @param tps An already parsed <code>ASTTypeParameterList</code>.
      * @return An <code>ASTMethodDeclaration</code>.
      */
-    public ASTConstructorDeclaration parseConstructorDeclaration(Location loc, ASTKeywordNode accessMod, ASTTypeParameterList tps) {
+    public ASTConstructorDeclaration parseConstructorDeclaration(Location loc, ASTAnnotationList annList,
+                                                                 ASTKeywordNode accessMod, ASTTypeParameterList tps) {
         ASTConstructorDeclaration.Builder builder = new ASTConstructorDeclaration.Builder()
-                .setLocation(loc);
+                .setLocation(loc)
+                .setAnnList(annList);
         if (accessMod != null) {
             builder.setAccessMod(accessMod);
         }
@@ -1346,19 +1415,22 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses a <code>ConstructorDeclaration</code>, given optionally already
-     * parsed productions: AccessModifier, GeneralModifierList.
+     * parsed productions: AnnotationList, AccessModifier, GeneralModifierList.
      * <em>
      * ConstructorDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] ConstructorDeclarator [ConstructorInvocation] Block
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] ConstructorDeclarator [ConstructorInvocation] Block
      * </em>
      * @param loc The starting <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  Access Modifier.  If not present, <code>null</code>.
      * @return An <code>ASTMethodDeclaration</code>.
      */
-    public ASTConstructorDeclaration parseConstructorDeclaration(Location loc, ASTKeywordNode accessMod) {
+    public ASTConstructorDeclaration parseConstructorDeclaration(Location loc, ASTAnnotationList annList,
+                                                                 ASTKeywordNode accessMod) {
         ASTConstructorDeclaration.Builder builder = new ASTConstructorDeclaration.Builder()
-                .setLocation(loc);
+                .setLocation(loc)
+                .setAnnList(annList);
         if (accessMod != null) {
             builder.setAccessMod(accessMod);
         }
@@ -1464,20 +1536,21 @@ public class ClassesParser extends BasicParser {
 
     /**
      * Parses a <code>FieldDeclaration</code>, given an already parsed
-     * Access Modifier, a GeneralModifierList, and a <code>ASTDataType</code>.
+     * Annotation List, Access Modifier, a GeneralModifierList, and a DataType.
      * <em>
      * FieldDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [FieldModifierList] DataType VariableDeclaratorList
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [FieldModifierList] DataType VariableDeclaratorList
      * </em>
      * @param loc The given <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *           Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @param dt An already parsed <code>ASTDataType</code>, present.
      * @return An <code>ASTFieldDeclaration</code>.
      */
-    public ASTFieldDeclaration parseFieldDeclaration(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList gms,
-                                                     ASTVariableModifierList varModList, ASTDataType dt) {
+    public ASTFieldDeclaration parseFieldDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                 ASTGeneralModifierList gms, ASTVariableModifierList varModList, ASTDataType dt) {
         ASTFieldModifierList fieldModifiers = gms.convertToSpecificList(
                     "Unexpected field modifier.",
                     Arrays.asList(CONSTANT, SHARED, VOLATILE),
@@ -1488,27 +1561,28 @@ public class ClassesParser extends BasicParser {
             throw new CompileException(curr().getLocation(), "Expected semicolon.");
         }
         if (accessMod == null) {
-            return new ASTFieldDeclaration(loc, fieldModifiers, varModList, dt, varDeclList);
+            return new ASTFieldDeclaration(loc, annList, fieldModifiers, varModList, dt, varDeclList);
         }
-        return new ASTFieldDeclaration(loc, accessMod, fieldModifiers, varModList, dt, varDeclList);
+        return new ASTFieldDeclaration(loc, annList, accessMod, fieldModifiers, varModList, dt, varDeclList);
     }
 
     /**
      * Parses a <code>MethodDeclaration</code>, given optionally already
-     * parsed productions: AccessModifier, a GeneralModifierList, and an
-     * <code>ASTTypeParameterList</code>.
+     * parsed productions: AnnotationList, AccessModifier, a GeneralModifierList,
+     * and a TypeParameterList.
      * <em>
      * MethodDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [MethodModifierList] MethodHeader MethodBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [MethodModifierList] MethodHeader MethodBody
      * </em>
      * @param loc The starting <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing
      *                  an Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @param tps An already parsed <code>ASTTypeParameterList</code>.  If not present, <code>null</code>.
      * @return An <code>ASTMethodDeclaration</code>.
      */
-    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTKeywordNode accessMod,
+    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
                                                        ASTGeneralModifierList gms, ASTTypeParameterList tps) {
         ASTMethodModifierList methodModifiers = gms.convertToSpecificList(
                     "Unexpected method modifier.",
@@ -1518,25 +1592,27 @@ public class ClassesParser extends BasicParser {
         ASTMethodHeader header = parseMethodHeader(tps);
         ASTMethodBody body = parseMethodBody();
         if (accessMod == null) {
-            return new ASTMethodDeclaration(loc, methodModifiers, header, body);
+            return new ASTMethodDeclaration(loc, annList, methodModifiers, header, body);
         }
-        return new ASTMethodDeclaration(loc, accessMod, methodModifiers, header, body);
+        return new ASTMethodDeclaration(loc, annList, accessMod, methodModifiers, header, body);
     }
 
     /**
      * Parses a <code>MethodDeclaration</code>, given optionally already
-     * parsed productions: AccessModifier and a GeneralModifierList.
+     * parsed productions: AnnotationList, AccessModifier, and a GeneralModifierList.
      * <em>
      * MethodDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [MethodModifierList] MethodHeader MethodBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [MethodModifierList] MethodHeader MethodBody
      * </em>
      * @param loc The starting <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
      * @return An <code>ASTMethodDeclaration</code>.
      */
-    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
+    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAnnotationList annList,
+                                                       ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
         ASTMethodModifierList methodModifiers = gms.convertToSpecificList(
                 "Unexpected method modifier.",
                 Arrays.asList(FINAL, ABSTRACT, OVERRIDE, SHARED),
@@ -1545,20 +1621,21 @@ public class ClassesParser extends BasicParser {
         ASTMethodHeader header = parseMethodHeader();
         ASTMethodBody body = parseMethodBody();
         if (accessMod != null) {
-            return new ASTMethodDeclaration(loc, accessMod, methodModifiers, header, body);
+            return new ASTMethodDeclaration(loc, annList, accessMod, methodModifiers, header, body);
         }
-        return new ASTMethodDeclaration(loc, methodModifiers, header, body);
+        return new ASTMethodDeclaration(loc, annList, methodModifiers, header, body);
     }
 
     /**
      * Parses a <code>MethodDeclaration</code>, given optionally already
-     * parsed productions: AccessModifier, a GeneralModifierList, and an
-     * <code>ASTDataType</code>.
+     * parsed productions: AnnotationList, AccessModifier, a GeneralModifierList,
+     * and a DataType.
      * <em>
      * MethodDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [MethodModifierList] MethodHeader MethodBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [MethodModifierList] MethodHeader MethodBody
      * </em>
      * @param loc The starting <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
      *                  Access Modifier.  If not present, <code>null</code>.
      * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
@@ -1566,7 +1643,8 @@ public class ClassesParser extends BasicParser {
      * @param dt An already parsed <code>ASTDataType</code>, present.
      * @return An <code>ASTMethodDeclaration</code>.
      */
-    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTKeywordNode accessMod, ASTGeneralModifierList gms,
+    public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAnnotationList annList,
+                                                       ASTKeywordNode accessMod, ASTGeneralModifierList gms,
                                                        ASTVariableModifierList varModList, ASTDataType dt) {
         ASTMethodModifierList methodModifiers = gms.convertToSpecificList(
                 "Unexpected method modifier.",
@@ -1583,9 +1661,9 @@ public class ClassesParser extends BasicParser {
         }
         ASTMethodBody body = parseMethodBody();
         if (accessMod != null) {
-            return new ASTMethodDeclaration(loc, accessMod, methodModifiers, header, body);
+            return new ASTMethodDeclaration(loc, annList, accessMod, methodModifiers, header, body);
         }
-        return new ASTMethodDeclaration(loc, methodModifiers, header, body);
+        return new ASTMethodDeclaration(loc, annList, methodModifiers, header, body);
     }
 
     /**
@@ -1858,7 +1936,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTFormalParameterList parseFormalParameterList() {
         ASTFormalParameterList node = parseList(
-                t -> test(t, IDENTIFIER, MUT, VAR),
+                t -> test(t, TAKE, AT_SIGN, IDENTIFIER, MUT, VAR),
                 "Expected data type",
                 COMMA,
                 this::parseFormalParameter,
@@ -1895,7 +1973,8 @@ public class ClassesParser extends BasicParser {
     public ASTFormalParameter parseFormalParameter() {
         Location loc = curr().getLocation();
         ASTFormalParameter.Builder builder = new ASTFormalParameter.Builder()
-                .setLocation(loc);
+                .setLocation(loc)
+                .setAnnList(parseAnnotationList());
         if (isCurr(TAKE)) {
             builder.setTakeMod(parseModifier(Arrays.asList(TAKE),
                     "Expected 'take'.",

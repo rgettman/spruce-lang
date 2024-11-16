@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.statements.ASTVariableModifierList;
@@ -13,16 +13,17 @@ import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTFormalParameter</code> is optionally "take", an optional
- * variable modifier list, a data type, possibly an ellipsis, and an identifier.</p>
+ * <p>An <code>ASTFormalParameter</code> is an optional AnnotationList followed
+ * by an optional "take", an optional variable modifier list, a data type,
+ * possibly an ellipsis, and an identifier.</p>
  *
  * <em>
  * FormalParameter:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[take] [VariableModifierList] DataType Identifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[take] [VariableModifierList] DataType ... Identifier<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [take] [VariableModifierList] DataType Identifier<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList][take] [VariableModifierList] DataType ... Identifier<br>
  * </em>
  */
-public class ASTFormalParameter extends ASTParentNode {
+public class ASTFormalParameter extends ASTAnnotatedNode {
     private final ASTKeywordNode myTakeMod;
     private final ASTVariableModifierList myVarModList;
     private final ASTDataType myDataType;
@@ -33,15 +34,17 @@ public class ASTFormalParameter extends ASTParentNode {
      * Constructs an <code>ASTFormalParameter</code> with arguments supplied by
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param takeMod A possibly null <code>ASTKeywordNode</code> of type <code>TAKE</code>.
      * @param varModList An <code>ASTVariableModifierList</code>.
      * @param dataType An <code>ASTDataType</code>.
      * @param ellipsisMod A possibly null <code>ASTKeywordNode</code> of type <code>ELLIPSIS</code>.
      * @param name An <code>ASTIdentifier</code> representing the formal parameter's name.
      */
-    private ASTFormalParameter(Location location, ASTKeywordNode takeMod, ASTVariableModifierList varModList,
-                              ASTDataType dataType, ASTKeywordNode ellipsisMod, ASTIdentifier name) {
-        super(location);
+    private ASTFormalParameter(Location location, ASTAnnotationList annList, ASTKeywordNode takeMod,
+                               ASTVariableModifierList varModList, ASTDataType dataType, ASTKeywordNode ellipsisMod,
+                               ASTIdentifier name) {
+        super(location, annList);
         myTakeMod = takeMod;
         myVarModList = varModList;
         myDataType = dataType;
@@ -53,21 +56,15 @@ public class ASTFormalParameter extends ASTParentNode {
      * Because of the 4 possible cases, use this <code>Builder</code> to build
      * an instance of <code>ASTFormalParameter</code>.
      */
-    public static class Builder {
-        private Location myLocation;
+    public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTKeywordNode myTakeMod;
         private ASTVariableModifierList myVarModList;
         private ASTDataType myDataType;
         private ASTKeywordNode myEllipsisMod;
         private ASTIdentifier myName;
 
-        /**
-         * Sets the <code>Location</code>.
-         * @param location The <code>Location</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setLocation(Location location) {
-            this.myLocation = location;
+        @Override
+        protected Builder getThis() {
             return this;
         }
 
@@ -132,6 +129,9 @@ public class ASTFormalParameter extends ASTParentNode {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
             }
+            if (myAnnList == null) {
+                throw new IllegalStateException("No Annotation List given (can be empty)!");
+            }
             if (myVarModList == null) {
                 throw new IllegalStateException("No Variable Modifier List given!");
             }
@@ -141,7 +141,7 @@ public class ASTFormalParameter extends ASTParentNode {
             if (myName == null) {
                 throw new IllegalStateException("No Formal Parameter Name given!");
             }
-            return new ASTFormalParameter(myLocation, myTakeMod, myVarModList, myDataType, myEllipsisMod, myName);
+            return new ASTFormalParameter(myLocation, myAnnList, myTakeMod, myVarModList, myDataType, myEllipsisMod, myName);
         }
     }
 
@@ -187,7 +187,8 @@ public class ASTFormalParameter extends ASTParentNode {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(5);
+        List<Node> children = new ArrayList<>(6);
+        children.add(myAnnList);
         if (myTakeMod != null) {
             children.add(myTakeMod);
         }

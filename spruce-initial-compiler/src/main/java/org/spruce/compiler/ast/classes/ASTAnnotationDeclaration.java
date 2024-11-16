@@ -4,40 +4,42 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTAnnotationDeclaration</code> is an optional AccessModifier followed by
- * an optional InterfaceModifierList, then "annotation", an Identifier, then an AnnotationBody.</p>
+ * <p>An <code>ASTAnnotationDeclaration</code> is an optional AnnotationList,
+ * followed by an optional AccessModifier, followed by an optional
+ * InterfaceModifierList, then "annotation", an Identifier, then an AnnotationBody.</p>
  *
  * <em>
  * AnnotationDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceModifierList] annotation Identifier AnnotationBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceModifierList] annotation Identifier AnnotationBody
  * </em>
  */
-public final class ASTAnnotationDeclaration extends ASTParentNode implements ASTTypeDeclaration {
+public final class ASTAnnotationDeclaration extends ASTAnnotatedNode implements ASTTypeDeclaration {
     private final ASTKeywordNode myAccessMod;
     private final ASTInterfaceModifierList myInterfaceModList;
     private final ASTIdentifier myName;
     private final ASTAnnotationPartList myBody;
 
     /**
-     * Constructs an <code>ASTAdtDeclaration</code> at the given <code>Location</code>
-     * with the given AccessModifier, InterfaceModifierList, Annotation Name, and
+     * Constructs an <code>ASTAnnotationDeclaration</code> at the given <code>Location</code>
+     * with the given AnnotationList, AccessModifier, InterfaceModifierList, Annotation Name, and
      * Annotation Parts List.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod A possibly null <code>ASTKeywordNode</code> representing an AccessModifier.
      * @param interfaceModList An <code>ASTInterfaceModifierList</code>.
      * @param name An <code>ASTIdentifier</code> representing the annotation name.
      * @param body An <code>ASTAnnotationPartList</code>.
      */
-    public ASTAnnotationDeclaration(Location location, ASTKeywordNode accessMod, ASTInterfaceModifierList interfaceModList,
-                                     ASTIdentifier name, ASTAnnotationPartList body) {
-        super(location);
+    public ASTAnnotationDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                                    ASTInterfaceModifierList interfaceModList, ASTIdentifier name, ASTAnnotationPartList body) {
+        super(location, annList);
         myAccessMod = accessMod;
         myInterfaceModList = interfaceModList;
         myName = name;
@@ -45,17 +47,18 @@ public final class ASTAnnotationDeclaration extends ASTParentNode implements AST
     }
 
     /**
-     * Constructs an <code>ASTAdtDeclaration</code> at the given <code>Location</code>
-     * with the given AccessModifier, InterfaceModifierList, Annotation Name, and
+     * Constructs an <code>ASTAnnotationDeclaration</code> at the given <code>Location</code>
+     * with the given AnnotationList, AccessModifier, InterfaceModifierList, Annotation Name, and
      * Annotation Parts List.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param interfaceModList An <code>ASTInterfaceModifierList</code>.
      * @param name An <code>ASTIdentifier</code> representing the annotation name.
      * @param body An <code>ASTAnnotationPartList</code>.
      */
-    public ASTAnnotationDeclaration(Location location, ASTInterfaceModifierList interfaceModList,
+    public ASTAnnotationDeclaration(Location location, ASTAnnotationList annList, ASTInterfaceModifierList interfaceModList,
                                     ASTIdentifier name, ASTAnnotationPartList body) {
-        super(location);
+        super(location, annList);
         myAccessMod = null;
         myInterfaceModList = interfaceModList;
         myName = name;
@@ -96,7 +99,8 @@ public final class ASTAnnotationDeclaration extends ASTParentNode implements AST
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(4);
+        List<Node> children = new ArrayList<>(5);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }

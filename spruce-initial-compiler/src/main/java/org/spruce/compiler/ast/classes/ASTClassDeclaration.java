@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArray;
@@ -14,17 +14,17 @@ import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTClassDeclaration</code> is an optional AccessModifier followed by
- * an optional ClassModifierList, then "class", an Identifier, followed by
- * optional Type Parameters, optional Superclass, optional Superinterfaces,
- * optional Permits, then a ClassBody.</p>
+ * <p>An <code>ASTClassDeclaration</code> is an optional AnnotationList, followed
+ * by an optional AccessModifier, followed by an optional ClassModifierList,
+ * then "class", an Identifier, followed by optional Type Parameters, optional
+ * Superclass, optional Superinterfaces, optional Permits, then a ClassBody.</p>
  *
  * <em>
  * ClassDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [ClassModifierList] class Identifier [TypeParameters] [Superclass] [Superinterfaces] [Permits] ClassBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [ClassModifierList] class Identifier [TypeParameters] [Superclass] [Superinterfaces] [Permits] ClassBody
  * </em>
  */
-public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeDeclaration {
+public final class ASTClassDeclaration extends ASTAnnotatedNode implements ASTTypeDeclaration {
     private final ASTKeywordNode myAccessMod;
     private final ASTClassModifierList myClassModifierList;
     private final ASTIdentifier myName;
@@ -38,8 +38,9 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
      * Constructs an <code>ASTClassDeclaration</code> with arguments supplied by
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
-     * @param classModifierList A possibly null <code>ASTClassModifierList</code>.
+     * @param classModifierList A possibly empty <code>ASTClassModifierList</code>.
      * @param name An <code>ASTIdentifier</code> representing the class name.
      * @param typeParams A possibly null <code>ASTTypeParameterList</code>.
      * @param superclass A possibly null <code>ASTDataTypeNoArray</code> representing the superclass name.
@@ -49,10 +50,10 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
      *                   representing the list of permitted implementing classes.
      * @param classParts A possibly null <code>ASTClassPartList</code> representing the class body.
      */
-    private ASTClassDeclaration(Location location, ASTKeywordNode accessMod, ASTClassModifierList classModifierList,
+    private ASTClassDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod, ASTClassModifierList classModifierList,
                                 ASTIdentifier name, ASTTypeParameterList typeParams, ASTDataTypeNoArray superclass,
                                 ASTDataTypeNoArrayList superinterfaces, ASTDataTypeNoArrayList permits, ASTClassPartList classParts) {
-        super(location);
+        super(location, annList);
         myAccessMod = accessMod;
         myClassModifierList = classModifierList;
         myName = name;
@@ -67,8 +68,7 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
      * Because of the 32 possible cases, use this <code>Builder</code> to build
      * an instance of <code>ASTClassDeclaration</code>.
      */
-    public static class Builder {
-        private Location myLocation;
+    public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTKeywordNode myAccessMod;
         private ASTClassModifierList myClassModifierList;
         private ASTIdentifier myName;
@@ -78,13 +78,8 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
         private ASTDataTypeNoArrayList myPermits;
         private ASTClassPartList myClassParts;
 
-        /**
-         * Sets the <code>Location</code>.
-         * @param location A <code>Location</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setLocation(Location location) {
-            this.myLocation = location;
+        @Override
+        protected Builder getThis() {
             return this;
         }
 
@@ -175,9 +170,13 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
          * is thrown.
          * @return An <code>ASTClassDeclaration</code>.
          */
+        @Override
         public ASTClassDeclaration build() {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
+            }
+            if (myAnnList == null) {
+                throw new IllegalStateException("No Annotation List given (can be empty)!");
             }
             if (myName == null) {
                 throw new IllegalStateException("No Name given!");
@@ -188,7 +187,7 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
             if (myClassModifierList == null) {
                 throw new IllegalStateException("No Class Modifier List given (can be empty)!");
             }
-            return new ASTClassDeclaration(myLocation, myAccessMod, myClassModifierList, myName, myTypeParams,
+            return new ASTClassDeclaration(myLocation, myAnnList, myAccessMod, myClassModifierList, myName, myTypeParams,
                     mySuperclass, mySuperinterfaces, myPermits, myClassParts);
         }
     }
@@ -259,7 +258,8 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(8);
+        List<Node> children = new ArrayList<>(9);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }

@@ -4,21 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTMethodDeclaration</code> is an optional AccessModifier followed by
- * an optional MethodModifierList, then a MethodHeader and a MethodBody.</p>
+ * <p>An <code>ASTMethodDeclaration</code> is an optional AnnotationList,
+ * followed by an optional AccessModifier, followed by an optional MethodModifierList,
+ * then a MethodHeader and a MethodBody.</p>
  *
  * <em>
  * MethodDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [MethodModifierList] MethodHeader MethodBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [MethodModifierList] MethodHeader MethodBody
  * </em>
  */
-public final class ASTMethodDeclaration extends ASTParentNode implements ASTClassPart {
+public final class ASTMethodDeclaration extends ASTAnnotatedNode implements ASTClassPart {
     private final ASTKeywordNode myAccessMod;
     private final ASTMethodModifierList myMethodModList;
     private final ASTMethodHeader myHeader;
@@ -26,18 +27,19 @@ public final class ASTMethodDeclaration extends ASTParentNode implements ASTClas
 
     /**
      * Constructs an <code>ASTMethodDeclaration</code> at the given <code>Location</code>
-     * with the given <code>ASTKeywordNode</code> representing the Access Modifier,
-     * the given <code>ASTMethodModifierList</code>,
+     * with the given <code>ASTAnnotationList</code>, the given <code>ASTKeywordNode</code>
+     * representing the Access Modifier, the given <code>ASTMethodModifierList</code>,
      * the given <code>ASTMethodHeader</code>, and the given <code>ASTMethodBody</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod An <code>ASTKeywordNode</code> representing an AccessModifier.
      * @param methodModList An <code>ASTMethodModifierList</code>.
      * @param header An <code>ASTMethodHeader</code>.
      * @param body An <code>ASTMethodBody</code>.
      */
-    public ASTMethodDeclaration(Location location, ASTKeywordNode accessMod, ASTMethodModifierList methodModList,
-                                ASTMethodHeader header, ASTMethodBody body) {
-        super(location);
+    public ASTMethodDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                                ASTMethodModifierList methodModList, ASTMethodHeader header, ASTMethodBody body) {
+        super(location, annList);
         myAccessMod = accessMod;
         myMethodModList = methodModList;
         myHeader = header;
@@ -46,17 +48,18 @@ public final class ASTMethodDeclaration extends ASTParentNode implements ASTClas
 
     /**
      * Constructs an <code>ASTMethodDeclaration</code> at the given <code>Location</code>
-     * with the given <code>ASTKeywordNode</code> representing the Access Modifier,
-     * the given <code>ASTMethodModifierList</code>,
+     * with the given <code>ASTAnnotationList</code>, the given <code>ASTKeywordNode</code>
+     * representing the Access Modifier, the given <code>ASTMethodModifierList</code>,
      * the given <code>ASTMethodHeader</code>, and the given <code>ASTMethodBody</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param methodModList An <code>ASTMethodModifierList</code>.
      * @param header An <code>ASTMethodHeader</code>.
      * @param body An <code>ASTMethodBody</code>.
      */
-    public ASTMethodDeclaration(Location location, ASTMethodModifierList methodModList,
+    public ASTMethodDeclaration(Location location, ASTAnnotationList annList, ASTMethodModifierList methodModList,
                                 ASTMethodHeader header, ASTMethodBody body) {
-        super(location);
+        super(location, annList);
         myAccessMod = null;
         myMethodModList = methodModList;
         myHeader = header;
@@ -97,7 +100,8 @@ public final class ASTMethodDeclaration extends ASTParentNode implements ASTClas
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(4);
+        List<Node> children = new ArrayList<>(5);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }

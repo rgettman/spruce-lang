@@ -1,9 +1,12 @@
 package org.spruce.compiler.parser;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
+import org.spruce.compiler.ast.classes.ASTAnnotationList;
 import org.spruce.compiler.ast.classes.ASTGeneralModifierList;
 import org.spruce.compiler.ast.classes.ASTTypeDeclaration;
 import org.spruce.compiler.ast.names.ASTIdentifier;
@@ -14,6 +17,7 @@ import org.spruce.compiler.ast.toplevel.*;
 import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
+import org.spruce.compiler.scanner.Token;
 
 import static org.spruce.compiler.scanner.TokenType.*;
 
@@ -43,12 +47,29 @@ public class TopLevelParser extends BasicParser {
      */
     public ASTOrdinaryCompilationUnit parseOrdinaryCompilationUnit() {
         Location loc = curr().getLocation();
+        ClassesParser classesParser = getClassesParser();
         ASTNamespaceDeclaration namespaceDecl = null;
+        ASTAnnotationList annList = classesParser.parseAnnotationList();
+
+        // Namespace
         if (isCurr(NAMESPACE)) {
-            namespaceDecl = parseNamespaceDeclaration();
+            namespaceDecl = parseNamespaceDeclaration(annList);
+            annList = classesParser.parseAnnotationList();
         }
+
+        // Use
         ASTUseDeclarationList useDeclList = parseUseDeclarationList();
-        ASTTypeDeclarationList typeDeclList = parseTypeDeclarationList();
+        if (!annList.getChildren().isEmpty() && !useDeclList.getChildren().isEmpty()) {
+            Location errorLoc = annList.get(0).getLocation();
+            throw new CompileException(errorLoc, "Annotations are not allowed on use declarations.");
+        }
+        else if (annList.getChildren().isEmpty() && !useDeclList.getChildren().isEmpty()) {
+            annList = classesParser.parseAnnotationList();
+        }
+        // Else the use declaration list was empty, and we can use the above annotation list for types.
+
+        // Type
+        ASTTypeDeclarationList typeDeclList = parseTypeDeclarationList(annList);
         if (namespaceDecl != null) {
             return new ASTOrdinaryCompilationUnit(loc, namespaceDecl, useDeclList, typeDeclList);
         }
@@ -59,16 +80,18 @@ public class TopLevelParser extends BasicParser {
      * Parses a <code>NamespaceDeclaration</code>.
      * <em>
      * NamespaceDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;namespace NamespaceName
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] namespace NamespaceName
      * </em>
+     * @param annList An <code>ASTAnnotationList</code>, possibly empty.
      * @return An <code>ASTNamespaceDeclaration</code>.
      */
-    public ASTNamespaceDeclaration parseNamespaceDeclaration() {
+
+    public ASTNamespaceDeclaration parseNamespaceDeclaration(ASTAnnotationList annList) {
         Location loc = curr().getLocation();
         if (accept(NAMESPACE) == null) {
             throw new CompileException(curr().getLocation(), "Expected namespace.");
         }
-        ASTNamespaceDeclaration node = new ASTNamespaceDeclaration(loc, getNamesParser().parseNamespaceName());
+        ASTNamespaceDeclaration node = new ASTNamespaceDeclaration(loc, annList, getNamesParser().parseNamespaceName());
         if (accept(SEMICOLON) == null) {
             throw new CompileException(curr().getLocation(), "Missing semicolon.");
         }
@@ -272,26 +295,40 @@ public class TopLevelParser extends BasicParser {
     }
 
     /**
-     * Parses a <code>TypeDeclarationList</code>.
+     * Parses a <code>TypeDeclarationList</code>, given an already parsed
+     * AnnotationList.
      * <em>
      * TypeDeclarationList:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration {TypeDeclaration}
      * </em>
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @return An <code>ASTTypeDeclarationList</code>.
      */
-    public ASTTypeDeclarationList parseTypeDeclarationList() {
-        return parseMultiple(
-                t -> Arrays.asList(PUBLIC, INTERNAL, PROTECTED, PRIVATE, ABSTRACT, SHARED,
-                        CLASS, ENUM, INTERFACE, ANNOTATION, RECORD).contains(t.getType()),
-                "Expected class, enum, interface, annotation, or record declaration.",
-                this::parseTypeDeclaration,
-                ASTTypeDeclarationList::new,
-                false
-        );
+    public ASTTypeDeclarationList parseTypeDeclarationList(ASTAnnotationList annList) {
+        Location loc = curr().getLocation();
+        ASTAnnotationList currAnnList = annList;
+        Predicate<Token> isOnInitialToken = t ->
+                Arrays.asList(AT_SIGN, PUBLIC, INTERNAL, PROTECTED, PRIVATE, ABSTRACT, SHARED,
+                              CLASS, ENUM, INTERFACE, ANNOTATION, RECORD)
+                        .contains(t.getType());
+        if (isOnInitialToken.test(curr())) {
+            List<ASTTypeDeclaration> children = new ArrayList<>();
+            children.add(parseTypeDeclaration(currAnnList));
+            currAnnList = getClassesParser().parseAnnotationList();
+            while (isOnInitialToken.test(curr())) {
+                children.add(parseTypeDeclaration(currAnnList));
+                currAnnList = getClassesParser().parseAnnotationList();
+            }
+            return new ASTTypeDeclarationList(loc, children);
+        }
+        else {
+            return new ASTTypeDeclarationList(curr().getLocation(), new ArrayList<>());
+        }
     }
 
     /**
-     * Parses a <code>TypeDeclaration</code>.
+     * Parses a <code>TypeDeclaration</code>, given an already parsed
+     * AnnotationList.
      * <em>
      * TypeDeclaration:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
@@ -301,9 +338,10 @@ public class TopLevelParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
      * </em>
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @return An <code>ASTTypeDeclaration</code>.
      */
-    public ASTTypeDeclaration parseTypeDeclaration() {
+    public ASTTypeDeclaration parseTypeDeclaration(ASTAnnotationList annList) {
         Location loc = curr().getLocation();
         ClassesParser cp = getClassesParser();
         ASTKeywordNode accessMod = null;
@@ -312,21 +350,21 @@ public class TopLevelParser extends BasicParser {
         }
         ASTGeneralModifierList genModList = cp.parseGeneralModifierList();
         return switch (curr().getType()) {
-            case CLASS -> cp.parseClassDeclaration(loc, accessMod, genModList);
-            case ENUM -> cp.parseEnumDeclaration(loc, accessMod, genModList);
-            case INTERFACE -> cp.parseInterfaceDeclaration(loc, accessMod, genModList);
-            case ANNOTATION -> cp.parseAnnotationDeclaration(loc, accessMod, genModList);
+            case CLASS -> cp.parseClassDeclaration(loc, annList, accessMod, genModList);
+            case ENUM -> cp.parseEnumDeclaration(loc, annList, accessMod, genModList);
+            case INTERFACE -> cp.parseInterfaceDeclaration(loc, annList, accessMod, genModList);
+            case ANNOTATION -> cp.parseAnnotationDeclaration(loc, annList, accessMod, genModList);
             case RECORD -> {
                 if (!genModList.getChildren().isEmpty()) {
                     throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
                 }
-                yield cp.parseRecordDeclaration(loc, accessMod);
+                yield cp.parseRecordDeclaration(loc, annList, accessMod);
             }
             case ADT -> {
                 if (!genModList.getChildren().isEmpty()) {
                     throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
                 }
-                yield cp.parseAdtDeclaration(loc, accessMod);
+                yield cp.parseAdtDeclaration(loc, annList, accessMod);
             }
             default -> throw new CompileException(curr().getLocation(), "Expected class, enum, interface, annotation, record, or adt.");
         };

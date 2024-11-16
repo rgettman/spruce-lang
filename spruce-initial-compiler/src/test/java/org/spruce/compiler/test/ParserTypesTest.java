@@ -1,6 +1,7 @@
 package org.spruce.compiler.test;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
+import org.spruce.compiler.ast.classes.ASTAnnotation;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.*;
 import org.spruce.compiler.exception.CompileException;
@@ -213,6 +214,17 @@ public class ParserTypesTest {
     }
 
     /**
+     * Tests parameter list of type parameters with annotations.
+     */
+    @Test
+    public void testTypeParameterListTypeParametersAnnotations() {
+        TypesParser parser = getTypesParser("@Test1 T, @Test2 U, @Test3 V");
+        ASTTypeParameterList node = parser.parseTypeParameterList();
+        System.out.println(node);
+        checkList(node, TYPE_PARAMETERS, ASTTypeParameter.class, 3);
+    }
+
+    /**
      * Tests simple type parameter.
      */
     @Test
@@ -220,8 +232,10 @@ public class ParserTypesTest {
         TypesParser parser = getTypesParser("T");
         ASTTypeParameter node = parser.parseTypeParameter();
         System.out.println(node);
+
+        checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
         assertFalse(node.getTypeBound().isPresent());
-        ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
+        ASTIdentifier id = node.getName();
         assertEquals("T", id.getValue());
     }
 
@@ -233,6 +247,23 @@ public class ParserTypesTest {
         TypesParser parser = getTypesParser("N <: Number");
         ASTTypeParameter node = parser.parseTypeParameter();
         System.out.println(node);
+
+        checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
+        ASTIdentifier id = node.getName();
+        assertEquals("N", id.getValue());
+        assertTrue(node.getTypeBound().isPresent());
+    }
+
+    /**
+     * Tests type parameter of annotation.
+     */
+    @Test
+    public void testTypeParameterOfAnnotation() {
+        TypesParser parser = getTypesParser("@Test N <: Number");
+        ASTTypeParameter node = parser.parseTypeParameter();
+        System.out.println(node);
+
+        checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 1);
         ASTIdentifier id = node.getName();
         assertEquals("N", id.getValue());
         assertTrue(node.getTypeBound().isPresent());

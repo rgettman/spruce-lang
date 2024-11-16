@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
@@ -13,16 +13,16 @@ import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTAdtDeclaration</code> is an optional AccessModifier followed by
- * "adt", followed by an Identifier, followed by optional Type Parameters,
- * optional ExtendsInterfaces, then an AdtBody.</p>
+ * <p>An <code>ASTAdtDeclaration</code> is an optional AnnotationList, followed
+ * by an optional AccessModifier, followed by "adt", followed by an Identifier,
+ * followed by optional Type Parameters, optional ExtendsInterfaces, then an AdtBody.</p>
  *
  * <em>
  * AdtDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] adt Identifier [TypeParameters] [ExtendsInterfaces] AdtBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] adt Identifier [TypeParameters] [ExtendsInterfaces] AdtBody
  * </em>
  */
-public final class ASTAdtDeclaration extends ASTParentNode implements ASTTypeDeclaration {
+public final class ASTAdtDeclaration extends ASTAnnotatedNode implements ASTTypeDeclaration {
     private final ASTKeywordNode myAccessModifier;
     private final ASTIdentifier myName;
     private final ASTTypeParameterList myTypeParams;
@@ -33,15 +33,16 @@ public final class ASTAdtDeclaration extends ASTParentNode implements ASTTypeDec
      * Constructs an <code>ASTAdtDeclaration</code> with arguments supplied by
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessModifier A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
      * @param name An <code>ASTIdentifier</code> representing the ADT Name.
      * @param typeParams A possibly null <code>ASTTypeParameterList</code>.
      * @param extendsInterfaces A possibly null <code>ASTDataTypeNoArrayList</code>.
      * @param adtBody An <code>ASTAdtBody</code>.
      */
-    private ASTAdtDeclaration(Location location, ASTKeywordNode accessModifier, ASTIdentifier name,
+    private ASTAdtDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessModifier, ASTIdentifier name,
                               ASTTypeParameterList typeParams, ASTDataTypeNoArrayList extendsInterfaces, ASTAdtBody adtBody) {
-        super(location);
+        super(location, annList);
         myAccessModifier = accessModifier;
         myName = name;
         myTypeParams = typeParams;
@@ -53,21 +54,15 @@ public final class ASTAdtDeclaration extends ASTParentNode implements ASTTypeDec
      * Because of the 8 possible cases, use this <code>Builder</code> to build
      * an instance of <code>ASTAdtDeclaration</code>.
      */
-    public static class Builder {
-        private Location myLocation;
+    public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTKeywordNode myAccessModifier;
         private ASTIdentifier myName;
         private ASTTypeParameterList myTypeParams;
         private ASTDataTypeNoArrayList myExtendsInterfaces;
         private ASTAdtBody myAdtBody;
 
-        /**
-         * Sets the <code>Location</code>.
-         * @param location The <code>Location</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setLocation(Location location) {
-            this.myLocation = location;
+        @Override
+        protected Builder getThis() {
             return this;
         }
 
@@ -128,14 +123,19 @@ public final class ASTAdtDeclaration extends ASTParentNode implements ASTTypeDec
          * is thrown.
          * @return An <code>ASTAdtDeclaration</code>.
          */
+        @Override
         public ASTAdtDeclaration build() {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
             }
+            if (myAnnList == null) {
+                throw new IllegalStateException("No Annotation List given (can be empty)!");
+            }
             if (myName == null) {
                 throw new IllegalStateException("No Name given!");
             }
-            return new ASTAdtDeclaration(myLocation, myAccessModifier, myName, myTypeParams, myExtendsInterfaces, myAdtBody);
+            return new ASTAdtDeclaration(myLocation, myAnnList, myAccessModifier, myName, myTypeParams,
+                    myExtendsInterfaces, myAdtBody);
         }
     }
 
@@ -181,7 +181,8 @@ public final class ASTAdtDeclaration extends ASTParentNode implements ASTTypeDec
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(5);
+        List<Node> children = new ArrayList<>(6);
+        children.add(myAnnList);
         if (myAccessModifier != null) {
             children.add(myAccessModifier);
         }

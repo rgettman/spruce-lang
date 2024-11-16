@@ -1,7 +1,9 @@
 package org.spruce.compiler.test;
 
 import org.spruce.compiler.ast.classes.ASTAdtDeclaration;
+import org.spruce.compiler.ast.classes.ASTAnnotation;
 import org.spruce.compiler.ast.classes.ASTAnnotationDeclaration;
+import org.spruce.compiler.ast.classes.ASTAnnotationList;
 import org.spruce.compiler.ast.classes.ASTClassDeclaration;
 import org.spruce.compiler.ast.classes.ASTEnumDeclaration;
 import org.spruce.compiler.ast.classes.ASTInterfaceDeclaration;
@@ -56,6 +58,72 @@ public class ParserTopLevelTest {
     }
 
     /**
+     * Tests full ordinary compilation unit with annotations.
+     */
+    @Test
+    public void testOrdinaryCompilationUnitFullWithAnnotations() {
+        TopLevelParser parser = getTopLevelParser("""
+                @Doc namespace foo;
+                use project.Bar;
+                @Test1 public class Baz<T> extends Bar<T> {}
+                @Test2 enum Light {RED, YELLOW, GREEN}
+                """);
+        ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
+        System.out.println(node);
+        assertTrue(node.getNamespaceDecl().isPresent());
+        checkList(node.getUseDeclList(), USE_DECLARATIONS, ASTUseDeclaration.class, 1);
+        checkList(node.getTypeDeclList(), TYPE_DECLARATIONS, ASTTypeDeclaration.class, 2);
+    }
+
+    /**
+     * Tests full ordinary compilation unit of only type declarations with annotations.
+     */
+    @Test
+    public void testOrdinaryCompilationUnitTypeDeclarationsWithAnnotations() {
+        TopLevelParser parser = getTopLevelParser("""
+                @Test1 public class Baz<T> extends Bar<T> {}
+                @Test2 enum Light {RED, YELLOW, GREEN}
+                """);
+        ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
+        System.out.println(node);
+        assertFalse(node.getNamespaceDecl().isPresent());
+        checkList(node.getUseDeclList(), USE_DECLARATIONS, ASTUseDeclaration.class, 0);
+        checkList(node.getTypeDeclList(), TYPE_DECLARATIONS, ASTTypeDeclaration.class, 2);
+    }
+
+    /**
+     * Tests full ordinary compilation unit of use declarations then type declarations with annotations.
+     */
+    @Test
+    public void testOrdinaryCompilationUnitUseDeclarationsTypeDeclarationsWithAnnotations() {
+        TopLevelParser parser = getTopLevelParser("""
+                use project.Bar;
+                @Test1 public class Baz<T> extends Bar<T> {}
+                @Test2 enum Light {RED, YELLOW, GREEN}
+                """);
+        ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
+        System.out.println(node);
+        assertFalse(node.getNamespaceDecl().isPresent());
+        checkList(node.getUseDeclList(), USE_DECLARATIONS, ASTUseDeclaration.class, 1);
+        checkList(node.getTypeDeclList(), TYPE_DECLARATIONS, ASTTypeDeclaration.class, 2);
+    }
+
+    /**
+     * Tests bad ordinary compilation of bad use declarations with annotations.
+     */
+    @Test
+    public void testOrdinaryCompilationUnitBadUseDeclListWithAnnotations() {
+        TopLevelParser parser = getTopLevelParser("""
+                namespace foo;
+                @Bad use project.Bar;
+                public class Baz<T> extends Bar<T> {}
+                enum Light {RED, YELLOW, GREEN}
+                """);
+        assertThrows(CompileException.class, parser::parseOrdinaryCompilationUnit,
+                "Annotations are not allowed on use declarations.");
+    }
+
+    /**
      * Tests use declaration list of use declaration.
      */
     @Test
@@ -87,8 +155,23 @@ public class ParserTopLevelTest {
     @Test
     public void testNamespaceDeclaration() {
         TopLevelParser parser = getTopLevelParser("namespace spruce.test.parser;");
-        ASTNamespaceDeclaration node = parser.parseNamespaceDeclaration();
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTNamespaceDeclaration node = parser.parseNamespaceDeclaration(annList);
         System.out.println(node);
+        checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
+        checkList(node.getNamespace(), NAMESPACE_IDS, ASTIdentifier.class, 3);
+    }
+
+    /**
+     * Tests namespace declaration with annotation.
+     */
+    @Test
+    public void testNamespaceDeclarationAnnotation() {
+        TopLevelParser parser = getTopLevelParser("@Doc namespace spruce.test.parser;");
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTNamespaceDeclaration node = parser.parseNamespaceDeclaration(annList);
+        System.out.println(node);
+        checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 1);
         checkList(node.getNamespace(), NAMESPACE_IDS, ASTIdentifier.class, 3);
     }
 
@@ -98,7 +181,8 @@ public class ParserTopLevelTest {
     @Test
     public void testNamespaceDeclarationNoSemicolon() {
         TopLevelParser parser = getTopLevelParser("namespace spruce.test.parser use");
-        assertThrows(CompileException.class, parser::parseNamespaceDeclaration, "Missing semicolon.");
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        assertThrows(CompileException.class, () -> parser.parseNamespaceDeclaration(annList), "Missing semicolon.");
     }
 
     /**
@@ -261,7 +345,8 @@ public class ParserTopLevelTest {
     @Test
     public void testTypeDeclarationListOfTypeDeclaration() {
         TopLevelParser parser = getTopLevelParser("class Foo {}");
-        ASTTypeDeclarationList node = parser.parseTypeDeclarationList();
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclarationList node = parser.parseTypeDeclarationList(annList);
         System.out.println(node);
         checkList(node, TYPE_DECLARATIONS, ASTTypeDeclaration.class, 1);
     }
@@ -273,10 +358,27 @@ public class ParserTopLevelTest {
     public void testTypeDeclarationListOfMultipleTypeDeclarations() {
         TopLevelParser parser = getTopLevelParser("""
                 class Foo {}
-                enum Bar {CHOCOLATE, EXAM, SAND}
+                @Test enum Bar {CHOCOLATE, EXAM, SAND}
                 interface Baz {}
                 """);
-        ASTTypeDeclarationList node = parser.parseTypeDeclarationList();
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclarationList node = parser.parseTypeDeclarationList(annList);
+        System.out.println(node);
+        checkList(node, TYPE_DECLARATIONS, ASTTypeDeclaration.class, 3);
+    }
+
+    /**
+     * Tests type declaration list of multiple type declarations and annotations.
+     */
+    @Test
+    public void testTypeDeclarationListOfMultipleTypeDeclarationsAndAnnotations() {
+        TopLevelParser parser = getTopLevelParser("""
+                @Test1 class Foo {}
+                @Test2 enum Bar {CHOCOLATE, EXAM, SAND}
+                @Test3 interface Baz {}
+                """);
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclarationList node = parser.parseTypeDeclarationList(annList);
         System.out.println(node);
         checkList(node, TYPE_DECLARATIONS, ASTTypeDeclaration.class, 3);
     }
@@ -287,7 +389,8 @@ public class ParserTopLevelTest {
     @Test
     public void testTypeDeclarationOfClassDeclaration() {
         TopLevelParser parser = getTopLevelParser("public abstract class Dummy<T> { abstract void test(); }");
-        ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
         System.out.println(node);
         assertInstanceOf(ASTClassDeclaration.class, node);
     }
@@ -298,7 +401,8 @@ public class ParserTopLevelTest {
     @Test
     public void testTypeDeclarationOfEnumDeclaration() {
         TopLevelParser parser = getTopLevelParser("public shared enum TrafficLight {RED, YELLOW, GREEN}");
-        ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
         System.out.println(node);
         assertInstanceOf(ASTEnumDeclaration.class, node);
     }
@@ -309,7 +413,8 @@ public class ParserTopLevelTest {
     @Test
     public void testTypeDeclarationOfInterfaceDeclaration() {
         TopLevelParser parser = getTopLevelParser("protected shared interface Dummy { public void run();}");
-        ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
         System.out.println(node);
         assertInstanceOf(ASTInterfaceDeclaration.class, node);
     }
@@ -320,7 +425,8 @@ public class ParserTopLevelTest {
     @Test
     public void testTypeDeclarationOfAnnotationDeclaration() {
         TopLevelParser parser = getTopLevelParser("public shared annotation Spruce { String language();}");
-        ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
         System.out.println(node);
         assertInstanceOf(ASTAnnotationDeclaration.class, node);
     }
@@ -331,7 +437,9 @@ public class ParserTopLevelTest {
     @Test
     public void testTypeDeclarationOfRecordDeclarationBadModifier() {
         TopLevelParser parser = getTopLevelParser("internal shared record Redacted(String byWhom) { }");
-        assertThrows(CompileException.class, parser::parseTypeDeclaration, "General modifier not allowed here.");
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        assertThrows(CompileException.class, () -> parser.parseTypeDeclaration(annList),
+                "General modifier not allowed here.");
     }
 
     /**
@@ -340,7 +448,8 @@ public class ParserTopLevelTest {
     @Test
     public void testTypeDeclarationOfRecordDeclaration() {
         TopLevelParser parser = getTopLevelParser("internal record Redacted(String byWhom) { }");
-        ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
         System.out.println(node);
         assertInstanceOf(ASTRecordDeclaration.class, node);
     }
@@ -350,8 +459,9 @@ public class ParserTopLevelTest {
      */
     @Test
     public void testTypeDeclarationOfAdtDeclaration() {
-        TopLevelParser parser = getTopLevelParser("adt Test { Test1, Test2 }");
-        ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        TopLevelParser parser = getTopLevelParser("@Preview adt Test { Test1, Test2 }");
+        ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
+        ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
         System.out.println(node);
         assertInstanceOf(ASTAdtDeclaration.class, node);
     }

@@ -4,24 +4,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTEnumDeclaration</code> is an optional AccessModifier followed by
- * an optional ClassModifierList, then "enum", an Identifier, followed by
- * optional Superinterfaces, then an EnumBody.</p>
+ * <p>An <code>ASTEnumDeclaration</code> is an optional AnnotationList, followed
+ * by an optional AccessModifier, followed by an optional ClassModifierList,
+ * then "enum", an Identifier, followed by optional Superinterfaces, then an EnumBody.</p>
  *
  * <em>
  * EnumDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [ClassModifierList] enum Identifier [Superinterfaces] EnumBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [ClassModifierList] enum Identifier [Superinterfaces] EnumBody
  * </em>
  */
-public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDeclaration {
+public final class ASTEnumDeclaration extends ASTAnnotatedNode implements ASTTypeDeclaration {
     private final ASTKeywordNode myAccessMod;
     private final ASTClassModifierList myClassModifierList;
     private final ASTIdentifier myName;
@@ -32,6 +32,7 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
      * Constructs an <code>ASTEnumDeclaration</code> with arguments supplied by
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
      * @param classModifierList A possibly empty <code>ASTClassModifierList</code>.
      * @param name An <code>ASTIdentifier</code> representing the enum name.
@@ -39,9 +40,9 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
      *                   representing the list of superinterfaces.
      * @param enumBody An <code>ASTEnumBody</code>.
      */
-    private ASTEnumDeclaration(Location location, ASTKeywordNode accessMod, ASTClassModifierList classModifierList,
+    private ASTEnumDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod, ASTClassModifierList classModifierList,
                                 ASTIdentifier name, ASTDataTypeNoArrayList superinterfaces, ASTEnumBody enumBody) {
-        super(location);
+        super(location, annList);
         myAccessMod = accessMod;
         myClassModifierList = classModifierList;
         myName = name;
@@ -53,21 +54,15 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
      * Because of the 4 possible cases, use this <code>Builder</code> to build
      * an instance of <code>ASTEnumDeclaration</code>.
      */
-    public static class Builder {
-        private Location myLocation;
+    public static class Builder extends ASTAnnotatedNode.Builder<Builder>{
         private ASTKeywordNode myAccessMod;
         private ASTClassModifierList myClassModifierList;
         private ASTIdentifier myName;
         private ASTDataTypeNoArrayList mySuperinterfaces;
         private ASTEnumBody myEnumBody;
 
-        /**
-         * Sets the <code>Location</code>.
-         * @param location A <code>Location</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setLocation(Location location) {
-            this.myLocation = location;
+        @Override
+        protected Builder getThis() {
             return this;
         }
 
@@ -129,9 +124,13 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
          *
          * @return An <code>ASTEnumDeclaration</code>.
          */
+        @Override
         public ASTEnumDeclaration build() {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
+            }
+            if (myAnnList == null) {
+                throw new IllegalStateException("No Annotation List given (can be empty)!");
             }
             if (myName == null) {
                 throw new IllegalStateException("No Name given!");
@@ -142,7 +141,7 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
             if (myClassModifierList == null) {
                 throw new IllegalStateException("No Class Modifier List given (can be empty)!");
             }
-            return new ASTEnumDeclaration(myLocation, myAccessMod, myClassModifierList, myName, mySuperinterfaces, myEnumBody);
+            return new ASTEnumDeclaration(myLocation, myAnnList, myAccessMod, myClassModifierList, myName, mySuperinterfaces, myEnumBody);
         }
     }
 
@@ -188,7 +187,8 @@ public final class ASTEnumDeclaration extends ASTParentNode implements ASTTypeDe
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(5);
+        List<Node> children = new ArrayList<>(6);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }

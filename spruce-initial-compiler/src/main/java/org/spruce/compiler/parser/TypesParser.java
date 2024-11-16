@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
+import org.spruce.compiler.ast.classes.ASTAnnotationList;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.*;
 import org.spruce.compiler.exception.CompileException;
@@ -83,7 +84,7 @@ public class TypesParser extends BasicParser {
      */
     public ASTTypeParameterList parseTypeParameterList() {
         return parseList(
-                t -> test(t, IDENTIFIER),
+                t -> Arrays.asList(AT_SIGN, IDENTIFIER).contains(t.getType()),
                 "Expected an identifier.",
                 COMMA,
                 this::parseTypeParameter,
@@ -95,18 +96,18 @@ public class TypesParser extends BasicParser {
      * Parses a <code>TypeParameter</code>.
      * <em>
      * TypeParameter:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Identifier TypeBound
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] Identifier [TypeBound]<br>
      * </em>
      * @return An <code>ASTTypeParameter</code>.
      */
     public ASTTypeParameter parseTypeParameter() {
         Location loc = curr().getLocation();
+        ASTAnnotationList annList = getClassesParser().parseAnnotationList();
         ASTIdentifier name = getNamesParser().parseIdentifier();
         if (isCurr(SUBTYPE)) {
-            return new ASTTypeParameter(loc, name, parseTypeBound());
+            return new ASTTypeParameter(loc, annList, name, parseTypeBound());
         }
-        return new ASTTypeParameter(loc, name);
+        return new ASTTypeParameter(loc, annList, name);
     }
 
     /**

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import org.spruce.compiler.ast.ASTParentNode;
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
@@ -12,15 +12,16 @@ import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTCompactRecordDeclaration</code> is an Identifier, optional Type Arguments,
- * a RecordHeader, optional Superinterfaces, then a ClassBody.</p>
+ * <p>An <code>ASTCompactRecordDeclaration</code> is an optional AnnotationList,
+ * followed by an Identifier, optional Type Arguments, a RecordHeader, optional
+ * Superinterfaces, then a ClassBody.</p>
  *
  * <em>
  * CompactRecordDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Identifier [TypeArguments] RecordHeader [Superinterfaces] ClassBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] Identifier [TypeArguments] RecordHeader [Superinterfaces] ClassBody
  * </em>
  */
-public final class ASTCompactRecordDeclaration extends ASTParentNode implements ASTVariant {
+public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implements ASTVariant {
     private final ASTIdentifier myName;
     private final ASTTypeParameterList myTypeParams;
     private final ASTFormalParameterList myFormalParamList;
@@ -32,16 +33,17 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
      * @param name An <code>ASTIdentifier</code> representing the record name.
+     * @param annList An <code>ASTAnnotationList</code>, possibly empty.
      * @param typeParams A possibly null <code>ASTTypeParameterList</code>.
      * @param formalParamList An <code>ASTFormalParameterList</code>.
      * @param superinterfaces A possibly null <code>ASTDataTypeNoArrayList</code>
      *                        representing the list of superinterfaces.
      * @param classParts A possibly null <code>ASTClassPartList</code> representing the record body.
      */
-    private ASTCompactRecordDeclaration(Location location,
+    private ASTCompactRecordDeclaration(Location location, ASTAnnotationList annList,
                                  ASTIdentifier name, ASTTypeParameterList typeParams, ASTFormalParameterList formalParamList,
                                  ASTDataTypeNoArrayList superinterfaces, ASTClassPartList classParts) {
-        super(location);
+        super(location, annList);
         myName = name;
         myTypeParams = typeParams;
         myFormalParamList = formalParamList;
@@ -53,21 +55,15 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
      * Because of the 8 possible cases, use this <code>Builder</code> to build
      * an instance of <code>ASTCompactRecordDeclaration</code>.
      */
-    public static class Builder {
-        private Location myLocation;
+    public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTIdentifier myName;
         private ASTTypeParameterList myTypeParams;
         private ASTFormalParameterList myFormalParamList;
         private ASTDataTypeNoArrayList mySuperinterfaces;
         private ASTClassPartList myClassParts;
 
-        /**
-         * Sets the <code>Location</code>.
-         * @param location A <code>Location</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setLocation(Location location) {
-            this.myLocation = location;
+        @Override
+        protected Builder getThis() {
             return this;
         }
 
@@ -128,20 +124,24 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
          * is thrown.
          * @return An <code>ASTCompactRecordDeclaration</code>.
          */
+        @Override
         public ASTCompactRecordDeclaration build() {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
             }
+            if (myAnnList == null) {
+                throw new IllegalStateException("No Annotation List given (can be empty)!");
+            }
             if (myName == null) {
                 throw new IllegalStateException("No Name given!");
             }
-            if (myFormalParamList  == null) {
+            if (myFormalParamList == null) {
                 throw new IllegalStateException("No Record Header given!");
             }
             if (myClassParts == null) {
                 throw new IllegalStateException("No Compact Record Body given!");
             }
-            return new ASTCompactRecordDeclaration(myLocation, myName, myTypeParams,
+            return new ASTCompactRecordDeclaration(myLocation, myAnnList, myName, myTypeParams,
                     myFormalParamList, mySuperinterfaces, myClassParts);
         }
     }
@@ -188,7 +188,8 @@ public final class ASTCompactRecordDeclaration extends ASTParentNode implements 
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(5);
+        List<Node> children = new ArrayList<>(6);
+        children.add(myAnnList);
         children.add(myName);
         if (myTypeParams != null) {
             children.add(myTypeParams);

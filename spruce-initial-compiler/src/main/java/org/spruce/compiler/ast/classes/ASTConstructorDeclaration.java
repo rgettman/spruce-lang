@@ -4,23 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.statements.ASTBlock;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTConstructorDeclaration</code> is an optional AccessModifier followed by
- * a ConstructorDeclarator, optionally followed by a Constructor Invocation, followed by
- * a Block.</p>
+ * <p>An <code>ASTConstructorDeclaration</code> is an optional AnnotationList,
+ * followed by an optional AccessModifier, followed by a ConstructorDeclarator,
+ * optionally followed by a Constructor Invocation, followed by a Block.</p>
  *
  * <em>
  * ConstructorDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] ConstructorDeclarator [ConstructorInvocation] Block
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] ConstructorDeclarator [ConstructorInvocation] Block
  * </em>
  */
-public final class ASTConstructorDeclaration extends ASTParentNode implements ASTClassPart {
+public final class ASTConstructorDeclaration extends ASTAnnotatedNode implements ASTClassPart {
     private final ASTKeywordNode myAccessMod;
     private final ASTConstructorDeclarator myConstructorDecl;
     private final ASTConstructorInvocation myConstructorInvocation;
@@ -30,15 +30,17 @@ public final class ASTConstructorDeclaration extends ASTParentNode implements AS
      * Constructs an <code>ASTConstructorDeclaration</code> with arguments supplied by
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod A possibly null <code>ASTKeywordNode</code> representing
      *                  the Access Modifier.
      * @param constructorDecl An <code>ASTConstructorDeclarator</code>.
      * @param constructorInvocation A possibly null <code>ASTConstructorInvocation</code>.
      * @param block An <code>ASTBlock</code>.
      */
-    private ASTConstructorDeclaration(Location location, ASTKeywordNode accessMod, ASTConstructorDeclarator constructorDecl,
+    private ASTConstructorDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                                      ASTConstructorDeclarator constructorDecl,
                                       ASTConstructorInvocation constructorInvocation, ASTBlock block) {
-        super(location);
+        super(location, annList);
         myAccessMod = accessMod;
         myConstructorDecl = constructorDecl;
         myConstructorInvocation = constructorInvocation;
@@ -49,20 +51,14 @@ public final class ASTConstructorDeclaration extends ASTParentNode implements AS
      * Because of the 4 possible cases, use this <code>Builder</code> to build
      * an instance of <code>ASTConstructorDeclaration</code>.
      */
-    public static class Builder {
-        private Location myLocation;
+    public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTKeywordNode myAccessMod;
         private ASTConstructorDeclarator myConstructorDecl;
         private ASTConstructorInvocation myConstructorInvocation;
         private ASTBlock myBlock;
 
-        /**
-         * Sets the <code>Location</code>.
-         * @param location The <code>Location</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setLocation(Location location) {
-            this.myLocation = location;
+        @Override
+        protected Builder getThis() {
             return this;
         }
 
@@ -113,9 +109,13 @@ public final class ASTConstructorDeclaration extends ASTParentNode implements AS
          * is thrown.
          * @return An <code>ASTConstructorDeclaration</code>.
          */
+        @Override
         public ASTConstructorDeclaration build() {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
+            }
+            if (myAnnList == null) {
+                throw new IllegalStateException("No Annotation List given (can be empty)!");
             }
             if (myConstructorDecl == null) {
                 throw new IllegalStateException("No Constructor Declarator given!");
@@ -123,7 +123,8 @@ public final class ASTConstructorDeclaration extends ASTParentNode implements AS
             if (myBlock == null) {
                 throw new IllegalStateException("No Block given!");
             }
-            return new ASTConstructorDeclaration(myLocation, myAccessMod, myConstructorDecl, myConstructorInvocation, myBlock);
+            return new ASTConstructorDeclaration(myLocation, myAnnList, myAccessMod, myConstructorDecl,
+                    myConstructorInvocation, myBlock);
         }
     }
 
@@ -161,7 +162,8 @@ public final class ASTConstructorDeclaration extends ASTParentNode implements AS
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(4);
+        List<Node> children = new ArrayList<>(5);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }

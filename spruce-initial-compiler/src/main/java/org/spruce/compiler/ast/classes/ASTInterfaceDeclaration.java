@@ -4,8 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 
@@ -14,16 +14,17 @@ import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTInterfaceDeclaration</code> is an optional AccessModifier followed by
- * an optional InterfaceModifierList, then "interface", an Identifier, followed by
- * optional Type Parameters, optional ExtendsInterfaces, optional Permits, then an InterfaceBody.</p>
+ * <p>An <code>ASTInterfaceDeclaration</code> is an optional AnnotationList,
+ * followed by an optional AccessModifier, followed by an optional
+ * InterfaceModifierList, then "interface", an Identifier, followed by optional
+ * Type Parameters, optional ExtendsInterfaces, optional Permits, then an InterfaceBody.</p>
  *
  * <em>
  * InterfaceDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AccessModifier] [InterfaceModifierList] interface Identifier [TypeParameters] [ExtendsInterfaces] [Permits] InterfaceBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceModifierList] interface Identifier [TypeParameters] [ExtendsInterfaces] [Permits] InterfaceBody
  * </em>
  */
-public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTTypeDeclaration {
+public final class ASTInterfaceDeclaration extends ASTAnnotatedNode implements ASTTypeDeclaration {
     private final ASTKeywordNode myAccessMod;
     private final ASTInterfaceModifierList myInterfaceModifierList;
     private final ASTIdentifier myName;
@@ -36,6 +37,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
      * Constructs an <code>ASTInterfaceDeclaration</code> with arguments supplied by
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
+     * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
      * @param interfaceModifierList A possibly empty <code>ASTInterfaceModifierList</code>.
      * @param name An <code>ASTIdentifier</code> representing the interface name.
@@ -46,10 +48,10 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
      *                   representing the list of permitted implementing classes.
      * @param interfaceParts A possibly empty <code>ASTInterfacePartList</code> representing the class body.
      */
-    private ASTInterfaceDeclaration(Location location, ASTKeywordNode accessMod, ASTInterfaceModifierList interfaceModifierList,
+    private ASTInterfaceDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod, ASTInterfaceModifierList interfaceModifierList,
                                     ASTIdentifier name, ASTTypeParameterList typeParams, ASTDataTypeNoArrayList extendsInterfaces,
                                     ASTDataTypeNoArrayList permits, ASTInterfacePartList interfaceParts) {
-        super(location);
+        super(location, annList);
         myAccessMod = accessMod;
         myInterfaceModifierList = interfaceModifierList;
         myName = name;
@@ -63,8 +65,7 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
      * Because of the 16 possible cases, use this <code>Builder</code> to build
      * an instance of <code>ASTInterfaceDeclaration</code>.
      */
-    public static class Builder {
-        private Location myLocation;
+    public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTKeywordNode myAccessMod;
         private ASTInterfaceModifierList myInterfaceModifierList;
         private ASTIdentifier myName;
@@ -73,13 +74,8 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
         private ASTDataTypeNoArrayList myPermits;
         private ASTInterfacePartList myInterfaceParts;
 
-        /**
-         * Sets the <code>Location</code>.
-         * @param location A <code>Location</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setLocation(Location location) {
-            this.myLocation = location;
+        @Override
+        protected Builder getThis() {
             return this;
         }
 
@@ -160,9 +156,13 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
          * is thrown.
          * @return An <code>ASTInterfaceDeclaration</code>.
          */
+        @Override
         public ASTInterfaceDeclaration build() {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
+            }
+            if (myAnnList == null) {
+                throw new IllegalStateException("No Annotation List given (can be empty)!");
             }
             if (myName == null) {
                 throw new IllegalStateException("No Name given!");
@@ -173,8 +173,8 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
             if (myInterfaceModifierList == null) {
                 throw new IllegalStateException("No Class Modifier List given (can be empty)!");
             }
-            return new ASTInterfaceDeclaration(myLocation, myAccessMod, myInterfaceModifierList, myName, myTypeParams,
-                    myExtendsInterfaces, myPermits, myInterfaceParts);
+            return new ASTInterfaceDeclaration(myLocation, myAnnList, myAccessMod, myInterfaceModifierList, myName,
+                    myTypeParams, myExtendsInterfaces, myPermits, myInterfaceParts);
         }
     }
 
@@ -236,7 +236,8 @@ public final class ASTInterfaceDeclaration extends ASTParentNode implements ASTT
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(7);
+        List<Node> children = new ArrayList<>(8);
+        children.add(myAnnList);
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }
