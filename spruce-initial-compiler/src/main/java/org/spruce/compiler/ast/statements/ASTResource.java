@@ -1,6 +1,7 @@
 package org.spruce.compiler.ast.statements;
 
 import org.spruce.compiler.ast.ParentNode;
+import org.spruce.compiler.ast.expressions.ASTElementAccess;
 import org.spruce.compiler.ast.expressions.ASTFieldAccess;
 import org.spruce.compiler.ast.names.ASTExpressionName;
 
@@ -14,5 +15,6 @@ import org.spruce.compiler.ast.names.ASTExpressionName;
  * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess
  * </em>
  */
-public sealed interface ASTResource extends ParentNode permits ASTResourceDeclaration, ASTExpressionName, ASTFieldAccess {
+public sealed interface ASTResource extends ParentNode permits ASTResourceDeclaration, ASTExpressionName,
+        ASTElementAccess, ASTFieldAccess {
 }

@@ -1,10 +1,14 @@
 package org.spruce.compiler.ast.statements;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.types.ASTDataTypeNoArray;
+import org.spruce.compiler.ast.types.ASTSimpleType;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -36,6 +40,23 @@ public final class ASTLocalVariableDeclaration extends ASTParentNode implements 
         myVarModifierList = varModifierList;
         myLocalVarType = localVarType;
         myVarDeclList = varDeclList;
+    }
+
+    /**
+     * Create a bad LocalVariableDeclaration as a placeholder in case of an error.
+     * @param loc The <code>Location</code>.
+     * @return An <code>ASTLocalVariableDeclaration</code> at the given <code>Location</code>.
+     */
+    public static ASTLocalVariableDeclaration badLocalVariableDeclaration(Location loc) {
+        return new ASTLocalVariableDeclaration(loc,
+                new ASTVariableModifierList(loc, Collections.emptyList()),
+                new ASTLocalVariableType(loc,
+                        new ASTDataTypeNoArray(loc, Arrays.asList(
+                                new ASTSimpleType(loc,
+                                        new ASTIdentifier(loc, "Bad Local Variable Declaration"))))),
+                new ASTVariableDeclaratorList(loc, Arrays.asList(
+                        new ASTVariableDeclarator(loc,
+                                new ASTIdentifier(loc,"Bad local variable")))));
     }
 
     /**

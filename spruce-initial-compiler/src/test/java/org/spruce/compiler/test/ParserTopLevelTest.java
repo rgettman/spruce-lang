@@ -11,7 +11,6 @@ import org.spruce.compiler.ast.classes.ASTRecordDeclaration;
 import org.spruce.compiler.ast.classes.ASTTypeDeclaration;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.toplevel.*;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.parser.TopLevelParser;
 import org.spruce.compiler.scanner.Scanner;
@@ -33,7 +32,7 @@ public class ParserTopLevelTest {
     public void testOrdinaryCompilationUnitEmpty() {
         TopLevelParser parser = getTopLevelParser("");
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertFalse(node.getNamespaceDecl().isPresent());
         checkList(node.getUseDeclList(), USE_DECLARATIONS, ASTUseDeclaration.class, 0);
         checkList(node.getTypeDeclList(), TYPE_DECLARATIONS, ASTTypeDeclaration.class, 0);
@@ -51,7 +50,7 @@ public class ParserTopLevelTest {
                 enum Light {RED, YELLOW, GREEN}
                 """);
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertTrue(node.getNamespaceDecl().isPresent());
         checkList(node.getUseDeclList(), USE_DECLARATIONS, ASTUseDeclaration.class, 1);
         checkList(node.getTypeDeclList(), TYPE_DECLARATIONS, ASTTypeDeclaration.class, 2);
@@ -69,7 +68,7 @@ public class ParserTopLevelTest {
                 @Test2 enum Light {RED, YELLOW, GREEN}
                 """);
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertTrue(node.getNamespaceDecl().isPresent());
         checkList(node.getUseDeclList(), USE_DECLARATIONS, ASTUseDeclaration.class, 1);
         checkList(node.getTypeDeclList(), TYPE_DECLARATIONS, ASTTypeDeclaration.class, 2);
@@ -85,7 +84,7 @@ public class ParserTopLevelTest {
                 @Test2 enum Light {RED, YELLOW, GREEN}
                 """);
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertFalse(node.getNamespaceDecl().isPresent());
         checkList(node.getUseDeclList(), USE_DECLARATIONS, ASTUseDeclaration.class, 0);
         checkList(node.getTypeDeclList(), TYPE_DECLARATIONS, ASTTypeDeclaration.class, 2);
@@ -102,7 +101,7 @@ public class ParserTopLevelTest {
                 @Test2 enum Light {RED, YELLOW, GREEN}
                 """);
         ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertFalse(node.getNamespaceDecl().isPresent());
         checkList(node.getUseDeclList(), USE_DECLARATIONS, ASTUseDeclaration.class, 1);
         checkList(node.getTypeDeclList(), TYPE_DECLARATIONS, ASTTypeDeclaration.class, 2);
@@ -119,8 +118,8 @@ public class ParserTopLevelTest {
                 public class Baz<T> extends Bar<T> {}
                 enum Light {RED, YELLOW, GREEN}
                 """);
-        assertThrows(CompileException.class, parser::parseOrdinaryCompilationUnit,
-                "Annotations are not allowed on use declarations.");
+        ASTOrdinaryCompilationUnit node = parser.parseOrdinaryCompilationUnit();
+        expectError(node, parser);
     }
 
     /**
@@ -130,7 +129,7 @@ public class ParserTopLevelTest {
     public void testUseDeclarationListOfUseDeclaration() {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.List;");
         ASTUseDeclarationList node = parser.parseUseDeclarationList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, USE_DECLARATIONS, ASTUseDeclaration.class, 1);
     }
 
@@ -145,7 +144,7 @@ public class ParserTopLevelTest {
                 use shared spruce.test.Assertions.*;
                 """);
         ASTUseDeclarationList node = parser.parseUseDeclarationList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, USE_DECLARATIONS, ASTUseDeclaration.class, 3);
     }
 
@@ -157,7 +156,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("namespace spruce.test.parser;");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTNamespaceDeclaration node = parser.parseNamespaceDeclaration(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
         checkList(node.getNamespace(), NAMESPACE_IDS, ASTIdentifier.class, 3);
     }
@@ -170,7 +169,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("@Doc namespace spruce.test.parser;");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTNamespaceDeclaration node = parser.parseNamespaceDeclaration(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 1);
         checkList(node.getNamespace(), NAMESPACE_IDS, ASTIdentifier.class, 3);
     }
@@ -182,7 +181,8 @@ public class ParserTopLevelTest {
     public void testNamespaceDeclarationNoSemicolon() {
         TopLevelParser parser = getTopLevelParser("namespace spruce.test.parser use");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
-        assertThrows(CompileException.class, () -> parser.parseNamespaceDeclaration(annList), "Missing semicolon.");
+        ASTNamespaceDeclaration node = parser.parseNamespaceDeclaration(annList);
+        expectError(node, parser);
     }
 
     /**
@@ -192,7 +192,7 @@ public class ParserTopLevelTest {
     public void testUseDeclarationOfUSAD() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.*;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         ASTUseSharedAllDeclaration usad = ensureIsa(node, ASTUseSharedAllDeclaration.class);
         checkList(usad.getTypename(), TYPENAME_IDS, ASTIdentifier.class, 3);
@@ -204,7 +204,8 @@ public class ParserTopLevelTest {
     @Test
     public void testUseDeclarationOfUSADNoSemicolon() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.*");
-        assertThrows(CompileException.class, parser::parseUseDeclaration, "Expected semicolon.");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
     }
 
     /**
@@ -214,7 +215,7 @@ public class ParserTopLevelTest {
     public void testUseDeclarationOfUSTD() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.assertEquals;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         ASTUseSharedTypeDeclaration ustd = ensureIsa(node, ASTUseSharedTypeDeclaration.class);
         ASTIdentifier identifier = ustd.getIdentifier();
@@ -228,7 +229,8 @@ public class ParserTopLevelTest {
     @Test
     public void testUseDeclarationOfUSTDNoSemicolon() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.assertEquals use");
-        assertThrows(CompileException.class, parser::parseUseDeclaration, "Expected semicolon.");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
     }
 
     /**
@@ -238,7 +240,7 @@ public class ParserTopLevelTest {
     public void testUseDeclarationOfUSMD() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.{assertEquals, assertTrue, assertFalse};");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         ASTUseSharedMultDeclaration usmd = ensureIsa(node, ASTUseSharedMultDeclaration.class);
         checkList(usmd.getIdentifierList(), IDENTIFIERS, ASTIdentifier.class, 3);
@@ -251,7 +253,8 @@ public class ParserTopLevelTest {
     @Test
     public void testUseDeclarationOfUSMDNoSemicolon() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.{assertEquals, assertTrue, assertFalse} use");
-        assertThrows(CompileException.class, parser::parseUseDeclaration, "Expected semicolon.");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
     }
 
     /**
@@ -260,7 +263,8 @@ public class ParserTopLevelTest {
     @Test
     public void testUseDeclarationOfUSMDNoCloseBrace() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.test.Assertions.{assertEquals, assertTrue, assertFalse;");
-        assertThrows(CompileException.class, parser::parseUseDeclaration, "Expected '}'");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
     }
 
     /**
@@ -270,7 +274,7 @@ public class ParserTopLevelTest {
     public void testUseDeclarationOfUAD() {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.*;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         ASTUseAllDeclaration uad = ensureIsa(node, ASTUseAllDeclaration.class);
         assertNotNull(uad.getNamespaceOrTypeName());
@@ -282,7 +286,9 @@ public class ParserTopLevelTest {
     @Test
     public void testUseDeclarationOfUADNoSemicolon() {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.*");
-        assertThrows(CompileException.class, parser::parseUseDeclaration, "Expected semicolon.");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
+
     }
 
     /**
@@ -292,7 +298,7 @@ public class ParserTopLevelTest {
     public void testUseDeclarationOfUTD() {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.ArrayList;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         ASTUseTypeDeclaration utd = ensureIsa(node, ASTUseTypeDeclaration.class);
         checkList(utd.getTypename(), TYPENAME_IDS, ASTIdentifier.class, 3);
@@ -304,7 +310,8 @@ public class ParserTopLevelTest {
     @Test
     public void testUseDeclarationOfUTDNoSemicolon() {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.ArrayList use");
-        assertThrows(CompileException.class, parser::parseUseDeclaration, "Expected semicolon.");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
     }
 
     /**
@@ -314,7 +321,7 @@ public class ParserTopLevelTest {
     public void testUseDeclarationOfUMD() {
         TopLevelParser parser = getTopLevelParser("use spruce.collections.{List, ArrayList, LinkedList};");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         ASTUseMultDeclaration umd = ensureIsa(node, ASTUseMultDeclaration.class);
         checkList(umd.getIdentifierList(), IDENTIFIERS, ASTIdentifier.class, 3);
@@ -327,7 +334,8 @@ public class ParserTopLevelTest {
     @Test
     public void testUseDeclarationOfUMDNoSemicolon() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.collections.{List, ArrayList, LinkedList} use");
-        assertThrows(CompileException.class, parser::parseUseDeclaration, "Expected semicolon.");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
     }
 
     /**
@@ -336,7 +344,8 @@ public class ParserTopLevelTest {
     @Test
     public void testUseDeclarationOfUMDNoCloseBrace() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.collections.{List, ArrayList, LinkedList;");
-        assertThrows(CompileException.class, parser::parseUseDeclaration, "Expected '}'");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
     }
 
     /**
@@ -347,7 +356,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("class Foo {}");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclarationList node = parser.parseTypeDeclarationList(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_DECLARATIONS, ASTTypeDeclaration.class, 1);
     }
 
@@ -363,7 +372,7 @@ public class ParserTopLevelTest {
                 """);
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclarationList node = parser.parseTypeDeclarationList(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_DECLARATIONS, ASTTypeDeclaration.class, 3);
     }
 
@@ -379,7 +388,7 @@ public class ParserTopLevelTest {
                 """);
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclarationList node = parser.parseTypeDeclarationList(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_DECLARATIONS, ASTTypeDeclaration.class, 3);
     }
 
@@ -391,7 +400,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("public abstract class Dummy<T> { abstract void test(); }");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTClassDeclaration.class, node);
     }
 
@@ -403,7 +412,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("public shared enum TrafficLight {RED, YELLOW, GREEN}");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTEnumDeclaration.class, node);
     }
 
@@ -415,7 +424,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("protected shared interface Dummy { public void run();}");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTInterfaceDeclaration.class, node);
     }
 
@@ -427,7 +436,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("public shared annotation Spruce { String language();}");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTAnnotationDeclaration.class, node);
     }
 
@@ -438,8 +447,8 @@ public class ParserTopLevelTest {
     public void testTypeDeclarationOfRecordDeclarationBadModifier() {
         TopLevelParser parser = getTopLevelParser("internal shared record Redacted(String byWhom) { }");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
-        assertThrows(CompileException.class, () -> parser.parseTypeDeclaration(annList),
-                "General modifier not allowed here.");
+        ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
+        expectError(node, parser);
     }
 
     /**
@@ -450,7 +459,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("internal record Redacted(String byWhom) { }");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTRecordDeclaration.class, node);
     }
 
@@ -462,7 +471,7 @@ public class ParserTopLevelTest {
         TopLevelParser parser = getTopLevelParser("@Preview adt Test { Test1, Test2 }");
         ASTAnnotationList annList = parser.getClassesParser().parseAnnotationList();
         ASTTypeDeclaration node = parser.parseTypeDeclaration(annList);
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTAdtDeclaration.class, node);
     }
 

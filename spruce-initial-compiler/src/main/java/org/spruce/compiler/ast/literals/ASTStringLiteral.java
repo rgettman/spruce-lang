@@ -1,5 +1,6 @@
 package org.spruce.compiler.ast.literals;
 
+import org.spruce.compiler.ast.ASTValueNode;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -15,7 +16,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;EscapeCharacter
  * </em>
  */
-public class ASTStringLiteral extends ASTLiteral {
+public final class ASTStringLiteral extends ASTValueNode implements ASTLiteral {
     /**
      * Constructs an <code>ASTStringLiteral</code> given the <code>Location</code>
      * and the string value of the token.

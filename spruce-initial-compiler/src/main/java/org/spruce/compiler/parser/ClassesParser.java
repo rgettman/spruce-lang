@@ -2,10 +2,13 @@ package org.spruce.compiler.parser;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
+import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.classes.*;
 import org.spruce.compiler.ast.expressions.ASTArgumentList;
 import org.spruce.compiler.ast.names.ASTIdentifier;
@@ -17,9 +20,10 @@ import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.ast.types.ASTTypeParameterList;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
+import org.spruce.compiler.scanner.Token;
+import org.spruce.compiler.scanner.TokenType;
 
 import static org.spruce.compiler.scanner.TokenType.*;
 
@@ -51,27 +55,23 @@ public class ClassesParser extends BasicParser {
     private ASTTypeDeclaration parseNestedType(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
                                                ASTGeneralModifierList genModList) {
         return switch (curr().getType()) {
-            case CLASS ->
-                    parseClassDeclaration(loc, annList, accessMod, genModList);
-            case ENUM ->
-                    parseEnumDeclaration(loc, annList, accessMod, genModList);
-            case INTERFACE ->
-                    parseInterfaceDeclaration(loc, annList, accessMod, genModList);
-            case ANNOTATION ->
-                    parseAnnotationDeclaration(loc, annList, accessMod, genModList);
+            case CLASS -> parseClassDeclaration(loc, annList, accessMod, genModList);
+            case ENUM -> parseEnumDeclaration(loc, annList, accessMod, genModList);
+            case INTERFACE -> parseInterfaceDeclaration(loc, annList, accessMod, genModList);
+            case ANNOTATION -> parseAnnotationDeclaration(loc, annList, accessMod, genModList);
             case RECORD -> {
                 if (!genModList.getChildren().isEmpty()) {
-                    throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+                    error(curr().getLocation(), "General modifier not allowed here.");
                 }
                 yield parseRecordDeclaration(loc, annList, accessMod);
             }
             case ADT -> {
                 if (!genModList.getChildren().isEmpty()) {
-                    throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+                    error(curr().getLocation(), "General modifier not allowed here.");
                 }
                 yield parseAdtDeclaration(loc, annList, accessMod);
             }
-            default -> throw new CompileException(loc, "Expected a type declaration.");
+            default -> throw internalError("type declaration");
         };
     }
 
@@ -91,13 +91,13 @@ public class ClassesParser extends BasicParser {
      */
     public ASTAnnotationDeclaration parseAnnotationDeclaration(Location loc, ASTAnnotationList annList,
                                                                ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
-        ASTInterfaceModifierList interfaceModList = gms.convertToSpecificList(
+        ASTInterfaceModifierList interfaceModList = convertToSpecificList(gms, 
                     "Unexpected annotation modifier.",
                     Arrays.asList(ABSTRACT, SHARED),
                     ASTInterfaceModifierList::new
         );
         if (accept(ANNOTATION) == null) {
-            throw new CompileException(curr().getLocation(), "Expected annotation.");
+            throw internalError(ANNOTATION);
         }
         ASTIdentifier name = getNamesParser().parseIdentifier();
         ASTAnnotationPartList body = parseAnnotationBody();
@@ -118,11 +118,11 @@ public class ClassesParser extends BasicParser {
      */
     public ASTAnnotationPartList parseAnnotationBody() {
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '{'.");
+            error(curr().getLocation(), "Expected '{'.");
         }
         ASTAnnotationPartList annotationPartList = parseAnnotationPartList();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '}'.");
+            error(curr().getLocation(), "Expected '}'.");
         }
         return annotationPartList;
     }
@@ -143,6 +143,7 @@ public class ClassesParser extends BasicParser {
                         .contains(t.getType()),
                 "Expected constant or element declaration.",
                 this::parseAnnotationPart,
+                Arrays.asList(CLOSE_BRACE, EOF),
                 ASTAnnotationPartList::new,
                 false
         );
@@ -164,6 +165,7 @@ public class ClassesParser extends BasicParser {
      * @return An <code>ASTAnnotationPart</code> representing one of the above productions.
      */
     public ASTAnnotationPart parseAnnotationPart() {
+        skipUnrecognizedTokens();
         Location loc = curr().getLocation();
         ASTAnnotationList annList = parseAnnotationList();
         ASTKeywordNode accessMod = null;
@@ -180,24 +182,31 @@ public class ClassesParser extends BasicParser {
         ASTTypeParameterList typeParams = null;
         if (isCurr(LESS_THAN)) {
             typeParams = getTypesParser().parseTypeParameters();
+
+            if (isCurr(CONSTANT)) {
+                ASTKeywordNode constantKeyword = parseModifier(Arrays.asList(CONSTANT),
+                        "Internal error (constant).");
+                error(typeParams.getLocation(), "Type parameters not allowed on constant declaration.");
+                return parseConstantDeclaration(loc, annList, accessMod, constantKeyword);
+            }
         }
 
         ASTDataType dt = getTypesParser().parseDataType();
         if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS)) {
             if (typeParams != null) {
-                throw new CompileException(curr().getLocation(), "Type parameters not allowed on annotation element declaration.");
+                error(typeParams.getLocation(), "Type parameters not allowed on annotation element declaration.");
             }
             if (!genModList.getChildren().isEmpty()) {
-                throw new CompileException(curr().getLocation(), "Method modifiers not allowed on annotation element declaration.");
+                error(genModList.getLocation(), "Method modifiers not allowed on annotation element declaration.");
             }
             if (accessMod != null) {
-                throw new CompileException(curr().getLocation(), "Access modifiers not allowed on annotation element declaration.");
+                error(accessMod.getLocation(), "Access modifiers not allowed on annotation element declaration.");
             }
             return parseAnnotationTypeElementDeclaration(loc, annList, dt);
         }
         else {
             if (typeParams != null) {
-                throw new CompileException(curr().getLocation(), "Type parameters not allowed on constant declaration.");
+                error(typeParams.getLocation(), "Type parameters not allowed on constant declaration.");
             }
             return parseConstantDeclaration(loc, annList, accessMod, genModList, dt);
         }
@@ -221,16 +230,16 @@ public class ClassesParser extends BasicParser {
         ASTIdentifier name = getNamesParser().parseIdentifier();
         ASTElementValue defaultValue = null;
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('");
+            error(curr().getLocation(), "Expected '('.");
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'");
+            error(curr().getLocation(), "Expected ')'.");
         }
         if (isCurr(DEFAULT)) {
             defaultValue = parseDefaultValue();
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Missing semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         if (defaultValue == null) {
             return new ASTAnnotationTypeElementDeclaration(loc, annList, dt, name);
@@ -251,7 +260,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTElementValue parseDefaultValue() {
         if (accept(DEFAULT) == null) {
-            throw new CompileException(curr().getLocation(), "Expected default.");
+            throw internalError(DEFAULT);
         }
         return parseElementValue();
     }
@@ -266,12 +275,9 @@ public class ClassesParser extends BasicParser {
      */
     public ASTAnnotationList parseAnnotationList() {
         return parseMultiple(
-                t -> Arrays.asList(AT_SIGN)
-                        .contains(t.getType()),
-                "Expected an annotation.",
+                t -> test(t, AT_SIGN),
                 this::parseAnnotation,
-                ASTAnnotationList::new,
-                false
+                ASTAnnotationList::new
         );
     }
 
@@ -290,7 +296,7 @@ public class ClassesParser extends BasicParser {
     public ASTAnnotation parseAnnotation() {
         Location loc = curr().getLocation();
         if (accept(AT_SIGN) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '@'.");
+            throw internalError(AT_SIGN);
         }
         ASTTypeName typeName = getNamesParser().parseTypeName();
         if (isCurr(OPEN_PARENTHESIS)) {
@@ -343,7 +349,7 @@ public class ClassesParser extends BasicParser {
     public ASTSingleElementAnnotation parseSingleElementAnnotation(Location loc, ASTTypeName typeName) {
         ASTElementValue elementValue = parseElementValue();
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return new ASTSingleElementAnnotation(loc, typeName, elementValue);
     }
@@ -362,7 +368,7 @@ public class ClassesParser extends BasicParser {
     public ASTNormalAnnotation parseNormalAnnotation(Location loc, ASTTypeName typeName) {
         ASTElementValuePairList elementValuePairList = parseElementValuePairList();
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return new ASTNormalAnnotation(loc, typeName, elementValuePairList);
     }
@@ -381,6 +387,13 @@ public class ClassesParser extends BasicParser {
                 "Expected identifier.",
                 COMMA,
                 this::parseElementValuePair,
+                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACE, SEMICOLON,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, CONSTANT, DEFAULT, OVERRIDE, SEALED, SHARED, VOLATILE,  // General modifiers
+                        VAR, MUT,  // Variable modifiers (return type, field type)
+                        VOID, CONSTRUCTOR,  // Other class part stuff
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
                 ASTElementValuePairList::new,
                 false
         );
@@ -398,7 +411,10 @@ public class ClassesParser extends BasicParser {
         Location loc = curr().getLocation();
         ASTIdentifier elementName = getNamesParser().parseIdentifier();
         if (accept(EQUAL) == null) {
-            throw new CompileException(curr().getLocation(), "Expected assignment operator '='.");
+            error(curr().getLocation(), "Expected assignment operator '='.");
+            if (!isExpression(curr())) {
+                accept(curr().getType());
+            }
         }
         return new ASTElementValuePair(loc, elementName, parseElementValue());
     }
@@ -414,11 +430,11 @@ public class ClassesParser extends BasicParser {
      */
     public ASTElementValueList parseElementValueArrayInitializer() {
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '{'.");
+            throw internalError(OPEN_BRACE);
         }
         ASTElementValueList elementValueArrayInit = parseElementValueList();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '}'.");
+            error(curr().getLocation(), "Expected '}'.");
         }
         return elementValueArrayInit;
     }
@@ -433,10 +449,17 @@ public class ClassesParser extends BasicParser {
      */
     public ASTElementValueList parseElementValueList() {
         return parseList(
-                ExpressionsParser::isPrimary,
+                t -> isValueExpression(t) || test(t, Arrays.asList(OPEN_BRACE, AT_SIGN)),
                 "Expected value.",
                 COMMA,
                 this::parseElementValue,
+                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACE, SEMICOLON,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, CONSTANT, DEFAULT, OVERRIDE, SEALED, SHARED, VOLATILE,  // General modifiers
+                        VAR, MUT,  // Variable modifiers (return type, field type)
+                        VOID, CONSTRUCTOR,  // Other class part stuff
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
                 ASTElementValueList::new,
                 false
         );
@@ -486,7 +509,7 @@ public class ClassesParser extends BasicParser {
             builder.setAccessModifier(accessMod);
         }
         if (accept(ADT) == null) {
-            throw new CompileException(curr().getLocation(), "Expected adt.");
+            throw internalError(ADT);
         }
         builder.setName(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
@@ -510,12 +533,12 @@ public class ClassesParser extends BasicParser {
     public ASTAdtBody parseAdtBody() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException(loc, "Expected '{'.");
+            error(loc, "Expected '{'.");
         }
         ASTVariantList variantList = parseVariantList();
         ASTInterfacePartList bodyDecls = parseAdtBodyDeclarations();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(loc, "Expected '}'.");
+            error(loc, "Expected '}'.");
         }
         return new ASTAdtBody(loc, variantList, bodyDecls);
     }
@@ -534,6 +557,13 @@ public class ClassesParser extends BasicParser {
                 "Expected a data type or a compact record declaration.",
                 COMMA,
                 this::parseVariant,
+                Arrays.asList(CLOSE_BRACE, SEMICOLON,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, CONSTANT, DEFAULT, OVERRIDE, SEALED, SHARED, VOLATILE,  // General modifiers
+                        VAR, MUT,  // Variable modifiers (return type, field type)
+                        VOID, CONSTRUCTOR,  // Other class part stuff
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
                 ASTVariantList::new,
                 false
         );
@@ -552,7 +582,7 @@ public class ClassesParser extends BasicParser {
         Location loc = curr().getLocation();
         ASTAnnotationList annList = parseAnnotationList();
         if (!isCurr(IDENTIFIER)) {
-            throw new CompileException(loc, "Expected an identifier.");
+            throw internalError("'identifier'");
         }
         switch(next().getType()) {
             case DOT, COMMA, SEMICOLON, CLOSE_BRACE -> {
@@ -591,8 +621,9 @@ public class ClassesParser extends BasicParser {
      */
     public ASTCompactRecordDeclaration parseCompactRecordDeclaration(ASTAnnotationList annList) {
         Location loc = curr().getLocation();
-        if (!isCurr(IDENTIFIER)) {
-            throw new CompileException(loc, "Expected an identifier.");
+        if (isCurr(RECORD)) {
+            error(loc, "Keyword 'record' cannot be present for a compact record declaration.  Remove.");
+            accept(RECORD);
         }
         ASTCompactRecordDeclaration.Builder builder = new ASTCompactRecordDeclaration.Builder()
                 .setLocation(loc)
@@ -623,7 +654,7 @@ public class ClassesParser extends BasicParser {
             return parseInterfacePartList();
         }
         else if (!isCurr(CLOSE_BRACE)) {
-            throw new CompileException(loc, "Expected ';'.");
+            error(loc, "Expected ';'.");
         }
         return new ASTInterfacePartList(loc, Collections.emptyList());
     }
@@ -650,13 +681,13 @@ public class ClassesParser extends BasicParser {
         if (accessMod != null) {
             builder.setAccessMod(accessMod);
         }
-        builder.setInterfaceModifierList(gms.convertToSpecificList(
+        builder.setInterfaceModifierList(convertToSpecificList(gms, 
                     "Unexpected interface modifier.",
                     Arrays.asList(ABSTRACT, SHARED),
                     ASTInterfaceModifierList::new
             ));
         if (accept(INTERFACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected interface.");
+            throw internalError(INTERFACE);
         }
         builder.setName(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
@@ -681,7 +712,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTDataTypeNoArrayList parseExtendsInterfaces() {
         if (accept(EXTENDS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected extends.");
+            throw internalError(EXTENDS);
         }
         return getTypesParser().parseDataTypeNoArrayList();
     }
@@ -697,11 +728,11 @@ public class ClassesParser extends BasicParser {
      */
     public ASTInterfacePartList parseInterfaceBody() {
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '{'.");
+            error(curr().getLocation(), "Expected '{'.");
         }
         ASTInterfacePartList node = parseInterfacePartList();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '}'.");
+            error(curr().getLocation(), "Expected '}'.");
         }
         return node;
     }
@@ -722,6 +753,7 @@ public class ClassesParser extends BasicParser {
                         .contains(t.getType()),
                 "Expected constant or method declaration.",
                 this::parseInterfacePart,
+                Arrays.asList(CLOSE_BRACE, EOF),
                 ASTInterfacePartList::new,
                 false
         );
@@ -743,6 +775,7 @@ public class ClassesParser extends BasicParser {
      * @return An <code>ASTInterfacePart</code> representing one of the above productions.
      */
     public ASTInterfacePart parseInterfacePart() {
+        skipUnrecognizedTokens();
         Location loc = curr().getLocation();
         ASTAnnotationList annList = parseAnnotationList();
         ASTKeywordNode accessMod = null;
@@ -759,6 +792,13 @@ public class ClassesParser extends BasicParser {
         if (isCurr(LESS_THAN)) {
             // TypeParameters mut|void|identifier
             ASTTypeParameterList typeParams = getTypesParser().parseTypeParameters();
+
+            if (isCurr(CONSTANT)) {
+                ASTKeywordNode constantKeyword = parseModifier(Arrays.asList(CONSTANT),
+                        "Internal error (constant).");
+                error(typeParams.getLocation(), "Type parameters not allowed on constant declaration.");
+                return parseConstantDeclaration(loc, annList, accessMod, constantKeyword);
+            }
             return parseInterfaceMethodDeclaration(loc, annList, accessMod, genModList, typeParams);
         }
         // No type parameters:
@@ -776,7 +816,7 @@ public class ClassesParser extends BasicParser {
             else {
                 if (!varModList.getChildren().isEmpty()) {
                     ASTKeywordNode bad = varModList.getTypedChildren().get(0);
-                    throw new CompileException(bad.getLocation(), "Unexpected variable modifier.");
+                    error(bad.getLocation(), "Unexpected variable modifier.");
                 }
                 // [VariableModifierList] DataType ...
                 return parseConstantDeclaration(loc, annList, accessMod, genModList, dt);
@@ -802,7 +842,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAnnotationList annList,
                    ASTKeywordNode accessMod, ASTGeneralModifierList gms, ASTTypeParameterList tps) {
-        ASTInterfaceMethodModifierList interfaceMethodModifiers = gms.convertToSpecificList(
+        ASTInterfaceMethodModifierList interfaceMethodModifiers = convertToSpecificList(gms, 
                     "Unexpected interface method modifier.",
                     Arrays.asList(ABSTRACT, DEFAULT, OVERRIDE, SHARED),
                     ASTInterfaceMethodModifierList::new
@@ -831,7 +871,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAnnotationList annList,
                       ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
-        ASTInterfaceMethodModifierList interfaceMethodModifiers = gms.convertToSpecificList(
+        ASTInterfaceMethodModifierList interfaceMethodModifiers = convertToSpecificList(gms, 
                 "Unexpected interface method modifier.",
                 Arrays.asList(ABSTRACT, DEFAULT, OVERRIDE, SHARED),
                 ASTInterfaceMethodModifierList::new
@@ -862,7 +902,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTAnnotationList annList,
                   ASTKeywordNode accessMod, ASTGeneralModifierList gms, ASTVariableModifierList varModList, ASTDataType dt) {
-        ASTInterfaceMethodModifierList interfaceMethodModifiers = gms.convertToSpecificList(
+        ASTInterfaceMethodModifierList interfaceMethodModifiers = convertToSpecificList(gms, 
                 "Unexpected interface method modifier.",
                 Arrays.asList(ABSTRACT, DEFAULT, OVERRIDE, SHARED),
                 ASTInterfaceMethodModifierList::new
@@ -900,18 +940,22 @@ public class ClassesParser extends BasicParser {
      */
     public ASTConstantDeclaration parseConstantDeclaration(Location loc, ASTAnnotationList annList,
                 ASTKeywordNode accessMod, ASTGeneralModifierList gms, ASTDataType dt) {
-        ASTConstantModifierList constantModifiers = gms.convertToSpecificList(
+        ASTConstantModifierList constantModifiers = convertToSpecificList(gms, 
                     "Unexpected modifier for a constant.",
                     Collections.singletonList(CONSTANT),
                     ASTConstantModifierList::new
             );
+        ASTKeywordNode constantMod;
         if (constantModifiers.getChildren().isEmpty()) {
-            throw new CompileException(dt.getLocation(), "Expected 'constant'.");
+            error(dt.getLocation(), "Expected 'constant'.");
+            constantMod = new ASTKeywordNode(curr().getLocation(), UNKNOWN);
         }
-        ASTKeywordNode constantMod = constantModifiers.get(0);
+        else {
+            constantMod = constantModifiers.get(0);
+        }
         ASTVariableDeclaratorList varDeclList = getStatementsParser().parseVariableDeclaratorList();
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         if (accessMod != null) {
             return new ASTConstantDeclaration(loc, annList, accessMod, constantMod, dt, varDeclList);
@@ -920,19 +964,31 @@ public class ClassesParser extends BasicParser {
     }
 
     /**
-     * Parses a <code>ConstantModifier</code>.
+     * Parses a <code>ConstantDeclaration</code>, given an already parsed
+     * AnnotationList, AccessModifier, GeneralModifierList, and DataType.
      * <em>
-     * ConstantModifier:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;constant
+     * ConstantDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] AccessModifier] ConstantModifier DataType VariableDeclaratorList
      * </em>
-     * @return An <code>ASTKeywordNode</code> of keyword <code>CONSTANT</code>.
+     * @param loc The given <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
+     * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
+     *                  AccessModifier.  If not present, <code>null</code>.
+     * @param constantMod An already parsed <code>ASTKeywordNode</code> representing
+     *                    the keyword <code>constant</code>.
+     * @return An <code>ASTConstantDeclaration</code>.
      */
-    public ASTKeywordNode parseConstantModifier() {
-        return parseModifier(
-                Collections.singletonList(CONSTANT),
-                "Expected constant.",
-                ASTKeywordNode::new
-        );
+    public ASTConstantDeclaration parseConstantDeclaration(Location loc, ASTAnnotationList annList,
+                ASTKeywordNode accessMod, ASTKeywordNode constantMod) {
+        ASTDataType dt = getTypesParser().parseDataType();
+        ASTVariableDeclaratorList varDeclList = getStatementsParser().parseVariableDeclaratorList();
+        if (accept(SEMICOLON) == null) {
+            error(curr().getLocation(), "Expected ';'.");
+        }
+        if (accessMod != null) {
+            return new ASTConstantDeclaration(loc, annList, accessMod, constantMod, dt, varDeclList);
+        }
+        return new ASTConstantDeclaration(loc, annList, constantMod, dt, varDeclList);
     }
 
     /**
@@ -956,7 +1012,7 @@ public class ClassesParser extends BasicParser {
             builder.setAccessMod(accessMod);
         }
         if (accept(RECORD) == null) {
-            throw new CompileException(curr().getLocation(), "Expected record.");
+            throw internalError(RECORD);
         }
         builder.setName(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
@@ -979,11 +1035,11 @@ public class ClassesParser extends BasicParser {
      */
     public ASTFormalParameterList parseRecordHeader() {
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         ASTFormalParameterList formalParamList = parseFormalParameterList();
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return formalParamList;
     }
@@ -1004,7 +1060,7 @@ public class ClassesParser extends BasicParser {
     public ASTCompactConstructorDeclaration parseCompactConstructorDeclaration(Location loc, ASTAnnotationList annList,
                                                                                ASTKeywordNode accessMod) {
         if (accept(CONSTRUCTOR) == null) {
-            throw new CompileException(curr().getLocation(), "Expected 'constructor'.");
+            throw internalError(CONSTRUCTOR);
         }
         ASTBlock block = getStatementsParser().parseBlock();
         if (accessMod != null) {
@@ -1037,13 +1093,13 @@ public class ClassesParser extends BasicParser {
         if (accessMod != null) {
             builder.setAccessMod(accessMod);
         }
-        builder.setClassModifierList(gms.convertToSpecificList(
+        builder.setClassModifierList(convertToSpecificList(gms, 
                     "Unexpected enum modifier.",
                     Arrays.asList(ABSTRACT, SHARED),
                     ASTClassModifierList::new
             ));
         if (accept(ENUM) == null) {
-            throw new CompileException(curr().getLocation(), "Expected enum.");
+            throw internalError(ENUM);
         }
         builder.setName(getNamesParser().parseIdentifier());
         if (isCurr(IMPLEMENTS)) {
@@ -1063,11 +1119,11 @@ public class ClassesParser extends BasicParser {
     public ASTEnumBody parseEnumBody() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '{'.");
+            error(curr().getLocation(), "Expected '{'.");
         }
         ASTEnumBody node = new ASTEnumBody(loc, parseEnumConstantList(), parseEnumBodyDeclarations());
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '}'.");
+            error(curr().getLocation(), "Expected '}'.");
         }
         return node;
     }
@@ -1081,11 +1137,11 @@ public class ClassesParser extends BasicParser {
      * @return An <code>ASTClassPartList</code>.
      */
     public ASTClassPartList parseEnumBodyDeclarations() {
-        if (isCurr(CLOSE_BRACE)) {
+        if (isAcceptedOperator(Arrays.asList(CLOSE_BRACE, EOF)) != null) {
             return new ASTClassPartList(curr().getLocation(), Collections.emptyList());
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         return parseClassPartList();
     }
@@ -1100,10 +1156,17 @@ public class ClassesParser extends BasicParser {
      */
     public ASTEnumConstantList parseEnumConstantList() {
         return parseList(
-                t -> test(t, IDENTIFIER, AT_SIGN),
+                t -> test(t, Arrays.asList(IDENTIFIER, AT_SIGN)),
                 "Expected enum constant identifier.",
                 COMMA,
                 this::parseEnumConstant,
+                Arrays.asList(CLOSE_BRACE, SEMICOLON,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, CONSTANT, DEFAULT, OVERRIDE, SEALED, SHARED, VOLATILE,  // General modifiers
+                        VAR, MUT,  // Variable modifiers (return type, field type)
+                        VOID, CONSTRUCTOR,  // Other class part stuff
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
                 ASTEnumConstantList::new,
                 false
         );
@@ -1126,7 +1189,7 @@ public class ClassesParser extends BasicParser {
             accept(OPEN_PARENTHESIS);
             argsList = getExpressionsParser().parseArgumentList();
             if (accept(CLOSE_PARENTHESIS) == null) {
-                throw new CompileException(curr().getLocation(), "Expected ')'.");
+                error(curr().getLocation(), "Expected ')'.");
             }
         }
         else {
@@ -1164,9 +1227,9 @@ public class ClassesParser extends BasicParser {
             builder.setAccessMod(accessMod);
         }
         if (accept(CLASS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected class.");
+            throw internalError(CLASS);
         }
-        builder.setClassModifierList(gms.convertToSpecificList(
+        builder.setClassModifierList(convertToSpecificList(gms, 
                     "Unexpected class modifier.",
                     Arrays.asList(ABSTRACT, SHARED),
                     ASTClassModifierList::new))
@@ -1197,7 +1260,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTDataTypeNoArrayList parsePermits() {
         if (accept(PERMITS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected permits.");
+            throw internalError(PERMITS);
         }
         return getTypesParser().parseDataTypeNoArrayList();
     }
@@ -1212,7 +1275,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTDataTypeNoArrayList parseSuperinterfaces() {
         if (accept(IMPLEMENTS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected implements.");
+            throw internalError(IMPLEMENTS);
         }
         return getTypesParser().parseDataTypeNoArrayList();
     }
@@ -1227,7 +1290,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTDataTypeNoArray parseSuperclass() {
         if (accept(EXTENDS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected extends.");
+            throw internalError(EXTENDS);
         }
         return getTypesParser().parseDataTypeNoArray();
     }
@@ -1243,11 +1306,11 @@ public class ClassesParser extends BasicParser {
      */
     public ASTClassPartList parseClassBody() {
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '{'.");
+            error(curr().getLocation(), "Expected '{'.");
         }
         ASTClassPartList classPartList = parseClassPartList();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '}'.");
+            error(curr().getLocation(), "Expected '}'.");
         }
         return classPartList;
     }
@@ -1268,6 +1331,7 @@ public class ClassesParser extends BasicParser {
                         .contains(t.getType()),
                 "Expected constructor, field, or method declaration.",
                 this::parseClassPart,
+                Arrays.asList(CLOSE_BRACE, EOF),
                 ASTClassPartList::new,
                 false
         );
@@ -1291,7 +1355,9 @@ public class ClassesParser extends BasicParser {
      * @return An <code>ASTClassPart</code>.
      */
     public ASTClassPart parseClassPart() {
+        skipUnrecognizedTokens();
         Location loc = curr().getLocation();
+
         if (isCurr(SHARED) && isNext(CONSTRUCTOR)) {
             return parseSharedConstructor();
         }
@@ -1312,11 +1378,17 @@ public class ClassesParser extends BasicParser {
             if (isCurr(CONSTRUCTOR)) {
                 if (!genModList.getChildren().isEmpty()) {
                     ASTKeywordNode modifier = genModList.get(0);
-                    throw new CompileException(genModList.getLocation(), "Unexpected modifier: '" +
+                    error(genModList.getLocation(), "Unexpected modifier: '" +
                             modifier.getKeyword().getRepresentation() + "'.");
                 }
                 // TypeParameters constructor ...
                 return parseConstructorDeclaration(loc, annList, accessMod, typeParams);
+            }
+            else if (isCurr(CONSTANT)) {
+                ASTKeywordNode constantKeyword = parseModifier(Arrays.asList(CONSTANT),
+                        "Internal error (constant).");
+                error(typeParams.getLocation(), "Type parameters not allowed on constant declaration.");
+                return parseFieldDeclaration(loc, annList, accessMod, constantKeyword);
             }
             else {
                 // TypeParameters mut|void|identifier
@@ -1331,7 +1403,7 @@ public class ClassesParser extends BasicParser {
         else if (isCurr(CONSTRUCTOR)) {
             if (!genModList.getChildren().isEmpty()) {
                 ASTKeywordNode modifier = genModList.get(0);
-                throw new CompileException(genModList.getLocation(), "Unexpected modifier: '" +
+                error(genModList.getLocation(), "Unexpected modifier: '" +
                         modifier.getKeyword().getRepresentation() + "'.");
             }
             if (isNext(OPEN_BRACE)) {
@@ -1368,16 +1440,16 @@ public class ClassesParser extends BasicParser {
     public ASTSharedConstructor parseSharedConstructor() {
         Location loc = curr().getLocation();
         if (accept(SHARED) == null) {
-            throw new CompileException(curr().getLocation(), "Expected shared.");
+            throw internalError(SHARED);
         }
         if (accept(CONSTRUCTOR) == null) {
-            throw new CompileException(curr().getLocation(), "Expected constructor.");
+            throw internalError(CONSTRUCTOR);
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return new ASTSharedConstructor(loc, getStatementsParser().parseBlock());
     }
@@ -1456,25 +1528,40 @@ public class ClassesParser extends BasicParser {
     public ASTConstructorInvocation parseConstructorInvocation() {
         Location loc = curr().getLocation();
         if (accept(COLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ':' for explicit constructor invocation.");
+            throw internalError(COLON);
         }
         ASTConstructorInvocation.Builder builder = new ASTConstructorInvocation.Builder()
                 .setLocation(loc);
         if (isCurr(LESS_THAN)) {
             builder.setTypeArgs(getTypesParser().parseTypeArguments());
         }
-        builder.setConstructorKeyword(parseModifier(Arrays.asList(CONSTRUCTOR, SUPER),
-                "Expected 'constructor' or 'super'.",
-                ASTKeywordNode::new
-                )
-        );
+        if (isAcceptedOperator(Arrays.asList(CONSTRUCTOR, SUPER)) != null) {
+            builder.setConstructorKeyword(parseModifier(Arrays.asList(CONSTRUCTOR, SUPER),
+                            "'constructor' or 'super'."
+                    )
+            );
+        }
+        else {
+            error(curr().getLocation(), "Expected 'constructor' or 'super'.");
+            // Consume unless stopper.
+            if (!test(curr(), Arrays.asList(OPEN_PARENTHESIS, CLOSE_PARENTHESIS, GIVE, OPEN_BRACE,
+                    EOF
+            ))) {
+                builder.setConstructorKeyword(parseModifier(Arrays.asList(curr().getType()),
+                        curr().getType().getRepresentation()
+                        ));
+            }
+            else {
+                builder.setConstructorKeyword(new ASTKeywordNode(curr().getLocation(), UNKNOWN));
+            }
+        }
 
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         builder.setArgsList(getExpressionsParser().parseArgumentList());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return builder.build();
     }
@@ -1494,14 +1581,14 @@ public class ClassesParser extends BasicParser {
             typeParams = getTypesParser().parseTypeParameters();
         }
         if (accept(CONSTRUCTOR) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"constructor\".");
+            error(curr().getLocation(), "Expected 'constructor'.");
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         ASTFormalParameterList formalParamList = parseFormalParameterList();
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         if (typeParams == null) {
             return new ASTConstructorDeclarator(loc, formalParamList);
@@ -1522,14 +1609,14 @@ public class ClassesParser extends BasicParser {
     public ASTConstructorDeclarator parseConstructorDeclarator(ASTTypeParameterList tps) {
         Location loc = tps.getLocation();
         if (accept(CONSTRUCTOR) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"constructor\".");
+            throw internalError(CONSTRUCTOR);
         }
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         ASTFormalParameterList formalParamList = parseFormalParameterList();
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return new ASTConstructorDeclarator(loc, tps, formalParamList);
     }
@@ -1551,20 +1638,51 @@ public class ClassesParser extends BasicParser {
      */
     public ASTFieldDeclaration parseFieldDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
                  ASTGeneralModifierList gms, ASTVariableModifierList varModList, ASTDataType dt) {
-        ASTFieldModifierList fieldModifiers = gms.convertToSpecificList(
+        ASTFieldModifierList fieldModifiers = convertToSpecificList(gms, 
                     "Unexpected field modifier.",
                     Arrays.asList(CONSTANT, SHARED, VOLATILE),
                     ASTFieldModifierList::new
             );
         ASTVariableDeclaratorList varDeclList = getStatementsParser().parseVariableDeclaratorList();
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         if (accessMod == null) {
             return new ASTFieldDeclaration(loc, annList, fieldModifiers, varModList, dt, varDeclList);
         }
         return new ASTFieldDeclaration(loc, annList, accessMod, fieldModifiers, varModList, dt, varDeclList);
     }
+
+    /**
+     * Parses a <code>FieldDeclaration</code>, given an already parsed
+     * Annotation List, Access Modifier, a GeneralModifierList, and a DataType.
+     * <em>
+     * FieldDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [FieldModifierList] DataType VariableDeclaratorList
+     * </em>
+     * @param loc The given <code>Location</code>.
+     * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
+     * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an
+     *           Access Modifier.  If not present, <code>null</code>.
+     * @param constantMod An already parsed <code>ASTKeywordNode</code> representing
+     *                    the keyword <code>constant</code>.
+     * @return An <code>ASTFieldDeclaration</code>.
+     */
+    public ASTFieldDeclaration parseFieldDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
+                ASTKeywordNode constantMod) {
+        ASTFieldModifierList fieldModifiers = new ASTFieldModifierList(constantMod.getLocation(), Arrays.asList(constantMod));
+        ASTVariableModifierList varModList = getStatementsParser().parseVariableModifierList();
+        ASTDataType dt = getTypesParser().parseDataType();
+        ASTVariableDeclaratorList varDeclList = getStatementsParser().parseVariableDeclaratorList();
+        if (accept(SEMICOLON) == null) {
+            error(curr().getLocation(), "Expected ';'.");
+        }
+        if (accessMod == null) {
+            return new ASTFieldDeclaration(loc, annList, fieldModifiers, varModList, dt, varDeclList);
+        }
+        return new ASTFieldDeclaration(loc, annList, accessMod, fieldModifiers, varModList, dt, varDeclList);
+    }
+
 
     /**
      * Parses a <code>MethodDeclaration</code>, given optionally already
@@ -1584,7 +1702,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAnnotationList annList, ASTKeywordNode accessMod,
                                                        ASTGeneralModifierList gms, ASTTypeParameterList tps) {
-        ASTMethodModifierList methodModifiers = gms.convertToSpecificList(
+        ASTMethodModifierList methodModifiers = convertToSpecificList(gms, 
                     "Unexpected method modifier.",
                     Arrays.asList(FINAL, ABSTRACT, OVERRIDE, SHARED),
                     ASTMethodModifierList::new
@@ -1613,7 +1731,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAnnotationList annList,
                                                        ASTKeywordNode accessMod, ASTGeneralModifierList gms) {
-        ASTMethodModifierList methodModifiers = gms.convertToSpecificList(
+        ASTMethodModifierList methodModifiers = convertToSpecificList(gms, 
                 "Unexpected method modifier.",
                 Arrays.asList(FINAL, ABSTRACT, OVERRIDE, SHARED),
                 ASTMethodModifierList::new
@@ -1646,7 +1764,7 @@ public class ClassesParser extends BasicParser {
     public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTAnnotationList annList,
                                                        ASTKeywordNode accessMod, ASTGeneralModifierList gms,
                                                        ASTVariableModifierList varModList, ASTDataType dt) {
-        ASTMethodModifierList methodModifiers = gms.convertToSpecificList(
+        ASTMethodModifierList methodModifiers = convertToSpecificList(gms, 
                 "Unexpected method modifier.",
                 Arrays.asList(FINAL, ABSTRACT, OVERRIDE, SHARED),
                 ASTMethodModifierList::new
@@ -1681,12 +1799,7 @@ public class ClassesParser extends BasicParser {
             accept(SEMICOLON);
             return new ASTMethodBody(loc);
         }
-        else if (isCurr(OPEN_BRACE)) {
-            return new ASTMethodBody(loc, getStatementsParser().parseBlock());
-        }
-        else {
-            throw new CompileException(curr().getLocation(), "Expected block for method body.");
-        }
+        return new ASTMethodBody(loc, getStatementsParser().parseBlock());
     }
 
     /**
@@ -1703,8 +1816,7 @@ public class ClassesParser extends BasicParser {
     public ASTKeywordNode parseAccessModifier() {
         return parseModifier(
                 Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE),
-                "Expected public, protected, internal, or private.",
-                ASTKeywordNode::new
+                "public, protected, internal, or private."
         );
     }
 
@@ -1718,12 +1830,9 @@ public class ClassesParser extends BasicParser {
      */
     public ASTGeneralModifierList parseGeneralModifierList() {
         return parseMultiple(
-                t -> test(t, ABSTRACT, FINAL, CONSTANT, DEFAULT, OVERRIDE, SEALED, SHARED, VOLATILE),
-                "Expected a general modifier.",
+                t -> test(t, Arrays.asList(ABSTRACT, CONSTANT, DEFAULT, FINAL, OVERRIDE, SEALED, SHARED, VOLATILE)),
                 this::parseGeneralModifier,
-                ASTGeneralModifierList::new,
-                false,
-                Arrays.asList(MUT, VAR, VOID)
+                ASTGeneralModifierList::new
         );
     }
 
@@ -1733,10 +1842,10 @@ public class ClassesParser extends BasicParser {
      * GeneralModifier:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;abstract<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;constant<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;default<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;final<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;var<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;mut<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;override<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;sealed<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;shared<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;volatile
      * </em>
@@ -1744,9 +1853,8 @@ public class ClassesParser extends BasicParser {
      */
     public ASTKeywordNode parseGeneralModifier() {
         return parseModifier(
-                Arrays.asList(ABSTRACT, MUT, VAR, CONSTANT, DEFAULT, FINAL, OVERRIDE, SEALED, SHARED, VOLATILE),
-                "Expected a general modifier.",
-                ASTKeywordNode::new
+                Arrays.asList(ABSTRACT, CONSTANT, DEFAULT, FINAL, OVERRIDE, SEALED, SHARED, VOLATILE),
+                "general modifier."
         );
     }
 
@@ -1831,8 +1939,7 @@ public class ClassesParser extends BasicParser {
         if (isCurr(VOID)) {
             ASTKeywordNode voidKeyword = parseModifier(
                     Arrays.asList(VOID),
-                    "Expected 'void'.",
-                    ASTKeywordNode::new
+                    "'void'."
             );
             return new ASTResult(loc, voidKeyword);
         }
@@ -1888,11 +1995,11 @@ public class ClassesParser extends BasicParser {
         Location loc = curr().getLocation();
         ASTIdentifier methodName = getNamesParser().parseIdentifier();
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         ASTFormalParameterList formalParamList = parseFormalParameterList();
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         if (isCurr(MUT)) {
             return new ASTMethodDeclarator(loc, methodName, formalParamList, parseMutModifier());
@@ -1911,8 +2018,7 @@ public class ClassesParser extends BasicParser {
     public ASTKeywordNode parseMutModifier() {
         return parseModifier(
                 Collections.singletonList(MUT),
-                "Expected mut.",
-                ASTKeywordNode::new
+                "'mut'"
         );
     }
 
@@ -1923,7 +2029,21 @@ public class ClassesParser extends BasicParser {
      * @return An <code>Optional&ltASTKeywordNode&gt;</code> of keyword <code>mut</code>.
      */
     public Optional<ASTKeywordNode> parseMutModifier(ASTVariableModifierList varModList) {
-        return varModList.ensureMut("Expected 'mut'.");
+        // Dupe check.
+        HashSet<TokenType> seen = new HashSet<>();
+        List<ASTKeywordNode> children = varModList.getTypedChildren();
+        ASTKeywordNode mutKeyword = null;
+        for (ASTKeywordNode mod : children) {
+            TokenType modifier = mod.getKeyword();
+            if (!seen.add(modifier)) {
+                error(mod.getLocation(), "Duplicate modifier found: " + modifier.getRepresentation());
+            }
+            if (modifier != MUT) {
+                error(mod.getLocation(), "Expected 'mut'.");
+            }
+            mutKeyword = mod;
+        }
+        return Optional.ofNullable(mutKeyword);
     }
 
     /**
@@ -1936,10 +2056,17 @@ public class ClassesParser extends BasicParser {
      */
     public ASTFormalParameterList parseFormalParameterList() {
         ASTFormalParameterList node = parseList(
-                t -> test(t, TAKE, AT_SIGN, IDENTIFIER, MUT, VAR),
+                t -> test(t, Arrays.asList(TAKE, AT_SIGN, IDENTIFIER, MUT, VAR)),
                 "Expected data type",
                 COMMA,
                 this::parseFormalParameter,
+                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACE, OPEN_BRACE, SEMICOLON,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, CONSTANT, DEFAULT, OVERRIDE, SEALED, SHARED, VOLATILE,  // General modifiers
+                        VAR, MUT,  // Variable modifiers (return type, field type)
+                        VOID, CONSTRUCTOR,  // Other class part stuff
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
                 ASTFormalParameterList::new,
                 false
         );
@@ -1949,7 +2076,7 @@ public class ClassesParser extends BasicParser {
         boolean ellipsisSeen = false;
         for (ASTFormalParameter formalParam : children) {
             if (ellipsisSeen) {
-                throw new CompileException(curr().getLocation(), "Varargs parameter must be last in the list.");
+                error(curr().getLocation(), "Varargs parameter must be last in the list.");
             }
             if (formalParam.getEllipsisMod().isPresent()) {
                 ellipsisSeen = true;
@@ -1977,17 +2104,65 @@ public class ClassesParser extends BasicParser {
                 .setAnnList(parseAnnotationList());
         if (isCurr(TAKE)) {
             builder.setTakeMod(parseModifier(Arrays.asList(TAKE),
-                    "Expected 'take'.",
-                    ASTKeywordNode::new));
+                    "'take'"
+            ));
         }
         builder.setVarModList(getStatementsParser().parseVariableModifierList())
                 .setDataType(getTypesParser().parseDataType());
         if (isCurr(THREE_DOTS)) {
             builder.setEllipsisMod(parseModifier(Arrays.asList(THREE_DOTS),
-                    "Expected '...'.",
-                    ASTKeywordNode::new));
+                    "'...'"
+            ));
         }
         return builder.setName(getNamesParser().parseIdentifier())
                 .build();
+    }
+
+    /**
+     * Converts the given general modifier list to a more specific modifier list,
+     * giving an error if a found modifier is not in a more specific
+     * list, or if there are duplicate modifiers.
+     * @param genModList An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
+     * @param errorMessage The error message expected.
+     * @param expectedModifiers A List of expected modifiers (token types).
+     * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
+     *                     and a <code>List</code> of <code>ASTKeywordNode</code>s
+     *                     that constructs and returns the desired list node type.
+     * @return A new <code>ASTListNode</code> of the given type.
+     */
+    public <T extends ASTListNode<ASTKeywordNode>> T convertToSpecificList(ASTGeneralModifierList genModList,
+                      String errorMessage, List<TokenType> expectedModifiers,
+                      BiFunction<Location, List<ASTKeywordNode>, T> nodeSupplier) {
+        // Dupe check.
+        HashSet<TokenType> seen = new HashSet<>();
+        List<ASTKeywordNode> children = genModList.getTypedChildren();
+        for (ASTKeywordNode mod : children) {
+            TokenType modifier = mod.getKeyword();
+            if (!seen.add(modifier)) {
+                error(mod.getLocation(), "Duplicate modifier found: " + modifier.getRepresentation());
+            }
+            if (!expectedModifiers.contains(modifier)) {
+                error(mod.getLocation(), errorMessage);
+            }
+        }
+        return nodeSupplier.apply(genModList.getLocation(), children);
+    }
+
+    private void skipUnrecognizedTokens() {
+        List<TokenType> firstTokens = Arrays.asList(
+                PUBLIC, INTERNAL, PROTECTED, PRIVATE,  // Access modifiers
+                CONSTRUCTOR,
+                AT_SIGN, MUT, VOID,  // Annotations, Result
+                ABSTRACT, CONSTANT, DEFAULT, FINAL, OVERRIDE, SEALED, SHARED, VOLATILE,  // General modifiers
+                CLASS, ENUM, INTERFACE, ANNOTATION, RECORD, ADT,  // Type declarations
+                LESS_THAN, IDENTIFIER,  // Type parameters, name
+                CLOSE_BRACE, EOF
+        );
+        while (isAcceptedOperator(firstTokens) == null) {
+            Token unexpected = curr();
+            Location loc = unexpected.getLocation();
+            error(loc, "Unexpected token: " + unexpected.getType().getRepresentation());
+            accept(unexpected.getType());
+        }
     }
 }

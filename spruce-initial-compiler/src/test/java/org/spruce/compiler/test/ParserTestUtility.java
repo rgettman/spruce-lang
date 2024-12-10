@@ -6,6 +6,8 @@ import org.spruce.compiler.ast.*;
 import org.spruce.compiler.ast.expressions.ASTBinaryExpression;
 import org.spruce.compiler.ast.expressions.ASTUnaryExpression;
 import org.spruce.compiler.ast.expressions.ASTValueExpression;
+import org.spruce.compiler.message.CompilerMessage;
+import org.spruce.compiler.parser.BasicParser;
 import org.spruce.compiler.scanner.TokenType;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,6 +42,54 @@ public class ParserTestUtility {
     static <T extends Node> T ensureIsa(Node node, Class<T> nodeClass) {
         assertInstanceOf(nodeClass, node);
         return nodeClass.cast(node);
+    }
+
+    /**
+     * Prints the node.  Prints any compiler messages.  Ensures that there are
+     * no compiler messages representing an error.
+     * @param node A <code>Node</code>.
+     * @param parser A <code>BasicParser</code>.
+     */
+    static void ensureNoErrors(Node node, BasicParser parser) {
+        System.out.println(node);
+        long errorCount = generalCheckForError(parser);
+        if (errorCount != 0) {
+            fail("Error message(s) found!");
+        }
+    }
+
+    /**
+     * Prints the node.  Prints any compiler messages.  Ensures that there is
+     * exactly one compiler message representing an error.
+     * @param node A <code>Node</code>.
+     * @param parser A <code>BasicParser</code>.
+     */
+    static void expectError(Node node, BasicParser parser) {
+        expectError(node, parser, 1);
+    }
+
+    /**
+     * Prints the node.  Prints any compiler messages.  Ensures that there is
+     * exactly the specified number of compiler messages representing an error.
+     * @param node A <code>Node</code>.
+     * @param parser A <code>BasicParser</code>.
+     */
+    static void expectError(Node node, BasicParser parser, int count) {
+        System.out.println(node);
+        long errorCount = generalCheckForError(parser);
+        if (errorCount != count) {
+            fail("Expected " + count + " message(s), got " + errorCount + "!");
+        }
+    }
+
+    private static long generalCheckForError(BasicParser parser) {
+        List<CompilerMessage> msgs = parser.getCompilerMessages();
+        for (CompilerMessage msg : msgs) {
+            System.out.println(msg);
+        }
+        return msgs.stream()
+                .filter(cm -> cm.getLevel() == CompilerMessage.Level.ERROR)
+                .count();
     }
 
     /**

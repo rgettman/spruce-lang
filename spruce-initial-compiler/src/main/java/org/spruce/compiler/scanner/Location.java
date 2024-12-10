@@ -69,16 +69,15 @@ public class Location {
      */
     @Override
     public String toString() {
-        return "Location{" + myFilename + ":" + myLineNbr + ", pos " + myCharPos + ", line \"" + myLine + "\"}";
+        return "Location{" + getFilename() + ":" + getLineNbr() + ", pos " + getCharPos() + ", line \"" + getLine() + "\"}";
     }
 
-
     /**
-     * Returns a string of the format "filename:lineNbr".
-     * @return A string of the format "filename:lineNbr".
+     * Returns a string of the format "filename:lineNbr:charPos".
+     * @return A string of the format "filename:lineNbr:charPos".
      */
-    public String getFileAndLineNbr() {
-        return myFilename + ":" + myLineNbr;
+    public String getFileLinePos() {
+        return myFilename + ":" + getLineNbr() + ":" + getCharPos();
     }
 
     /**
@@ -91,7 +90,7 @@ public class Location {
      *     <code>^</code>.
      */
     public String getPosIndicator() {
-        return " ".repeat(myCharPos - 1) + "^";
+        return " ".repeat(getCharPos() - 1) + "^";
     }
 
     /**

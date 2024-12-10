@@ -2,18 +2,15 @@ package org.spruce.compiler.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.Node;
-import org.spruce.compiler.ast.expressions.ASTBinaryExpression;
-import org.spruce.compiler.ast.expressions.ASTValueExpression;
-import org.spruce.compiler.exception.CompileException;
+import org.spruce.compiler.message.CompilerMessage;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
@@ -41,6 +38,35 @@ public class BasicParser {
     public BasicParser(Scanner scanner, Parser parser) {
         myScanner = scanner;
         myParser = parser;
+    }
+
+    /**
+     * Creates a <code>CompilerMessage</code> of type <code>ERROR</code> at the
+     * given <code>Location</code> with the given message, and adds it to the
+     * internal list of compiler messages.
+     * @param loc The <code>Location</code>.
+     * @param msg The message.
+     */
+    public void error(Location loc, String msg) {
+        CompilerMessage cm = new CompilerMessage(loc, CompilerMessage.Level.ERROR, msg);
+        addMessage(cm);
+    }
+
+    /**
+     * Adds the given <code>CompilerMessage</code> to the internal list of
+     * compiler messages.
+     * @param cm The <code>CompilerMessage</code>.
+     */
+    private void addMessage(CompilerMessage cm) {
+        myParser.addCompilerMessage(cm);
+    }
+
+    /**
+     * Returns the <code>List</code> of <code>CompilerMessage</code>s.
+     * @return The <code>List</code> of <code>CompilerMessage</code>s.
+     */
+    public List<CompilerMessage> getCompilerMessages() {
+        return myParser.getCompilerMessages();
     }
 
     /**
@@ -102,7 +128,10 @@ public class BasicParser {
     protected Token accept(TokenType tokenType) {
         if (isCurr(tokenType)) {
             Token t = curr();
-            advance();
+            if (t.getCompilerMessage().isPresent()) {
+                addMessage(t.getCompilerMessage().get());
+            }
+            myScanner.next();
             return t;
         }
         return null;
@@ -153,8 +182,8 @@ public class BasicParser {
      * @param tokenTypes The list of expected token types.
      * @return Whether the given token's type exists in a list of token types.
      */
-    protected static boolean test(Token t, TokenType... tokenTypes) {
-        return Arrays.asList(tokenTypes).contains(t.getType());
+    protected static boolean test(Token t, List<TokenType> tokenTypes) {
+        return tokenTypes.contains(t.getType());
     }
 
     /**
@@ -188,13 +217,6 @@ public class BasicParser {
     }
 
     /**
-     * Advance the <code>Scanner</code> to the next token.
-     */
-    protected void advance() {
-        myScanner.next();
-    }
-
-    /**
      * Helper method to determine if the next token, expected to be an operator,
      * is one of the expected token types or expected keywords.
      * @param acceptedTokens A <code>List</code> of acceptable <code>TokenType</code>s.
@@ -221,35 +243,6 @@ public class BasicParser {
     }
 
     /**
-     * Helper method to avoid duplicating code for parsing binary expressions
-     * that are left associative.
-     *
-     * @param isOnInitialToken Determines whether a given token is a valid
-     *                         token on which to start parsing the desired node.
-     * @param acceptedTokens   A <code>List</code> of accepted <code>TokenTypes</code>
-     *                         that can serve as operators.
-     * @param childParser      Parses and returns the child node (operand).
-     * @return Either an <code>ASTNode</code> of the child type or an
-     *     <code>ASTBinaryExpression</code> containing left-associative children.
-     */
-    protected ASTValueExpression parseBinaryExpressionLeftAssociative(Predicate<Token> isOnInitialToken,
-                                                                      List<TokenType> acceptedTokens, Supplier<? extends ASTValueExpression> childParser) {
-        if (isOnInitialToken.test(curr())) {
-            Location loc = curr().getLocation();
-            ASTValueExpression result = childParser.get();
-            TokenType curr;
-            while ( (curr = isAcceptedOperator(acceptedTokens) ) != null && isOnInitialToken.test(next())) {
-                accept(curr);
-                result = new ASTBinaryExpression(loc, result, childParser.get(), curr);
-            }
-            return result;
-        }
-        else {
-            throw new CompileException(curr().getLocation(), "Expected a literal or expression name.");
-        }
-    }
-
-    /**
      * Helper method to avoid duplicating code for parsing list-like expressions.
      * Requires at least one element.
      * <em>List:  Element {sep Element}</em>
@@ -260,6 +253,8 @@ public class BasicParser {
      * @param acceptedToken The accepted <code>TokenTypes</code>
      *      that can serve as the separator.
      * @param childParser Parses and returns the child node (list item).
+     * @param listStoppers A <code>List</code> of <code>TokenType</code>s that
+     *                     stop the list parsing.
      * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
      *                     and a <code>List</code> of child nodes that constructs
      *                     and returns the desired list node type.
@@ -270,8 +265,9 @@ public class BasicParser {
      */
     protected <C extends Node, L extends ASTListNode<C>> L parseList(Predicate<Token> isOnInitialToken,
               String initialErrorMessage, TokenType acceptedToken, Supplier<C> childParser,
-              BiFunction<Location, List<C>, L> nodeSupplier) {
-        return parseList(isOnInitialToken, initialErrorMessage, acceptedToken, childParser, nodeSupplier, true);
+              List<TokenType> listStoppers, BiFunction<Location, List<C>, L> nodeSupplier) {
+        return parseList(isOnInitialToken, initialErrorMessage, acceptedToken, childParser,
+                listStoppers, nodeSupplier, true);
     }
 
     /**
@@ -284,6 +280,8 @@ public class BasicParser {
      * @param acceptedToken The accepted <code>TokenTypes</code>
      *      that can serve as the separator.
      * @param childParser Parses and returns the child node (list item).
+     * @param listStoppers A <code>List</code> of <code>TokenType</code>s that
+     *                     stop the list parsing.
      * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
      *                     and a <code>List</code> of child nodes that constructs
      *                     and returns the desired list node type.
@@ -296,165 +294,177 @@ public class BasicParser {
      */
     protected <C extends Node, L extends ASTListNode<C>> L parseList(Predicate<Token> isOnInitialToken,
                String initialErrorMessage, TokenType acceptedToken, Supplier<C> childParser,
-               BiFunction<Location, List<C>, L> nodeSupplier, boolean requireAtLeastOne) {
-        if (isOnInitialToken.test(curr())) {
-            Location loc = curr().getLocation();
-            List<C> children = new ArrayList<>();
-            children.add(childParser.get());
-            while (isCurr(acceptedToken) && isOnInitialToken.test(next())) {
-                accept(acceptedToken);
-                children.add(childParser.get());
-            }
-            return nodeSupplier.apply(loc, children);
-        }
-        else if (requireAtLeastOne) {
-            throw new CompileException(curr().getLocation(), initialErrorMessage);
-        }
-        else {
-            return nodeSupplier.apply(curr().getLocation(), new ArrayList<>());
-        }
-    }
-
-    /**
-     * Helper method to avoid duplicating code for parsing multiple expressions
-     * into a list from a repeating production.
-     * <em>Repeating:  Element {Element}</em>
-     * @param isOnInitialToken Determines whether a given token is a valid
-     *      token on which to start parsing the desired node.
-     * @param initialErrorMessage If the initial token is not a valid token,
-     *      the <code>CompilerException</code> thrown has this message.
-     * @param childParser Parses and returns the child node (repeating item).
-     * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
-     *                     and a <code>List</code> of child nodes that constructs
-     *                     and returns the desired list node type.
-     * @param <C> The type of the child node.
-     * @param <L> The type of the list node, parent to the children of type C.
-     * @return A node of the desired type with all children parsed in order,
-     *      leftmost first.
-     */
-    protected <C extends Node, L extends ASTListNode<C>> L parseMultiple(Predicate<Token> isOnInitialToken,
-              String initialErrorMessage, Supplier<C> childParser, BiFunction<Location, List<C>, L> nodeSupplier) {
-        return parseMultiple(isOnInitialToken, initialErrorMessage, childParser, nodeSupplier, true);
-    }
-
-    /**
-     * Helper method to avoid duplicating code for parsing multiple expressions
-     * into a list from a repeating production.
-     * <em>Repeating:  Element {Element}</em>
-     * @param isOnInitialToken Determines whether a given token is a valid
-     *      token on which to start parsing the desired node.
-     * @param initialErrorMessage If the initial token is not a valid token,
-     *      the <code>CompilerException</code> thrown has this message.
-     * @param childParser Parses and returns the child node (repeating item).
-     * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
-     *                     and a <code>List</code> of child nodes that constructs
-     *                     and returns the desired list node type.
-     * @param requireAtLeastOne Requires at least one element if true, allows
-     *                          an empty list if false.
-     * @param <C> The type of the child node.
-     * @param <L> The type of the list node, parent to the children of type C.
-     * @return A node of the desired type with all children parsed in order,
-     *      leftmost first.
-     */
-    protected <C extends Node, L extends ASTListNode<C>> L parseMultiple(Predicate<Token> isOnInitialToken,
-              String initialErrorMessage, Supplier<C> childParser,
-              BiFunction<Location, List<C>, L> nodeSupplier, boolean requireAtLeastOne) {
-        return parseMultiple(isOnInitialToken, initialErrorMessage, childParser, nodeSupplier,
-                requireAtLeastOne, Collections.emptyList());
-    }
-
-    /**
-     * Helper method to avoid duplicating code for parsing multiple expressions
-     * into a list from a repeating production.
-     * <em>Repeating:  Element {Element}</em>
-     * @param isOnInitialToken Determines whether a given token is a valid
-     *      token on which to start parsing the desired node.
-     * @param initialErrorMessage If the initial token is not a valid token,
-     *      the <code>CompilerException</code> thrown has this message.
-     * @param childParser Parses and returns the child node (repeating item).
-     * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
-     *                     and a <code>List</code> of child nodes that constructs
-     *                     and returns the desired list node type.
-     * @param requireAtLeastOne Requires at least one element if true, allows
-     *                          an empty list if false.
-     * @param okNotInclude A <code>List</code> of <code>TokenType</code>s that,
-     *                     if one is encountered, ends the parsing without including
-     *                     that keyword in the returned list.
-     * @param <C> The type of the child node.
-     * @param <L> The type of the list node, parent to the children of type C.
-     * @return A node of the desired type with all children parsed in order,
-     *      leftmost first.
-     */
-    protected <C extends Node, L extends ASTListNode<C>> L parseMultiple(Predicate<Token> isOnInitialToken,
-              String initialErrorMessage, Supplier<C> childParser, BiFunction<Location, List<C>, L> nodeSupplier,
-              boolean requireAtLeastOne, List<TokenType> okNotInclude) {
+               List<TokenType> listStoppers, BiFunction<Location, List<C>, L> nodeSupplier, boolean requireAtLeastOne) {
         Location loc = curr().getLocation();
-        if (isOnInitialToken.test(curr()) && !okNotInclude.contains(curr().getType())) {
-            List<C> children = new ArrayList<>();
+        List<C> children = new ArrayList<>();
+        L node;
+        if (isOnInitialToken.test(curr()) || !test(curr(), listStoppers)) {
             children.add(childParser.get());
-            while (isOnInitialToken.test(curr()) && !okNotInclude.contains(curr().getType())) {
-                children.add(childParser.get());
-            }
-            return nodeSupplier.apply(loc, children);
         }
-        else if (requireAtLeastOne) {
-            throw new CompileException(curr().getLocation(), initialErrorMessage);
+        while (isCurr(acceptedToken) && (isOnInitialToken.test(next()) || !test(next(), listStoppers))) {
+            accept(acceptedToken);
+            children.add(childParser.get());
         }
-        else {
-            return nodeSupplier.apply(curr().getLocation(), new ArrayList<>());
+        node = nodeSupplier.apply(loc, children);
+        if (requireAtLeastOne && children.isEmpty()) {
+            error(curr().getLocation(), initialErrorMessage);
         }
+        return node;
+    }
+
+    /**
+     * Helper method to avoid duplicating code for parsing multiple expressions
+     * into a list from a repeating production.  Attempts to parse a child even
+     * if the current token doesn't meet the <code>isOnInitialToken</code> test,
+     * as long as it's not in the <code>listStoppers</code> list.
+     * <em>Repeating:  Element {Element}</em>
+     * @param isOnInitialToken Determines whether a given token is a valid
+     *      token on which to start parsing the desired node.
+     * @param initialErrorMessage If the initial token is not a valid token,
+     *      the <code>CompilerException</code> thrown has this message.
+     * @param childParser Parses and returns the child node (repeating item).
+     * @param listStoppers A <code>List</code> of <code>TokenType</code>s that
+     *                     stop the list parsing.
+     * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
+     *                     and a <code>List</code> of child nodes that constructs
+     *                     and returns the desired list node type.
+     * @param <C> The type of the child node.
+     * @param <L> The type of the list node, parent to the children of type C.
+     * @return A node of the desired type with all children parsed in order,
+     *      leftmost first.
+     */
+    protected <C extends Node, L extends ASTListNode<C>> L parseMultiple(Predicate<Token> isOnInitialToken,
+              String initialErrorMessage, Supplier<C> childParser, List<TokenType> listStoppers,
+              BiFunction<Location, List<C>, L> nodeSupplier) {
+        return parseMultiple(isOnInitialToken, initialErrorMessage, childParser, listStoppers,
+                nodeSupplier, true);
+    }
+
+    /**
+     * Helper method to avoid duplicating code for parsing multiple expressions
+     * into a list from a repeating production.  Attempts to parse a child even
+     * if the current token doesn't meet the <code>isOnInitialToken</code> test,
+     * as long as it's not in the <code>listStoppers</code> list.
+     * <em>Repeating:  Element {Element}</em>
+     * @param isOnInitialToken Determines whether a given token is a valid
+     *      token on which to start parsing the desired node.
+     * @param initialErrorMessage If the initial token is not a valid token,
+     *      the <code>CompilerException</code> thrown has this message.
+     * @param childParser Parses and returns the child node (repeating item).
+     * @param listStoppers A <code>List</code> of <code>TokenType</code>s that
+     *                     stop the list parsing.
+     * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
+     *                     and a <code>List</code> of child nodes that constructs
+     *                     and returns the desired list node type.
+     * @param requireAtLeastOne Requires at least one element if true, allows
+     *                          an empty list if false.
+     * @param <C> The type of the child node.
+     * @param <L> The type of the list node, parent to the children of type C.
+     * @return A node of the desired type with all children parsed in order,
+     *      leftmost first.
+     */
+    protected <C extends Node, L extends ASTListNode<C>> L parseMultiple(Predicate<Token> isOnInitialToken,
+              String initialErrorMessage, Supplier<C> childParser, List<TokenType> listStoppers,
+              BiFunction<Location, List<C>, L> nodeSupplier, boolean requireAtLeastOne) {
+        Location loc = curr().getLocation();
+        L node;
+        List<C> children = new ArrayList<>();
+        while (isOnInitialToken.test(curr()) || !test(curr(), listStoppers)) {
+            children.add(childParser.get());
+        }
+        node = nodeSupplier.apply(loc, children);
+        if (requireAtLeastOne && children.isEmpty()) {
+            error(curr().getLocation(), initialErrorMessage);
+        }
+        return node;
+    }
+
+    /**
+     * Helper method to avoid duplicating code for parsing multiple expressions
+     * into a list from a repeating production.  Does not attempt to parse a
+     * child if the current token doesn't meet the <code>isOnInitialToken</code>
+     * test.  Does not require at least one child.
+     * <em>Repeating:  Element {Element}</em>
+     * @param isOnInitialToken Determines whether a given token is a valid
+     *      token on which to start parsing the desired node.
+     * @param childParser Parses and returns the child node (repeating item).
+     * @param nodeSupplier A <code>BiFunction/code> accepting a <code>Location</code>
+     *                     and a <code>List</code> of child nodes that constructs
+     *                     and returns the desired list node type.
+     * @param <C> The type of the child node.
+     * @param <L> The type of the list node, parent to the children of type C.
+     * @return A node of the desired type with all children parsed in order,
+     *      leftmost first.
+     */
+    protected <C extends Node, L extends ASTListNode<C>> L parseMultiple(Predicate<Token> isOnInitialToken,
+              Supplier<C> childParser, BiFunction<Location, List<C>, L> nodeSupplier) {
+        Location loc = curr().getLocation();
+        L node;
+        List<C> children = new ArrayList<>();
+        while (isOnInitialToken.test(curr())) {
+            children.add(childParser.get());
+        }
+        node = nodeSupplier.apply(loc, children);
+        return node;
     }
 
     /**
      * Helper method to avoid duplicating code for parsing "modifier" productions.
-     * @param initialErrorMessage If the initial token is not a valid token,
-     *      the <code>CompilerException</code> thrown has this message.
      * @param acceptedTokens A <code>List</code> of accepted <code>TokenTypes</code>
      *      that can serve as operators.
-     * @param nodeSupplier Creates the desired node, given a <code>Location</code>
-     *      and a <code>TokenType</code> representing the found operation.
-     * @param <T> The type of node to parse and create.
+     * @param initialErrorMessage If the initial token is not a valid token,
+     *      the internal error message has this message.
      * @return A node of the desired type with the desired operation.
      */
-    protected <T extends ASTNode> T parseModifier(List<TokenType> acceptedTokens, String initialErrorMessage, BiFunction<Location, TokenType, T> nodeSupplier) {
+    protected ASTKeywordNode parseModifier(List<TokenType> acceptedTokens, String initialErrorMessage) {
         Location loc = curr().getLocation();
         TokenType operation = isAcceptedOperator(acceptedTokens);
         if (operation == null) {
-            throw new CompileException(curr().getLocation(), initialErrorMessage);
+            throw internalError(initialErrorMessage);
         }
         accept(operation);
-        return nodeSupplier.apply(loc, operation);
+        return new ASTKeywordNode(loc, operation);
     }
 
     /**
-     * Determines whether the given token is a literal.
-     *
-     * @param t A <code>Token</code>.
-     * @return Whether the give token is a literal.
-     */
-    protected static boolean isLiteral(Token t) {
-        return switch (t.getType()) {
-            case TRUE, FALSE, INT_LITERAL, FLOATING_POINT_LITERAL, STRING_LITERAL, CHARACTER_LITERAL -> true;
-            default -> false;
-        };
-    }
-
-    /**
-     * Determines whether the given token can start an expression.
-     *
+     * <p>Determines whether the given token can start an expression.</p>
+     * <ul>
+     * <li>|</li>>
+     * <li>||</li>>
+     * <li>ValueExpression</li>
+     * </ul>
      * @param t A <code>Token</code>.
      * @return Whether the given token can start an expression.
+     * @see #isValueExpression
+     * @see #isPrimary
+     * @see #isLiteral
      */
     protected static boolean isExpression(Token t) {
-        return (test(t, INCREMENT, DECREMENT) || isPrimary(t));
+        return test(t, Arrays.asList(PIPE, DOUBLE_PIPE)) || isValueExpression(t);
+    }
+
+    /**
+     * <p>Determines whether the given token can start a value expression.</p>
+     * <ul>
+     * <li>-</li>
+     * <li>~</li>
+     * <li>!</li>
+     * <li>switch</li>
+     * <li>Primary</li>
+     * </ul>
+     * @param t A <code>Token</code>.
+     * @return Whether the given token can start a value expression.
+     * @see #isPrimary
+     * @see #isLiteral
+     */
+    protected static boolean isValueExpression(Token t) {
+        return test(t, Arrays.asList(MINUS, TILDE, EXCLAMATION, SWITCH)) || isPrimary(t);
     }
 
     /**
      * <p>Determines whether the given token can start a Primary.</p>
      * <ul>
-     * <li>-</li>
-     * <li>~</li>
-     * <li>!</li>
+     * <li>Literal</li>
      * <li>identifier</li>
      * <li><code>self</code></li>
      * <li><code>new</code></li>
@@ -464,14 +474,28 @@ public class BasicParser {
      *
      * @param t A <code>Token</code>.
      * @return Whether the given token can start a Primary.
+     * @see #isLiteral
      */
     protected static boolean isPrimary(Token t) {
-        if (isLiteral(t)) {
-            return true;
-        }
-        return switch (t.getType()) {
-            case MINUS, TILDE, EXCLAMATION, IDENTIFIER, SELF, OPEN_PARENTHESIS, NEW, SUPER -> true;
-            default -> false;
-        };
+        return isLiteral(t) || test(t, Arrays.asList(IDENTIFIER, SELF, OPEN_PARENTHESIS, NEW, SUPER));
+    }
+
+    /**
+     * Determines whether the given token is a literal.
+     *
+     * @param t A <code>Token</code>.
+     * @return Whether the give token is a literal.
+     */
+    protected static boolean isLiteral(Token t) {
+        return test(t, Arrays.asList(TRUE, FALSE, INT_LITERAL, FLOATING_POINT_LITERAL, STRING_LITERAL, CHARACTER_LITERAL));
+    }
+
+    protected IllegalStateException internalError(TokenType expected) {
+        return internalError("'" + expected.getRepresentation() + "'");
+    }
+
+    protected IllegalStateException internalError(String expected) {
+        return new IllegalStateException("Internal error: Expected " + expected + ", got '" +
+                curr().getType().getRepresentation() + "'!");
     }
 }

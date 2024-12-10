@@ -14,7 +14,13 @@ import org.spruce.compiler.ast.names.ASTExpressionName;
  */
 public sealed interface ASTDataType extends ParentNode, ASTTypeArgument permits ASTDataTypeNoArray, ASTArrayType {
     /**
-     * Converts a Data Type into an Expression Name.
+     * Returns whether this DataType can be converted to an ExpressionName.
+     * @return Whether this DataType can be converted to an ExpressionName.
+     */
+    boolean canConvertToExpressionName();
+
+    /**
+     * Converts this DataType into an Expression Name.
      * @return An <code>ASTExpressionName</code>.
      */
     ASTExpressionName convertToExpressionName();

@@ -1,5 +1,6 @@
 package org.spruce.compiler.ast.names;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
@@ -30,11 +31,19 @@ public final class ASTExpressionName extends ASTListNode<ASTIdentifier> implemen
     }
 
     /**
-     * Converts this to an <code>ASTTypeName</code>.  Converts any child
-     * <code>ASTAmbiguousName</code> to an <code>ASTPackageOrTypeName</code>.
+     * Create a bad ExpressionName as a placeholder in case of an error.
+     * @param loc The <code>Location</code>.
+     * @return An <code>ASTExpressionName</code> at the given <code>Location</code>
+     *     with one identifier "Bad Expression Name".
+     */
+    public static ASTExpressionName badExpressionName(Location loc) {
+        return new ASTExpressionName(loc, Arrays.asList(new ASTIdentifier(loc, "Bad Expression Name")));
+    }
+
+    /**
+     * Converts this to an <code>ASTTypeName</code>.
      * @return An <code>ASTTypeName</code> with the same structure as this
      *     <code>ASTExpressionName</code>.
-     * @see ASTAmbiguousName#convertToNamespaceOrTypeName
      */
     public ASTTypeName convertToTypeName() {
         return new ASTTypeName(getLocation(), getTypedChildren());

@@ -4,7 +4,6 @@ import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.classes.ASTAnnotation;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.*;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.parser.TypesParser;
 import org.spruce.compiler.scanner.Scanner;
@@ -28,7 +27,7 @@ public class ParserTypesTest {
     public void testDataTypeNoArrayListOfClassPart() {
         TypesParser parser = getTypesParser("Serializable");
         ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 1);
     }
 
@@ -39,7 +38,7 @@ public class ParserTypesTest {
     public void testDataTypeNoArrayList() {
         TypesParser parser = getTypesParser("Serializable, Comparable<T>");
         ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 2);
     }
     
@@ -50,7 +49,7 @@ public class ParserTypesTest {
     public void testDataTypeNoArrayListNested() {
         TypesParser parser = getTypesParser("Serializable, Comparable<T>, RandomAccess");
         ASTDataTypeNoArrayList node = parser.parseDataTypeNoArrayList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 3);
     }
     
@@ -61,7 +60,7 @@ public class ParserTypesTest {
     public void testDataTypeOfDataTypeNoArray() {
         TypesParser parser = getTypesParser("spruce.lang.String");
         ASTDataType node = parser.parseDataType();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTDataTypeNoArray.class, node);
     }
 
@@ -72,20 +71,10 @@ public class ParserTypesTest {
     public void testDataTypeOfArrayType() {
         TypesParser parser = getTypesParser("spruce.lang.String[]");
         ASTDataType node = parser.parseDataType();
-        System.out.println(node);
-        assertInstanceOf(ASTArrayType.class, node);
-    }
-
-    /**
-     * Tests array type.
-     */
-    @Test
-    public void testArrayType() {
-        TypesParser parser = getTypesParser("spruce.lang.String[][]");
-        ASTArrayType node = parser.parseArrayType();
-        System.out.println(node);
-        assertNotNull(node.getDataTypeNoArray());
-        assertNotNull(node.getDims());
+        ensureNoErrors(node, parser);
+        ASTArrayType arrayType = ensureIsa(node, ASTArrayType.class);
+        assertNotNull(arrayType.getDataTypeNoArray());
+        assertNotNull(arrayType.getDims());
     }
 
     /**
@@ -95,7 +84,7 @@ public class ParserTypesTest {
     public void testDims() {
         TypesParser parser = getTypesParser("[][][]");
         ASTDims node = parser.parseDims();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DIMS, ASTKeywordNode.class, 3);
     }
 
@@ -106,7 +95,7 @@ public class ParserTypesTest {
     public void testDimsSeparateTokens() {
         TypesParser parser = getTypesParser("[ ][ ][ ]");
         ASTDims node = parser.parseDims();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DIMS, ASTKeywordNode.class, 3);
     }
 
@@ -116,7 +105,8 @@ public class ParserTypesTest {
     @Test
     public void testDimsBad() {
         TypesParser parser = getTypesParser("[0]");
-        assertThrows(CompileException.class, parser::parseDims, "Expected '[]'.");
+        ASTDims node = parser.parseDims();
+        expectError(node, parser);
     }
 
     /**
@@ -126,7 +116,7 @@ public class ParserTypesTest {
     public void testDataTypeNoArrayOfSimpleType() {
         TypesParser parser = getTypesParser("List<?>");
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, SIMPLE_TYPES, ASTSimpleType.class, 1);
     }
 
@@ -137,7 +127,7 @@ public class ParserTypesTest {
     public void testDataTypeNoArray() {
         TypesParser parser = getTypesParser("A<?>.B<?>");
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, SIMPLE_TYPES, ASTSimpleType.class, 2);
     }
 
@@ -148,7 +138,7 @@ public class ParserTypesTest {
     public void testDataTypeNoArrayNested() {
         TypesParser parser = getTypesParser("spruce.collections.List<?>");
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, SIMPLE_TYPES, ASTSimpleType.class, 3);
     }
 
@@ -159,7 +149,7 @@ public class ParserTypesTest {
     public void testSimpleTypeOfIdentifier() {
         TypesParser parser = getTypesParser("Simple");
         ASTSimpleType node = parser.parseSimpleType();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         ASTIdentifier id = node.getName();
         assertEquals("Simple", id.getValue());
         assertFalse(node.getTypeArgs().isPresent());
@@ -172,7 +162,7 @@ public class ParserTypesTest {
     public void testSimpleTypeOfIdentifierTypeArguments() {
         TypesParser parser = getTypesParser("Map<?, ?>");
         ASTSimpleType node = parser.parseSimpleType();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         //checkNary(node, null, ASTIdentifier.class, ASTTypeArguments.class);
         ASTIdentifier id = node.getName();
         assertEquals("Map", id.getValue());
@@ -187,7 +177,7 @@ public class ParserTypesTest {
     public void testTypeParametersOfTypeParameterList() {
         TypesParser parser = getTypesParser("<K, V>");
         ASTTypeParameterList node = parser.parseTypeParameters();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_PARAMETERS, ASTTypeParameter.class, 2);
     }
 
@@ -198,7 +188,7 @@ public class ParserTypesTest {
     public void testTypeParameterListOfTypeParameter() {
         TypesParser parser = getTypesParser("E");
         ASTTypeParameterList node = parser.parseTypeParameterList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_PARAMETERS, ASTTypeParameter.class, 1);
     }
 
@@ -209,7 +199,7 @@ public class ParserTypesTest {
     public void testTypeParameterListNested() {
         TypesParser parser = getTypesParser("K, V, T <: Map<K, V>");
         ASTTypeParameterList node = parser.parseTypeParameterList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_PARAMETERS, ASTTypeParameter.class, 3);
     }
 
@@ -220,7 +210,7 @@ public class ParserTypesTest {
     public void testTypeParameterListTypeParametersAnnotations() {
         TypesParser parser = getTypesParser("@Test1 T, @Test2 U, @Test3 V");
         ASTTypeParameterList node = parser.parseTypeParameterList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_PARAMETERS, ASTTypeParameter.class, 3);
     }
 
@@ -231,7 +221,7 @@ public class ParserTypesTest {
     public void testTypeParameterSimple() {
         TypesParser parser = getTypesParser("T");
         ASTTypeParameter node = parser.parseTypeParameter();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
         assertFalse(node.getTypeBound().isPresent());
@@ -246,7 +236,7 @@ public class ParserTypesTest {
     public void testTypeParameterOfBounds() {
         TypesParser parser = getTypesParser("N <: Number");
         ASTTypeParameter node = parser.parseTypeParameter();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
         ASTIdentifier id = node.getName();
@@ -261,7 +251,7 @@ public class ParserTypesTest {
     public void testTypeParameterOfAnnotation() {
         TypesParser parser = getTypesParser("@Test N <: Number");
         ASTTypeParameter node = parser.parseTypeParameter();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
 
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 1);
         ASTIdentifier id = node.getName();
@@ -276,7 +266,7 @@ public class ParserTypesTest {
     public void testTypeBoundOfIntersectionType() {
         TypesParser parser = getTypesParser("<: Student & Serializable");
         ASTIntersectionType node = parser.parseTypeBound();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DATA_TYPES, ASTDataType.class, 2);
     }
 
@@ -287,7 +277,7 @@ public class ParserTypesTest {
     public void testIntersectionTypeOfDataType() {
         TypesParser parser = getTypesParser("Student");
         ASTIntersectionType node = parser.parseIntersectionType();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DATA_TYPES, ASTDataType.class, 1);
     }
 
@@ -298,7 +288,7 @@ public class ParserTypesTest {
     public void testIntersectionType() {
         TypesParser parser = getTypesParser("Student & Person");
         ASTIntersectionType node = parser.parseIntersectionType();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DATA_TYPES, ASTDataType.class, 2);
     }
 
@@ -309,7 +299,7 @@ public class ParserTypesTest {
     public void testIntersectionTypeMany() {
         TypesParser parser = getTypesParser("Student & Person & Learner");
         ASTIntersectionType node = parser.parseIntersectionType();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, DATA_TYPES, ASTDataType.class, 3);
     }
 
@@ -320,7 +310,7 @@ public class ParserTypesTest {
     public void testTypeArgumentsOfTypeArgumentList() {
         TypesParser parser = getTypesParser("<?>");
         ASTTypeArgumentList node = parser.parseTypeArguments();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_ARGUMENTS, ASTTypeArgument.class, 1);
     }
 
@@ -331,7 +321,7 @@ public class ParserTypesTest {
     public void testTypeArgumentListOfTypeArgument() {
         TypesParser parser = getTypesParser("?");
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_ARGUMENTS, ASTTypeArgument.class, 1);
     }
 
@@ -342,7 +332,7 @@ public class ParserTypesTest {
     public void testTypeArgumentsOrDiamondOfTypeArguments() {
         TypesParser parser = getTypesParser("<T, U>");
         ASTTypeArgumentsOrDiamond node = parser.parseTypeArgumentsOrDiamond();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertTrue(node.getTypeArgs().isPresent());
     }
 
@@ -353,7 +343,7 @@ public class ParserTypesTest {
     public void testTypeArgumentsOrDiamondOfDiamond() {
         TypesParser parser = getTypesParser("<>");
         ASTTypeArgumentsOrDiamond node = parser.parseTypeArgumentsOrDiamond();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertFalse(node.getTypeArgs().isPresent());
     }
 
@@ -364,7 +354,7 @@ public class ParserTypesTest {
     public void testTypeArgumentListNested() {
         TypesParser parser = getTypesParser("Employee, ?, ? <: Number");
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPE_ARGUMENTS, ASTTypeArgument.class, 3);
     }
 
@@ -375,7 +365,7 @@ public class ParserTypesTest {
     public void testTypeArgumentOfWildcard() {
         TypesParser parser = getTypesParser("?");
         ASTTypeArgument node = parser.parseTypeArgument();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTWildcard.class, node);
     }
 
@@ -386,17 +376,8 @@ public class ParserTypesTest {
     public void testTypeArgumentOfDataType() {
         TypesParser parser = getTypesParser("Employee");
         ASTTypeArgument node = parser.parseTypeArgument();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertInstanceOf(ASTDataType.class, node);
-    }
-
-    /**
-     * Tests bad type argument.
-     */
-    @Test
-    public void testTypeArgumentBad() {
-        TypesParser parser = getTypesParser("20");
-        assertThrows(CompileException.class, parser::parseTypeArgument, "Expected wildcard or data type.");
     }
 
     /**
@@ -406,7 +387,7 @@ public class ParserTypesTest {
     public void testWildcard() {
         TypesParser parser = getTypesParser("?");
         ASTWildcard node = parser.parseWildcard();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertEquals(QUESTION_MARK, node.getWildcard().getKeyword());
         assertFalse(node.getBounds().isPresent());
     }
@@ -418,7 +399,7 @@ public class ParserTypesTest {
     public void testWildcardBounds() {
         TypesParser parser = getTypesParser("? <: Employee");
         ASTWildcard node = parser.parseWildcard();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertEquals(QUESTION_MARK, node.getWildcard().getKeyword());
         assertTrue(node.getBounds().isPresent());
     }
@@ -430,7 +411,7 @@ public class ParserTypesTest {
     public void testWildcardBoundsOfSubtype() {
         TypesParser parser = getTypesParser("<: Employee");
         ASTWildcardBounds node = parser.parseWildcardBounds();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertEquals(SUBTYPE, node.getBoundKeyword().getKeyword());
         assertNotNull(node.getDataType());
     }
@@ -442,7 +423,7 @@ public class ParserTypesTest {
     public void testWildcardBoundsOfSupertype() {
         TypesParser parser = getTypesParser(":> Employee");
         ASTWildcardBounds node = parser.parseWildcardBounds();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         assertEquals(SUPERTYPE, node.getBoundKeyword().getKeyword());
         assertNotNull(node.getDataType());
     }

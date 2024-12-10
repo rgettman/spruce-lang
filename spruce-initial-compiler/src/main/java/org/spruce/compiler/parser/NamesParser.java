@@ -1,7 +1,8 @@
 package org.spruce.compiler.parser;
 
+import java.util.Arrays;
+
 import org.spruce.compiler.ast.names.*;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 
@@ -36,6 +37,11 @@ public class NamesParser extends BasicParser {
                 "Expected an identifier.",
                 DOT,
                 this::parseIdentifier,
+                Arrays.asList(SEMICOLON, USE,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, SEALED, SHARED,  // Type modifiers
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
                 ASTNamespaceName::new
         );
     }
@@ -55,64 +61,13 @@ public class NamesParser extends BasicParser {
                 "Expected an identifier.",
                 DOT,
                 this::parseIdentifier,
+                Arrays.asList(SEMICOLON, USE, OPEN_BRACE, OPEN_PARENTHESIS, STAR, SELF, SUPER, LESS_THAN,
+                        OPEN_BRACKET, OPEN_CLOSE_BRACKET,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, SEALED, SHARED,  // Type modifiers
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
                 ASTTypeName::new
-        );
-    }
-
-    /**
-     * Parses a <code>NamespaceOrTypeName</code>.
-     * <em>
-     * NamespaceOrTypeName:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceOrTypeName . Identifier<br>
-     * </em>
-     * @return An <code>ASTNamespaceOrTypeName</code>.
-     */
-    public ASTNamespaceOrTypeName parseNamespaceOrTypeName() {
-        return parseList(
-                t -> test(t, IDENTIFIER),
-                "Expected an identifier.",
-                DOT,
-                this::parseIdentifier,
-                ASTNamespaceOrTypeName::new
-        );
-    }
-
-    /**
-     * Parses an <code>ExpressionName</code>.
-     * <em>
-     * ExpressionName:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
-     * </em>
-     * @return An <code>ASTExpressionName</code>.
-     */
-    public ASTExpressionName parseExpressionName() {
-        return parseList(
-                t -> test(t, IDENTIFIER),
-                "Expected an identifier.",
-                DOT,
-                this::parseIdentifier,
-                ASTExpressionName::new
-        );
-    }
-
-    /**
-     * Parses an <code>AmbiguousName</code>.
-     * <em>
-     * AmbiguousName:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
-     * </em>
-     * @return An <code>ASTAmbiguousName</code>.
-     */
-    public ASTAmbiguousName parseAmbiguousName() {
-        return parseList(
-                t -> test(t, IDENTIFIER),
-                "Expected an identifier.",
-                DOT,
-                this::parseIdentifier,
-                ASTAmbiguousName::new
         );
     }
 
@@ -130,6 +85,11 @@ public class NamesParser extends BasicParser {
                 "Expected identifier",
                 COMMA,
                 this::parseIdentifier,
+                Arrays.asList(SEMICOLON, USE, CLOSE_BRACE,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, SEALED, SHARED,  // Type modifiers
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
                 ASTIdentifierList::new
         );
     }
@@ -154,7 +114,8 @@ public class NamesParser extends BasicParser {
             return new ASTIdentifier(t.getLocation(), t.getValue());
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected an identifier.");
+            error(curr().getLocation(), "Expected an identifier.");
+            return new ASTIdentifier(curr().getLocation(), "Bad Identifier");
         }
     }
 }

@@ -14,7 +14,6 @@ import org.spruce.compiler.ast.names.ASTIdentifierList;
 import org.spruce.compiler.ast.names.ASTNamespaceOrTypeName;
 import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.ast.toplevel.*;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
@@ -61,7 +60,7 @@ public class TopLevelParser extends BasicParser {
         ASTUseDeclarationList useDeclList = parseUseDeclarationList();
         if (!annList.getChildren().isEmpty() && !useDeclList.getChildren().isEmpty()) {
             Location errorLoc = annList.get(0).getLocation();
-            throw new CompileException(errorLoc, "Annotations are not allowed on use declarations.");
+            error(errorLoc, "Annotations are not allowed on use declarations.");
         }
         else if (annList.getChildren().isEmpty() && !useDeclList.getChildren().isEmpty()) {
             annList = classesParser.parseAnnotationList();
@@ -85,15 +84,14 @@ public class TopLevelParser extends BasicParser {
      * @param annList An <code>ASTAnnotationList</code>, possibly empty.
      * @return An <code>ASTNamespaceDeclaration</code>.
      */
-
     public ASTNamespaceDeclaration parseNamespaceDeclaration(ASTAnnotationList annList) {
         Location loc = curr().getLocation();
         if (accept(NAMESPACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected namespace.");
+            throw internalError(NAMESPACE);
         }
         ASTNamespaceDeclaration node = new ASTNamespaceDeclaration(loc, annList, getNamesParser().parseNamespaceName());
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Missing semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         return node;
     }
@@ -111,6 +109,11 @@ public class TopLevelParser extends BasicParser {
                 t -> test(t, USE),
                 "Expected use declaration.",
                 this::parseUseDeclaration,
+                Arrays.asList(PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, SEALED,  // General modifiers
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF, AT_SIGN
+                ),
                 ASTUseDeclarationList::new,
                 false
         );
@@ -132,7 +135,7 @@ public class TopLevelParser extends BasicParser {
     public ASTUseDeclaration parseUseDeclaration() {
         Location loc = curr().getLocation();
         if (accept(USE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected use.");
+            throw internalError(USE);
         }
         boolean isShared = false;
         if (isCurr(SHARED)) {
@@ -176,14 +179,14 @@ public class TopLevelParser extends BasicParser {
      */
     public ASTUseSharedMultDeclaration parseUseSharedMultDeclaration(Location loc, ASTTypeName tn) {
         if (accept(DOT) == null || accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected dot then '{'.");
+            throw internalError(curr().getType());
         }
         ASTIdentifierList identifierList = getNamesParser().parseIdentifierList();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '}'");
+            error(curr().getLocation(), "Expected '}'.");
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Missing semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         return new ASTUseSharedMultDeclaration(loc, tn, identifierList);
     }
@@ -201,14 +204,14 @@ public class TopLevelParser extends BasicParser {
     public ASTUseMultDeclaration parseUseMultDeclaration(Location loc, ASTTypeName tn) {
         ASTNamespaceOrTypeName namespaceOrTypeName = tn.convertToNamespaceOrTypeName();
         if (accept(DOT) == null || accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected dot then '{'.");
+            throw internalError(curr().getType());
         }
         ASTIdentifierList identifiers = getNamesParser().parseIdentifierList();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '}'");
+            error(curr().getLocation(), "Expected '}'.");
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Missing semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         return new ASTUseMultDeclaration(loc, namespaceOrTypeName, identifiers);
     }
@@ -226,10 +229,10 @@ public class TopLevelParser extends BasicParser {
     public ASTUseSharedAllDeclaration parseUseSharedAllDeclaration(Location loc, ASTTypeName tn) {
         ASTUseSharedAllDeclaration node = new ASTUseSharedAllDeclaration(loc, tn);
         if (accept(DOT) == null || accept(STAR) == null) {
-            throw new CompileException(curr().getLocation(), "Expected dot, star.");
+            throw internalError(curr().getType());
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         return node;
     }
@@ -247,10 +250,10 @@ public class TopLevelParser extends BasicParser {
     public ASTUseAllDeclaration parseUseAllDeclaration(Location loc, ASTTypeName tn) {
         ASTUseAllDeclaration node = new ASTUseAllDeclaration(loc, tn.convertToNamespaceOrTypeName());
         if (accept(DOT) == null || accept(STAR) == null) {
-            throw new CompileException(curr().getLocation(), "Expected dot, star.");
+            throw internalError(curr().getType());
         }
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         return node;
     }
@@ -267,7 +270,7 @@ public class TopLevelParser extends BasicParser {
      */
     public ASTUseSharedTypeDeclaration parseUseSharedTypeDeclaration(Location loc, ASTTypeName tn) {
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         // Extract identifier, last child of type name.
         List<ASTIdentifier> children = tn.getTypedChildren();
@@ -289,7 +292,7 @@ public class TopLevelParser extends BasicParser {
      */
     public ASTUseTypeDeclaration parseUseTypeDeclaration(Location loc, ASTTypeName tn) {
         if (accept(SEMICOLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected semicolon.");
+            error(curr().getLocation(), "Expected ';'.");
         }
         return new ASTUseTypeDeclaration(loc, tn);
     }
@@ -307,23 +310,23 @@ public class TopLevelParser extends BasicParser {
     public ASTTypeDeclarationList parseTypeDeclarationList(ASTAnnotationList annList) {
         Location loc = curr().getLocation();
         ASTAnnotationList currAnnList = annList;
+        List<ASTTypeDeclaration> children = new ArrayList<>();
         Predicate<Token> isOnInitialToken = t ->
                 Arrays.asList(AT_SIGN, PUBLIC, INTERNAL, PROTECTED, PRIVATE, ABSTRACT, SHARED,
                               CLASS, ENUM, INTERFACE, ANNOTATION, RECORD)
                         .contains(t.getType());
-        if (isOnInitialToken.test(curr())) {
-            List<ASTTypeDeclaration> children = new ArrayList<>();
-            children.add(parseTypeDeclaration(currAnnList));
-            currAnnList = getClassesParser().parseAnnotationList();
-            while (isOnInitialToken.test(curr())) {
+        while (!isCurr(EOF)) {
+            if (isOnInitialToken.test(curr())) {
                 children.add(parseTypeDeclaration(currAnnList));
                 currAnnList = getClassesParser().parseAnnotationList();
             }
-            return new ASTTypeDeclarationList(loc, children);
+            else {
+                error(curr().getLocation(), "Unexpected token '" +
+                        curr().getType().getRepresentation() + "'.");
+                accept(curr().getType());
+            }
         }
-        else {
-            return new ASTTypeDeclarationList(curr().getLocation(), new ArrayList<>());
-        }
+        return new ASTTypeDeclarationList(loc, children);
     }
 
     /**
@@ -356,17 +359,17 @@ public class TopLevelParser extends BasicParser {
             case ANNOTATION -> cp.parseAnnotationDeclaration(loc, annList, accessMod, genModList);
             case RECORD -> {
                 if (!genModList.getChildren().isEmpty()) {
-                    throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+                    error(genModList.getLocation(), "General modifier not allowed here.");
                 }
                 yield cp.parseRecordDeclaration(loc, annList, accessMod);
             }
             case ADT -> {
                 if (!genModList.getChildren().isEmpty()) {
-                    throw new CompileException(curr().getLocation(), "General modifier not allowed here.");
+                    error(genModList.getLocation(), "General modifier not allowed here.");
                 }
                 yield cp.parseAdtDeclaration(loc, annList, accessMod);
             }
-            default -> throw new CompileException(curr().getLocation(), "Expected class, enum, interface, annotation, record, or adt.");
+            default -> throw internalError("class, enum, interface, annotation, record, or adt");
         };
     }
 }

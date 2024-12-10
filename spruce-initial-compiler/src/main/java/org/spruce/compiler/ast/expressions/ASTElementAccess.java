@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.statements.ASTResource;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -20,7 +21,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess [ ValueExpression ]<br>
  * </em>
  */
-public final class ASTElementAccess extends ASTParentNode implements ASTLeftHandSide {
+public final class ASTElementAccess extends ASTParentNode implements ASTLeftHandSide, ASTResource {
     private final ASTPrimary myPrimary;
     private final ASTElementAccess myElementAccess;
     private final ASTValueExpression myIndexExpr;

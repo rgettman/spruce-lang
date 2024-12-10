@@ -5,7 +5,7 @@ import org.spruce.compiler.scanner.Location;
 /**
  * An <code>ASTValueNode</code> is a leaf <code>ASTNode</code> with a value.
  */
-public class ASTValueNode extends ASTNode {
+public class ASTValueNode extends ASTNode implements ValueNode {
     private final String myValue;
 
     /**
@@ -23,6 +23,7 @@ public class ASTValueNode extends ASTNode {
      * Returns the string value.
      * @return The string value.
      */
+    @Override
     public String getValue() {
         return myValue;
     }

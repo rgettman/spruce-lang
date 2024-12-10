@@ -1,11 +1,11 @@
 package org.spruce.compiler.parser;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
-import org.spruce.compiler.ast.ASTNode;
 import org.spruce.compiler.ast.expressions.*;
 import org.spruce.compiler.ast.literals.ASTLiteral;
 import org.spruce.compiler.ast.names.ASTExpressionName;
@@ -15,7 +15,6 @@ import org.spruce.compiler.ast.statements.ASTVariableModifierList;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.ast.types.ASTDims;
 import org.spruce.compiler.ast.types.ASTTypeArgumentList;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
@@ -29,6 +28,30 @@ import static org.spruce.compiler.scanner.TokenType.*;
  * expressions.
  */
 public class ExpressionsParser extends BasicParser {
+    // If we get a bad Primary, don't consume these when attempting to parse
+    // beyond it.
+    public static final List<TokenType> PRIMARY_STOPPERS = Arrays.asList(
+            CLOSE_PARENTHESIS, CLOSE_BRACKET, CLOSE_BRACE,
+            COLON, COMMA, SEMICOLON, ARROW,
+            INCREMENT, DECREMENT,
+            LESS_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN_OR_EQUAL, GREATER_THAN_OR_EQUAL, DOUBLE_EQUAL, NOT_EQUAL, COMPARISON,
+            AMPERSAND, AMPERSAND_COLON, DOUBLE_AMPERSAND, PIPE, PIPE_COLON, DOUBLE_PIPE, CARET, TILDE, EXCLAMATION,
+            SHIFT_LEFT, SHIFT_RIGHT, INCREMENT, DECREMENT, PLUS, MINUS, STAR, SLASH, PERCENT, AS, ISA, IS, ISNT,
+            EOF
+    );
+
+    // If we get a bad Expression, don't consume these when attempting to parse
+    // beyond it.  Primary stoppers without the binary operators.  Switch
+    // expression parts and statement starters.
+    public static final List<TokenType> EXPRESSION_STOPPERS = Arrays.asList(
+            CLOSE_PARENTHESIS, CLOSE_BRACKET, CLOSE_BRACE,
+            COLON, COMMA, SEMICOLON, ARROW,
+            INCREMENT, DECREMENT,
+            CASE, DEFAULT,
+            ASSERT, BREAK, CONTINUE, CRITICAL, DO, FALLTHROUGH, FOR, IF, RETURN, THROW, TRY, USE, WHILE, YIELD,
+            EOF
+    );
+
     /**
      * Constructs an <code>ExpressionsParser</code> using a <code>Scanner</code>.
      *
@@ -53,14 +76,15 @@ public class ExpressionsParser extends BasicParser {
         if (test(curr(), IDENTIFIER) && test(next(), ARROW)) {
             return parseLambdaExpression();
         }
-        if (isPrimary(curr())) {
+        if (isValueExpression(curr())) {
             return parseValueExpression();
         }
         else if (isCurr(PIPE) || isCurr(DOUBLE_PIPE)) {
             return parseLambdaExpression();
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected primary or lambda expression.  Got \"" + curr() + "\".");
+            error(curr().getLocation(), "Expected primary or lambda expression.  Got \"" + curr() + "\".");
+            return parseBadPrimary(EXPRESSION_STOPPERS);
         }
     }
 
@@ -76,7 +100,7 @@ public class ExpressionsParser extends BasicParser {
         Location loc = curr().getLocation();
         ASTLambdaParameters lambdaParams = parseLambdaParameters();
         if (accept(ARROW) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"->\".");
+            error(curr().getLocation(), "Expected arrow (->).");
         }
         return new ASTLambdaExpression(loc, lambdaParams, parseLambdaBody());
     }
@@ -108,12 +132,15 @@ public class ExpressionsParser extends BasicParser {
                 result = new ASTLambdaParameters(loc);
             }
             if (accept(PIPE) == null) {
-                throw new CompileException(curr().getLocation(), "Expected \"|\".");
+                error(curr().getLocation(), "Expected '|'.");
             }
             yield result;
         }
         case IDENTIFIER -> new ASTLambdaParameters(loc, getNamesParser().parseIdentifier());
-        default -> throw new CompileException(curr().getLocation(), "Expected lambda parameters.");
+        default -> {
+            error(loc, "Expected lambda parameters.");
+            yield new ASTLambdaParameters(loc);
+        }
         };
     }
 
@@ -129,14 +156,13 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTLambdaParameterList parseLambdaParameterList() {
         return switch(curr().getType()) {
-            case VAR, MUT, TAKE -> getClassesParser().parseFormalParameterList();
             case IDENTIFIER ->
                 switch(next().getType()) {
                     case COMMA, PIPE -> parseInferredParameterList();
                     default -> getClassesParser().parseFormalParameterList();
                 };
             case PIPE -> parseInferredParameterList();
-            default -> throw new CompileException(curr().getLocation(), "Expected lambda parameter(s), got \"" + curr() + "\".");
+            default -> getClassesParser().parseFormalParameterList();
         };
     }
 
@@ -154,6 +180,7 @@ public class ExpressionsParser extends BasicParser {
                 "Expected an identifier",
                 COMMA,
                 getNamesParser()::parseIdentifier,
+                Arrays.asList(PIPE, CLOSE_PARENTHESIS, CLOSE_BRACKET, CLOSE_BRACE, OPEN_BRACE, SEMICOLON, ARROW, EOF),
                 ASTInferredParameterList::new,
                 false
         );
@@ -200,25 +227,23 @@ public class ExpressionsParser extends BasicParser {
      *     <code>ASTSwitchExpression</code>, or <code>ASTPrimary</code>.
      */
     public ASTValueExpression parseValueExpression() {
-        if (isPrimary(curr())) {
+        if (isValueExpression(curr())) {
             Location loc = curr().getLocation();
             ASTValueExpression logicalOrExpr = parseLogicalOrExpression();
             if (isCurr(QUESTION_MARK)) {
                 accept(QUESTION_MARK);
                 ASTExpression exprIfTrue = parseExpression();
-                if (isCurr(COLON)) {
-                    accept(COLON);
-                    ASTExpression exprIfFalse = parseExpression();
-                    return new ASTConditionalExpression(loc, logicalOrExpr, exprIfTrue, exprIfFalse);
+                if (accept(COLON) == null) {
+                    error(curr().getLocation(), "Expected ':'.");
                 }
-                else {
-                    throw new CompileException(curr().getLocation(), "Expected ':'.");
-                }
+                ASTExpression exprIfFalse = parseExpression();
+                return new ASTConditionalExpression(loc, logicalOrExpr, exprIfTrue, exprIfFalse);
             }
             return logicalOrExpr;
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected a literal or expression name.");
+            error(curr().getLocation(), "Expected a literal or expression name.");
+            return parseBadPrimary(EXPRESSION_STOPPERS);
         }
     }
 
@@ -235,7 +260,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseLogicalOrExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(PIPE_COLON, DOUBLE_PIPE),
                 this::parseLogicalXorExpression
         );
@@ -253,7 +278,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseLogicalXorExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(CARET_COLON),
                 this::parseLogicalAndExpression
         );
@@ -272,7 +297,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseLogicalAndExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(AMPERSAND_COLON, DOUBLE_AMPERSAND),
                 this::parseRelationalExpression
         );
@@ -297,24 +322,19 @@ public class ExpressionsParser extends BasicParser {
      * @return An <code>ASTValueExpression</code>.
      */
     public ASTValueExpression parseRelationalExpression() {
-        if (isPrimary(curr())) {
-            Location loc = curr().getLocation();
-            ASTValueExpression result = parseCompareExpression();
-            TokenType curr;
-            while ( (curr = isAcceptedOperator(Arrays.asList(LESS_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, DOUBLE_EQUAL, NOT_EQUAL, ISA, IS, ISNT)) ) != null) {
-                accept(curr);
-                if (curr == ISA) {
-                    result = new ASTIsaExpression(loc, result, getTypesParser().parseDataType());
-                }
-                else {
-                    result = new ASTBinaryExpression(loc, result, parseCompareExpression(), curr);
-                }
+        Location loc = curr().getLocation();
+        ASTValueExpression result = parseCompareExpression();
+        TokenType curr;
+        while ( (curr = isAcceptedOperator(Arrays.asList(LESS_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, DOUBLE_EQUAL, NOT_EQUAL, ISA, IS, ISNT)) ) != null) {
+            accept(curr);
+            if (curr == ISA) {
+                result = new ASTIsaExpression(loc, result, getTypesParser().parseDataType());
             }
-            return result;
+            else {
+                result = new ASTBinaryExpression(loc, result, parseCompareExpression(), curr);
+            }
         }
-        else {
-            throw new CompileException(curr().getLocation(), "Expected a literal or expression name.");
-        }
+        return result;
     }
 
     /**
@@ -328,7 +348,7 @@ public class ExpressionsParser extends BasicParser {
      * @return An <code>ASTValueExpression</code>.
      */
     public ASTValueExpression parseCompareExpression() {
-        if (isPrimary(curr())) {
+        if (isValueExpression(curr())) {
             Location loc = curr().getLocation();
             ASTValueExpression result = parseBitwiseOrExpression();
             if (isCurr(COMPARISON)) {
@@ -338,7 +358,8 @@ public class ExpressionsParser extends BasicParser {
             return result;
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected a literal or expression name.");
+            error(curr().getLocation(), "Expected a literal or expression name.");
+            return parseBadPrimary(EXPRESSION_STOPPERS);
         }
     }
 
@@ -354,7 +375,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseBitwiseOrExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(PIPE),
                 this::parseBitwiseXorExpression
         );
@@ -372,7 +393,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseBitwiseXorExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(CARET),
                 this::parseBitwiseAndExpression
         );
@@ -390,7 +411,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseBitwiseAndExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(AMPERSAND),
                 this::parseShiftExpression
         );
@@ -409,7 +430,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseShiftExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(SHIFT_LEFT, SHIFT_RIGHT),
                 this::parseAdditiveExpression
         );
@@ -428,7 +449,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseAdditiveExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(PLUS, MINUS),
                 this::parseMultiplicativeExpression
         );
@@ -448,7 +469,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTValueExpression parseMultiplicativeExpression() {
         return parseBinaryExpressionLeftAssociative(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 Arrays.asList(STAR, SLASH, PERCENT),
                 this::parseCastExpression
         );
@@ -465,18 +486,13 @@ public class ExpressionsParser extends BasicParser {
      * @return An <code>ASTValueExpression</code>.
      */
     public ASTValueExpression parseCastExpression() {
-        if (isPrimary(curr())) {
-            Location loc = curr().getLocation();
-            ASTValueExpression result = parseUnaryExpression();
-            while (isCurr(AS)) {
-                accept(AS);
-                result = new ASTCastExpression(loc, result, getTypesParser().parseIntersectionType());
-            }
-            return result;
+        Location loc = curr().getLocation();
+        ASTValueExpression result = parseUnaryExpression();
+        while (isCurr(AS)) {
+            accept(AS);
+            result = new ASTCastExpression(loc, result, getTypesParser().parseIntersectionType());
         }
-        else {
-            throw new CompileException(curr().getLocation(), "Expected a literal or expression name.");
-        }
+        return result;
     }
 
     /**
@@ -524,7 +540,7 @@ public class ExpressionsParser extends BasicParser {
     public ASTSwitchExpression parseSwitchExpression() {
         Location loc = curr().getLocation();
         if (accept(SWITCH) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"switch\".");
+            throw internalError(SWITCH);
         }
         return new ASTSwitchExpression(loc, parseValueExpression(), parseSwitchExpressionBlock());
     }
@@ -539,11 +555,11 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTSwitchExpressionRules parseSwitchExpressionBlock() {
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"{\".");
+            error(curr().getLocation(), "Expected '{'.");
         }
         ASTSwitchExpressionRules rules = parseSwitchExpressionRules();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"}\".");
+            error(curr().getLocation(), "Expected '}'.");
         }
         return rules;
     }
@@ -558,9 +574,10 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTSwitchExpressionRules parseSwitchExpressionRules() {
         return parseMultiple(
-                t -> test(t, CASE, DEFAULT, MUT, VAR, IDENTIFIER) || isPrimary(curr()),
+                t -> test(t, Arrays.asList(CASE, DEFAULT, MUT, VAR, IDENTIFIER)),
                 "Expected a switch expression rule.",
                 this::parseSwitchExpressionRule,
+                PRIMARY_STOPPERS,
                 ASTSwitchExpressionRules::new
         );
     }
@@ -579,7 +596,7 @@ public class ExpressionsParser extends BasicParser {
         Location loc = curr().getLocation();
         ASTSwitchLabel switchLabel = parseSwitchLabel();
         if (accept(ARROW) == null) {
-            throw new CompileException(curr().getLocation(), "Expected arrow (->).");
+            error(curr().getLocation(), "Expected arrow (->).");
         }
         switch(curr().getType()) {
             case OPEN_BRACE -> {
@@ -591,7 +608,7 @@ public class ExpressionsParser extends BasicParser {
             default -> {
                 ASTExpression expr = parseExpression();
                 if (accept(SEMICOLON) == null) {
-                    throw new CompileException(curr().getLocation(), "Expected semicolon.");
+                    error(curr().getLocation(), "Expected semicolon.");
                 }
                 return new ASTSwitchExpressionRule(loc, switchLabel, expr);
             }
@@ -614,22 +631,20 @@ public class ExpressionsParser extends BasicParser {
             case CASE -> {
                 ASTKeywordNode caseKeyword = parseModifier(
                         Arrays.asList(CASE),
-                        "Expected 'case'.",
-                        ASTKeywordNode::new
+                        "'case'"
                 );
                 yield new ASTSwitchLabel(loc, caseKeyword, parseCaseConstants());
             }
             case DEFAULT -> {
                 ASTKeywordNode defaultKeyword = parseModifier(
                         Arrays.asList(DEFAULT),
-                        "Expected 'default'.",
-                        ASTKeywordNode::new
+                        "'default'"
                 );
                 yield new ASTSwitchLabel(loc, defaultKeyword);
             }
             default -> {
                 ASTPattern pattern = parsePattern();
-                if (test(curr(), WHEN)) {
+                if (isCurr(WHEN)) {
                     yield new ASTSwitchLabel(loc, pattern, parseGuard());
                 }
                 yield new ASTSwitchLabel(loc, pattern);
@@ -647,10 +662,12 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTCaseConstants parseCaseConstants() {
         return parseList(
-                ExpressionsParser::isPrimary,
+                ExpressionsParser::isValueExpression,
                 "Expected value expression.",
                 COMMA,
                 this::parseValueExpression,
+                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACKET, CLOSE_BRACE, OPEN_BRACE, SEMICOLON, ARROW,
+                        THROW, EOF),
                 ASTCaseConstants::new
         );
     }
@@ -663,23 +680,18 @@ public class ExpressionsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;RecordPattern
      * </em>
      * @return An <code>ASTPattern</code> which could be an <code>ASTTypePattern</code>
-     *     or a <code>ASTRecordPattern</code>.
+     *     or an <code>ASTRecordPattern</code>.
      */
     public ASTPattern parsePattern() {
         if (isAcceptedOperator(Arrays.asList(MUT, VAR)) != null) {
             return parseTypePattern();
         }
-        else if (isCurr(IDENTIFIER)) {
-            ASTDataType dataType = getTypesParser().parseDataType();
-            if (isCurr(OPEN_PARENTHESIS)) {
-                return parseRecordPattern(dataType);
-            }
-            else {
-                return parseTypePattern(dataType);
-            }
+        ASTDataType dataType = getTypesParser().parseDataType();
+        if (isCurr(OPEN_PARENTHESIS)) {
+            return parseRecordPattern(dataType);
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected a record pattern or a type pattern.");
+            return parseTypePattern(dataType);
         }
     }
 
@@ -694,9 +706,8 @@ public class ExpressionsParser extends BasicParser {
     public ASTGuard parseGuard() {
         Location loc = curr().getLocation();
         if (accept(WHEN) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"when\".");
+            throw internalError(WHEN);
         }
-        accept(WHEN);
         return new ASTGuard(loc, parseValueExpression());
     }
 
@@ -716,7 +727,10 @@ public class ExpressionsParser extends BasicParser {
                 "Expected type pattern or record pattern",
                 COMMA,
                 this::parsePattern,
-                ASTPatternList::new
+                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACKET, CLOSE_BRACE, SEMICOLON, ARROW,
+                        WHEN, THROW, EOF),
+                ASTPatternList::new,
+                false
         );
     }
 
@@ -733,18 +747,13 @@ public class ExpressionsParser extends BasicParser {
     public ASTRecordPattern parseRecordPattern(ASTDataType dataType) {
         Location loc = curr().getLocation();
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"(\".");
+            throw internalError(OPEN_PARENTHESIS);
         }
-        if (!isCurr(CLOSE_PARENTHESIS)) {
-            ASTPatternList patternList = parsePatternList();
-            if (accept(CLOSE_PARENTHESIS) == null) {
-                throw new CompileException(curr().getLocation(), "Expected \")\".");
-            }
-            return new ASTRecordPattern(loc, dataType, patternList);
+        ASTPatternList patternList = parsePatternList();
+        if (accept(CLOSE_PARENTHESIS) == null) {
+            error(curr().getLocation(), "Expected ')'.");
         }
-        else {
-            return new ASTRecordPattern(loc, dataType);
-        }
+        return new ASTRecordPattern(loc, dataType, patternList);
     }
 
     /**
@@ -787,6 +796,20 @@ public class ExpressionsParser extends BasicParser {
         return new ASTTypePattern(loc, dataType, identifier);
     }
 
+    private ASTPrimary parseBadPrimary(List<TokenType> stoppers) {
+        Location loc = curr().getLocation();
+        ASTKeywordNode badChild;
+        if (!test(curr(), stoppers)) {
+            badChild = parseModifier(Arrays.asList(curr().getType()),
+                    curr().getType().getRepresentation()
+            );
+        }
+        else {
+            badChild = new ASTKeywordNode(loc, UNKNOWN);
+        }
+        return new ASTPrimary(loc, badChild, BAD);
+    }
+
     /**
      * Parses a <code>Primary</code>.
      * <em>
@@ -809,7 +832,11 @@ public class ExpressionsParser extends BasicParser {
     public ASTPrimary parsePrimary() {
         Location loc = curr().getLocation();
         ASTPrimary primary;
-        if (isLiteral(curr())) {
+        if (!isPrimary(curr())) {
+            error(loc, "Expected: literal, expression name, or array or class instance creation expression.");
+            primary = parseBadPrimary(PRIMARY_STOPPERS);
+        }
+        else if (isLiteral(curr())) {
             // Literal
             ASTLiteral literal = getLiteralsParser().parseLiteral();
             primary = new ASTPrimary(loc, literal, LITERAL);
@@ -831,7 +858,15 @@ public class ExpressionsParser extends BasicParser {
                     // ClassLiteral
                     return new ASTPrimary(loc, parseClassLiteral(dataType), CLASS_LITERAL);
                 }
-                ASTExpressionName exprName = dataType.convertToExpressionName();
+
+                ASTExpressionName exprName;
+                if (dataType.canConvertToExpressionName()) {
+                    exprName = dataType.convertToExpressionName();
+                }
+                else {
+                    error(dataType.getLocation(),"Expected expression name.");
+                    exprName = ASTExpressionName.badExpressionName(dataType.getLocation());
+                }
                 primary = parsePrimary(exprName);
             }
         }
@@ -850,7 +885,7 @@ public class ExpressionsParser extends BasicParser {
             }
             else {
                 if (accept(DOT) == null) {
-                    throw new CompileException(curr().getLocation(), "Expected '.'.");
+                    error(curr().getLocation(), "Expected '.'.");
                 }
                 if (isCurr(LESS_THAN) || (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS))) {
                     // MethodInvocation
@@ -866,9 +901,8 @@ public class ExpressionsParser extends BasicParser {
             // Expression
             accept(OPEN_PARENTHESIS);
             ASTExpression expression = parseExpression();
-            Token closeParen = accept(CLOSE_PARENTHESIS);
-            if (closeParen == null) {
-                throw new CompileException(curr().getLocation(), "Expected close parenthesis \")\".");
+            if (accept(CLOSE_PARENTHESIS) == null) {
+                error(curr().getLocation(), "Expected close parenthesis ')'.");
             }
             primary = new ASTPrimary(loc, expression, PAREN_EXPR);
         }
@@ -878,27 +912,24 @@ public class ExpressionsParser extends BasicParser {
                 ASTClassInstanceCreationExpression cice = parseClassInstanceCreationExpression();
                 primary = new ASTPrimary(loc, cice, ASTPrimary.Type.CLASS_INSTANCE_CREATION_EXPR);
             }
-            else if (isNext(IDENTIFIER)) {
+            else {
                 accept(NEW);
+                // Assume an identifier is next.
                 ASTTypeToInstantiate tti = parseTypeToInstantiate();
                 if (isCurr(OPEN_BRACKET) || isCurr(OPEN_CLOSE_BRACKET)) {
                     // ArrayCreationExpression
                     primary = new ASTPrimary(loc, parseArrayCreationExpression(tti), ARRAY_CREATION_EXPR);
                 }
-                else if (isCurr(OPEN_PARENTHESIS)) {
-                    // ClassInstanceCreationExpression
-                    primary = new ASTPrimary(loc, parseClassInstanceCreationExpression(tti), ASTPrimary.Type.CLASS_INSTANCE_CREATION_EXPR);
-                }
                 else {
-                    throw new CompileException(curr().getLocation(), "Malformed array or class instance creation expression.");
+                    // Assume '(' is next.
+                    // ClassInstanceCreationExpression
+                    primary = new ASTPrimary(loc, parseClassInstanceCreationExpression(tti),
+                            ASTPrimary.Type.CLASS_INSTANCE_CREATION_EXPR);
                 }
-            }
-            else {
-                throw new CompileException(next().getLocation(), "Type arguments or type to instantiate expected after new.");
             }
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected: literal, expression name, or array or class instance creation expression.");
+            throw internalError("Primary");
         }
 
         // Qualified Class Instance Creation, Element Access, and Method Invocations may chain up.
@@ -961,9 +992,7 @@ public class ExpressionsParser extends BasicParser {
             // TypeName.super.methodInvocation()
             // TypeName.super.fieldAccess
             // NOT Expression.super() -- Constructor invocation.
-            if (accept(DOT) == null) {
-                throw new CompileException(curr().getLocation(), "Expected '.'.");
-            }
+            accept(DOT);
             ASTKeywordNode sooper = parseSuper();
             if (isCurr(DOUBLE_COLON)) {
                 // MethodReference
@@ -985,10 +1014,7 @@ public class ExpressionsParser extends BasicParser {
                 return new ASTPrimary(loc, methodReference, METHOD_REFERENCE);
             }
             else if (isCurr(DOT)) {
-                if (accept(DOT) == null) {
-                    throw new CompileException(curr().getLocation(), "Expected '.'.");
-                }
-
+                accept(DOT);
                 if (isCurr(LESS_THAN) || (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS))) {
                     // MethodInvocation
                     // TypeName.super.<TypeArgs>methodName(args)
@@ -1001,7 +1027,8 @@ public class ExpressionsParser extends BasicParser {
                 }
             }
             else {
-                throw new CompileException(curr().getLocation(), "Expected method reference (::), method invocation, or field access (.).");
+                error(loc, "Expected method reference (::), method invocation, or field access (.).");
+                primary = parseBadPrimary(PRIMARY_STOPPERS);
             }
         }
         else if (isCurr(OPEN_PARENTHESIS)) {
@@ -1093,7 +1120,7 @@ public class ExpressionsParser extends BasicParser {
             }
             if (isCurr(OPEN_BRACKET)) {
                 // ElementAccess
-                ASTElementAccess ea = parseElementAccess(loc, primary);
+                ASTElementAccess ea = parseElementAccess(primary);
                 primary = new ASTPrimary(loc, ea, ASTPrimary.Type.ELEMENT_ACCESS);
             }
         }
@@ -1116,14 +1143,14 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTMethodInvocation parseMethodInvocation(ASTIdentifier identifier) {
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            throw internalError(OPEN_PARENTHESIS);
         }
         ASTMethodInvocation.Builder builder = new ASTMethodInvocation.Builder()
                 .setLocation(identifier.getLocation())
                 .setIdentifier(identifier);
         builder.setArgsList(parseArgumentList());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return builder.build();
     }
@@ -1151,11 +1178,11 @@ public class ExpressionsParser extends BasicParser {
         }
         builder.setIdentifier(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         builder.setArgsList(parseArgumentList());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return builder.build();
     }
@@ -1188,11 +1215,11 @@ public class ExpressionsParser extends BasicParser {
         }
         builder.setIdentifier(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         builder.setArgsList(parseArgumentList());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return builder.build();
     }
@@ -1216,6 +1243,7 @@ public class ExpressionsParser extends BasicParser {
                 .setLocation(primary.getLocation())
                 .setPrimary(primary);
         if (isCurr(LESS_THAN)) {
+            ASTTypeArgumentList typeArgs = getTypesParser().parseTypeArguments();
             // Keep the type arguments in case of:
             // Primary . TypeArguments super (), a constructor invocation.
 
@@ -1226,28 +1254,23 @@ public class ExpressionsParser extends BasicParser {
             // ConstructorInvocation -> Primary . TypeArguments super ( [ArgumentList] )
 
             // Currently there is no clean way of pushing the type arguments
-            // back on to the parser when we get a super.  The easiest (not
-            // best) way is to throw an (otherwise invisible) exception that
-            // contains the primary and type arguments for a constructor invocation.
+            // back on to the parser when we get a super.  If the decision is
+            // made to allow constructor invocations in a constructor body,
+            // perhaps decide to create an ASTInvocation that could be a
+            // ConstructorInvocation or a MethodInvocation.
 
-            // Get it working, then improve it later.
-            ASTTypeArgumentList typeArgs = getTypesParser().parseTypeArguments();
-            if (isCurr(SUPER)) {
-                // Primary . TypeArguments super ( [ArgumentList] )
-                List<ASTNode> alreadyParsed = new ArrayList<>(2);
-                alreadyParsed.add(primary);
-                alreadyParsed.add(typeArgs);
-                throw new CompileException(curr().getLocation(), "Expected method name.", alreadyParsed);
-            }
+//            if (isCurr(SUPER)) {
+//                // Primary . TypeArguments super ( [ArgumentList] )
+//            }
             builder.setTypeArgs(typeArgs);
         }
         builder.setIdentifier(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         builder.setArgsList(parseArgumentList());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return builder.build();
     }
@@ -1271,9 +1294,10 @@ public class ExpressionsParser extends BasicParser {
                 .setLocation(exprName.getLocation())
                 .setExprName(exprName);
         if (accept(DOT) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '.'.");
+            error(curr().getLocation(), "Expected '.'.");
         }
         if (isCurr(LESS_THAN)) {
+            ASTTypeArgumentList typeArgs = getTypesParser().parseTypeArguments();
             // Keep the type arguments in case of:
             // ExpressionName . TypeArguments super (), a constructor invocation.
 
@@ -1284,28 +1308,27 @@ public class ExpressionsParser extends BasicParser {
             // ConstructorInvocation -> ExpressionName . TypeArguments super ( [ArgumentList] )
 
             // Currently there is no clean way of pushing the type arguments
-            // back on to the parser when we get a super.  The easiest (not
-            // best) way is to throw an (otherwise invisible) exception that
-            // contains the expression name and type arguments for a constructor invocation.
+            // back on to the parser when we get a super.  If the decision is
+            // made to allow constructor invocations in a constructor body,
+            // perhaps decide to create an ASTInvocation that could be a
+            // ConstructorInvocation or a MethodInvocation.
 
-            // Get it working, then improve it later.
-            ASTTypeArgumentList typeArgs = getTypesParser().parseTypeArguments();
-            if (isCurr(SUPER)) {
-                // ExpressionName . TypeArguments super ( [ArgumentList] )
-                List<ASTNode> alreadyParsed = new ArrayList<>(2);
-                alreadyParsed.add(exprName);
-                alreadyParsed.add(typeArgs);
-                throw new CompileException(curr().getLocation(), "Expected method name.", alreadyParsed);
-            }
+//            if (isCurr(SUPER)) {
+//                // ExpressionName . TypeArguments super ( [ArgumentList] )
+//                List<ASTNode> alreadyParsed = new ArrayList<>(2);
+//                alreadyParsed.add(exprName);
+//                alreadyParsed.add(typeArgs);
+//                error(curr().getLocation(), "Expected method name.", alreadyParsed);
+//            }
             builder.setTypeArgs(typeArgs);
         }
         builder.setIdentifier(getNamesParser().parseIdentifier());
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         builder.setArgsList(parseArgumentList());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return builder.build();
     }
@@ -1331,11 +1354,11 @@ public class ExpressionsParser extends BasicParser {
                 .setExprName(exprName)
                 .setIdentifier(methodName);
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '('.");
+            error(curr().getLocation(), "Expected '('.");
         }
         builder.setArgsList(parseArgumentList());
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ')'.");
+            error(curr().getLocation(), "Expected ')'.");
         }
         return builder.build();
     }
@@ -1357,8 +1380,10 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTMethodReference parseMethodReference(ASTDataType dataType) {
         Location loc = dataType.getLocation();
+        ASTMethodReference.Builder builder = new ASTMethodReference.Builder()
+                .setLocation(loc);
         if (accept(DOUBLE_COLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '::'.");
+            throw internalError(DOUBLE_COLON);
         }
         ASTTypeArgumentList typeArgs = null;
         if (isCurr(LESS_THAN)) {
@@ -1368,22 +1393,19 @@ public class ExpressionsParser extends BasicParser {
         if (isCurr(NEW)) {
             // DataType :: [TypeArguments] new
             accept(NEW);
-            return new ASTMethodReference.Builder()
-                    .setLocation(loc)
+            return builder
                     .setDataType(dataType)
                     .setTypeArguments(typeArgs)
                     .build();
         }
         else if (isCurr(IDENTIFIER)) {
             ASTIdentifier identifier = getNamesParser().parseIdentifier();
-            ASTMethodReference.Builder builder = new ASTMethodReference.Builder()
-                    .setLocation(loc);
-            try {
-                // ExpressionName :: [TypeArguments] Identifier
+            // ExpressionName :: [TypeArguments] Identifier
+            if (dataType.canConvertToExpressionName()) {
                 ASTExpressionName exprName = dataType.convertToExpressionName();
                 builder.setExprName(exprName);
             }
-            catch (CompileException tryDataType) {
+            else {
                 // DataType :: [TypeArguments] Identifier
                 builder.setDataType(dataType);
             }
@@ -1392,7 +1414,11 @@ public class ExpressionsParser extends BasicParser {
                     .build();
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected identifier or new.");
+            error(curr().getLocation(), "Expected identifier or new.");
+            return builder
+                    .setDataType(dataType)
+                    .setIdentifier(new ASTIdentifier(curr().getLocation(), "bad identifier"))
+                    .build();
         }
     }
 
@@ -1414,7 +1440,7 @@ public class ExpressionsParser extends BasicParser {
     public ASTMethodReference parseMethodReferenceSuper(ASTKeywordNode sooper) {
         Location loc = sooper.getLocation();
         if (accept(DOUBLE_COLON) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '::'.");
+            throw internalError(DOUBLE_COLON);
         }
         ASTTypeArgumentList typeArgs = null;
         if (isCurr(LESS_THAN)) {
@@ -1439,13 +1465,7 @@ public class ExpressionsParser extends BasicParser {
      * @return An <code>ASTClassInstanceCreationExpression</code>.
      */
     public ASTClassInstanceCreationExpression parseClassInstanceCreationExpression() {
-        if (isCurr(NEW)) {
-            return new ASTClassInstanceCreationExpression(curr().getLocation(), parseUnqualifiedClassInstanceCreationExpression());
-        }
-        else {
-            ASTPrimary primary = parsePrimary();
-            return parseClassInstanceCreationExpression(primary);
-        }
+        return new ASTClassInstanceCreationExpression(curr().getLocation(), parseUnqualifiedClassInstanceCreationExpression());
     }
 
     /**
@@ -1468,7 +1488,7 @@ public class ExpressionsParser extends BasicParser {
             return new ASTClassInstanceCreationExpression(loc, alreadyParsed, ucice);
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected . new");
+            throw internalError("'.' then 'new'");
         }
     }
 
@@ -1503,7 +1523,7 @@ public class ExpressionsParser extends BasicParser {
     public ASTUnqualifiedClassInstanceCreationExpression parseUnqualifiedClassInstanceCreationExpression() {
         Location loc = curr().getLocation();
         if (accept(NEW) == null) {
-            throw new CompileException(curr().getLocation(), "Expected new.");
+            throw internalError(NEW);
         }
         ASTTypeArgumentList typeArgs = null;
         if (isCurr(LESS_THAN)) {
@@ -1511,11 +1531,11 @@ public class ExpressionsParser extends BasicParser {
         }
         ASTTypeToInstantiate tti = parseTypeToInstantiate();
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"(\".");
+            error(curr().getLocation(), "Expected '('.");
         }
         ASTArgumentList argumentList = parseArgumentList();
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \")\".");
+            error(curr().getLocation(), "Expected ')'.");
         }
         if (typeArgs == null) {
             return new ASTUnqualifiedClassInstanceCreationExpression(loc, tti, argumentList);
@@ -1539,11 +1559,11 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTUnqualifiedClassInstanceCreationExpression parseUnqualifiedClassInstanceCreationExpression(ASTTypeToInstantiate alreadyParsed) {
         if (accept(OPEN_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"(\".");
+            error(curr().getLocation(), "Expected \"(\".");
         }
         ASTArgumentList argumentList = parseArgumentList();
         if (accept(CLOSE_PARENTHESIS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \")\".");
+            error(curr().getLocation(), "Expected \")\".");
         }
         return new ASTUnqualifiedClassInstanceCreationExpression(alreadyParsed.getLocation(), alreadyParsed, argumentList);
     }
@@ -1562,6 +1582,7 @@ public class ExpressionsParser extends BasicParser {
                 "Expected an expression.",
                 COMMA,
                 this::parseGiveExpression,
+                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACKET, CLOSE_BRACE, SEMICOLON, ARROW, EOF),
                 ASTArgumentList::new,
                 false);
     }
@@ -1580,8 +1601,7 @@ public class ExpressionsParser extends BasicParser {
         if (isCurr(GIVE)) {
             ASTKeywordNode giveKeyword = parseModifier(
                     Arrays.asList(GIVE),
-                    "Expected 'give'.",
-                    ASTKeywordNode::new
+                    "'give'"
             );
             return new ASTGiveExpression(loc, giveKeyword, parseExpression());
         }
@@ -1600,7 +1620,7 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTArrayCreationExpression parseArrayCreationExpression() {
         if (accept(NEW) == null) {
-            throw new CompileException(curr().getLocation(), "Expected new.");
+            error(curr().getLocation(), "Expected new.");
         }
         ASTTypeToInstantiate tti = parseTypeToInstantiate();
         return parseArrayCreationExpression(tti);
@@ -1634,10 +1654,10 @@ public class ExpressionsParser extends BasicParser {
         }
         if (isCurr(OPEN_BRACE)) {
             if (dimExprsPresent) {
-                throw new CompileException(curr().getLocation(), "Array initializer not expected with dimension expressions.");
+                error(curr().getLocation(), "Array initializer not expected with dimension expressions.");
             }
             ASTArrayInitializer arrayInitializer = parseArrayInitializer();
-            return new ASTArrayCreationExpression(loc, dims, arrayInitializer, alreadyParsed);
+            return new ASTArrayCreationExpression(loc, alreadyParsed, dims, arrayInitializer);
         }
         if (dims == null) {
             return new ASTArrayCreationExpression(loc, alreadyParsed, dimExprs);
@@ -1656,7 +1676,6 @@ public class ExpressionsParser extends BasicParser {
     public ASTDimExprs parseDimExprs() {
         return parseMultiple(
                 t -> test(t, OPEN_BRACKET) && !isNext(CLOSE_BRACKET),
-                "Expected \"[\".",
                 this::parseDimExpr,
                 ASTDimExprs::new
         );
@@ -1673,11 +1692,11 @@ public class ExpressionsParser extends BasicParser {
     public ASTDimExpr parseDimExpr() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACKET) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"[\".");
+            error(curr().getLocation(), "Expected '['.");
         }
         ASTValueExpression expr = parseValueExpression();
         if (accept(CLOSE_BRACKET) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"]\".");
+            error(curr().getLocation(), "Expected ']'.");
         }
         return new ASTDimExpr(loc, expr);
     }
@@ -1694,11 +1713,11 @@ public class ExpressionsParser extends BasicParser {
     public ASTArrayInitializer parseArrayInitializer() {
         Location loc = curr().getLocation();
         if (accept(OPEN_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"{\".");
+            error(curr().getLocation(), "Expected '{'.");
         }
         ASTVariableInitializerList varInitList = parseVariableInitializerList();
         if (accept(CLOSE_BRACE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"}\".");
+            error(curr().getLocation(), "Expected '}'.");
         }
         return new ASTArrayInitializer(loc, varInitList);
     }
@@ -1713,10 +1732,11 @@ public class ExpressionsParser extends BasicParser {
      */
     public ASTVariableInitializerList parseVariableInitializerList() {
         return parseList(
-                t -> isPrimary(t) || test(t, OPEN_BRACE),
+                t -> isExpression(t) || test(t, OPEN_BRACE),
                 "Expected an expression or an array initializer.",
                 COMMA,
                 this::parseVariableInitializer,
+                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACKET, CLOSE_BRACE, SEMICOLON, ARROW, EOF),
                 ASTVariableInitializerList::new,
                 false
         );
@@ -1733,15 +1753,10 @@ public class ExpressionsParser extends BasicParser {
      *     <code>ASTExpression</code> or <code>ASTArrayInitializer</code>.
      */
     public ASTVariableInitializer parseVariableInitializer() {
-        if (isPrimary(curr())) {
-            return parseExpression();
-        }
-        else if (isCurr(OPEN_BRACE)) {
+        if (isCurr(OPEN_BRACE)) {
             return parseArrayInitializer();
         }
-        else {
-            throw new CompileException(curr().getLocation(), "Expected an expression or an array initializer.");
-        }
+        return parseExpression();
     }
 
     /**
@@ -1771,24 +1786,24 @@ public class ExpressionsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;Primary [ ValueExpression ]<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess [ ValueExpression ]<br>
      * </em>
-     * @param loc The <code>Location</code> of <code>primary</code>.
      * @param primary An already parsed <code>ASTPrimary</code>.
      * @return An <code>ASTElementAccess</code>.
      */
-    public ASTElementAccess parseElementAccess(Location loc, ASTPrimary primary) {
+    public ASTElementAccess parseElementAccess(ASTPrimary primary) {
+        Location loc = primary.getLocation();
         if (accept(OPEN_BRACKET) == null) {
-            throw new CompileException(curr().getLocation(), "Expected '['.");
+            throw internalError(OPEN_BRACKET);
         }
         ASTElementAccess result = new ASTElementAccess(loc, primary, parseValueExpression());
         if (accept(CLOSE_BRACKET) == null) {
-            throw new CompileException(curr().getLocation(), "Expected ']'.");
+            error(curr().getLocation(), "Expected ']'.");
         }
 
         while (isCurr(OPEN_BRACKET)) {
             accept(OPEN_BRACKET);
             result = new ASTElementAccess(loc, result, parseValueExpression());
             if (accept(CLOSE_BRACKET) == null) {
-                throw new CompileException(curr().getLocation(), "Expected ']'.");
+                error(curr().getLocation(), "Expected ']'.");
             }
         }
         return result;
@@ -1861,7 +1876,7 @@ public class ExpressionsParser extends BasicParser {
     public ASTClassLiteral parseClassLiteral(ASTDataType dt) {
         Location loc = dt.getLocation();
         if (accept(DOT) == null || accept(CLASS) == null) {
-            throw new CompileException(curr().getLocation(), "Expected .class");
+            throw internalError("'.' then 'class'");
         }
         return new ASTClassLiteral(loc, dt);
     }
@@ -1876,7 +1891,7 @@ public class ExpressionsParser extends BasicParser {
             return new ASTKeywordNode(t.getLocation(), TokenType.SELF);
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected 'self'.");
+            throw internalError(TokenType.SELF);
         }
     }
 
@@ -1890,7 +1905,44 @@ public class ExpressionsParser extends BasicParser {
             return new ASTKeywordNode(t.getLocation(), SUPER);
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected 'super'.");
+            throw internalError(SUPER);
         }
+    }
+
+    /**
+     * Helper method to avoid duplicating code for parsing binary expressions
+     * that are left-associative.
+     *
+     * @param isOnInitialToken Determines whether a given token is a valid
+     *                         token on which to start parsing the desired node.
+     * @param acceptedTokens   A <code>List</code> of accepted <code>TokenTypes</code>
+     *                         that can serve as operators.
+     * @param childParser      Parses and returns the child node (operand).
+     * @return Either an <code>ASTValueExpression</code> of the child type or an
+     *     <code>ASTBinaryExpression</code> containing left-associative children.
+     */
+    private ASTValueExpression parseBinaryExpressionLeftAssociative(Predicate<Token> isOnInitialToken,
+                               List<TokenType> acceptedTokens, Supplier<? extends ASTValueExpression> childParser) {
+        Location loc = curr().getLocation();
+        ASTValueExpression result;
+        if (isOnInitialToken.test(curr())) {
+            result = childParser.get();
+        }
+        else {
+            error(curr().getLocation(), "Expected a literal or expression name.");
+            result = parseBadPrimary(EXPRESSION_STOPPERS);
+        }
+        TokenType curr;
+        while ( (curr = isAcceptedOperator(acceptedTokens) ) != null) {
+            accept(curr);
+            if (isOnInitialToken.test(curr())) {
+                result = new ASTBinaryExpression(loc, result, childParser.get(), curr);
+            }
+            else {
+                error(curr().getLocation(), "Expected a literal or expression name.");
+                result = new ASTBinaryExpression(loc, result, parseBadPrimary(EXPRESSION_STOPPERS), curr);
+            }
+        }
+        return result;
     }
 }

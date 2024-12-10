@@ -69,7 +69,8 @@ public class ASTArrayCreationExpression extends ASTParentNode {
      * @param arrayInitializer An <code>ASTArrayInitializer</code>.
      * @param tti An <code>ASTTypeToInstantiate</code>.
      */
-    public ASTArrayCreationExpression(Location location, ASTDims dims, ASTArrayInitializer arrayInitializer, ASTTypeToInstantiate tti) {
+    public ASTArrayCreationExpression(Location location, ASTTypeToInstantiate tti, ASTDims dims,
+                                      ASTArrayInitializer arrayInitializer) {
         super(location);
         myTti = tti;
         myDimExprs = null;

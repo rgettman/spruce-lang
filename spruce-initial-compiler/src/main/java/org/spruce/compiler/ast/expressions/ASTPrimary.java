@@ -6,7 +6,6 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTExpressionName;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 
 /**
@@ -31,7 +30,8 @@ import org.spruce.compiler.scanner.Location;
 public final class ASTPrimary extends ASTParentNode implements ASTValueExpression {
     public enum Type {
         LITERAL, CLASS_LITERAL, EXPR_NAME, SELF, TYPENAME_SELF, PAREN_EXPR, ELEMENT_ACCESS,
-        METHOD_INVOCATION, ARRAY_CREATION_EXPR, CLASS_INSTANCE_CREATION_EXPR, FIELD_ACCESS, METHOD_REFERENCE
+        METHOD_INVOCATION, ARRAY_CREATION_EXPR, CLASS_INSTANCE_CREATION_EXPR, FIELD_ACCESS, METHOD_REFERENCE,
+        BAD
     }
     private final Node myChild;
     private final Type myType;
@@ -68,20 +68,25 @@ public final class ASTPrimary extends ASTParentNode implements ASTValueExpressio
     }
 
     /**
-     * TODO: Pull implementation from ASTParentNode to here; this is the only place
-     * TODO: convertDescendant is called.  Must add test cases.
+     * Returns whether this <code>Primary</code> represents a <code>LeftHandSide</code>:
+     * an ExpressionName, ElementAccess, or FieldAccess.
+     * @return Whether this <code>Primary</code> represents a <code>LeftHandSide</code>.
+     */
+    public boolean isLeftHandSide() {
+        return Arrays.asList(Type.EXPR_NAME, Type.ELEMENT_ACCESS, Type.FIELD_ACCESS).contains(myType);
+    }
+
+    /**
      * Looks for something that can be the child of an <code>ASTLeftHandSide</code>.
      * If found, creates and returns the <code>ASTLeftHandSide</code>.
      * @return The <code>ASTLeftHandSide</code>.
-     * @throws CompileException If no descendant node can be a child of an
-     *     <code>ASTLeftHandSide</code>.
      */
     public ASTLeftHandSide getLeftHandSide() {
         return switch (myChild) {
             case ASTExpressionName exprName -> exprName;
             case ASTElementAccess elementAccess -> elementAccess;
             case ASTFieldAccess fieldAccess -> fieldAccess;
-            default -> throw new CompileException(getLocation(), "Expected variable or element access.");
+            default -> throw new IllegalStateException("Internal error: Expected a LeftHandSide!");
         };
     }
 

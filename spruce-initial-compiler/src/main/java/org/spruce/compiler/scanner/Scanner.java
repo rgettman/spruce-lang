@@ -6,15 +6,28 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
-import org.spruce.compiler.exception.CompileException;
+import org.spruce.compiler.message.CompilerMessage;
 
 /**
  * Reads input from a Reader representing a compilation unit.
  * Scans tokens from the text read from the Reader.
  */
 public class Scanner {
+    private static final Map<Character, Character> ESCAPES = Map.of(
+            'b', '\b',
+            'f', '\f',
+            'n', '\n',
+            'r', '\r',
+            's',  ' ' /* space */,
+            't', '\t',
+            '"', '"',
+            '\'', '\'',
+            '\\', '\\',
+            '0', '\0'
+    );
     private boolean amInTypeContext;
     private final List<String> myLines;
 
@@ -132,8 +145,26 @@ public class Scanner {
      * @return A new <code>Token</code>.
      */
     private Token createToken(TokenType t, String value) {
-        Location loc = new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr));
+        Location loc = getLocation();
         return new Token(loc, t, value);
+    }
+
+    /**
+     * Returns a new current token type/value along with a compiler message.
+     * @param t The token type.
+     * @param value The string value.
+     * @param errorLoc The <code>Location</code> of the error.
+     * @param errorMessage The compiler error message.
+     * @return A new <code>Token</code>.
+     */
+    private Token createToken(TokenType t, String value, Location errorLoc, String errorMessage) {
+        Location loc = getLocation();
+        return new Token(loc, t, value,
+                new CompilerMessage(errorLoc, CompilerMessage.Level.ERROR, errorMessage));
+    }
+
+    private Location getLocation() {
+        return new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr));
     }
 
     /**
@@ -171,7 +202,8 @@ public class Scanner {
         do {
             t = advance();
         }
-        while (t.getType() == TokenType.WHITESPACE || t.getType() == TokenType.COMMENT);
+        while (t.getType() == TokenType.WHITESPACE ||
+                (t.getType() == TokenType.COMMENT && t.getCompilerMessage().isEmpty()));
         return t;
     }
 
@@ -268,11 +300,10 @@ public class Scanner {
 
     /**
      * Reads until the end of a traditional comment, "&#42;/".
-     * @return The comment text.
-     * @throws CompileException If the end of the file was reached before the
-     *     end of the traditional comment.
+     * @return The <code>Token</code> associated with the comment, which might
+     *     contain a <code>CompilerMessage</code>.
      */
-    private String readCommentUntilEndComment() {
+    private Token readCommentUntilEndComment() {
         StringBuilder buf = new StringBuilder();
         char c;
         boolean endCommentReached = false;
@@ -286,18 +317,19 @@ public class Scanner {
             }
             buf.append(c);
         }
+        String text = buf.toString();
         if (!endCommentReached) {
-            throw new CompileException(new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr)),
+            return createToken(TokenType.COMMENT, text, getLocation(),
                     "End of file reached before end of traditional comment!");
         }
-        return buf.toString();
+        return createToken(TokenType.COMMENT, text);
     }
 
     /**
      * Reads until the end of the line or file.
-     * @return The comment text.
+     * @return The <code>Token</code> associated with the comment.
      */
-    private String readCommentUntilEndOfLine() {
+    private Token readCommentUntilEndOfLine() {
         StringBuilder buf = new StringBuilder();
         char c;
         while (true) {
@@ -313,7 +345,7 @@ public class Scanner {
             read();
             buf.append(c);
         }
-        return buf.toString();
+        return createToken(TokenType.COMMENT, buf.toString());
     }
 
     /**
@@ -324,23 +356,28 @@ public class Scanner {
     private Token readCharacterLiteral() {
         read();
         if (peek() == '\'') {
-            throw new CompileException(getPeekToken().getLocation(), "Illegal empty character literal.");
+            return createToken(TokenType.CHARACTER_LITERAL, "", getPeekToken().getLocation(),
+                    "Illegal empty character literal.");
         }
 
-        Token t;
-
+        String value;
         if (peek() == '\\') {
             read();
-            t = createToken(TokenType.CHARACTER_LITERAL, String.valueOf(applyEscape()));
+            if (isNotValidEscapeChar(peek())) {
+                return createToken(TokenType.CHARACTER_LITERAL, "", getPeekToken().getLocation(),
+                        "Illegal escape sequence: \\" + peek());
+            }
+            value = String.valueOf(applyEscape());
         }
         else {
-            t = createToken(TokenType.CHARACTER_LITERAL, String.valueOf(read()));
+            value = String.valueOf(read());
         }
 
         if (read() != '\'') {
-            throw new CompileException(getCurrToken().getLocation(), "Illegal unclosed character literal.");
+            return createToken(TokenType.CHARACTER_LITERAL, value, getCurrToken().getLocation(),
+                "Illegal unclosed character literal.");
         }
-        return t;
+        return createToken(TokenType.CHARACTER_LITERAL, value);
     }
 
     /**
@@ -349,8 +386,6 @@ public class Scanner {
      * consecutive, then the string is read without escapes and possibly with
      * newlines.
      * @return The <code>Token</code> associated with the string literal.
-     * @throws CompileException If end-of-line or end-of-file occurs before the
-     *     next double-quote character.
      */
     private Token readStringLiteral() {
         read();
@@ -371,13 +406,27 @@ public class Scanner {
             switch(peek()) {
             case '\\':
                 read();
+                if (isNotValidEscapeChar(peek())) {
+                    return createToken(TokenType.CHARACTER_LITERAL, buf.toString(), getPeekToken().getLocation(),
+                            "Illegal escape sequence: \\" + peek());
+                }
                 buf.append(applyEscape());
                 break;
-            case '\n':
             case '\r':
-                throw new CompileException(getPeekToken().getLocation(), "String not terminated before end of line.");
+                read();
+                if (peek() == '\n') {
+                    read();
+                    return createToken(TokenType.STRING_LITERAL, buf.toString(), getCurrToken().getLocation(),
+                            "String not terminated before end of line.");
+                }
+            case '\n':
+                read();
+                return createToken(TokenType.STRING_LITERAL, buf.toString(), getCurrToken().getLocation(),
+                        "String not terminated before end of line.");
             case (char) -1:
-                throw new CompileException(getPeekToken().getLocation(), "String not terminated before end of file.");
+                read();
+                return createToken(TokenType.STRING_LITERAL, buf.toString(), getCurrToken().getLocation(),
+                        "String not terminated before end of file.");
             default:
                 buf.append(read());
                 break;
@@ -389,23 +438,22 @@ public class Scanner {
     }
 
     /**
+     * Returns whether the given character represents a valid escape sequence.
+     * @param c The character to test.
+     * @return Whether the given character represents a valid escape sequence.
+     */
+    private boolean isNotValidEscapeChar(char c) {
+        return !ESCAPES.containsKey(c);
+    }
+
+    /**
      * We have already read the backslash character.  Now read the next
      * character and determine what escape character it is, if it is a valid
      * escape character.  Apply the escape and return the char.
      * @return The character that the escape sequence represents.
      */
     private char applyEscape() {
-        return switch (read()) {
-            case 'b' -> '\b';
-            case 'f' -> '\f';
-            case 'n' -> '\n';
-            case 'r' -> '\r';
-            case 't' -> '\t';
-            case '"' -> '"';
-            case '\'' -> '\'';
-            case '\\' -> '\\';
-            default -> throw new CompileException(getCurrToken().getLocation(), "Illegal escape sequence: \\" + peek());
-        };
+        return ESCAPES.get(read());
     }
 
     /**
@@ -432,12 +480,13 @@ public class Scanner {
                 pastInitialWhitespace = true;
                 break;
             } else if (!Character.isWhitespace(c)) {
-                throw new CompileException(new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr)),
+                return createToken(TokenType.STRING_LITERAL, "", getLocation(),
                         "Missing new line after opening quotes!");
             }
         }
         if (!pastInitialWhitespace) {
-            throw new CompileException(getCurrToken().getLocation(), "End of file reached before close of text block!");
+            return createToken(TokenType.STRING_LITERAL, "", getCurrToken().getLocation(),
+                    "End of input reached before close of text block!");
         }
         // First char of line terminator is read.  Read past any \r\n stuff.
         if (c == '\r' && peek() == '\n') {
@@ -464,10 +513,37 @@ public class Scanner {
                     buf.append("\"");
                 }
                 break;
+            // Escapes
+            case '\\':
+                read();
+                switch(peek()) {
+                // Apply special text-block only backslash-then-end-of-line escape.
+                // Such an escape does NOT append anything.
+                case '\r':
+                    // \r or \r\n.
+                    read();
+                    if (peek() == '\n') {
+                        read();
+                    }
+                    break;
+                case '\n':
+                    read();
+                    break;
+                // Else apply normal escapes.
+                default:
+                    if (isNotValidEscapeChar(peek())) {
+                        return createToken(TokenType.CHARACTER_LITERAL, buf.toString().stripIndent(), getLocation(),
+                                "Illegal escape sequence: \\" + peek());
+                    }
+                    buf.append(applyEscape());
+                    break;
+                }
+                break;
+            // Actual newlines.
             case '\r':
                 // \r or \r\n => \n.
                 read();
-                if (peek() != '\n') {
+                if (peek() == '\n') {
                     read();
                 }
                 buf.append('\n');
@@ -477,7 +553,8 @@ public class Scanner {
                 buf.append('\n');
                 break;
             case (char) -1:
-                throw new CompileException(new Location(myFilename, myTokenLineNbr, myTokenCharPos, myLines.get(myTokenLineNbr)), "Text block not terminated before end of file.");
+                return createToken(TokenType.STRING_LITERAL, buf.toString().stripIndent(), getLocation(),
+                        "Text block not terminated before end of input.");
             default:
                 buf.append(read());
                 break;
@@ -550,7 +627,8 @@ public class Scanner {
                 soFar.append(read());
             }
             if (!Character.isDigit(peek())) {
-                throw new CompileException(getPeekToken().getLocation(), "Invalid floating point literal; missing exponent");
+                return createToken(TokenType.FLOATING_POINT_LITERAL, soFar.toString(), getPeekToken().getLocation(),
+                        "Invalid floating point literal; missing exponent");
             }
             while (Character.isDigit(peek())) {
                 soFar.append(read());
@@ -771,11 +849,11 @@ public class Scanner {
             }
             case '*' -> {
                 read();
-                yield createToken(TokenType.COMMENT, readCommentUntilEndComment());
+                yield readCommentUntilEndComment();
             }
             case '/' -> {
                 read();
-                yield createToken(TokenType.COMMENT, readCommentUntilEndOfLine());
+                yield readCommentUntilEndOfLine();
             }
             default -> createToken(TokenType.SLASH, "/");
         };

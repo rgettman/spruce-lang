@@ -53,23 +53,23 @@ public enum TokenType {
     /**
      * A token of the form <code>'char'</code>.
      */
-    CHARACTER_LITERAL("'char'"),
+    CHARACTER_LITERAL("character literal"),
     /**
      * A token of the form <code>"string"</code> or <code>"""string"""</code>.
      */
-    STRING_LITERAL("\"str\""),
+    STRING_LITERAL("string literal"),
     /**
      * An integer literal from <code>Integer.MIN_VALUE</code> through <code>Integer.MAX_VALUE</code>,
      * e.g. -1000, 0, 1, 100
      */
-    INT_LITERAL("int"),
+    INT_LITERAL("integer literal"),
     /**
      * A floating point literal from <code>-Double.MAX_VALUE</code> through <code>Double.MAX_VALUE</code>,
      * e.g. -1.256, 1E100.
      * Decimal point, digits on either side of it or both, with optional exponent <code>[eE][+-]?[digits]+</code>,
      * or digits with exponent.
      */
-    FLOATING_POINT_LITERAL("fl.pt"),
+    FLOATING_POINT_LITERAL("floating point literal"),
 
     // STRUCTURAL
 
@@ -508,7 +508,7 @@ public enum TokenType {
      */
     SUPER,
     /**
-     * Switch statement.
+     * Switch statement or switch expression.
      */
     SWITCH,
     /**

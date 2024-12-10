@@ -118,11 +118,6 @@ public class ASTConstructorInvocation extends ASTParentNode {
             if (myArgsList == null) {
                 throw new IllegalStateException("No argument list given!");
             }
-            switch (myConstructorKeyword.getKeyword()) {
-                case CONSTRUCTOR, SUPER -> {
-                }
-                default -> throw new IllegalStateException("The constructor keyword must be 'constructor' or 'super'!");
-            }
             return new ASTConstructorInvocation(myLocation, myTypeArgs, myConstructorKeyword, myArgsList);
         }
     }

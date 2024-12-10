@@ -1,5 +1,9 @@
 package org.spruce.compiler.parser;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.spruce.compiler.message.CompilerMessage;
 import org.spruce.compiler.scanner.Scanner;
 
 /**
@@ -9,8 +13,7 @@ import org.spruce.compiler.scanner.Scanner;
  * They reference other <code>BasicParser</code> subclass instances through
  * this object.
  */
-public class Parser
-{
+public class Parser {
     private final LiteralsParser myLiteralsParser;
     private final NamesParser myNamesParser;
     private final TypesParser myTypesParser;
@@ -18,6 +21,7 @@ public class Parser
     private final StatementsParser myStatementsParser;
     private final ClassesParser myClassesParser;
     private final TopLevelParser myTopLevelParser;
+    private final List<CompilerMessage> myMessages;
 
     /**
      * Constructs a <code>Parser</code> given a <code>Scanner</code>.
@@ -31,6 +35,9 @@ public class Parser
         myStatementsParser = new StatementsParser(scanner, this);
         myClassesParser = new ClassesParser(scanner, this);
         myTopLevelParser = new TopLevelParser(scanner, this);
+
+        myMessages = new ArrayList<>();
+
         scanner.next();
     }
 
@@ -88,5 +95,22 @@ public class Parser
      */
     public TopLevelParser getTopLevelParser() {
         return myTopLevelParser;
+    }
+
+    /**
+     * Returns the <code>List</code> of <code>CompilerMessage</code>s.
+     * @return The <code>List</code> of <code>CompilerMessage</code>s.
+     */
+    public List<CompilerMessage> getCompilerMessages() {
+        return myMessages;
+    }
+
+    /**
+     * Adds the given <code>CompilerMessage</code> to the internal list of
+     * compiler messages.
+     * @param cm The <code>CompilerMessage</code>.
+     */
+    public void addCompilerMessage(CompilerMessage cm) {
+        myMessages.add(cm);
     }
 }

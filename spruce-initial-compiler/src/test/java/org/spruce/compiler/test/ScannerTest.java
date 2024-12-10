@@ -5,7 +5,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.exception.CompileException;
+import org.spruce.compiler.message.CompilerMessage;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
@@ -25,7 +25,7 @@ public class ScannerTest {
             Token token = scanner.getCurrToken();
             Location loc = token.getLocation();
             //System.out.println(token + " at " + loc);
-            System.out.println(loc.getFileAndLineNbr() + ": " + token);
+            System.out.println(loc.getFileLinePos() + ": " + token);
             System.out.println(loc.getLine());
             System.out.println(loc.getPosIndicator());
         }
@@ -42,6 +42,7 @@ public class ScannerTest {
         while(scanner.next()) {
             try {
                 Token token = scanner.getCurrToken();
+                assertFalse(token.getCompilerMessage().isPresent());
                 assertEquals(expectedTokens.get(i), token, "Mismatch on token " + i);
                 i++;
             }
@@ -52,6 +53,17 @@ public class ScannerTest {
         if (expectedTokens.size() > i) {
             fail("Expected more tokens (" + expectedTokens.size() + ") than found (" + i + ")!");
         }
+    }
+
+    /**
+     * Helper method to ensure that the given token is an error token.
+     * The <code>CompilerMessage</code> is expected to exist on the <code>Token</code>,
+     * and its level is supposed to be <code>ERROR</code>.
+     * @param test The <code>Token</code> to test.
+     */
+    private void ensureErrorToken(Token test) {
+        assertTrue(test.getCompilerMessage().isPresent());
+        assertEquals(CompilerMessage.Level.ERROR, test.getCompilerMessage().get().getLevel());
     }
 
     /**
@@ -478,28 +490,28 @@ public class ScannerTest {
     }
 
     /**
-     * Tests recognizing string literals.
+     * Tests recognizing string literals, including escape sequences.
+     * Carriage return in a text block gets converted to a newline.
      */
     @Test
     public void testStringLiterals() {
-        String line = "String escapeTest = \"Test #1: \\b\\t\\n\\f\\r\\\"\\'\\\\\";\n";
-        line += """
+        String text = "String escapeTest = \"Test #1: \\b\\t\\n\\f\\r\\s\\0\\\"\\'\\\\\";\n";
+        text += """
             String literalTest = \"""\s   
-                Test #2: \\b\\t\\n\\f\\r\\"\\'\\
+                Test #2: \\t\\b\\n    \\f!\\r    \\s\\0\\"\\'\\\\
                 \""";
             """;
 
         List<Token> expectedTokens = Arrays.asList(
                 new Token(IDENTIFIER, "String"), new Token(IDENTIFIER, "escapeTest"),
                 new Token(EQUAL, "="),
-                new Token(STRING_LITERAL, "Test #1: \b\t\n\f\r\"'\\"), new Token(SEMICOLON, ";"),
+                new Token(STRING_LITERAL, "Test #1: \b\t\n\f\r \0\"'\\"), new Token(SEMICOLON, ";"),
 
                 new Token(IDENTIFIER, "String"), new Token(IDENTIFIER, "literalTest"),
                 new Token(EQUAL, "="),
-                new Token(STRING_LITERAL, "Test #2: \\b\\t\\n\\f\\r\\\"\\'\\\n"), new Token(SEMICOLON, ";")
-
+                new Token(STRING_LITERAL, "Test #2: \t\b\n\f!\n \0\"'\\\n"), new Token(SEMICOLON, ";")
         );
-        Scanner scanner = new Scanner(line);
+        Scanner scanner = new Scanner(text);
         compareToExpected(expectedTokens, scanner);
     }
 
@@ -515,7 +527,8 @@ public class ScannerTest {
                 \"""
                 """;
         Scanner scanner = new Scanner(code);
-        assertThrows(CompileException.class, scanner::next);
+        scanner.next();
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -528,7 +541,27 @@ public class ScannerTest {
                 noEndInSight
                 """;
         Scanner scanner = new Scanner(code);
-        assertThrows(CompileException.class, scanner::next);
+        scanner.next();
+        ensureErrorToken(scanner.getCurrToken());
+    }
+
+    /**
+     * Tests text block-only escape sequences.
+     */
+    @Test
+    public void testTextBlockEscapes() {
+        String code = """
+                \"""
+                Lorem ipsum dolor sit amet,\\s\\
+                consectetur adipiscing elit,
+                \"""
+                """;
+        Scanner scanner = new Scanner(code);
+        List<Token> expectedTokens = Arrays.asList(
+                new Token(STRING_LITERAL,
+                        "Lorem ipsum dolor sit amet, consectetur adipiscing elit,\n")
+        );
+        compareToExpected(expectedTokens, scanner);
     }
 
     /**
@@ -704,17 +737,19 @@ public class ScannerTest {
      */
     @Test
     public void testComments() {
-        String line = "foo // through end of line comment";
-            line += "\nbar /* multi-";
-            line += "\nline-";
-            line += "\ncomment */ baz";
+        String text = """
+            foo // through end of line comment
+            bar /* multi-";
+            line-";
+            comment */ baz
+            """;
 
         List<Token> expectedTokens = Arrays.asList(
                 new Token(IDENTIFIER, "foo"),  new Token(IDENTIFIER, "bar"),
                 new Token(IDENTIFIER, "baz")
         );
 
-        Scanner scanner = new Scanner(line);
+        Scanner scanner = new Scanner(text);
         compareToExpected(expectedTokens, scanner);
     }
 
@@ -828,9 +863,13 @@ public class ScannerTest {
      */
     @Test
     public void testErrorNoEndTradComment() {
-        String line = "/* Not ended!\nEven after a newline!";
+        String line = """
+                /* Not ended!
+                Even after a newline!
+                """;
         Scanner scanner = new Scanner(line);
-        assertThrows(CompileException.class, scanner::next);
+        scanner.next();
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -840,8 +879,10 @@ public class ScannerTest {
     public void testErrorEmptyCharLiteral() {
         String line = "char err = '';";
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -851,8 +892,10 @@ public class ScannerTest {
     public void testErrorCharLiteralTooLong() {
         String line = "char err = 'ab';";
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -863,8 +906,10 @@ public class ScannerTest {
     public void testErrorStringLiteralEndOfLine() {
         String line = "String err = \"Not ended!\nreturn;";
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -875,8 +920,10 @@ public class ScannerTest {
     public void testErrorStringLiteralEndOfFile() {
         String line = "String err = \"Not ended!";
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -888,8 +935,10 @@ public class ScannerTest {
         String line = "String err = \"\"\"Not ended!\nEven after a newline!";
 
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -899,8 +948,10 @@ public class ScannerTest {
     public void testErrorIllegalEscapeSequence() {
         String line = "String err = \"\\a\";";
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -910,8 +961,10 @@ public class ScannerTest {
     public void testErrorFloatLiteralExpWithoutDigits() {
         String line = "double d = 3.14e";
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -921,8 +974,10 @@ public class ScannerTest {
     public void testErrorFloatLiteralExpWithPlusWithoutDigits() {
         String line = "double d = 3.14e+";
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 
     /**
@@ -932,8 +987,10 @@ public class ScannerTest {
     public void testErrorFloatLiteralExpWithMinusWithoutDigits() {
         String line = "double d = 3.14e-";
         Scanner scanner = new Scanner(line);
-        scanner.next();
-        assertThrows(CompileException.class, scanner::next);
+        for (int i = 0; i < 4; i++) {
+            scanner.next();
+        }
+        ensureErrorToken(scanner.getCurrToken());
     }
 }
 

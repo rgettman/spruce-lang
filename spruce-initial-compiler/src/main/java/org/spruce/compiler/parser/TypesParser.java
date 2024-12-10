@@ -1,13 +1,11 @@
 package org.spruce.compiler.parser;
 
 import java.util.Arrays;
-import java.util.List;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.classes.ASTAnnotationList;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.*;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
@@ -42,6 +40,7 @@ public class TypesParser extends BasicParser {
                 "Expected an identifier.",
                 AMPERSAND,
                 this::parseDataType,
+                ExpressionsParser.PRIMARY_STOPPERS,
                 ASTIntersectionType::new
         );
     }
@@ -51,6 +50,7 @@ public class TypesParser extends BasicParser {
      * the <code>Scanner</code> for the duration parsing this node.</p>
      * <p>To distinguish otherwise ambiguous parsings, parsing of this node will
      * turn on the type context in the Scanner for the duration of this parsing.</p>
+     * <p>It is expected that the parser is at the location of LESS_THAN.</p>
      * <em>
      * TypeParameters:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;&lt; TypeParameterList &gt;
@@ -64,13 +64,13 @@ public class TypesParser extends BasicParser {
         if (accept(LESS_THAN) != null) {
             ASTTypeParameterList typeParamList = parseTypeParameterList();
             if (accept(GREATER_THAN) == null) {
-                throw new CompileException(curr().getLocation(), "Expected \">\".");
+                error(curr().getLocation(), "Expected \">\".");
             }
             setInTypeContext(false);
             return typeParamList;
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected \"<\".");
+            throw internalError(LESS_THAN);
         }
     }
 
@@ -88,6 +88,11 @@ public class TypesParser extends BasicParser {
                 "Expected an identifier.",
                 COMMA,
                 this::parseTypeParameter,
+                Arrays.asList(GREATER_THAN, OPEN_BRACE, OPEN_PARENTHESIS, CONSTRUCTOR,
+                        EXTENDS, IMPLEMENTS, PERMITS,  // Rest of type declaration
+                        VOID, VAR, MUT, // Result of method declaration
+                        EOF
+                ),
                 ASTTypeParameterList::new
         );
     }
@@ -120,11 +125,9 @@ public class TypesParser extends BasicParser {
      */
     public ASTIntersectionType parseTypeBound() {
         if (accept(SUBTYPE) == null) {
-            throw new CompileException(curr().getLocation(), "Expected \"<:\".");
+            error(curr().getLocation(), "Expected \"<:\".");
         }
-        else {
-            return parseIntersectionType();
-        }
+        return parseIntersectionType();
     }
 
     /**
@@ -150,31 +153,6 @@ public class TypesParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ArrayType</code>.
-     * <em>
-     * ArrayType:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray Dims
-     * </em>
-     * @return An <code>ASTArrayType</code>.
-     */
-    public ASTArrayType parseArrayType() {
-        Location loc = curr().getLocation();
-        if (isCurr(IDENTIFIER)) {
-            ASTDataTypeNoArray dtna = parseDataTypeNoArray();
-            if (isCurr(OPEN_CLOSE_BRACKET) || isCurr(OPEN_BRACKET)) {
-                ASTDims dims = parseDims();
-                return new ASTArrayType(loc, dtna, dims);
-            }
-            else {
-                throw new CompileException(curr().getLocation(), "Expected [].");
-            }
-        }
-        else {
-            throw new CompileException(curr().getLocation(), "Identifier expected.");
-        }
-    }
-
-    /**
      * Parses a <code>Dims</code>.
      * <em>
      * Dims:<br>
@@ -184,11 +162,10 @@ public class TypesParser extends BasicParser {
      * @return An <code>ASTDims</code>.
      */
     public ASTDims parseDims() {
-        return parseMultiple(t -> List.of(OPEN_CLOSE_BRACKET, OPEN_BRACKET).contains(t.getType()),
-                "Expected [].",
+        return parseMultiple(t -> test(t, Arrays.asList(OPEN_CLOSE_BRACKET, OPEN_BRACKET)),
                 this::parseDim,
                 ASTDims::new
-                );
+        );
     }
 
     /**
@@ -203,16 +180,17 @@ public class TypesParser extends BasicParser {
         Location loc = curr().getLocation();
         if (isCurr(OPEN_CLOSE_BRACKET)) {
             accept(OPEN_CLOSE_BRACKET);
-            return new ASTKeywordNode(loc, OPEN_CLOSE_BRACKET);
         }
-        else if (isCurr(OPEN_BRACKET) && isNext(CLOSE_BRACKET)) {
+        else if (isCurr(OPEN_BRACKET)) {
             accept(OPEN_BRACKET);
-            accept(CLOSE_BRACKET);
-            return new ASTKeywordNode(loc, OPEN_CLOSE_BRACKET);
+            if (accept(CLOSE_BRACKET) == null) {
+                error(loc, "Expected ']' following '['.");
+            }
         }
         else {
-            throw new CompileException(loc, "Expected '[]'.");
+            throw internalError("'[]' or '['");
         }
+        return new ASTKeywordNode(loc, OPEN_CLOSE_BRACKET);
     }
 
     /**
@@ -229,6 +207,10 @@ public class TypesParser extends BasicParser {
                 "Expected a data type (no array).",
                 COMMA,
                 getTypesParser()::parseDataTypeNoArray,
+                Arrays.asList(OPEN_BRACE, OPEN_PARENTHESIS,
+                        EXTENDS, IMPLEMENTS, PERMITS,  // Rest of type declaration
+                        EOF
+                ),
                 ASTDataTypeNoArrayList::new
         );
     }
@@ -248,6 +230,13 @@ public class TypesParser extends BasicParser {
                 "Expected an identifier",
                 DOT,
                 this::parseSimpleType,
+                Arrays.asList(GREATER_THAN, OPEN_BRACE, OPEN_PARENTHESIS, SEMICOLON, DOUBLE_COLON,
+                        OPEN_BRACKET, OPEN_CLOSE_BRACKET, PIPE, GREATER_THAN, COMMA, AMPERSAND, THREE_DOTS,
+                        EXTENDS, IMPLEMENTS, PERMITS,  // Rest of type declaration
+                        VOID, VAR, MUT,  // Result of method declaration
+                        CLASS, NEW, SUPER, LESS_THAN, SELF,  // parts of primaries
+                        EOF
+                ),
                 ASTDataTypeNoArray::new
         );
     }
@@ -329,13 +318,13 @@ public class TypesParser extends BasicParser {
         if (accept(LESS_THAN) != null) {
             ASTTypeArgumentList typeArgList = parseTypeArgumentList();
             if (accept(GREATER_THAN) == null) {
-                throw new CompileException(curr().getLocation(), "Expected \">\".");
+                error(curr().getLocation(), "Expected \">\".");
             }
             setInTypeContext(false);
             return typeArgList;
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected \"<\".");
+            throw internalError(LESS_THAN);
         }
     }
 
@@ -346,7 +335,7 @@ public class TypesParser extends BasicParser {
      * @return Whether the given token can start a type argument.
      */
     private static boolean isTypeArgument(Token t) {
-        return (test(t, QUESTION_MARK, IDENTIFIER));
+        return test(t, Arrays.asList(QUESTION_MARK, IDENTIFIER));
     }
 
     /**
@@ -363,6 +352,12 @@ public class TypesParser extends BasicParser {
                 "Expected a type argument.",
                 COMMA,
                 this::parseTypeArgument,
+                Arrays.asList(GREATER_THAN, OPEN_BRACE, OPEN_PARENTHESIS, SEMICOLON, DOUBLE_COLON, NEW,
+                        OPEN_BRACKET, OPEN_CLOSE_BRACKET, PIPE, GREATER_THAN, COMMA, AMPERSAND, THREE_DOTS,
+                        EXTENDS, IMPLEMENTS, PERMITS,  // Rest of type declaration
+                        VOID, VAR, MUT, // Result of method declaration
+                        EOF
+                ),
                 ASTTypeArgumentList::new
         );
     }
@@ -385,7 +380,7 @@ public class TypesParser extends BasicParser {
             return parseDataType();
         }
         else {
-            throw new CompileException(curr().getLocation(), "Expected wildcard or data type.");
+            throw internalError("wildcard or data type");
         }
     }
 
@@ -403,8 +398,7 @@ public class TypesParser extends BasicParser {
         if (isCurr(QUESTION_MARK)) {
             ASTKeywordNode wildcard = parseModifier(
                     Arrays.asList(QUESTION_MARK),
-                    "Wildcard expected.",
-                    ASTKeywordNode::new
+                    "'?'"
             );
             if (isCurr(SUBTYPE) || isCurr(SUPERTYPE)) {
                 return new ASTWildcard(loc, wildcard, parseWildcardBounds());
@@ -414,7 +408,7 @@ public class TypesParser extends BasicParser {
             }
         }
         else {
-            throw new CompileException(curr().getLocation(), "Wildcard expected.");
+            throw internalError(QUESTION_MARK);
         }
     }
 
@@ -431,8 +425,8 @@ public class TypesParser extends BasicParser {
         Location loc = curr().getLocation();
         ASTKeywordNode boundKeyword = parseModifier(
                 Arrays.asList(SUBTYPE, SUPERTYPE),
-                "Expected \"<:\" or \":>\".",
-                ASTKeywordNode::new);
+                "'<:' or ':>'."
+        );
         return new ASTWildcardBounds(loc, boundKeyword, parseDataType());
     }
 }

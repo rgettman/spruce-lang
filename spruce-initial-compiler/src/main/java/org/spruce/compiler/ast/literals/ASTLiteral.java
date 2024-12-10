@@ -1,7 +1,6 @@
 package org.spruce.compiler.ast.literals;
 
-import org.spruce.compiler.ast.ASTValueNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.ast.ValueNode;
 
 /**
  * <p>An <code>ASTLiteral</code> is a node representing a literal value.</p>
@@ -15,14 +14,6 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;BooleanLiteral
  * </em>
  */
-public class ASTLiteral extends ASTValueNode {
-    /**
-     * Constructs an <code>ASTLiteral</code> at the given <code>Location</code>
-     * and with one child as its node.
-     * @param location The <code>Location</code>.
-     * @param value The value of the node.
-     */
-    public ASTLiteral(Location location, String value) {
-        super(location, value);
-    }
+public sealed interface ASTLiteral extends ValueNode permits ASTBooleanLiteral, ASTCharacterLiteral,
+        ASTFloatingPointLiteral, ASTIntegerLiteral, ASTStringLiteral {
 }

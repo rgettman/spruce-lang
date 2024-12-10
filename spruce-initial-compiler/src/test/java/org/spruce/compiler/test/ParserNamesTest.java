@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.ast.names.*;
-import org.spruce.compiler.exception.CompileException;
 import org.spruce.compiler.parser.NamesParser;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
@@ -27,7 +26,7 @@ public class ParserNamesTest {
     public void testNamespaceNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
         ASTNamespaceName node = parser.parseNamespaceName();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, NAMESPACE_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
@@ -40,7 +39,7 @@ public class ParserNamesTest {
     public void testNamespaceNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
         ASTNamespaceName node = parser.parseNamespaceName();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, NAMESPACE_IDS, ASTIdentifier.class, 2);
     }
 
@@ -51,7 +50,7 @@ public class ParserNamesTest {
     public void testNamespaceNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
         ASTNamespaceName node = parser.parseNamespaceName();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, NAMESPACE_IDS, ASTIdentifier.class, 3);
     }
 
@@ -62,7 +61,7 @@ public class ParserNamesTest {
     public void testTypeNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
         ASTTypeName node = parser.parseTypeName();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPENAME_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
@@ -75,7 +74,7 @@ public class ParserNamesTest {
     public void testTypeNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
         ASTTypeName node = parser.parseTypeName();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPENAME_IDS, ASTIdentifier.class, 2);
     }
 
@@ -86,7 +85,7 @@ public class ParserNamesTest {
     public void testTypeNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
         ASTTypeName node = parser.parseTypeName();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, TYPENAME_IDS, ASTIdentifier.class, 3);
     }
 
@@ -96,8 +95,8 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceOrTypeNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
-        ASTNamespaceOrTypeName node = parser.parseNamespaceOrTypeName();
-        System.out.println(node);
+        ASTNamespaceOrTypeName node = parser.parseTypeName().convertToNamespaceOrTypeName();
+        ensureNoErrors(node, parser);
         checkList(node, NAMESPACE_OR_TYPENAME_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
@@ -109,8 +108,8 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceOrTypeNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
-        ASTNamespaceOrTypeName node = parser.parseNamespaceOrTypeName();
-        System.out.println(node);
+        ASTNamespaceOrTypeName node = parser.parseTypeName().convertToNamespaceOrTypeName();
+        ensureNoErrors(node, parser);
         checkList(node, NAMESPACE_OR_TYPENAME_IDS, ASTIdentifier.class, 2);
     }
 
@@ -120,8 +119,8 @@ public class ParserNamesTest {
     @Test
     public void testNamespaceOrTypeNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
-        ASTNamespaceOrTypeName node = parser.parseNamespaceOrTypeName();
-        System.out.println(node);
+        ASTNamespaceOrTypeName node = parser.parseTypeName().convertToNamespaceOrTypeName();
+        ensureNoErrors(node, parser);
         checkList(node, NAMESPACE_OR_TYPENAME_IDS, ASTIdentifier.class, 3);
     }
 
@@ -131,8 +130,8 @@ public class ParserNamesTest {
     @Test
     public void testExpressionNameOfIdentifier() {
         NamesParser parser = getNamesParser("simple");
-        ASTExpressionName node = parser.parseExpressionName();
-        System.out.println(node);
+        ASTExpressionName node = parser.getTypesParser().parseDataType().convertToExpressionName();
+        ensureNoErrors(node, parser);
         checkList(node, EXPR_NAME_IDS, ASTIdentifier.class, 1);
         ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("simple", identifier.getValue());
@@ -144,8 +143,8 @@ public class ParserNamesTest {
     @Test
     public void testExpressionNameOfTwoIdentifiers() {
         NamesParser parser = getNamesParser("one.two");
-        ASTExpressionName node = parser.parseExpressionName();
-        System.out.println(node);
+        ASTExpressionName node = parser.getTypesParser().parseDataType().convertToExpressionName();
+        ensureNoErrors(node, parser);
         checkList(node, EXPR_NAME_IDS, ASTIdentifier.class, 2);
     }
 
@@ -155,44 +154,9 @@ public class ParserNamesTest {
     @Test
     public void testExpressionNameOfThreeIdentifiers() {
         NamesParser parser = getNamesParser("one.two.three");
-        ASTExpressionName node = parser.parseExpressionName();
-        System.out.println(node);
+        ASTExpressionName node = parser.getTypesParser().parseDataType().convertToExpressionName();
+        ensureNoErrors(node, parser);
         checkList(node, EXPR_NAME_IDS, ASTIdentifier.class, 3);
-    }
-
-    /**
-     * Tests ambiguous name as a simple identifier.
-     */
-    @Test
-    public void testAmbiguousNameOfIdentifier() {
-        NamesParser parser = getNamesParser("simple");
-        ASTAmbiguousName node = parser.parseAmbiguousName();
-        System.out.println(node);
-        checkList(node, AMBIGUOUS_NAME_IDS, ASTIdentifier.class, 1);
-        ASTIdentifier identifier = (ASTIdentifier) node.getChildren().get(0);
-        assertEquals("simple", identifier.getValue());
-    }
-
-    /**
-     * Tests ambiguous name as two identifiers separated by ".".
-     */
-    @Test
-    public void testAmbiguousNameOfTwoIdentifiers() {
-        NamesParser parser = getNamesParser("one.two");
-        ASTAmbiguousName node = parser.parseAmbiguousName();
-        System.out.println(node);
-        checkList(node, AMBIGUOUS_NAME_IDS, ASTIdentifier.class, 2);
-    }
-
-    /**
-     * Tests ambiguous name as three identifiers separated by ".".
-     */
-    @Test
-    public void testAmbiguousNameOfThreeIdentifiers() {
-        NamesParser parser = getNamesParser("one.two.three");
-        ASTAmbiguousName node = parser.parseAmbiguousName();
-        System.out.println(node);
-        checkList(node, AMBIGUOUS_NAME_IDS, ASTIdentifier.class, 3);
     }
 
     /**
@@ -202,7 +166,7 @@ public class ParserNamesTest {
     public void testIdentifierListOfIdentifier() {
         NamesParser parser = getNamesParser("ArrayList");
         ASTIdentifierList node = parser.parseIdentifierList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, IDENTIFIERS, ASTIdentifier.class, 1);
         ASTIdentifier id = (ASTIdentifier) node.getChildren().get(0);
         assertEquals("ArrayList", id.getValue());
@@ -215,7 +179,7 @@ public class ParserNamesTest {
     public void testIdentifierListNested() {
         NamesParser parser = getNamesParser("List, ArrayList, LinkedList");
         ASTIdentifierList node = parser.parseIdentifierList();
-        System.out.println(node);
+        ensureNoErrors(node, parser);
         checkList(node, IDENTIFIERS, ASTIdentifier.class, 3);
         List<String> expectedValues = Arrays.asList("List", "ArrayList", "LinkedList");
         for (int i = 0; i < expectedValues.size(); i++) {
@@ -231,6 +195,7 @@ public class ParserNamesTest {
     public void testIdentifier() {
         NamesParser parser = getNamesParser("x");
         ASTIdentifier node = parser.parseIdentifier();
+        ensureNoErrors(node, parser);
         assertEquals("x", node.getValue());
     }
 
@@ -240,7 +205,8 @@ public class ParserNamesTest {
     @Test
     public void testIdentifierBad() {
         NamesParser parser = getNamesParser("12x");
-        assertThrows(CompileException.class, parser::parseIdentifier, "Expected an identifier.");
+        ASTIdentifier node = parser.parseIdentifier();
+        expectError(node, parser);
     }
 
     /**
