@@ -263,6 +263,7 @@ public class Scanner {
                 case '|' -> readStartingWithPipe();
                 case '^' -> readStartingWithCaret();
                 case '~' -> createToken(TokenType.TILDE, String.valueOf(read()));
+                case '_' -> readStartingWithUnderscore();
                 default -> createToken(TokenType.UNKNOWN, String.valueOf(read()));
             };
         }
@@ -653,22 +654,18 @@ public class Scanner {
     }
 
     /**
-     * Scans "::", ":=", ":&gt;", and ":".
+     * Scans "::" and ":".
      * @return The appropriate <code>Token</code>.
      */
     private Token readStartingWithColon() {
         read();
-        return switch (peek()) {
-            case ':' -> {
-                read();
-                yield createToken(TokenType.DOUBLE_COLON, "::");
-            }
-            case '>' -> {
-                read();
-                yield createToken(TokenType.SUPERTYPE, ":>");
-            }
-            default -> createToken(TokenType.COLON, ":");
-        };
+        if (peek() == ':') {
+            read();
+            return createToken(TokenType.DOUBLE_COLON, "::");
+        }
+        else {
+            return createToken(TokenType.COLON, ":");
+        }
     }
 
     /**
@@ -720,7 +717,7 @@ public class Scanner {
     }
 
     /**
-     * Scans "&lt;&lt;", "&lt;&lt;=", "&lt;=", "&lt;=&gt;", "&lt;:", and "&lt;".
+     * Scans "&lt;&lt;", "&lt;&lt;=", "&lt;=", "&lt;=&gt;", and "&lt;".
      * @return The appropriate <code>Token</code>.
      */
     private Token readStartingWithLessThan() {
@@ -744,16 +741,13 @@ public class Scanner {
             else {
                 return createToken(TokenType.SHIFT_LEFT, "<<");
             }
-        case ':':
-            read();
-            return createToken(TokenType.SUBTYPE, "<:");
         default:
             return createToken(TokenType.LESS_THAN, "<");
         }
     }
 
     /**
-     * Scans "&gt;&gt;", "&gt;&gt;=", "&gt;=", "&gt;&gt;&gt;", "&gt;&gt;&gt;=", and "&gt;".
+     * Scans "&gt;&gt;", "&gt;&gt;=", "&gt;=", and "&gt;".
      * @return The appropriate <code>Token</code>.
      */
     private Token readStartingWithGreaterThan() {
@@ -935,6 +929,20 @@ public class Scanner {
             }
             default -> createToken(TokenType.CARET, "^");
         };
+    }
+
+    /**
+     * Scans "_" and identifiers starting with "_", e.g., "_varName".
+     * @return The appropriate <code>Token</code>.
+     */
+    private Token readStartingWithUnderscore() {
+        if (Character.isJavaIdentifierPart(peek())) {
+            return readIdentifierOrKeyword();
+        }
+        else {
+            read();
+            return createToken(TokenType.UNDERSCORE, "_");
+        }
     }
 
     /**

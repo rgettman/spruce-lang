@@ -573,7 +573,7 @@ public class ParserStatementsTest {
             try {
                 br.readLine();
             } catch (IOException e) {
-                out.println(e.getMessage());
+                stdout.println(e.getMessage());
             }
             """);
         ASTStatement node = parser.parseStatement();
@@ -588,9 +588,9 @@ public class ParserStatementsTest {
     public void testStatementOfSwitchStatement() {
         StatementsParser parser = getStatementsParser("""
                 switch code {
-                case 1 -> out.println("One");
-                case 2 -> out.println("Two");
-                default -> out.println("Unexpected");
+                case 1 -> stdout.println("One");
+                case 2 -> stdout.println("Two");
+                default -> stdout.println("Unexpected");
                 }
                 """);
         ASTStatement node = parser.parseStatement();
@@ -604,9 +604,9 @@ public class ParserStatementsTest {
     @Test
     public void testSwitchStatementRules() {
         StatementsParser parser = getStatementsParser("""
-                case 1 -> out.println("One");
-                case 2 -> out.println("Two");
-                default -> out.println("Unexpected");
+                case 1 -> stdout.println("One");
+                case 2 -> stdout.println("Two");
+                default -> stdout.println("Unexpected");
                 """);
         ASTSwitchStatementRules node = parser.parseSwitchStatementRules();
         ensureNoErrors(node, parser);
@@ -619,7 +619,7 @@ public class ParserStatementsTest {
     @Test
     public void testSwitchStatementRuleOfExprStmt() {
         StatementsParser parser = getStatementsParser("""
-                case 1 -> out.println("One");
+                case 1 -> stdout.println("One");
                 """);
         ASTSwitchStatementRule node = parser.parseSwitchStatementRule();
         ensureNoErrors(node, parser);
@@ -636,7 +636,7 @@ public class ParserStatementsTest {
     public void testSwitchStatementRuleOfBlock() {
         StatementsParser parser = getStatementsParser("""
                 case 1 -> {
-                    out.println("One");
+                    stdout.println("One");
                 }
                 """);
         ASTSwitchStatementRule node = parser.parseSwitchStatementRule();
@@ -682,9 +682,9 @@ public class ParserStatementsTest {
     public void testSwitchStatement() {
         StatementsParser parser = getStatementsParser("""
                 switch code {
-                case 1 -> out.println("One");
-                case 2 -> out.println("Two");
-                default -> out.println("Unexpected");
+                case 1 -> stdout.println("One");
+                case 2 -> stdout.println("Two");
+                default -> stdout.println("Unexpected");
                 }
                 """);
         ASTSwitchStatement node = parser.parseSwitchStatement();
@@ -713,7 +713,7 @@ public class ParserStatementsTest {
             try {
                 br.readLine();
             } catch (IOException e) {
-                out.println(e.getMessage());
+                stdout.println(e.getMessage());
             }
             """);
         ASTTryStatement node = parser.parseTryStatement();
@@ -773,7 +773,7 @@ public class ParserStatementsTest {
             try (BufferedReader br = new BufferedReader()) {
                 br.readLine();
             } catch (IOException e) {
-                out.println(e.getMessage());
+                stdout.println(e.getMessage());
             } finally {
                 br.close();
             }
@@ -958,7 +958,7 @@ public class ParserStatementsTest {
                 err.println(e.getMessage());
             }
             catch (IOException e) {
-                out.println(e.getMessage());
+                stdout.println(e.getMessage());
             }
             """);
         ASTCatches node = parser.parseCatches();
@@ -971,7 +971,7 @@ public class ParserStatementsTest {
      */
     @Test
     public void testCatchClause() {
-        StatementsParser parser = getStatementsParser("catch (APIException ce) { out.println(ce.getMessage()); }");
+        StatementsParser parser = getStatementsParser("catch (APIException ce) { stdout.println(ce.getMessage()); }");
         ASTCatchClause node = parser.parseCatchClause();
         ensureNoErrors(node, parser);
         assertNotNull(node.getCatchFormalParam());
@@ -983,7 +983,7 @@ public class ParserStatementsTest {
      */
     @Test
     public void testCatchClauseNoOpenParen() {
-        StatementsParser parser = getStatementsParser("catch FooException ce) { out.println(ce.getMessage()); }");
+        StatementsParser parser = getStatementsParser("catch FooException ce) { stdout.println(ce.getMessage()); }");
         ASTCatchClause node = parser.parseCatchClause();
         expectError(node, parser);
     }
@@ -993,7 +993,7 @@ public class ParserStatementsTest {
      */
     @Test
     public void testCatchClauseNoCloseParen() {
-        StatementsParser parser = getStatementsParser("catch (BarException ce { out.println(ce.getMessage()); }");
+        StatementsParser parser = getStatementsParser("catch (BarException ce { stdout.println(ce.getMessage()); }");
         ASTCatchClause node = parser.parseCatchClause();
         expectError(node, parser);
     }
@@ -1072,7 +1072,7 @@ public class ParserStatementsTest {
     public void testFinally() {
         StatementsParser parser = getStatementsParser("""
                 finally {
-                    out.println("Always executed!");
+                    stdout.println("Always executed!");
                 }
                 """);
         ASTBlock node = parser.parseFinally();
@@ -1100,7 +1100,7 @@ public class ParserStatementsTest {
     @Test
     public void testIfStatementOfInitNoBlock() {
         StatementsParser parser = getStatementsParser("""
-                if {String line = br.readLine()} (line != null) out.println(line);
+                if {String line = br.readLine()} (line != null) stdout.println(line);
                 """);
         ASTIfStatement node = parser.parseIfStatement();
         expectError(node, parser, 2);
@@ -1113,7 +1113,7 @@ public class ParserStatementsTest {
     public void testIfStatementOfInit() {
         StatementsParser parser = getStatementsParser("""
                 if {String line = br.readLine()} line != null {
-                    out.println(line);
+                    stdout.println(line);
                 }
                 """);
         ASTIfStatement node = parser.parseIfStatement();
@@ -1132,9 +1132,9 @@ public class ParserStatementsTest {
     public void testIfStatementOfElse() {
         StatementsParser parser = getStatementsParser("""
             if result {
-                out.println("Test passed.");
+                stdout.println("Test passed.");
             } else {
-                out.println("Test FAILED!");
+                stdout.println("Test FAILED!");
             }
             """);
         ASTIfStatement node = parser.parseIfStatement();
@@ -1153,11 +1153,11 @@ public class ParserStatementsTest {
     public void testIfStatementNested() {
         StatementsParser parser = getStatementsParser("""
             if result {
-                out.println("Test passed.");
+                stdout.println("Test passed.");
             } else if DEBUG {
-                out.println("Test failed in debug mode!");
+                stdout.println("Test failed in debug mode!");
             } else {
-                out.println("Test FAILED!");
+                stdout.println("Test FAILED!");
             }
             """);
         ASTIfStatement node = parser.parseIfStatement();
@@ -1183,7 +1183,7 @@ public class ParserStatementsTest {
     public void testIfStatementBadInitNoCloseBrace() {
         StatementsParser parser = getStatementsParser("""
             if {String line = br.readLine() line != null {
-                out.println("Test passed.");
+                stdout.println("Test passed.");
             }
             """);
         ASTIfStatement node = parser.parseIfStatement();
@@ -1197,9 +1197,9 @@ public class ParserStatementsTest {
     public void testIfStatementBadElse() {
         StatementsParser parser = getStatementsParser("""
             if result {
-                out.println("Test passed.");
+                stdout.println("Test passed.");
             }
-            else out.println("Test failed.");
+            else stdout.println("Test failed.");
             """);
         ASTIfStatement node = parser.parseIfStatement();
         expectError(node, parser, 2);
@@ -1224,7 +1224,7 @@ public class ParserStatementsTest {
     @Test
     public void testWhileStatementOfInitNoBlock() {
         StatementsParser parser = getStatementsParser("""
-                while {String line = br.readLine()} line != null out.println(line);
+                while {String line = br.readLine()} line != null stdout.println(line);
                 """);
         ASTWhileStatement node = parser.parseWhileStatement();
         expectError(node, parser, 2);
@@ -1237,7 +1237,7 @@ public class ParserStatementsTest {
     public void testWhileStatementOfInit() {
         StatementsParser parser = getStatementsParser("""
                 while {String line = br.readLine()} line != null {
-                    out.println(line);
+                    stdout.println(line);
                 }
                 """);
         ASTWhileStatement node = parser.parseWhileStatement();
@@ -1256,7 +1256,7 @@ public class ParserStatementsTest {
     public void testWhileStatementBadInitNoCloseBrace() {
         StatementsParser parser = getStatementsParser("""
             while {String line = br.readLine() line != null {
-                out.println("Test passed.");
+                stdout.println("Test passed.");
             }
             """);
         ASTWhileStatement node = parser.parseWhileStatement();
@@ -1306,7 +1306,7 @@ public class ParserStatementsTest {
     public void testForStatementNoOpenParen() {
         StatementsParser parser = getStatementsParser("""
                 for Int i = 0; i < 10; i++) {
-                    out.println(i);
+                    stdout.println(i);
                 }
                 """);
         ASTForStatement node = parser.parseForStatement();
@@ -1320,7 +1320,7 @@ public class ParserStatementsTest {
     public void testForStatementNoSemicolonOrColon() {
         StatementsParser parser = getStatementsParser("""
                 for (Int i = 0) {
-                    out.println(i);
+                    stdout.println(i);
                 }
                 """);
         ASTForStatement node = parser.parseForStatement();
@@ -1334,7 +1334,7 @@ public class ParserStatementsTest {
     public void testForStatementOfBasicForStatementAll3() {
         StatementsParser parser = getStatementsParser("""
                 for (Int i = 0; i < 10; i++) {
-                    out.println(i);
+                    stdout.println(i);
                 }
                 """);
         ASTForStatement node = parser.parseForStatement();
@@ -1356,7 +1356,7 @@ public class ParserStatementsTest {
     public void testForStatementOfBasicForStatementInfiniteLoop() {
         StatementsParser parser = getStatementsParser("""
         for (;;) {
-            out.println("Hello world!");
+            stdout.println("Hello world!");
         }
         """);
         ASTForStatement node = parser.parseForStatement();
@@ -1375,7 +1375,7 @@ public class ParserStatementsTest {
     public void testBasicForStatementBadNoFirstSemicolon() {
         StatementsParser parser = getStatementsParser("""
         for (Integer i = 0) {
-            out.println("Hello world!");
+            stdout.println("Hello world!");
         }
         """);
         ASTForStatement node = parser.parseForStatement();
@@ -1389,7 +1389,7 @@ public class ParserStatementsTest {
     public void testBasicForStatementBadNoSecondSemicolon() {
         StatementsParser parser = getStatementsParser("""
         for (Integer i = 0; i < length) {
-            out.println("Hello world!");
+            stdout.println("Hello world!");
         }
         """);
         ASTForStatement node = parser.parseForStatement();
@@ -1403,7 +1403,7 @@ public class ParserStatementsTest {
     public void testBasicForStatementBadNoCloseParen() {
         StatementsParser parser = getStatementsParser("""
         for (Integer i = 0; i < length; i++ {
-            out.println("Hello world!");
+            stdout.println("Hello world!");
         }
         """);
         ASTForStatement node = parser.parseForStatement();

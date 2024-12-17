@@ -206,43 +206,46 @@ public class ExpressionsParser extends BasicParser {
     }
 
     /**
-     * Parses a <code>ConditionalExpression</code>; they are right-associative
-     * with each other.
+     * Parses a <code>ValueExpression</code>.
      * <em>
      * ValueExpression:
-     * &nbsp;&nbsp;&nbsp;&nbsp;ConditionalExpression
+     * &nbsp;&nbsp;&nbsp;&nbsp;IfExpression
      * &nbsp;&nbsp;&nbsp;&nbsp;BinaryExpression
      * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression
+     * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression
+     * &nbsp;&nbsp;&nbsp;&nbsp;IsaExpression
      * &nbsp;&nbsp;&nbsp;&nbsp;SwitchExpression
      * &nbsp;&nbsp;&nbsp;&nbsp;Primary
      * </em>
      * <em>
-     * ConditionalExpression:<br>
+     * IfExpression:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression ? Expression : Expression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;if LogicalOrExpression use Expression else Expression<br>
      * </em>
-     * @return An <code>ASTValueExpression</code>, which could be an
-     *     <code>ASTConditionalExpression</code>, or a lower production
-     *     such as <code>ASTBinaryExpression</code>, <code>ASTUnaryExpression</code>,
-     *     <code>ASTSwitchExpression</code>, or <code>ASTPrimary</code>.
+     * @return An implementation of <code>ASTValueExpression</code>.
      */
     public ASTValueExpression parseValueExpression() {
         if (isValueExpression(curr())) {
-            Location loc = curr().getLocation();
-            ASTValueExpression logicalOrExpr = parseLogicalOrExpression();
-            if (isCurr(QUESTION_MARK)) {
-                accept(QUESTION_MARK);
+            if (isCurr(IF)) {
+                Location loc = curr().getLocation();
+                accept(IF);
+                ASTValueExpression logicalOrExpr = parseLogicalOrExpression();
+                if (accept(USE) == null) {
+                    error(curr().getLocation(), "Expected 'use'.");
+                }
                 ASTExpression exprIfTrue = parseExpression();
-                if (accept(COLON) == null) {
-                    error(curr().getLocation(), "Expected ':'.");
+                if (accept(ELSE) == null) {
+                    error(curr().getLocation(), "Expected 'else'.");
                 }
                 ASTExpression exprIfFalse = parseExpression();
-                return new ASTConditionalExpression(loc, logicalOrExpr, exprIfTrue, exprIfFalse);
+                    return new ASTIfExpression(loc, logicalOrExpr, exprIfTrue, exprIfFalse);
             }
-            return logicalOrExpr;
+            else {
+                return parseLogicalOrExpression();
+            }
         }
         else {
-            error(curr().getLocation(), "Expected a literal or expression name.");
+            error(curr().getLocation(), "Expected a value expression.");
             return parseBadPrimary(EXPRESSION_STOPPERS);
         }
     }
@@ -1315,10 +1318,6 @@ public class ExpressionsParser extends BasicParser {
 
 //            if (isCurr(SUPER)) {
 //                // ExpressionName . TypeArguments super ( [ArgumentList] )
-//                List<ASTNode> alreadyParsed = new ArrayList<>(2);
-//                alreadyParsed.add(exprName);
-//                alreadyParsed.add(typeArgs);
-//                error(curr().getLocation(), "Expected method name.", alreadyParsed);
 //            }
             builder.setTypeArgs(typeArgs);
         }

@@ -253,10 +253,10 @@ public class ParserExpressionsTest {
      */
     @Test
     public void testExpressionOfConditionalExpression() {
-        ExpressionsParser parser = getExpressionsParser("a ? b : c");
+        ExpressionsParser parser = getExpressionsParser("if a use b else c");
         ASTExpression node = parser.parseExpression();
         ensureNoErrors(node, parser);
-        assertInstanceOf(ASTConditionalExpression.class, node);
+        assertInstanceOf(ASTIfExpression.class, node);
     }
 
     /**
@@ -271,46 +271,57 @@ public class ParserExpressionsTest {
     }
 
     /**
-     * Tests conditional expression of "?" and ":" and logical or expression.
+     * Tests if expression.
      */
     @Test
     public void testConditionalExpression() {
-        ExpressionsParser parser = getExpressionsParser("condition ? valueIfTrue : valueIfFalse");
+        ExpressionsParser parser = getExpressionsParser("if condition use valueIfTrue else valueIfFalse");
         ASTValueExpression node = parser.parseValueExpression();
         ensureNoErrors(node, parser);
-        ASTConditionalExpression condExpr = ensureIsa(node, ASTConditionalExpression.class);
+        ASTIfExpression ifExpr = ensureIsa(node, ASTIfExpression.class);
         compareClasses(Arrays.asList(ASTPrimary.class, ASTPrimary.class, ASTPrimary.class),
-                Arrays.asList(condExpr.getCondition(), condExpr.getExprIfTrue(), condExpr.getExprIfFalse()));
+                Arrays.asList(ifExpr.getCondition(), ifExpr.getExprIfTrue(), ifExpr.getExprIfFalse()));
     }
 
     /**
-     * Tests nested conditional expressions.
+     * Tests chained if expressions.
      */
     @Test
-    public void testConditionalExpressionNested() {
-        ExpressionsParser parser = getExpressionsParser("a || b ? \"one\" : c || d ? \"two\" : e || f ? \"three\" : \"four\"");
+    public void testIfExpressionChained() {
+        ExpressionsParser parser = getExpressionsParser(
+                "if a || b use \"one\" else if c || d use \"two\" else if e || f use \"three\" else \"four\"");
         ASTValueExpression node = parser.parseValueExpression();
         ensureNoErrors(node, parser);
 
-        ASTConditionalExpression outer = ensureIsa(node, ASTConditionalExpression.class);
-        compareClasses(Arrays.asList(ASTBinaryExpression.class, ASTPrimary.class, ASTConditionalExpression.class),
+        ASTIfExpression outer = ensureIsa(node, ASTIfExpression.class);
+        compareClasses(Arrays.asList(ASTBinaryExpression.class, ASTPrimary.class, ASTIfExpression.class),
                 Arrays.asList(outer.getCondition(), outer.getExprIfTrue(), outer.getExprIfFalse()));
 
-        ASTConditionalExpression middle = ensureIsa(outer.getExprIfFalse(), ASTConditionalExpression.class);
-        compareClasses(Arrays.asList(ASTBinaryExpression.class, ASTPrimary.class, ASTConditionalExpression.class),
+        ASTIfExpression middle = ensureIsa(outer.getExprIfFalse(), ASTIfExpression.class);
+        compareClasses(Arrays.asList(ASTBinaryExpression.class, ASTPrimary.class, ASTIfExpression.class),
                 Arrays.asList(middle.getCondition(), middle.getExprIfTrue(), middle.getExprIfFalse()));
 
-        ASTConditionalExpression inner = ensureIsa(middle.getExprIfFalse(), ASTConditionalExpression.class);
+        ASTIfExpression inner = ensureIsa(middle.getExprIfFalse(), ASTIfExpression.class);
         compareClasses(Arrays.asList(ASTBinaryExpression.class, ASTPrimary.class, ASTPrimary.class),
                 Arrays.asList(inner.getCondition(), inner.getExprIfTrue(), inner.getExprIfFalse()));
     }
 
     /**
-     * Tests bad conditional expression with question mark but no colon.
+     * Tests bad if expression with question mark but no else.
      */
     @Test
-    public void testConditionalExpressionNoColon() {
-        ExpressionsParser parser = getExpressionsParser("condition ? valueIfTrue valueIfFalse");
+    public void testIfExpressionNoElse() {
+        ExpressionsParser parser = getExpressionsParser("if condition use valueIfTrue valueIfFalse");
+        ASTValueExpression node = parser.parseValueExpression();
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests bad if expression with question mark but no use.
+     */
+    @Test
+    public void testIfExpressionNoUse() {
+        ExpressionsParser parser = getExpressionsParser("if condition valueIfTrue else valueIfFalse");
         ASTValueExpression node = parser.parseValueExpression();
         expectError(node, parser);
     }
@@ -1758,7 +1769,7 @@ public class ParserExpressionsTest {
         checkMethodReference(mRef, false, false, false,
                 true,false, false);
         ASTDataType dt = mRef.getDataType().orElseThrow();
-        assertInstanceOf(ASTDataTypeNoArray.class, dt);
+        assertInstanceOf(ASTDataType.class, dt);
     }
 
     /**

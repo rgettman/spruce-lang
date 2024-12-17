@@ -54,27 +54,69 @@ public class ParserTypesTest {
     }
     
     /**
-     * Tests data type of data type (no array).
+     * Tests base data type of data type (no array).
      */
     @Test
-    public void testDataTypeOfDataTypeNoArray() {
+    public void testBaseDataTypeOfDataTypeNoArray() {
         TypesParser parser = getTypesParser("spruce.lang.String");
-        ASTDataType node = parser.parseDataType();
+        ASTBaseDataType node = parser.parseBaseDataType();
         ensureNoErrors(node, parser);
         assertInstanceOf(ASTDataTypeNoArray.class, node);
     }
 
     /**
-     * Tests data type of array type.
+     * Tests base data type of array type.
      */
     @Test
-    public void testDataTypeOfArrayType() {
+    public void testBaseDataTypeOfArrayType() {
         TypesParser parser = getTypesParser("spruce.lang.String[]");
-        ASTDataType node = parser.parseDataType();
+        ASTBaseDataType node = parser.parseBaseDataType();
         ensureNoErrors(node, parser);
         ASTArrayType arrayType = ensureIsa(node, ASTArrayType.class);
         assertNotNull(arrayType.getDataTypeNoArray());
         assertNotNull(arrayType.getDims());
+    }
+
+    /**
+     * Tests data type of base data type.
+     */
+    @Test
+    public void testDataTypeOfBaseDataType() {
+        TypesParser parser = getTypesParser("spruce.lang.String");
+        ASTDataType node = parser.parseDataType();
+        ensureNoErrors(node, parser);
+        assertFalse(node.getSuffixOperator().isPresent());
+        assertNotNull(node.getBaseDataType());
+        assertTrue(node.canConvertToExpressionName());
+        assertNotNull(node.convertToExpressionName());
+    }
+
+    /**
+     * Tests data type of base data type with exclamation point.
+     */
+    @Test
+    public void testDataTypeOfExclamation() {
+        TypesParser parser = getTypesParser("Connection!");
+        ASTDataType node = parser.parseDataType();
+        ensureNoErrors(node, parser);
+        assertTrue(node.getSuffixOperator().isPresent());
+        assertEquals(EXCLAMATION, node.getSuffixOperator().get().getKeyword());
+        assertNotNull(node.getBaseDataType());
+        assertFalse(node.canConvertToExpressionName());
+    }
+
+    /**
+     * Tests data type of base data type with question mark.
+     */
+    @Test
+    public void testDataTypeOfQuestionMark() {
+        TypesParser parser = getTypesParser("stdDev?");
+        ASTDataType node = parser.parseDataType();
+        ensureNoErrors(node, parser);
+        assertTrue(node.getSuffixOperator().isPresent());
+        assertEquals(QUESTION_MARK, node.getSuffixOperator().get().getKeyword());
+        assertNotNull(node.getBaseDataType());
+        assertFalse(node.canConvertToExpressionName());
     }
 
     /**
@@ -114,7 +156,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testDataTypeNoArrayOfSimpleType() {
-        TypesParser parser = getTypesParser("List<?>");
+        TypesParser parser = getTypesParser("List<_>");
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         ensureNoErrors(node, parser);
         checkList(node, SIMPLE_TYPES, ASTSimpleType.class, 1);
@@ -125,7 +167,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testDataTypeNoArray() {
-        TypesParser parser = getTypesParser("A<?>.B<?>");
+        TypesParser parser = getTypesParser("A<_>.B<_>");
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         ensureNoErrors(node, parser);
         checkList(node, SIMPLE_TYPES, ASTSimpleType.class, 2);
@@ -136,7 +178,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testDataTypeNoArrayNested() {
-        TypesParser parser = getTypesParser("spruce.collections.List<?>");
+        TypesParser parser = getTypesParser("spruce.collections.List<_>");
         ASTDataTypeNoArray node = parser.parseDataTypeNoArray();
         ensureNoErrors(node, parser);
         checkList(node, SIMPLE_TYPES, ASTSimpleType.class, 3);
@@ -160,14 +202,41 @@ public class ParserTypesTest {
      */
     @Test
     public void testSimpleTypeOfIdentifierTypeArguments() {
-        TypesParser parser = getTypesParser("Map<?, ?>");
+        TypesParser parser = getTypesParser("Map<_, _>");
         ASTSimpleType node = parser.parseSimpleType();
         ensureNoErrors(node, parser);
-        //checkNary(node, null, ASTIdentifier.class, ASTTypeArguments.class);
         ASTIdentifier id = node.getName();
         assertEquals("Map", id.getValue());
         assertTrue(node.getTypeArgs().isPresent());
         checkList(node.getTypeArgs().get(), TYPE_ARGUMENTS, ASTTypeArgument.class, 2);
+    }
+
+    /**
+     * Test simple type of nested type arguments.
+     */
+    @Test
+    public void testSimpleTypeOfNestedTypeArguments() {
+        TypesParser parser = getTypesParser("Foo<Map<Integer, String>>");
+        ASTSimpleType node = parser.parseSimpleType();
+        ensureNoErrors(node, parser);
+        ASTIdentifier id = node.getName();
+        assertEquals("Foo", id.getValue());
+
+        assertTrue(node.getTypeArgs().isPresent());
+        ASTTypeArgumentList outer = node.getTypeArgs().get();
+        checkList(outer, TYPE_ARGUMENTS, ASTTypeArgument.class, 1);
+
+        ASTDataType first = ensureIsa(outer.get(0), ASTTypeArgumentBounds.class).getDataType();
+        ASTDataTypeNoArray dtna = ensureIsa(first.getBaseDataType(), ASTDataTypeNoArray.class);
+        checkList(dtna, SIMPLE_TYPES, ASTSimpleType.class, 1);
+
+        ASTSimpleType simpleType = dtna.get(0);
+        ASTIdentifier simpleId = simpleType.getName();
+        assertEquals("Map", simpleId.getValue());
+
+        assertTrue(simpleType.getTypeArgs().isPresent());
+        ASTTypeArgumentList inner = simpleType.getTypeArgs().get();
+        checkList(inner, TYPE_ARGUMENTS, ASTTypeArgument.class, 2);
     }
 
     /**
@@ -197,7 +266,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testTypeParameterListNested() {
-        TypesParser parser = getTypesParser("K, V, T <: Map<K, V>");
+        TypesParser parser = getTypesParser("K, V, T : Map<K, V>");
         ASTTypeParameterList node = parser.parseTypeParameterList();
         ensureNoErrors(node, parser);
         checkList(node, TYPE_PARAMETERS, ASTTypeParameter.class, 3);
@@ -234,7 +303,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testTypeParameterOfBounds() {
-        TypesParser parser = getTypesParser("N <: Number");
+        TypesParser parser = getTypesParser("N : Number");
         ASTTypeParameter node = parser.parseTypeParameter();
         ensureNoErrors(node, parser);
 
@@ -249,7 +318,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testTypeParameterOfAnnotation() {
-        TypesParser parser = getTypesParser("@Test N <: Number");
+        TypesParser parser = getTypesParser("@Test N : Number");
         ASTTypeParameter node = parser.parseTypeParameter();
         ensureNoErrors(node, parser);
 
@@ -264,7 +333,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testTypeBoundOfIntersectionType() {
-        TypesParser parser = getTypesParser("<: Student & Serializable");
+        TypesParser parser = getTypesParser(": Student & Serializable");
         ASTIntersectionType node = parser.parseTypeBound();
         ensureNoErrors(node, parser);
         checkList(node, DATA_TYPES, ASTDataType.class, 2);
@@ -308,7 +377,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testTypeArgumentsOfTypeArgumentList() {
-        TypesParser parser = getTypesParser("<?>");
+        TypesParser parser = getTypesParser("<T>");
         ASTTypeArgumentList node = parser.parseTypeArguments();
         ensureNoErrors(node, parser);
         checkList(node, TYPE_ARGUMENTS, ASTTypeArgument.class, 1);
@@ -319,7 +388,7 @@ public class ParserTypesTest {
      */
     @Test
     public void testTypeArgumentListOfTypeArgument() {
-        TypesParser parser = getTypesParser("?");
+        TypesParser parser = getTypesParser("T");
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
         ensureNoErrors(node, parser);
         checkList(node, TYPE_ARGUMENTS, ASTTypeArgument.class, 1);
@@ -348,11 +417,11 @@ public class ParserTypesTest {
     }
 
     /**
-     * Tests argument list of nested argument lists (here, just multiple arguments).
+     * Tests type argument list of multiple type arguments.
      */
     @Test
     public void testTypeArgumentListNested() {
-        TypesParser parser = getTypesParser("Employee, ?, ? <: Number");
+        TypesParser parser = getTypesParser("Employee, _, out Number");
         ASTTypeArgumentList node = parser.parseTypeArgumentList();
         ensureNoErrors(node, parser);
         checkList(node, TYPE_ARGUMENTS, ASTTypeArgument.class, 3);
@@ -363,21 +432,21 @@ public class ParserTypesTest {
      */
     @Test
     public void testTypeArgumentOfWildcard() {
-        TypesParser parser = getTypesParser("?");
+        TypesParser parser = getTypesParser("_");
         ASTTypeArgument node = parser.parseTypeArgument();
         ensureNoErrors(node, parser);
         assertInstanceOf(ASTWildcard.class, node);
     }
 
     /**
-     * Tests type argument of data type.
+     * Tests type argument of type argument bounds.
      */
     @Test
-    public void testTypeArgumentOfDataType() {
+    public void testTypeArgumentOfTypeArgumentBounds() {
         TypesParser parser = getTypesParser("Employee");
         ASTTypeArgument node = parser.parseTypeArgument();
         ensureNoErrors(node, parser);
-        assertInstanceOf(ASTDataType.class, node);
+        assertInstanceOf(ASTTypeArgumentBounds.class, node);
     }
 
     /**
@@ -385,46 +454,47 @@ public class ParserTypesTest {
      */
     @Test
     public void testWildcard() {
-        TypesParser parser = getTypesParser("?");
+        TypesParser parser = getTypesParser("_");
         ASTWildcard node = parser.parseWildcard();
         ensureNoErrors(node, parser);
-        assertEquals(QUESTION_MARK, node.getWildcard().getKeyword());
-        assertFalse(node.getBounds().isPresent());
+        assertEquals(UNDERSCORE, node.getWildcard().getKeyword());
     }
 
     /**
-     * Tests wildcard with bounds.
+     * Tests type argument bounds of subtype.
      */
     @Test
-    public void testWildcardBounds() {
-        TypesParser parser = getTypesParser("? <: Employee");
-        ASTWildcard node = parser.parseWildcard();
+    public void testTypeArgumentBoundsOfSubtype() {
+        TypesParser parser = getTypesParser("out Employee");
+        ASTTypeArgumentBounds node = parser.parseTypeArgumentBounds();
         ensureNoErrors(node, parser);
-        assertEquals(QUESTION_MARK, node.getWildcard().getKeyword());
-        assertTrue(node.getBounds().isPresent());
-    }
-
-    /**
-     * Tests wildcard bounds of subtype.
-     */
-    @Test
-    public void testWildcardBoundsOfSubtype() {
-        TypesParser parser = getTypesParser("<: Employee");
-        ASTWildcardBounds node = parser.parseWildcardBounds();
-        ensureNoErrors(node, parser);
-        assertEquals(SUBTYPE, node.getBoundKeyword().getKeyword());
+        assertTrue(node.getGenericModifier().isPresent());
+        assertEquals(OUT, node.getGenericModifier().get().getKeyword());
         assertNotNull(node.getDataType());
     }
 
     /**
-     * Tests wildcard bounds of supertype.
+     * Tests type argument bounds of supertype.
      */
     @Test
-    public void testWildcardBoundsOfSupertype() {
-        TypesParser parser = getTypesParser(":> Employee");
-        ASTWildcardBounds node = parser.parseWildcardBounds();
+    public void testTypeArgumentBoundsOfSupertype() {
+        TypesParser parser = getTypesParser("in Employee");
+        ASTTypeArgumentBounds node = parser.parseTypeArgumentBounds();
         ensureNoErrors(node, parser);
-        assertEquals(SUPERTYPE, node.getBoundKeyword().getKeyword());
+        assertTrue(node.getGenericModifier().isPresent());
+        assertEquals(IN, node.getGenericModifier().get().getKeyword());
+        assertNotNull(node.getDataType());
+    }
+
+    /**
+     * Tests type argument bounds of data type.
+     */
+    @Test
+    public void testTypeArgumentBoundsOfDataType() {
+        TypesParser parser = getTypesParser("Manager");
+        ASTTypeArgumentBounds node = parser.parseTypeArgumentBounds();
+        ensureNoErrors(node, parser);
+        assertFalse(node.getGenericModifier().isPresent());
         assertNotNull(node.getDataType());
     }
     

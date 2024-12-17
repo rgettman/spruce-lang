@@ -24,18 +24,6 @@ public final class ASTRecordPattern extends ASTParentNode implements ASTPattern 
 
     /**
      * Constructs an <code>ASTRecordPattern</code> with the given Location,
-     * DataType, but no PatternList.
-     * @param location A <code>Location</code>.
-     * @param dataType An <code>ASTDataType</code>.
-     */
-    public ASTRecordPattern(Location location, ASTDataType dataType) {
-        super(location);
-        myDataType = dataType;
-        myPatternList = null;
-    }
-
-    /**
-     * Constructs an <code>ASTRecordPattern</code> with the given Location,
      * DataType, and PatternList.
      * @param location A <code>Location</code>.
      * @param dataType An <code>ASTDataType</code>.

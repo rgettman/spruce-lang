@@ -654,7 +654,7 @@ public class ScannerTest {
         line += "\ncase 2 when true:";
         line += "\n    fallthrough;";
         line += "\ndefault:";
-        line += "\n    out.println(a);";
+        line += "\n    stdout.println(a);";
         line += "\n}";
 
         List<Token> expectedTokens = Arrays.asList(
@@ -672,7 +672,7 @@ public class ScannerTest {
 
                 new Token(DEFAULT, "default"), new Token(COLON, ":"),
 
-                new Token(IDENTIFIER, "out"), new Token(DOT, "."),
+                new Token(IDENTIFIER, "stdout"), new Token(DOT, "."),
                 new Token(IDENTIFIER, "println"), new Token(OPEN_PARENTHESIS, "("), new Token(IDENTIFIER, "a"),
                 new Token(CLOSE_PARENTHESIS, ")"), new Token(SEMICOLON, ";"),
 
@@ -758,7 +758,7 @@ public class ScannerTest {
      */
     @Test
     public void testMiscOperators() {
-        String line = "a = == != <=> & &= | |= ^ ^= ~ && || &: ^: |: ! << <<= >> >>= + += - -= * *= / /= % %= <: :> ... ? b";
+        String line = "a = == != <=> & &= | |= ^ ^= ~ && || &: ^: |: ! << <<= >> >>= + += - -= * *= / /= % %= ... ? _ b";
 
         List<Token> expectedTokens = Arrays.asList(
                 new Token(IDENTIFIER, "a"),
@@ -778,9 +778,9 @@ public class ScannerTest {
                 new Token(STAR, "*"), new Token(STAR_EQUALS, "*="),
                 new Token(SLASH, "/"), new Token(SLASH_EQUALS, "/="),
                 new Token(PERCENT, "%"), new Token(PERCENT_EQUALS, "%="),
-                new Token(SUBTYPE, "<:"), new Token(SUPERTYPE, ":>"),
                 new Token(THREE_DOTS, "..."),
                 new Token(QUESTION_MARK, "?"),
+                new Token(UNDERSCORE, "_"),
                 new Token(IDENTIFIER, "b")
         );
 
@@ -991,6 +991,39 @@ public class ScannerTest {
             scanner.next();
         }
         ensureErrorToken(scanner.getCurrToken());
+    }
+
+    /**
+     * Tests in and out.
+     */
+    @Test
+    public void testInOut() {
+        String line = "Function<in T, out R>";
+
+        List<Token> expectedTokens = Arrays.asList(
+                new Token(IDENTIFIER, "Function"), new Token(LESS_THAN, "<"),
+                new Token(IN, "in"), new Token(IDENTIFIER, "T"), new Token(COMMA, ","),
+                new Token(OUT, "out"), new Token(IDENTIFIER, "R"), new Token(GREATER_THAN, ">")
+        );
+
+        Scanner scanner = new Scanner(line);
+        compareToExpected(expectedTokens, scanner);
+    }
+
+    /**
+     * Tests underscore by itself and as the start of an identifier.
+     */
+    @Test
+    public void testUnderscores() {
+        String line = "_a, _, _2";
+
+        List<Token> expectedTokens = Arrays.asList(
+                new Token(IDENTIFIER, "_a"), new Token(COMMA, ","),
+                new Token(UNDERSCORE, "_"), new Token(COMMA, ","), new Token(IDENTIFIER, "_2")
+        );
+
+        Scanner scanner = new Scanner(line);
+        compareToExpected(expectedTokens, scanner);
     }
 }
 

@@ -16,7 +16,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray Dims
  * </em>
  */
-public final class ASTArrayType extends ASTParentNode implements ASTDataType {
+public final class ASTArrayType extends ASTParentNode implements ASTBaseDataType {
     private final ASTDataTypeNoArray myDataTypeNoArray;
     private final ASTDims myDims;
 

@@ -133,6 +133,10 @@ public enum TokenType {
      * The token <code>...</code>.
      */
     THREE_DOTS("..."),
+    /**
+     * A "don't care" identifier.
+     */
+    UNDERSCORE("_"),
 
     // OPERATORS
 
@@ -293,15 +297,6 @@ public enum TokenType {
      * The token <code>%=</code>.
      */
     PERCENT_EQUALS("%="),
-    // Generics subtype/supertype.
-    /**
-     * The token <code>&lt;:</code>.
-     */
-    SUBTYPE("<:"),
-    /**
-     * The token <code>:&gt;</code>.
-     */
-    SUPERTYPE(":>"),
 
     // KEYWORDS
 
@@ -421,6 +416,10 @@ public enum TokenType {
      */
     IMPLEMENTS,
     /**
+     * Generics: the following type or a supertype.
+     */
+    IN,
+    /**
      * All functionality abstract except for default methods; constants.
      */
     INTERFACE,
@@ -463,6 +462,10 @@ public enum TokenType {
      * Create a new object, yielding an object reference.
      */
     NEW,
+    /**
+     * Generics: the following type or a subtype.
+     */
+    OUT,
     /**
      * With this modifier, the method MUST override a superclass method.
      */

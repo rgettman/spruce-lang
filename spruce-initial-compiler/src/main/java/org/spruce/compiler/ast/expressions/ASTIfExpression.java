@@ -8,31 +8,29 @@ import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTConditionalExpression</code> is a logical or expression or
- * a logical or expression, '?', an expression, ':', and another expression.</p>
- *
- * <p>The operators associated with conditional expressions are right-associative.</p>
+ * <p>An <code>ASTIfExpression</code> is a logical or expression or
+ * 'if', a logical or expression, 'use', an expression, 'else', and another expression.</p>
  *
  * <em>
- * ConditionalExpression:<br>
+ * IfExpression:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression ? Expression : Expression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;if LogicalOrExpression use Expression else Expression<br>
  * </em>
  */
-public final class ASTConditionalExpression extends ASTParentNode implements ASTValueExpression {
+public final class ASTIfExpression extends ASTParentNode implements ASTValueExpression {
     private final ASTValueExpression myCondition;
     private final ASTExpression myExprIfTrue;
     private final ASTExpression myExprIfFalse;
 
     /**
-     * Constructs an <code>ASTConditionalExpression</code> at the given <code>Location</code>
+     * Constructs an <code>ASTIfExpression</code> at the given <code>Location</code>
      * given a condition node, an expression if true, and an expression if false.
      * @param location The <code>Location</code>.
      * @param condition The <code>ASTValueExpression</code> representing the condition.
      * @param exprIfTrue The <code>ASTExpression</code> representing the expression value if true.
      * @param exprIfFalse The <code>ASTExpression</code> representing the expression value if false.
      */
-    public ASTConditionalExpression(Location location, ASTValueExpression condition, ASTExpression exprIfTrue, ASTExpression exprIfFalse) {
+    public ASTIfExpression(Location location, ASTValueExpression condition, ASTExpression exprIfTrue, ASTExpression exprIfFalse) {
         super(location);
         myCondition = condition;
         myExprIfTrue = exprIfTrue;

@@ -1672,7 +1672,7 @@ public class ParserClassesTest {
         ClassesParser parser = getClassesParser("""
                 {;
                     shared void utility() {
-                        out.println("Utility!");
+                        stdout.println("Utility!");
                     }
                 }
                 """);
@@ -1691,7 +1691,7 @@ public class ParserClassesTest {
                 {
                     RED, YELLOW, GREEN;
                     shared void utility() {
-                        out.println("Utility!");
+                        stdout.println("Utility!");
                     }
                 }
                 """);
@@ -2696,7 +2696,7 @@ public class ParserClassesTest {
      */
     @Test
     public void testMethodBodyOfBlock() {
-        ClassesParser parser = getClassesParser("{\n    out.println(\"Body!\");\n}");
+        ClassesParser parser = getClassesParser("{\n    stdout.println(\"Body!\");\n}");
         ASTMethodBody node = parser.parseMethodBody();
         ensureNoErrors(node, parser);
         assertTrue(node.getBlock().isPresent());

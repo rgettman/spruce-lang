@@ -1,6 +1,7 @@
 package org.spruce.compiler.parser;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.classes.ASTAnnotationList;
@@ -9,6 +10,7 @@ import org.spruce.compiler.ast.types.*;
 import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
+import org.spruce.compiler.scanner.TokenType;
 
 import static org.spruce.compiler.scanner.TokenType.*;
 
@@ -109,7 +111,7 @@ public class TypesParser extends BasicParser {
         Location loc = curr().getLocation();
         ASTAnnotationList annList = getClassesParser().parseAnnotationList();
         ASTIdentifier name = getNamesParser().parseIdentifier();
-        if (isCurr(SUBTYPE)) {
+        if (isCurr(COLON)) {
             return new ASTTypeParameter(loc, annList, name, parseTypeBound());
         }
         return new ASTTypeParameter(loc, annList, name);
@@ -119,13 +121,13 @@ public class TypesParser extends BasicParser {
      * Parses a <code>TypeBound</code>.
      * <em>
      * TypeBound:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;&lt;: IntersectionType<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;: IntersectionType<br>
      * </em>
      * @return An <code>ASTIntersectionType</code>.
      */
     public ASTIntersectionType parseTypeBound() {
-        if (accept(SUBTYPE) == null) {
-            error(curr().getLocation(), "Expected \"<:\".");
+        if (accept(COLON) == null) {
+            error(curr().getLocation(), "Expected ':'.");
         }
         return parseIntersectionType();
     }
@@ -134,13 +136,35 @@ public class TypesParser extends BasicParser {
      * Parses a <code>DataType</code>.
      * <em>
      * DataType:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;BaseDataType<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;BaseDataType !<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;BaseDataType ?
+     * </em>
+     * @return An <code>ASTDataType</code>.
+     */
+    public ASTDataType parseDataType() {
+        Location loc = curr().getLocation();
+        ASTBaseDataType base = parseBaseDataType();
+        List<TokenType> suffixes = Arrays.asList(QUESTION_MARK, EXCLAMATION);
+        if (isAcceptedOperator(suffixes) != null) {
+            ASTKeywordNode suffixOp = parseModifier(suffixes,
+                    "'?' or '!'");
+            return new ASTDataType(loc, base, suffixOp);
+        }
+        return new ASTDataType(loc, base);
+    }
+
+    /**
+     * Parses a <code>BaseDataType</code>.
+     * <em>
+     * BaseDataType:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ArrayType
      * </em>
-     * @return An <code>ASTDataType</code> that could be an
+     * @return An <code>ASTBaseDataType</code> that could be an
      *     <code>ASTDataTypeNoArray</code> or an <code>ASTArrayType</code>.
      */
-    public ASTDataType parseDataType() {
+    public ASTBaseDataType parseBaseDataType() {
         Location loc = curr().getLocation();
         ASTDataTypeNoArray dtna = parseDataTypeNoArray();
         if (isCurr(OPEN_CLOSE_BRACKET) || (isCurr(OPEN_BRACKET) && isNext(CLOSE_BRACKET)) ) {
@@ -263,7 +287,8 @@ public class TypesParser extends BasicParser {
                 ((isNext(IDENTIFIER) && isPeek(LESS_THAN)) ||
                         (isNext(IDENTIFIER) && isPeek(COMMA)) ||
                         (isNext(IDENTIFIER) && isPeek(GREATER_THAN)) ||
-                        (isNext(QUESTION_MARK))
+                        (isNext(UNDERSCORE)) ||
+                        (isNext(IN)) || (isNext(OUT))
                 )
                 ) {
             return new ASTSimpleType(loc, name, parseTypeArguments());
@@ -318,7 +343,7 @@ public class TypesParser extends BasicParser {
         if (accept(LESS_THAN) != null) {
             ASTTypeArgumentList typeArgList = parseTypeArgumentList();
             if (accept(GREATER_THAN) == null) {
-                error(curr().getLocation(), "Expected \">\".");
+                error(curr().getLocation(), "Expected '>'.");
             }
             setInTypeContext(false);
             return typeArgList;
@@ -335,7 +360,7 @@ public class TypesParser extends BasicParser {
      * @return Whether the given token can start a type argument.
      */
     private static boolean isTypeArgument(Token t) {
-        return test(t, Arrays.asList(QUESTION_MARK, IDENTIFIER));
+        return test(t, Arrays.asList(UNDERSCORE, IN, OUT, IDENTIFIER));
     }
 
     /**
@@ -366,67 +391,61 @@ public class TypesParser extends BasicParser {
      * Parses a <code>TypeArgument</code>.
      * <em>
      * TypeArgument:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Wildcard<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;in DataType<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;out DataType<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;DataType
      * </em>
      * @return An <code>ASTTypeArgument</code>: either an <code>ASTWildcard</code>
-     *     or an <code>ASTDataType</code>.
+     *     or an <code>ASTTypeArgumentBounds</code>.
      */
     public ASTTypeArgument parseTypeArgument() {
-        if (isCurr(QUESTION_MARK)) {
+        if (isCurr(UNDERSCORE)) {
             return parseWildcard();
         }
-        else if (isCurr(IDENTIFIER)) {
-            return parseDataType();
-        }
         else {
-            throw internalError("wildcard or data type");
+            return parseTypeArgumentBounds();
         }
+    }
+
+    /**
+     * Parses a <code>TypeArgumentBounds</code>.
+     * <em>
+     * TypeArgumentBounds:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;in DataType<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;out DataType<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;DataType
+     * </em>
+     * @return An <code>ASTTypeArgumentBounds</code>.
+     */
+    public ASTTypeArgumentBounds parseTypeArgumentBounds() {
+        Location loc = curr().getLocation();
+        if (isAcceptedOperator(Arrays.asList(IN, OUT)) != null) {
+            ASTKeywordNode genericModifier = parseModifier(Arrays.asList(IN, OUT),
+                    "'in' or 'out'");
+            return new ASTTypeArgumentBounds(loc, genericModifier, parseDataType());
+        }
+        return new ASTTypeArgumentBounds(loc, parseDataType());
     }
 
     /**
      * Parses a <code>Wildcard</code>.
      * <em>
      * WildCard:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;?<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;? WildcardBounds
+     * &nbsp;&nbsp;&nbsp;&nbsp;_
      * </em>
      * @return An <code>ASTWildcard</code>.
      */
     public ASTWildcard parseWildcard() {
         Location loc = curr().getLocation();
-        if (isCurr(QUESTION_MARK)) {
+        if (isCurr(UNDERSCORE)) {
             ASTKeywordNode wildcard = parseModifier(
-                    Arrays.asList(QUESTION_MARK),
-                    "'?'"
+                    Arrays.asList(UNDERSCORE),
+                    "'_'"
             );
-            if (isCurr(SUBTYPE) || isCurr(SUPERTYPE)) {
-                return new ASTWildcard(loc, wildcard, parseWildcardBounds());
-            }
-            else {
-                return new ASTWildcard(loc, wildcard);
-            }
+            return new ASTWildcard(loc, wildcard);
         }
         else {
-            throw internalError(QUESTION_MARK);
+            throw internalError(UNDERSCORE);
         }
-    }
-
-    /**
-     * Parses a <code>WildcardBounds</code>.
-     * <em>
-     * WildcardBounds:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;&lt;: DataType<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;:&gt; DataType
-     * </em>
-     * @return An <code>ASTWildcardBounds</code>.
-     */
-    public ASTWildcardBounds parseWildcardBounds() {
-        Location loc = curr().getLocation();
-        ASTKeywordNode boundKeyword = parseModifier(
-                Arrays.asList(SUBTYPE, SUPERTYPE),
-                "'<:' or ':>'."
-        );
-        return new ASTWildcardBounds(loc, boundKeyword, parseDataType());
     }
 }

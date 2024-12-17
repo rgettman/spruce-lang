@@ -579,7 +579,6 @@ public class ClassesParser extends BasicParser {
      * @return An <code>ASTVariant</code>.
      */
     public ASTVariant parseVariant() {
-        Location loc = curr().getLocation();
         ASTAnnotationList annList = parseAnnotationList();
         if (!isCurr(IDENTIFIER)) {
             throw internalError("'identifier'");

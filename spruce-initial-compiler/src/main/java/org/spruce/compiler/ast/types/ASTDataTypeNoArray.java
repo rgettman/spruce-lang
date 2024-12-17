@@ -18,7 +18,7 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray . SimpleType
  * </em>
  */
-public final class ASTDataTypeNoArray extends ASTListNode<ASTSimpleType> implements ASTDataType {
+public final class ASTDataTypeNoArray extends ASTListNode<ASTSimpleType> implements ASTBaseDataType {
     /**
      * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
      * list of child nodes, and a list type.

@@ -450,6 +450,7 @@ public class BasicParser {
      * <li>~</li>
      * <li>!</li>
      * <li>switch</li>
+     * <li>if</li>
      * <li>Primary</li>
      * </ul>
      * @param t A <code>Token</code>.
@@ -458,7 +459,7 @@ public class BasicParser {
      * @see #isLiteral
      */
     protected static boolean isValueExpression(Token t) {
-        return test(t, Arrays.asList(MINUS, TILDE, EXCLAMATION, SWITCH)) || isPrimary(t);
+        return test(t, Arrays.asList(MINUS, TILDE, EXCLAMATION, SWITCH, IF)) || isPrimary(t);
     }
 
     /**

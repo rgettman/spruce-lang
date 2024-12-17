@@ -11,11 +11,13 @@ import org.spruce.compiler.ast.classes.ASTElementValue;
  * &nbsp;&nbsp;&nbsp;&nbsp;ConditionalExpression
  * &nbsp;&nbsp;&nbsp;&nbsp;BinaryExpression
  * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression
+ * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression
+ * &nbsp;&nbsp;&nbsp;&nbsp;IsaExpression
  * &nbsp;&nbsp;&nbsp;&nbsp;SwitchExpression
  * &nbsp;&nbsp;&nbsp;&nbsp;Primary
  * </em>
  */
 public sealed interface ASTValueExpression extends ASTExpression, ASTElementValue
-        permits ASTConditionalExpression, ASTBinaryExpression, ASTUnaryExpression,
+        permits ASTIfExpression, ASTBinaryExpression, ASTUnaryExpression,
         ASTCastExpression, ASTIsaExpression, ASTSwitchExpression, ASTPrimary {
 }

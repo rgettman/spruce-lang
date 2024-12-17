@@ -7,6 +7,7 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.ast.types.ASTSimpleType;
 import org.spruce.compiler.scanner.Location;
@@ -51,9 +52,10 @@ public final class ASTLocalVariableDeclaration extends ASTParentNode implements 
         return new ASTLocalVariableDeclaration(loc,
                 new ASTVariableModifierList(loc, Collections.emptyList()),
                 new ASTLocalVariableType(loc,
-                        new ASTDataTypeNoArray(loc, Arrays.asList(
-                                new ASTSimpleType(loc,
-                                        new ASTIdentifier(loc, "Bad Local Variable Declaration"))))),
+                        new ASTDataType(loc,
+                                new ASTDataTypeNoArray(loc, Arrays.asList(
+                                        new ASTSimpleType(loc,
+                                               new ASTIdentifier(loc, "Bad Local Variable Declaration")))))),
                 new ASTVariableDeclaratorList(loc, Arrays.asList(
                         new ASTVariableDeclarator(loc,
                                 new ASTIdentifier(loc,"Bad local variable")))));
