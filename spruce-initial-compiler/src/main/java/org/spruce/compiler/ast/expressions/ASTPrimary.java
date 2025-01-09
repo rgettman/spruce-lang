@@ -19,6 +19,10 @@ import org.spruce.compiler.scanner.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;self<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . self<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;( Expression )<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;CollectionComprehension<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;CollectionExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;MapComprehension<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;MapExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess<br> // Array, List, Map access with [i]
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodInvocation<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ArrayCreationExpression<br>
@@ -31,6 +35,7 @@ public final class ASTPrimary extends ASTParentNode implements ASTValueExpressio
     public enum Type {
         LITERAL, CLASS_LITERAL, EXPR_NAME, SELF, TYPENAME_SELF, PAREN_EXPR, ELEMENT_ACCESS,
         METHOD_INVOCATION, ARRAY_CREATION_EXPR, CLASS_INSTANCE_CREATION_EXPR, FIELD_ACCESS, METHOD_REFERENCE,
+        COLLECTION_EXPR, COLLECTION_COMPREHENSION, MAP_EXPR, MAP_COMPREHENSION,
         BAD
     }
     private final Node myChild;
@@ -38,7 +43,7 @@ public final class ASTPrimary extends ASTParentNode implements ASTValueExpressio
 
     /**
      * Constructs an <code>ASTPrimary</code> at the given <code>Location</code>
-     * with the given <code>ASTNode</code> as its child, and with the given
+     * with the given <code>Node</code> as its child, and with the given
      * <code>Type</code>.
      * @param location The <code>Location</code>.
      * @param child The child <code>Node</code>.

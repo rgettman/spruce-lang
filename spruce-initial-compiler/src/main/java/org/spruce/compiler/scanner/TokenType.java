@@ -90,10 +90,6 @@ public enum TokenType {
      */
     CLOSE_BRACKET("]"),
     /**
-     * The token <code>[]</code>.
-     */
-    OPEN_CLOSE_BRACKET("[]"),
-    /**
      * The token <code>(</code>.
      */
     OPEN_PARENTHESIS("("),

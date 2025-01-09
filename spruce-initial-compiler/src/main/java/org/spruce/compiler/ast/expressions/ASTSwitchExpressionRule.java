@@ -29,8 +29,8 @@ public class ASTSwitchExpressionRule extends ASTParentNode {
 
     /**
      * Constructs an <code>ASTSwitchExpressionRule</code> at the given <code>Location</code>
-     * with the given <code>ASTSwitchLabel</code> and the given <code>ASTNode</code>
-     * representing an Expression.
+     * with the given <code>ASTSwitchLabel</code> and the given
+     * <code>ASTExpression</code>.
      * @param location The <code>Location</code>.
      * @param switchLabel An <code>ASTSwitchLabel</code>.
      * @param expr An <code>ASTExpression</code>.

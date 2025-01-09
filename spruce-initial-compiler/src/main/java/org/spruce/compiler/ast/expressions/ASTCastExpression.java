@@ -22,8 +22,8 @@ public final class ASTCastExpression extends ASTParentNode implements ASTValueEx
 
     /**
      * Constructs an <code>ASTCastExpression</code> at the given <code>Location</code>
-     * with the given <code>ASTExpression</code> and the given <code>ASTListNode</code>
-     * representing an IntersectionType.
+     * with the given <code>ASTExpression</code> and the given
+     * <code>ASTIntersectionType</code>.
      * @param location The <code>Location</code>.
      * @param expr An <code>ASTExpression</code>.
      * @param intersectionType An <code>ASTIntersectionType</code>.

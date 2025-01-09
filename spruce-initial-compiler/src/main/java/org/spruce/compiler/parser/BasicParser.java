@@ -451,6 +451,7 @@ public class BasicParser {
      * <li>!</li>
      * <li>switch</li>
      * <li>if</li>
+     * <li>for</li>
      * <li>Primary</li>
      * </ul>
      * @param t A <code>Token</code>.
@@ -459,7 +460,7 @@ public class BasicParser {
      * @see #isLiteral
      */
     protected static boolean isValueExpression(Token t) {
-        return test(t, Arrays.asList(MINUS, TILDE, EXCLAMATION, SWITCH, IF)) || isPrimary(t);
+        return test(t, Arrays.asList(MINUS, TILDE, EXCLAMATION, SWITCH, IF, FOR)) || isPrimary(t);
     }
 
     /**
@@ -471,6 +472,8 @@ public class BasicParser {
      * <li><code>new</code></li>
      * <li><code>super</code></li>
      * <li>(</li>
+     * <li>[</li>
+     * <li>{</li>
      * </ul>
      *
      * @param t A <code>Token</code>.
@@ -478,7 +481,7 @@ public class BasicParser {
      * @see #isLiteral
      */
     protected static boolean isPrimary(Token t) {
-        return isLiteral(t) || test(t, Arrays.asList(IDENTIFIER, SELF, OPEN_PARENTHESIS, NEW, SUPER));
+        return isLiteral(t) || test(t, Arrays.asList(IDENTIFIER, SELF, OPEN_PARENTHESIS, NEW, SUPER, OPEN_BRACKET, OPEN_BRACE));
     }
 
     /**

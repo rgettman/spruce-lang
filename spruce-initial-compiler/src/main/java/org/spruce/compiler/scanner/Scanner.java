@@ -241,7 +241,7 @@ public class Scanner {
                 case '#' -> createToken(TokenType.HASHTAG, String.valueOf(read()));
                 case '{' -> createToken(TokenType.OPEN_BRACE, String.valueOf(read()));
                 case '}' -> createToken(TokenType.CLOSE_BRACE, String.valueOf(read()));
-                case '[' -> readStartingWithOpenBracket();
+                case '[' -> createToken(TokenType.OPEN_BRACKET, String.valueOf(read()));
                 case ']' -> createToken(TokenType.CLOSE_BRACKET, String.valueOf(read()));
                 case '(' -> createToken(TokenType.OPEN_PARENTHESIS, String.valueOf(read()));
                 case ')' -> createToken(TokenType.CLOSE_PARENTHESIS, String.valueOf(read()));
@@ -636,21 +636,6 @@ public class Scanner {
             }
         }
         return createToken(TokenType.FLOATING_POINT_LITERAL, soFar.toString());
-    }
-
-    /**
-     * Scans "[" and "[]".
-     * @return The appropriate <code>Token</code>.
-     */
-    private Token readStartingWithOpenBracket() {
-        read();
-        if (peek() == ']') {
-            read();
-            return createToken(TokenType.OPEN_CLOSE_BRACKET, "[]");
-        }
-        else {
-            return createToken(TokenType.OPEN_BRACKET, "[");
-        }
     }
 
     /**

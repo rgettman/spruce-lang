@@ -25,7 +25,7 @@ public class ASTTypeArgumentsOrDiamond extends ASTParentNode {
 
     /**
      * Constructs an <code>ASTTypeArgumentsOrDiamond</code> at the given <code>Location</code>
-     * with an <code>ASTListNode</code> representing the TypeArguments.
+     * with an <code>ASTTypeArgumentList</code>.
      * @param location The <code>Location</code>.
      * @param typeArgs An <code>ASTTypeArgumentList</code>.
      */

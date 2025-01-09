@@ -20,7 +20,7 @@ public class ASTGuard extends ASTParentNode {
 
     /**
      * Constructs an <code>ASTGuard</code> at the given <code>Location</code>
-     * with the given <code>ASTNode</code> representing an Expression.
+     * with the given <code>ASTValueExpression</code>.
      * @param location The <code>Location</code>.
      * @param expr An <code>ASTValueExpression</code>.
      */

@@ -22,7 +22,7 @@ public final class ASTYieldStatement extends ASTParentNode implements ASTStateme
 
     /**
      * Constructs an <code>ASTYieldStatement</code> at the given <code>Location</code>
-     * given the <code>ASTNode </code> representing the Expression.
+     * given the <code>ASTExpression</code>.
      * @param location The <code>Location</code>.
      * @param expr <code>ASTExpression</code>.
      */

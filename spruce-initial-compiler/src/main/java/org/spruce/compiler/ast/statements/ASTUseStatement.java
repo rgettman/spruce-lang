@@ -22,7 +22,7 @@ public final class ASTUseStatement extends ASTParentNode implements ASTStatement
 
     /**
      * Constructs an <code>ASTUseStatement</code> at the given <code>Location</code>
-     * given the <code>ASTNode </code> representing the Expression.
+     * given the <code>ASTExpression</code>.
      * @param location The <code>Location</code>.
      * @param expr <code>ASTExpression</code> representing the Expression.
      */

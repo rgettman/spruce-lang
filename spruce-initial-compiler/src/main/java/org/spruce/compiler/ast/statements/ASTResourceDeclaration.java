@@ -28,9 +28,9 @@ public final class ASTResourceDeclaration extends ASTParentNode implements ASTRe
 
     /**
      * Constructs an <code>ASTResourceDeclaration</code> at the given <code>Location</code>
-     * with the given <code>ASTListNode</code> representing a VariableModifierList,
-     * the given <code>ASTIdentifier</code> representing the resource name, and
-     * the given <code>ASTNode</code> representing the Expression.
+     * with the given <code>ASTVariableModifierList</code>, the given
+     * <code>ASTIdentifier</code> representing the resource name, and the given
+     * <code>ASTExpression</code>.
      * @param location The <code>Location</code>.
      * @param varModifierList An <code>ASTVariableModifierList</code>.
      * @param localVarType An <code>ASTLocalVariableType</code>.

@@ -11,12 +11,12 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTAssertStatement</code> is "assert" followed by a value expression,
- * then optionally a colon and another value expression, then a semicolon.</p>
+ * then optionally "else" and another value expression, then a semicolon.</p>
  *
  * <em>
  * AssertStatement:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;assert ValueExpression ;<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;assert ValueExpression : ValueExpression;
+ * &nbsp;&nbsp;&nbsp;&nbsp;assert ValueExpression else ValueExpression;
  * </em>
  */
 public final class ASTAssertStatement extends ASTParentNode implements ASTStatement {
@@ -25,7 +25,7 @@ public final class ASTAssertStatement extends ASTParentNode implements ASTStatem
 
     /**
      * Constructs an <code>ASTAssertStatement</code> at the given <code>Location</code>
-     * with the given <code>ASTNode</code> representing the assert condition.
+     * with the given <code>ASTValueExpression</code> representing the assert condition.
      * @param location The <code>Location</code>.
      * @param condition An <code>ASTValueExpression</code> representing the assert condition.
      */
@@ -37,7 +37,8 @@ public final class ASTAssertStatement extends ASTParentNode implements ASTStatem
 
     /**
      * Constructs an <code>ASTAssertStatement</code> at the given <code>Location</code>
-     * with the given <code>ASTNode</code> representing the assert condition.
+     * with the given <code>ASTValueExpression</code> representing the assert condition
+     * and the given <code>ASTValueExpression</code> representing the assert message.
      * @param location The <code>Location</code>.
      * @param condition An <code>ASTValueExpression</code> representing the assert condition.
      * @param message An <code>ASTValueExpression</code> representing the message.

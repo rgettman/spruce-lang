@@ -185,7 +185,7 @@ public class ScannerTest {
                 new Token(ANNOTATION, "annotation"),
                 new Token(IDENTIFIER, "SuppressWarnings"),
                 new Token(OPEN_BRACE, "{"), new Token(IDENTIFIER, "String"),
-                new Token(OPEN_CLOSE_BRACKET, "[]"),
+                new Token(OPEN_BRACKET, "["), new Token(CLOSE_BRACKET, "]"),
                 new Token(IDENTIFIER, "value"),
                 new Token(OPEN_PARENTHESIS, "("), new Token(CLOSE_PARENTHESIS, ")"),
                 new Token(SEMICOLON, ";"), new Token(CLOSE_BRACE, "}")
@@ -364,7 +364,7 @@ public class ScannerTest {
                 new Token(OPEN_PARENTHESIS, "("),
                 new Token(VAR, "var"), new Token(MUT, "mut"),
                 new Token(INT, "int"),
-                new Token(OPEN_CLOSE_BRACKET, "[]"),
+                new Token(OPEN_BRACKET, "["), new Token(CLOSE_BRACKET, "]"),
                 new Token(IDENTIFIER, "nbrs"), new Token(COMMA, ","),
                 new Token(CONSTANT, "constant"), new Token(IDENTIFIER, "List"),
                 new Token(LESS_THAN, "<"), new Token(IDENTIFIER, "String"), new Token(GREATER_THAN, ">"),
@@ -413,9 +413,10 @@ public class ScannerTest {
                 new Token(IDENTIFIER, "obj"), new Token(CLOSE_PARENTHESIS, ")"),
                 new Token(OPEN_BRACE, "{"), new Token(CLOSE_BRACE, "}"),
 
-                new Token(INT, "int"), new Token(OPEN_CLOSE_BRACKET, "[]"),
+                new Token(INT, "int"), new Token(OPEN_BRACKET, "["), new Token(CLOSE_BRACKET, "]"),
                 new Token(IDENTIFIER, "iarray"), new Token(EQUAL, "="),
-                new Token(NEW, "new"), new Token(INT, "int"), new Token(OPEN_CLOSE_BRACKET, "[]"),
+                new Token(NEW, "new"), new Token(INT, "int"),
+                new Token(OPEN_BRACKET, "["), new Token(CLOSE_BRACKET, "]"),
                 new Token(OPEN_BRACE, "{"),
                 new Token(INT_LITERAL, "1"), new Token(COMMA, ","),
                 new Token(INT_LITERAL, "2"), new Token(COMMA, ","),
@@ -483,7 +484,7 @@ public class ScannerTest {
         List<Token> expectedTokens = Arrays.asList(
                 new Token(NEW, "new"), new Token(INT, "int"),
                 new Token(OPEN_BRACKET, "["), new Token(INT_LITERAL, "3"), new Token(CLOSE_BRACKET, "]"),
-                new Token(OPEN_CLOSE_BRACKET, "[]"), new Token(SEMICOLON, ";")
+                new Token(OPEN_BRACKET, "["), new Token(CLOSE_BRACKET, "]"), new Token(SEMICOLON, ";")
         );
         Scanner scanner = new Scanner(line);
         compareToExpected(expectedTokens, scanner);

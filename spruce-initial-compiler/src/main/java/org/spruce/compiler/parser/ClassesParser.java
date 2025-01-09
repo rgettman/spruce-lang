@@ -46,6 +46,15 @@ public class ClassesParser extends BasicParser {
      * General method to parse a nested type and produce a "part" type.  Reduces
      * code repetition because many different "part" nodes can contain any of
      * the same list of nested types.
+     * <em>
+     * TypeDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
+     * </em>
      * @param loc The <code>Location</code>.
      * @param annList An already parsed <code>ASTAnnotationList</code>, possibly empty.
      * @param accessMod An already parsed <code>ASTKeywordNode</code> representing an Access Modifier, if it was found.
@@ -155,12 +164,7 @@ public class ClassesParser extends BasicParser {
      * AnnotationPart:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationTypeElementDeclaration<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ConstantDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
+     * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration
      * </em>
      * @return An <code>ASTAnnotationPart</code> representing one of the above productions.
      */
@@ -255,7 +259,7 @@ public class ClassesParser extends BasicParser {
      * DefaultValue:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;default ElementValue
      * </em>
-     * @return An <code>ASTNode</code> representing the element value that is
+     * @return An <code>ASTElementValue</code> representing the element value that is
      *     the default value.
      */
     public ASTElementValue parseDefaultValue() {
@@ -764,12 +768,7 @@ public class ClassesParser extends BasicParser {
      * InterfacePart:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ConstantDeclaration<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceMethodDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
+     * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration
      * </em>
      * @return An <code>ASTInterfacePart</code> representing one of the above productions.
      */
@@ -1344,12 +1343,7 @@ public class ClassesParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;ConstructorDeclaration<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;FieldDeclaration<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;MethodDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
+     * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration
      * </em>
      * @return An <code>ASTClassPart</code>.
      */

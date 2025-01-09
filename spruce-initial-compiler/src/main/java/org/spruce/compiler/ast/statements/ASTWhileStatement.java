@@ -26,9 +26,8 @@ public final class ASTWhileStatement extends ASTParentNode implements ASTStateme
 
     /**
      * Constructs an <code>ASTWhileStatement</code> at the given <code>Location</code>
-     * with the given <code>ASTInit</code>, the given
-     * <code>ASTNode</code> representing a Conditional Expression, and the
-     * given <code>ASTBlock</code>.
+     * with the given <code>ASTInit</code>, the given <code>ASTValueExpression</code>
+     * representing the condition, and the given <code>ASTBlock</code>.
      * @param location The <code>Location</code>.
      * @param init An <code>ASTInit</code>.
      * @param valueExpr An <code>ASTValueExpression</code>.
@@ -43,7 +42,7 @@ public final class ASTWhileStatement extends ASTParentNode implements ASTStateme
 
     /**
      * Constructs an <code>ASTWhileStatement</code> at the given <code>Location</code>
-     * with the given <code>ASTNode</code> representing a Conditional Expression
+     * with the given <code>ASTValueExpression</code> representing the condition
      * and the given <code>ASTBlock</code>.
      * @param location The <code>Location</code>.
      * @param valueExpr An <code>ASTValueExpression</code>.

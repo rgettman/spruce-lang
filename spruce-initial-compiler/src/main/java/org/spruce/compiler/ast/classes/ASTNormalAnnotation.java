@@ -23,11 +23,11 @@ public final class ASTNormalAnnotation extends ASTParentNode implements ASTAnnot
 
     /**
      * Constructs an <code>ASTNormalAnnotation</code> at the given <code>Location</code>
-     * with the given <code>ASTTypeName</code> and the given <code>ASTListNode</code>
-     * representing the ElementValuePairList.
+     * with the given <code>ASTTypeName</code> and the given
+     * <code>ASTElementValuePairList</code>.
      * @param location The <code>Location</code>.
      * @param typeName An <code>ASTTypeName</code>.
-     * @param elementValuePairList An <code>ASTListNode</code> with type <code>ELEMENT_VALUE_PAIRS</code>.
+     * @param elementValuePairList An <code>ASTElementValuePairList</code>.
      */
     public ASTNormalAnnotation(Location location, ASTTypeName typeName, ASTElementValuePairList elementValuePairList) {
         super(location);

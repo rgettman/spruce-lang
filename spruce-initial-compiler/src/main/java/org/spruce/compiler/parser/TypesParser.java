@@ -167,7 +167,7 @@ public class TypesParser extends BasicParser {
     public ASTBaseDataType parseBaseDataType() {
         Location loc = curr().getLocation();
         ASTDataTypeNoArray dtna = parseDataTypeNoArray();
-        if (isCurr(OPEN_CLOSE_BRACKET) || (isCurr(OPEN_BRACKET) && isNext(CLOSE_BRACKET)) ) {
+        if (isCurr(OPEN_BRACKET) && isNext(CLOSE_BRACKET)) {
             ASTDims dims = parseDims();
             return new ASTArrayType(loc, dtna, dims);
         }
@@ -186,7 +186,7 @@ public class TypesParser extends BasicParser {
      * @return An <code>ASTDims</code>.
      */
     public ASTDims parseDims() {
-        return parseMultiple(t -> test(t, Arrays.asList(OPEN_CLOSE_BRACKET, OPEN_BRACKET)),
+        return parseMultiple(t -> test(t, Arrays.asList(OPEN_BRACKET)),
                 this::parseDim,
                 ASTDims::new
         );
@@ -198,23 +198,20 @@ public class TypesParser extends BasicParser {
      * Dim:
      * &nbsp;&nbsp;&nbsp;&nbsp;[]
      * </em>
-     * @return An <code>ASTKeywordNode</code> of keyword <code>OPEN_CLOSE_BRACKET</code>.
+     * @return An <code>ASTKeywordNode</code> of keyword <code>OPEN_BRACKET</code>.
      */
     public ASTKeywordNode parseDim() {
         Location loc = curr().getLocation();
-        if (isCurr(OPEN_CLOSE_BRACKET)) {
-            accept(OPEN_CLOSE_BRACKET);
-        }
-        else if (isCurr(OPEN_BRACKET)) {
+        if (isCurr(OPEN_BRACKET)) {
             accept(OPEN_BRACKET);
             if (accept(CLOSE_BRACKET) == null) {
                 error(loc, "Expected ']' following '['.");
             }
         }
         else {
-            throw internalError("'[]' or '['");
+            throw internalError(OPEN_BRACKET);
         }
-        return new ASTKeywordNode(loc, OPEN_CLOSE_BRACKET);
+        return new ASTKeywordNode(loc, OPEN_BRACKET);
     }
 
     /**
@@ -255,7 +252,7 @@ public class TypesParser extends BasicParser {
                 DOT,
                 this::parseSimpleType,
                 Arrays.asList(GREATER_THAN, OPEN_BRACE, OPEN_PARENTHESIS, SEMICOLON, DOUBLE_COLON,
-                        OPEN_BRACKET, OPEN_CLOSE_BRACKET, PIPE, GREATER_THAN, COMMA, AMPERSAND, THREE_DOTS,
+                        OPEN_BRACKET, PIPE, GREATER_THAN, COMMA, AMPERSAND, THREE_DOTS,
                         EXTENDS, IMPLEMENTS, PERMITS,  // Rest of type declaration
                         VOID, VAR, MUT,  // Result of method declaration
                         CLASS, NEW, SUPER, LESS_THAN, SELF,  // parts of primaries
@@ -378,7 +375,7 @@ public class TypesParser extends BasicParser {
                 COMMA,
                 this::parseTypeArgument,
                 Arrays.asList(GREATER_THAN, OPEN_BRACE, OPEN_PARENTHESIS, SEMICOLON, DOUBLE_COLON, NEW,
-                        OPEN_BRACKET, OPEN_CLOSE_BRACKET, PIPE, GREATER_THAN, COMMA, AMPERSAND, THREE_DOTS,
+                        OPEN_BRACKET, PIPE, GREATER_THAN, COMMA, AMPERSAND, THREE_DOTS,
                         EXTENDS, IMPLEMENTS, PERMITS,  // Rest of type declaration
                         VOID, VAR, MUT, // Result of method declaration
                         EOF

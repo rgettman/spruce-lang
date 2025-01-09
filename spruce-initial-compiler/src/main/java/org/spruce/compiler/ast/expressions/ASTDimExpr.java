@@ -8,7 +8,7 @@ import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.scanner.Location;
 
 /**
- * <p>An <code>ASTDimExpr</code> is a conditional expression inside brackets.</p>
+ * <p>An <code>ASTDimExpr</code> is a value expression inside brackets.</p>
  *
  * <em>
  * DimExpr:<br>

@@ -17,7 +17,7 @@ import org.spruce.compiler.scanner.Location;
  */
 public final class ASTInferredParameterList extends ASTListNode<ASTIdentifier> implements ASTLambdaParameterList {
     /**
-     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * Constructs an <code>ASTInferredParameterList</code> with a <code>Location</code>, a
      * list of child nodes, and a list type.
      *
      * @param location The <code>Location</code>.

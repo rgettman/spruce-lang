@@ -67,7 +67,7 @@ public final class ASTAnnotationDeclaration extends ASTAnnotatedNode implements 
 
     /**
      * Returns an <code>ASTKeywordNode</code> representing the Access Modifier, if it exists.
-     * @return An <code>Optional&lt;ASTListNode&gt;</code>.
+     * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
      */
     public Optional<ASTKeywordNode> getAccessMod() {
         return Optional.ofNullable(myAccessMod);

@@ -27,10 +27,8 @@ public final class ASTBasicForStatement extends ASTParentNode implements ASTForS
 
     /**
      * Constructs an <code>ASTBasicForStatement</code> at the given <code>Location</code>
-     * with the given <code>ASTInit</code>, the given
-     * <code>ASTNode</code> representing a Value Expression, the given
-     * <code>ASTListNode</code> representing a Statement Expression List, and
-     * the given <code>ASTBlock</code>.
+     * with the given <code>ASTInit</code>, the given <code>ASTValueExpression</code>,
+     * the given <code>ASTStatementExpressionList</code>, and the given <code>ASTBlock</code>.
      * @param location The <code>Location</code>.
      * @param init A possibly null <code>ASTInit</code>.
      * @param condExpr A possibly null <code>ASTValueExpression</code>.

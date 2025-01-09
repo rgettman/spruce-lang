@@ -1,0 +1,70 @@
+// Comprehensions / Generators / Literals
+
+[x * x for Int x in 0.thru(9)]  // Perhaps
+
+// Generator expressions, typed Iterator<T>.
+for (Int x in 0.thru(9)) x * x         // Iterator<Int> expression
+for (Int x in 0.thru(9)) x => x * x    // Iterator<Map.Entry<Int, Int>> expression
+
+a |-> b + c   // Looks too much like the end of LambdaParameters and rest of LambdaExpression.
+a => b + c    // Map a to (b + c)
+a: b + c      // I don't want labels anyway!
+
+for (List<Int> xs in a) for (Int x in xs if x > 1) x
+ForExpression:
+    ForHeaders:
+        ForHeader:
+            VariableDeclarator: List<Int> xs
+            ValueExpression: a
+            IfCondition: None
+        ForHeader:
+            VariableDeclarator: Int x
+            ValueExpression: xs
+            IfCondition: x > 1
+    Expr: x
+
+// Comprehensions, which use Generator expressions, are a Primary.
+[GeneratorExpression<T>]               // T[], List<T>, Set<T> depending on type inference!
+{GeneratorExpression<Map.Entry<K, V>>} // Map<K, V>
+
+// Defaults to List<List<Int>> in absence of target type inference.
+[for (Int i in 0.to(3)) [for (Int j in 0.to(3)) i + j]]
+CollectionComprehension:
+    ForHeaders:
+        ForHeader:
+            VariableDeclarator: Int i
+            ValueExpression: 0.to(3)
+            IfCondition: None
+    Expression:
+        CollectionComprehension:
+            ForHeaders:
+                ForHeader:
+                    VariableDeclarator: Int j
+                    ValueExpression: 0.to(3)
+                    IfCondition: None
+            Expression: i + j
+
+// Generators to actual types, explicitly.
+Arrays.fromGenerator(Generator<T> gen)
+ArrayList.fromGenerator(Generator<T> gen)
+TreeSet.fromGenerator(Generator<T> gen)
+HashMap.fromGenerator(Generator<Map.Entry<K, V>> gen)
+
+// Generators, explicitly.
+constructor(Iterable<U> itr, Function<U, T> mapper)
+
+// Precedence concerns?
+// Switch expressions - keep unary precedence to allow this.
+int x = z + switch someExpr {
+    case 2 -> x * x;
+    case 3 -> x * x * x;
+} + y;
+
+// If expressions - keep conditional low precedence because it ends in an expression.
+// Must force the user to parenthesize to force part of an expression "outside" the if.
+int x = z + if someExpr == 2 use x * x else x * x * x + y;
+int x = z + (if someExpr == 2 use x * x else x * x * x) + y;  // Necessary to put "+ y" outside of if.
+int x = z + (if someExpr == 2 use x * x else x * x * x + y);  // Unnecessary; default parsing.
+
+// For expressions - assign conditional low precedence for the same reasons as "if" expressions.
+Generator<Int> gen = for (List<Int> xs in a) for (Int x in xs if x > 1) x

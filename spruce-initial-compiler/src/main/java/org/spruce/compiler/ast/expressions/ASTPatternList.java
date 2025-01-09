@@ -16,7 +16,7 @@ import org.spruce.compiler.scanner.Location;
  */
 public class ASTPatternList extends ASTListNode<ASTPattern> {
     /**
-     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * Constructs an <code>ASTPatternList</code> with a <code>Location</code>, a
      * list of child nodes, and a list type.
      *
      * @param location The <code>Location</code>.

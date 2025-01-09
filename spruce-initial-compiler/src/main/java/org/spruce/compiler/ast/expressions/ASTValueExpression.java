@@ -4,20 +4,22 @@ import org.spruce.compiler.ast.classes.ASTElementValue;
 
 /**
  * An <code>ASTValueExpression</code> is an expression that represents a value.
- * It can be a Conditional Expression, a Binary Expression, a Unary Expression,
- * a Switch Expression, or a Primary.
+ * It can be an If Expression, a For Expression, a Binary Expression, a Unary
+ * Expression, a Switch Expression, a MapEntry, or a Primary.
  * <em>
- * ValueExpression:
- * &nbsp;&nbsp;&nbsp;&nbsp;ConditionalExpression
- * &nbsp;&nbsp;&nbsp;&nbsp;BinaryExpression
- * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression
- * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression
- * &nbsp;&nbsp;&nbsp;&nbsp;IsaExpression
- * &nbsp;&nbsp;&nbsp;&nbsp;SwitchExpression
+ * ValueExpression:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;IfExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ForExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;BinaryExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;IsaExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;SwitchExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;MapEntry<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Primary
  * </em>
  */
 public sealed interface ASTValueExpression extends ASTExpression, ASTElementValue
-        permits ASTIfExpression, ASTBinaryExpression, ASTUnaryExpression,
-        ASTCastExpression, ASTIsaExpression, ASTSwitchExpression, ASTPrimary {
+        permits ASTBinaryExpression, ASTCastExpression, ASTForExpression, ASTIfExpression, ASTIsaExpression,
+                ASTMapEntry, ASTPrimary, ASTSwitchExpression, ASTUnaryExpression {
 }

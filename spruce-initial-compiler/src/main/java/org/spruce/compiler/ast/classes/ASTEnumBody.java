@@ -22,8 +22,8 @@ public class ASTEnumBody extends ASTParentNode {
 
     /**
      * Constructs an <code>ASTEnumBody</code> at the given <code>Location</code>
-     * with the given <code>ASTListNode</code> representing an EnumConstantList
-     * and the given <code>ASTListNode</code> representing a ClassPartsList.
+     * with the given <code>ASTEnumConstantList</code> and the given
+     * <code>ASTClassPartList</code>.
      * @param location The <code>Location</code>.
      * @param enumConstants An <code>ASTEnumConstantList</code>.
      * @param classParts An <code>ASTClassPartList</code>.

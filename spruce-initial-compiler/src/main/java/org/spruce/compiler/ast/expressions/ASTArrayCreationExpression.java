@@ -16,21 +16,18 @@ import org.spruce.compiler.scanner.Location;
  *
  * <em>
  * ArrayCreationExpression:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;TypeToInstantiate DimExprs<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;TypeToInstantiate DimExprs Dims<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;TypeToInstantiate Dims ArrayInitializer
+ * &nbsp;&nbsp;&nbsp;&nbsp;new TypeToInstantiate DimExprs<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;new TypeToInstantiate DimExprs Dims
  * </em>
  */
 public class ASTArrayCreationExpression extends ASTParentNode {
     private final ASTTypeToInstantiate myTti;
     private final ASTDimExprs myDimExprs;
     private final ASTDims myDims;
-    private final ASTArrayInitializer myArrayInitializer;
 
     /**
      * Constructs an <code>ASTArrayCreationExpression</code> at the given <code>Location</code>
-     * with an <code>ASTTypeToInstantiate</code> and an <code>ASTListNode</code> representing
-     * the DimExprs.
+     * with an <code>ASTTypeToInstantiate</code> and an <code>ASTDimExprs</code>.
      * @param location The <code>Location</code>.
      * @param tti An <code>ASTTypeToInstantiate</code>.
      * @param dimExprs An <code>ASTDimExprs</code>.
@@ -40,13 +37,12 @@ public class ASTArrayCreationExpression extends ASTParentNode {
         myTti = tti;
         myDimExprs = dimExprs;
         myDims = null;
-        myArrayInitializer = null;
     }
 
     /**
      * Constructs an <code>ASTArrayCreationExpression</code> at the given <code>Location</code>
-     * with an <code>ASTTypeToInstantiate</code>, an <code>ASTListNode</code>
-     * representing the DimExprs, and an <code>ASTListNode</code> representing Dims.
+     * with an <code>ASTTypeToInstantiate</code>, an <code>ASTDimExprs</code>,
+     * and an <code>ASTDims</code>.
      * @param location The <code>Location</code>.
      * @param tti An <code>ASTTypeToInstantiate</code>.
      * @param dimExprs An <code>ASTDimExprs</code>.
@@ -57,25 +53,6 @@ public class ASTArrayCreationExpression extends ASTParentNode {
         myTti = tti;
         myDimExprs = dimExprs;
         myDims = dims;
-        myArrayInitializer = null;
-    }
-
-    /**
-     * Constructs an <code>ASTArrayCreationExpression</code> at the given <code>Location</code>
-     * with an <code>ASTTypeToInstantiate</code>, an <code>ListNode</code> representing Dims,
-     * and an <code>ASTListNode</code> representing an array initializer.
-     * @param location The <code>Location</code>.
-     * @param dims An <code>ASTDims</code>.
-     * @param arrayInitializer An <code>ASTArrayInitializer</code>.
-     * @param tti An <code>ASTTypeToInstantiate</code>.
-     */
-    public ASTArrayCreationExpression(Location location, ASTTypeToInstantiate tti, ASTDims dims,
-                                      ASTArrayInitializer arrayInitializer) {
-        super(location);
-        myTti = tti;
-        myDimExprs = null;
-        myDims = dims;
-        myArrayInitializer = arrayInitializer;
     }
 
     /**
@@ -87,11 +64,11 @@ public class ASTArrayCreationExpression extends ASTParentNode {
     }
 
     /**
-     * Returns an <code>ASTDimExprs</code>, if it exists.
-     * @return An <code>Optional&lt;ASTDimExprs&gt;</code>.
+     * Returns an <code>ASTDimExprs</code>.
+     * @return An <code>ASTDimExprs</code>.
      */
-    public Optional<ASTDimExprs> getDimExprs() {
-        return Optional.ofNullable(myDimExprs);
+    public ASTDimExprs getDimExprs() {
+        return myDimExprs;
     }
 
     /**
@@ -102,26 +79,13 @@ public class ASTArrayCreationExpression extends ASTParentNode {
         return Optional.ofNullable(myDims);
     }
 
-    /**
-     * Returns an <code>ASTArrayInitializer</code>, if it exists.
-     * @return An <code>Optional&lt;ASTArrayInitializer&gt;</code>.
-     */
-    public Optional<ASTArrayInitializer> getArrayInitializer() {
-        return Optional.ofNullable(myArrayInitializer);
-    }
-
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(3);
+        List<Node> children = new ArrayList<>(2);
         children.add(myTti);
-        if (myDimExprs != null) {
-            children.add(myDimExprs);
-        }
+        children.add(myDimExprs);
         if (myDims != null) {
             children.add(myDims);
-        }
-        if (myArrayInitializer != null) {
-            children.add(myArrayInitializer);
         }
         return children;
     }

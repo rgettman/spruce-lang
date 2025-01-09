@@ -25,7 +25,7 @@ public class ASTSimpleType extends ASTParentNode {
     /**
      * Constructs an <code>ASTSimpleType</code> at the given <code>Location</code>
      * with the given <code>ASTIdentifier</code> representing the name, and the
-     * given <code>ASTListNode</code> representing the TypeArguments.
+     * given <code>ASTTypeArgumentList</code>.
      * @param location The <code>Location</code>.
      * @param name An <code>ASTIdentifier</code> representing the name.
      * @param typeArgs An <code>ASTTypeArgumentList</code>.

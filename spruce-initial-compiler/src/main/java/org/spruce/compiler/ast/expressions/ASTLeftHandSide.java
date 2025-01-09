@@ -5,7 +5,7 @@ import org.spruce.compiler.ast.names.ASTExpressionName;
 
 /**
  * <p>An <code>ASTLeftHandSide</code> is an expression suitable for the left-
- * hand side of an assignment expression.</p>
+ * hand side of an assignment statement.</p>
  *
  * <em>
  * LeftHandSide:<br>

@@ -23,8 +23,8 @@ public final class ASTSwitchStatement extends ASTParentNode implements ASTStatem
 
     /**
      * Constructs an <code>ASTSwitchStatement</code> at the given <code>Location</code>
-     * with the given <code>ASTNode</code> representing the Conditional Expression
-     * and the given <code>ASTListNode</code> of type <code>SWITCH_STMT_RULES</code>.
+     * with the given <code>ASTValueExpression</code> and the given
+     * <code>ASTSwitchStatementRules</code>.
      * @param location The <code>Location</code>.
      * @param valueExpr An <code>ASTValueExpression</code>.
      * @param switchStmtRules An <code>ASTSwitchStatementRules</code>.

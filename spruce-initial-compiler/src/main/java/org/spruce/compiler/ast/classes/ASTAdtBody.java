@@ -22,8 +22,8 @@ public class ASTAdtBody extends ASTParentNode {
 
     /**
      * Constructs an <code>ASTAdtBody</code> at the given <code>Location</code>
-     * with the given <code>ASTListNode</code> representing a VariantList and
-     * the given <code>ASTListNode</code> representing an InterfacePartList.
+     * with the given <code>ASTVariantList</code> and the given
+     * <code>ASTInterfacePartList</code>.
      * @param location The <code>Location</code>.
      * @param variantList An <code>ASTVariantList</code>.
      * @param bodyDecls An <code>ASTInterfacePartList</code>.

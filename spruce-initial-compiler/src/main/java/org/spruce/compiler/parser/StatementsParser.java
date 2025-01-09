@@ -97,7 +97,7 @@ public class StatementsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
      * </em>
-     * @return An <code>ASTNode</code> representing a Local Variable
+     * @return An <code>ASTBlockStatement</code> representing a Local Variable
      *     Declaration Statement or a Statement.
      */
     public ASTBlockStatement parseBlockStatement() {
@@ -265,7 +265,7 @@ public class StatementsParser extends BasicParser {
         ASTIdentifier varName = getNamesParser().parseIdentifier();
         if (isCurr(EQUAL)) {
             accept(EQUAL);
-            return new ASTVariableDeclarator(loc, varName, getExpressionsParser().parseVariableInitializer());
+            return new ASTVariableDeclarator(loc, varName, getExpressionsParser().parseExpression());
         }
         return new ASTVariableDeclarator(loc, varName);
     }
@@ -758,7 +758,7 @@ public class StatementsParser extends BasicParser {
         }
         else {
             ASTInit init = parseInit();
-            if (isCurr(COLON)) {
+            if (isCurr(IN)) {
                 return parseEnhancedForStatement(loc, init);
             }
             else {
@@ -768,17 +768,20 @@ public class StatementsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>EnhancedForStatement</code>, given that "for (" has
+     * <p>Parses an <code>EnhancedForStatement</code>, given that "for (" has
      * already been parsed, and following that the given <code>ASTInit</code>
-     * was found and parsed before the colon.
-     *
+     * was found and parsed before the colon.</p>
+     * <em>
+     * EnhancedForStatement:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;for ( LocalVariableDeclaration in ValueExpression ) Block<br>
+     * </em>
      * @param locFor The location of the "for" keyword, already parsed.
      * @param init An already parsed <code>ASTInit</code>.
      * @return An <code>ASTEnhancedForStatement</code>.
      */
     public ASTEnhancedForStatement parseEnhancedForStatement(Location locFor, ASTInit init) {
-        if (accept(COLON) == null) {
-            throw internalError(COLON);
+        if (accept(IN) == null) {
+            throw internalError(IN);
         }
         ASTLocalVariableDeclaration localVariableDecl;
         if (init instanceof ASTLocalVariableDeclaration localVarDecl) {
@@ -1126,7 +1129,7 @@ public class StatementsParser extends BasicParser {
      * <em>
      * AssertStatement:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;assert ValueExpression ;<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;assert ValueExpression : ValueExpression;
+     * &nbsp;&nbsp;&nbsp;&nbsp;assert ValueExpression else ValueExpression;
      * </em>
      * @return An <code>ASTAssertStatement</code>.
      */
@@ -1137,8 +1140,8 @@ public class StatementsParser extends BasicParser {
         }
         ASTAssertStatement node;
         ASTValueExpression condition = getExpressionsParser().parseValueExpression();
-        if (isCurr(COLON)) {
-            accept(COLON);
+        if (isCurr(ELSE)) {
+            accept(ELSE);
             ASTValueExpression message = getExpressionsParser().parseValueExpression();
             node = new ASTAssertStatement(loc, condition, message);
         }

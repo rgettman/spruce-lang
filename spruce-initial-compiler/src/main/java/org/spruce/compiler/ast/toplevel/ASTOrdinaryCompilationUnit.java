@@ -46,7 +46,7 @@ public class ASTOrdinaryCompilationUnit extends ASTParentNode {
      * with the given <code>ASTNamespaceDeclaration</code>, the given
      * <code>ASTUseDeclarationList</code>, and the given <code>ASTTypeDeclarationList</code>.
      * @param location The <code>Location</code>.
-     * @param useDeclList An <code>ASTListNode</code> of type <code>USE_DECLARATIONS</code>.
+     * @param useDeclList An <code>ASTUseDeclarationList</code>.
      * @param typeDeclList An <code>ASTTypeDeclarationList</code>.
      */
     public ASTOrdinaryCompilationUnit(Location location, ASTUseDeclarationList useDeclList, ASTTypeDeclarationList typeDeclList) {

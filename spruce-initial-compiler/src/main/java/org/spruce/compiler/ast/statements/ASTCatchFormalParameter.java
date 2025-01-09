@@ -25,8 +25,8 @@ public class ASTCatchFormalParameter extends ASTParentNode {
 
     /**
      * Constructs an <code>ASTCatchFormalParameter</code> at the given <code>Location</code>
-     * with the given <code>ASTListNode</code>s representing a Variable Modifier List and
-     * a Catch Type, and an <code>ASTIdentifier</code> representing the variable name.
+     * with the given <code>ASTVariableModifierList</code>, an <code>ASTCatchType</code>,
+     * and an <code>ASTIdentifier</code> representing the variable name.
      * @param location The <code>Location</code>.
      * @param varModifierList An <code>ASTVariableModifierList</code>.
      * @param catchType An <code>ASTCatchType</code>.

@@ -43,7 +43,7 @@ public final class ASTElementAccess extends ASTParentNode implements ASTLeftHand
 
     /**
      * Constructs an <code>ASTElementAccess</code> at the given <code>Location</code>
-     * with the given <code>ASTPrimary</code> and the given <code>ASTValueExpression</code>
+     * with the given <code>ASTElementAccess</code> and the given <code>ASTValueExpression</code>
      * representing the index Expression.
      * @param location The <code>Location</code>.
      * @param chain Another <code>ASTElementAccess</code> representing an earlier Element Access.
@@ -67,7 +67,7 @@ public final class ASTElementAccess extends ASTParentNode implements ASTLeftHand
     /**
      * Returns an <code>ASTElementAccess</code> representing the chained
      * ElementAccess, if it exists.
-     * @return An <code>Optional&lt;ASTNode&gt;</code>.
+     * @return An <code>Optional&lt;ASTElementAccess&gt;</code>.
      */
     public Optional<ASTElementAccess> getElementAccess() {
         return Optional.ofNullable(myElementAccess);
@@ -83,7 +83,7 @@ public final class ASTElementAccess extends ASTParentNode implements ASTLeftHand
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(3);
+        List<Node> children = new ArrayList<>(2);
         if (myPrimary != null) {
             children.add(myPrimary);
         }

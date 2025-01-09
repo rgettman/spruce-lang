@@ -23,7 +23,7 @@ public final class ASTLambdaExpression extends ASTParentNode implements ASTExpre
     /**
      * Constructs an <code>ASTLambdaExpression</code> at the given <code>Location</code>
      * with the given <code>ASTLambdaParameters</code> and the given
-     * <code>ASTNode</code> representing a Lambda Body.
+     * <code>ASTLambdaBody</code>.
      * @param location The <code>Location</code>.
      * @param lambdaParameters A <code>ASTLambdaParameters</code>.
      * @param lambdaBody An <code>ASTLambdaBody</code>.

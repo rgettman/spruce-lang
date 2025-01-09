@@ -6,23 +6,23 @@ import java.util.Optional;
 
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
-import org.spruce.compiler.ast.expressions.ASTVariableInitializer;
+import org.spruce.compiler.ast.expressions.ASTExpression;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTVariableDeclarator</code> is an identifier optionally
- * followed by assignment to a variable initializer.</p>
+ * followed by assignment to an expression.</p>
  *
  * <em>
  * VariableDeclarator:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Identifier = VariableInitializer
+ * &nbsp;&nbsp;&nbsp;&nbsp;Identifier = Expression
  * </em>
  */
 public class ASTVariableDeclarator extends ASTParentNode {
     private final ASTIdentifier myVarName;
-    private final ASTVariableInitializer myVarInitializer;
+    private final ASTExpression myExpr;
 
     /**
      * Constructs an <code>ASTVariableDeclarator</code> at the given <code>Location</code>
@@ -33,21 +33,21 @@ public class ASTVariableDeclarator extends ASTParentNode {
     public ASTVariableDeclarator(Location location, ASTIdentifier varName) {
         super(location);
         myVarName = varName;
-        myVarInitializer = null;
+        myExpr = null;
     }
 
     /**
      * Constructs an <code>ASTVariableDeclarator</code> at the given <code>Location</code>
      * with the given <code>ASTIdentifier</code> representing the variable name
-     * and the given <code>ASTNode</code> representing the variable initializer.
+     * and the given <code>ASTExpression</code>.
      * @param location The <code>Location</code>.
      * @param varName An <code>ASTIdentifier</code> representing the variable name.
-     * @param varInitializer An <code>ASTVariableInitializer</code>.
+     * @param expr An <code>ASTExpression</code>.
      */
-    public ASTVariableDeclarator(Location location, ASTIdentifier varName, ASTVariableInitializer varInitializer) {
+    public ASTVariableDeclarator(Location location, ASTIdentifier varName, ASTExpression expr) {
         super(location);
         myVarName = varName;
-        myVarInitializer = varInitializer;
+        myExpr = expr;
     }
 
     /**
@@ -59,19 +59,19 @@ public class ASTVariableDeclarator extends ASTParentNode {
     }
 
     /**
-     * Returns an <code>ASTVariableInitializer</code>, if it exists.
-     * @return An <code>Optional&lt;ASTVariableInitializer&gt;</code>.
+     * Returns an <code>ASTExpression</code>, if it exists.
+     * @return An <code>Optional&lt;ASTExpression&gt;</code>.
      */
-    public Optional<ASTVariableInitializer> getVarInitializer() {
-        return Optional.ofNullable(myVarInitializer);
+    public Optional<ASTExpression> getVarInitializer() {
+        return Optional.ofNullable(myExpr);
     }
 
     @Override
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(2);
         children.add(myVarName);
-        if (myVarInitializer != null) {
-            children.add(myVarInitializer);
+        if (myExpr != null) {
+            children.add(myExpr);
         }
         return children;
     }

@@ -15,8 +15,8 @@ import org.spruce.compiler.scanner.Location;
  */
 public class ASTAnnotationPartList extends ASTListNode<ASTAnnotationPart> {
     /**
-     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
-     * list of child nodes, and a list type.
+     * Constructs an <code>ASTAnnotationPartList</code> with a <code>Location</code>,
+     * a list of child nodes, and a list type.
      *
      * @param location The <code>Location</code>.
      * @param children A <code>List</code> of <code>ASTAnnotationPart</code>s.

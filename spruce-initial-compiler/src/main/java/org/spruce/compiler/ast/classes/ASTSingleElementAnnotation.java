@@ -23,8 +23,8 @@ public final class ASTSingleElementAnnotation extends ASTParentNode implements A
 
     /**
      * Constructs an <code>ASTSingleElementAnnotation</code> at the given <code>Location</code>
-     * with the given <code>ASTTypeName</code> and the given <code>ASTNode</code>
-     * representing the ElementValue.
+     * with the given <code>ASTTypeName</code> and the given
+     * <code>ASTElementValue</code>.
      * @param location The <code>Location</code>.
      * @param typeName An <code>ASTTypeName</code>.
      * @param elementValue An <code>ASTElementValue</code>.

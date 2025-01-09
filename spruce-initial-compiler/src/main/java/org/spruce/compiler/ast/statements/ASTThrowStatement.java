@@ -22,7 +22,7 @@ public final class ASTThrowStatement extends ASTParentNode implements ASTStateme
 
     /**
      * Constructs an <code>ASTThrowStatement</code> at the given <code>Location</code>
-     * with the given <code>ASTNode</code> representing the Conditional Expression.
+     * with the given <code>ASTValueExpression</code>.
      * @param location The <code>Location</code>.
      * @param valueExpr An <code>ASTValueExpression</code>.
      */

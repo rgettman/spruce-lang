@@ -11,6 +11,7 @@ import org.spruce.compiler.ast.literals.ASTLiteral;
 import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.names.ASTTypeName;
+import org.spruce.compiler.ast.statements.ASTLocalVariableDeclaration;
 import org.spruce.compiler.ast.statements.ASTVariableModifierList;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.ast.types.ASTDims;
@@ -208,45 +209,132 @@ public class ExpressionsParser extends BasicParser {
     /**
      * Parses a <code>ValueExpression</code>.
      * <em>
-     * ValueExpression:
-     * &nbsp;&nbsp;&nbsp;&nbsp;IfExpression
-     * &nbsp;&nbsp;&nbsp;&nbsp;BinaryExpression
-     * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression
-     * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression
-     * &nbsp;&nbsp;&nbsp;&nbsp;IsaExpression
-     * &nbsp;&nbsp;&nbsp;&nbsp;SwitchExpression
+     * ValueExpression:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;IfExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ForExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;BinaryExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;IsaExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;SwitchExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;MapEntry<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;Primary
-     * </em>
-     * <em>
-     * IfExpression:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;if LogicalOrExpression use Expression else Expression<br>
      * </em>
      * @return An implementation of <code>ASTValueExpression</code>.
      */
     public ASTValueExpression parseValueExpression() {
         if (isValueExpression(curr())) {
             if (isCurr(IF)) {
-                Location loc = curr().getLocation();
-                accept(IF);
-                ASTValueExpression logicalOrExpr = parseLogicalOrExpression();
-                if (accept(USE) == null) {
-                    error(curr().getLocation(), "Expected 'use'.");
-                }
-                ASTExpression exprIfTrue = parseExpression();
-                if (accept(ELSE) == null) {
-                    error(curr().getLocation(), "Expected 'else'.");
-                }
-                ASTExpression exprIfFalse = parseExpression();
-                    return new ASTIfExpression(loc, logicalOrExpr, exprIfTrue, exprIfFalse);
+                return parseIfExpression();
+            }
+            else if (isCurr(FOR)) {
+                return parseForExpression();
             }
             else {
-                return parseLogicalOrExpression();
+                ASTValueExpression valueExpr = parseLogicalOrExpression();
+                if (isCurr(COLON)) {
+                    return parseMapEntry(valueExpr);
+                }
+                else {
+                    return valueExpr;
+                }
             }
         }
         else {
             error(curr().getLocation(), "Expected a value expression.");
             return parseBadPrimary(EXPRESSION_STOPPERS);
+        }
+    }
+
+    /**
+     * Parses an <code>IfExpression</code>.
+     * <em>
+     * IfExpression:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;if LogicalOrExpression use Expression else Expression<br>
+     * </em>
+     * @return An <code>ASTIfExpression</code>.
+     */
+    public ASTIfExpression parseIfExpression() {
+        Location loc = curr().getLocation();
+        if (accept(IF) == null) {
+            throw internalError(IF);
+        }
+        ASTValueExpression logicalOrExpr = parseLogicalOrExpression();
+        if (accept(USE) == null) {
+            error(curr().getLocation(), "Expected 'use'.");
+        }
+        ASTExpression exprIfTrue = parseExpression();
+        if (accept(ELSE) == null) {
+            error(curr().getLocation(), "Expected 'else'.");
+        }
+        ASTExpression exprIfFalse = parseExpression();
+        return new ASTIfExpression(loc, logicalOrExpr, exprIfTrue, exprIfFalse);
+    }
+
+    /**
+     * Parses a <code>ForExpression</code>.
+     * <em>
+     * ForExpression:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ForHeaderList Expression<br>
+     * </em>
+     * @return An <code>ASTForExpression</code>.
+     */
+    public ASTForExpression parseForExpression() {
+        Location loc = curr().getLocation();
+        return new ASTForExpression(loc, parseForHeaderList(), parseExpression());
+    }
+
+    /**
+     * Parses a <code>ForHeaderList</code>.
+     * <em>
+     * ForHeaderList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ForHeader {ForHeader}<br>
+     * </em>
+     * @return An <code>ASTForHeaderList</code>.
+     */
+    public ASTForHeaderList parseForHeaderList() {
+        return parseMultiple(t -> test(t, Arrays.asList(FOR)),
+                this::parseForHeader,
+                ASTForHeaderList::new
+        );
+    }
+
+    /**
+     * Parses a <code>ForHeader</code>.
+     * <em>
+     * ForHeader:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;for ( LocalVariableDeclaration in ValueExpression )<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;for ( LocalVariableDeclaration in ValueExpression if ValueExpression )<br>
+     * </em>
+     * @return An <code>ASTForHeader</code>.
+     */
+    public ASTForHeader parseForHeader() {
+        Location loc = curr().getLocation();
+        if (accept(FOR) == null) {
+            throw internalError(FOR);
+        }
+        if (accept(OPEN_PARENTHESIS) == null) {
+            error(curr().getLocation(), "Expected '('.");
+        }
+        ASTLocalVariableDeclaration localVarDecl = getStatementsParser().parseLocalVariableDeclaration();
+        if (accept(IN) == null) {
+            error(curr().getLocation(), "Expected 'in'");
+        }
+        ASTValueExpression valueExpr = parseValueExpression();
+        ASTValueExpression condition = null;
+        if (isCurr(IF)) {
+            accept(IF);
+            condition = parseValueExpression();
+        }
+        if (accept(CLOSE_PARENTHESIS) == null) {
+            error(curr().getLocation(), "Expected ')'.");
+        }
+
+        if (condition != null) {
+            return new ASTForHeader(loc, localVarDecl, valueExpr, condition);
+        }
+        else {
+            return new ASTForHeader(loc, localVarDecl, valueExpr);
         }
     }
 
@@ -715,7 +803,7 @@ public class ExpressionsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTListNode</code>, <code>ASTPattern</code>s,
+     * Parses a <code>PatternList</code>, <code>ASTPattern</code>s,
      * separated by a comma, that are either <code>ASTTypePattern</code>s or
      * <code>ASTRecordPattern</code>s.
      * <em>
@@ -823,6 +911,10 @@ public class ExpressionsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>self</strong><br>
      * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . self<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>( Expression )</strong><br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;<strong>CollectionComprehension</strong><br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;<strong>CollectionExpression</strong><br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;<strong>MapComprehension</strong><br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;<strong>MapExpression</strong><br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess<br> // Array, List, Map access with [i]
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>MethodInvocation</strong><br>
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>ArrayCreationExpression</strong><br>
@@ -909,6 +1001,37 @@ public class ExpressionsParser extends BasicParser {
             }
             primary = new ASTPrimary(loc, expression, PAREN_EXPR);
         }
+        else if (isCurr(OPEN_BRACKET)) {
+            accept(OPEN_BRACKET);
+            if (isCurr(FOR)) {
+                // Collection Comprehension
+                ASTForExpression forExpr = parseForExpression();
+                primary = new ASTPrimary(loc, new ASTCollectionComprehension(loc, forExpr), COLLECTION_COMPREHENSION);
+            }
+            else {
+                // Collection Expression
+                primary = new ASTPrimary(loc, new ASTCollectionExpression(loc, parseArgumentList()), COLLECTION_EXPR);
+            }
+            if (accept(CLOSE_BRACKET) == null) {
+                error(curr().getLocation(), "Expected ']'.");
+            }
+        }
+        else if (isCurr(OPEN_BRACE)) {
+            accept(OPEN_BRACE);
+            if (isCurr(FOR)) {
+                // Map Comprehension
+                ASTForExpression forExpr = parseForExpression();
+                primary = new ASTPrimary(loc, new ASTMapComprehension(loc, forExpr), MAP_COMPREHENSION);
+            }
+            else {
+                // Map Expression
+                primary = new ASTPrimary(loc, new ASTMapExpression(loc, parseArgumentList()), MAP_EXPR);
+
+            }
+            if (accept(CLOSE_BRACE) == null) {
+                error(curr().getLocation(), "Expected '}'.");
+            }
+        }
         else if (isCurr(NEW)) {
             if (isNext(LESS_THAN)) {
                 // ClassInstanceCreationExpression
@@ -919,7 +1042,7 @@ public class ExpressionsParser extends BasicParser {
                 accept(NEW);
                 // Assume an identifier is next.
                 ASTTypeToInstantiate tti = parseTypeToInstantiate();
-                if (isCurr(OPEN_BRACKET) || isCurr(OPEN_CLOSE_BRACKET)) {
+                if (isCurr(OPEN_BRACKET)) {
                     // ArrayCreationExpression
                     primary = new ASTPrimary(loc, parseArrayCreationExpression(tti), ARRAY_CREATION_EXPR);
                 }
@@ -951,6 +1074,10 @@ public class ExpressionsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;self<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>TypeName . self</strong><br>
      * &nbsp;&nbsp;&nbsp;&nbsp;( Expression )<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;CollectionComprehension<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;CollectionExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;MapComprehension<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;MapExpression<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ElementAccess<br> // Array, List, Map access with [i]
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>MethodInvocation</strong><br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ArrayCreationExpression<br>
@@ -1063,6 +1190,10 @@ public class ExpressionsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;self<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . self<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;( Expression )<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;CollectionComprehension<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;CollectionExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;MapComprehension<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;MapExpression<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>ElementAccess</strong><br> // Array, List, Map access with [i]
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>MethodInvocation</strong><br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ArrayCreationExpression<br>
@@ -1128,6 +1259,26 @@ public class ExpressionsParser extends BasicParser {
             }
         }
         return primary;
+    }
+
+    /**
+     * <p>Parses a <code>MapEntry</code>, given an already parsed
+     * <code>ASTValueExpression</code> representing the key.  It is expected
+     * that the parser is already on the colon.</p>
+     * <em>
+     * MapEntry:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;LogicalOrExpression : LogicalOrExpression
+     * </em>
+     * @param key An already parsed <code>ASTValueExpression</code>.
+     * @return An <code>ASTMapEntry</code>.
+     */
+    public ASTMapEntry parseMapEntry(ASTValueExpression key) {
+        Location loc = key.getLocation();
+        if (accept(COLON) == null) {
+            throw internalError(COLON);
+        }
+        ASTValueExpression value = parseLogicalOrExpression();
+        return new ASTMapEntry(loc, key, value);
     }
 
     /**
@@ -1626,42 +1777,28 @@ public class ExpressionsParser extends BasicParser {
     }
 
     /**
-     * Parses an <code>ASTArrayCreationExpression</code>, using an
+     * <p>Parses an <code>ASTArrayCreationExpression</code>, using an
      * already parsed <code>ASTTypeToInstantiate</code>.  It is expected that
-     * the parser has already parsed "new TypeToInstantiate" and is at "[" or
-     * "[[" in the Scanner.
+     * the parser has already parsed "new TypeToInstantiate" and is at "[" in
+     * the Scanner.</p>
      * <em>
      * ArrayCreationExpression:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray DimExprs<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray DimExprs Dims<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray Dims ArrayInitializer
+     * &nbsp;&nbsp;&nbsp;&nbsp;new TypeToInstantiate DimExprs<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;new TypeToInstantiate DimExprs Dims
      * </em>
      * @param alreadyParsed An already parsed <code>ASTTypeToInstantiate</code>.
      * @return An <code>ASTArrayCreationExpression</code>.
      */
     public ASTArrayCreationExpression parseArrayCreationExpression(ASTTypeToInstantiate alreadyParsed) {
         Location loc = curr().getLocation();
-        boolean dimExprsPresent = false;
-        ASTDimExprs dimExprs = null;
-        ASTDims dims = null;
-        if (isCurr(OPEN_BRACKET)) {
-            dimExprs = parseDimExprs();
-            dimExprsPresent = true;
+        ASTDimExprs dimExprs = parseDimExprs();
+        if (isCurr(OPEN_BRACKET) && isNext(CLOSE_BRACKET)) {
+            ASTDims dims = getTypesParser().parseDims();
+            return new ASTArrayCreationExpression(loc, alreadyParsed, dimExprs, dims);
         }
-        if (isCurr(OPEN_CLOSE_BRACKET)) {
-            dims = getTypesParser().parseDims();
-        }
-        if (isCurr(OPEN_BRACE)) {
-            if (dimExprsPresent) {
-                error(curr().getLocation(), "Array initializer not expected with dimension expressions.");
-            }
-            ASTArrayInitializer arrayInitializer = parseArrayInitializer();
-            return new ASTArrayCreationExpression(loc, alreadyParsed, dims, arrayInitializer);
-        }
-        if (dims == null) {
+        else {
             return new ASTArrayCreationExpression(loc, alreadyParsed, dimExprs);
         }
-        return new ASTArrayCreationExpression(loc, alreadyParsed, dimExprs, dims);
     }
 
     /**
@@ -1698,64 +1835,6 @@ public class ExpressionsParser extends BasicParser {
             error(curr().getLocation(), "Expected ']'.");
         }
         return new ASTDimExpr(loc, expr);
-    }
-
-    /**
-     * Parses an <code>ArrayInitializer</code>.
-     * <em>
-     * ArrayInitializer:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;{ VariableInitializerList }<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;{ }
-     * </em>
-     * @return An <code>ASTArrayInitializer</code>.
-     */
-    public ASTArrayInitializer parseArrayInitializer() {
-        Location loc = curr().getLocation();
-        if (accept(OPEN_BRACE) == null) {
-            error(curr().getLocation(), "Expected '{'.");
-        }
-        ASTVariableInitializerList varInitList = parseVariableInitializerList();
-        if (accept(CLOSE_BRACE) == null) {
-            error(curr().getLocation(), "Expected '}'.");
-        }
-        return new ASTArrayInitializer(loc, varInitList);
-    }
-
-    /**
-     * Parses a <code>VariableInitializerList</code>.
-     * <em>
-     * VariableInitializerList:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;VariableInitializer {, VariableInitializer}
-     * </em>
-     * @return An <code>ASTVariableInitializerList</code>.
-     */
-    public ASTVariableInitializerList parseVariableInitializerList() {
-        return parseList(
-                t -> isExpression(t) || test(t, OPEN_BRACE),
-                "Expected an expression or an array initializer.",
-                COMMA,
-                this::parseVariableInitializer,
-                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACKET, CLOSE_BRACE, SEMICOLON, ARROW, EOF),
-                ASTVariableInitializerList::new,
-                false
-        );
-    }
-
-    /**
-     * Parses a <code>VariableInitializer</code>.
-     * <em>
-     * VariableInitializer:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;Expression<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;ArrayInitializer
-     * </em>
-     * @return An <code>ASTVariableInitializer</code> which could be an
-     *     <code>ASTExpression</code> or <code>ASTArrayInitializer</code>.
-     */
-    public ASTVariableInitializer parseVariableInitializer() {
-        if (isCurr(OPEN_BRACE)) {
-            return parseArrayInitializer();
-        }
-        return parseExpression();
     }
 
     /**

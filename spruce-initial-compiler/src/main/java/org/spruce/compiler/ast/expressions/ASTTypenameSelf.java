@@ -20,8 +20,8 @@ public class ASTTypenameSelf extends ASTParentNode {
 
     /**
      * Constructs an <code>ASTTypenameSelf</code> at the given <code>Location</code>
-     * with the given <code>ASTListNode</code> with type <code>TYPENAME_IDS</code>
-     * and the given <code>ASTKeywordNode</code> with keyword <code>SELF</code>.
+     * with the given <code>ASTTypeName</code> and the given <code>ASTKeywordNode</code>
+     * with keyword <code>SELF</code>.
      * @param location The <code>Location</code>.
      * @param typename An <code>ASTTypeName</code>.
      * @param selfKeyword An <code>ASTKeywordNode</code> with keyword <code>SELF</code>.

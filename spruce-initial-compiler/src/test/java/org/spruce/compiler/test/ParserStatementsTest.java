@@ -1314,10 +1314,10 @@ public class ParserStatementsTest {
     }
 
     /**
-     * Tests bad for statement of no semicolon or colon.
+     * Tests bad for statement of no semicolon or 'in'.
      */
     @Test
-    public void testForStatementNoSemicolonOrColon() {
+    public void testForStatementNoSemicolonOrIn() {
         StatementsParser parser = getStatementsParser("""
                 for (Int i = 0) {
                     stdout.println(i);
@@ -1416,7 +1416,7 @@ public class ParserStatementsTest {
     @Test
     public void testForStatementOfEnhancedForStatement() {
         StatementsParser parser = getStatementsParser("""
-                for (Int i : array) {
+                for (Int i in array) {
                     sum += i;
                 }
                 """);
@@ -1424,7 +1424,7 @@ public class ParserStatementsTest {
         ensureNoErrors(node, parser);
         ASTEnhancedForStatement enhForStmt = ensureIsa(node, ASTEnhancedForStatement.class);
         assertNotNull(enhForStmt.getLocalVarDecl());
-        assertInstanceOf(ASTPrimary.class, enhForStmt.getCondExpr());
+        assertInstanceOf(ASTPrimary.class, enhForStmt.getValueExpr());
         assertNotNull(enhForStmt.getBlock());
     }
 
@@ -1434,7 +1434,7 @@ public class ParserStatementsTest {
     @Test
     public void testEnhancedForStatementNoCloseParen() {
         StatementsParser parser = getStatementsParser("""
-                for (Int i : array {
+                for (Int i in array {
                     sum += i;
                 }
                 """);
@@ -1448,7 +1448,7 @@ public class ParserStatementsTest {
     @Test
     public void testEnhancedForStatementBadInitOfStatementExprList() {
         StatementsParser parser = getStatementsParser("""
-                for (i = 0, j = 0 : array {
+                for (i = 0, j = 0 in array {
                     sum += i;
                 }
                 """);
@@ -1641,7 +1641,7 @@ public class ParserStatementsTest {
      */
     @Test
     public void testAssertStatementOfTwoExpressions() {
-        StatementsParser parser = getStatementsParser("assert result == true : \"Assertion failed!\";");
+        StatementsParser parser = getStatementsParser("assert result == true else \"Assertion failed!\";");
         ASTAssertStatement node = parser.parseAssertStatement();
         ensureNoErrors(node, parser);
         assertInstanceOf(ASTBinaryExpression.class, node.getCondExprCondition());
@@ -1654,7 +1654,7 @@ public class ParserStatementsTest {
      */
     @Test
     public void testAssertStatementNoSemicolon() {
-        StatementsParser parser = getStatementsParser("assert whether : \"Missing semicolon!\"");
+        StatementsParser parser = getStatementsParser("assert whether else \"Missing semicolon!\"");
         ASTAssertStatement node = parser.parseAssertStatement();
         expectError(node, parser);
     }

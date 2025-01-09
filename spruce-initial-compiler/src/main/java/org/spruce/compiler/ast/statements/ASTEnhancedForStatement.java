@@ -10,12 +10,12 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTEnhancedForStatement</code> is "for (", a local variable
- * declaration, a colon, a Value Expression, ")", and a block.  The local
+ * declaration, the keyword 'in', a Value Expression, ")", and a block.  The local
  * variable declaration must declare exactly one variable.</p>
  *
  * <em>
  * EnhancedForStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;for ( LocalVariableDeclaration : ValueExpression ) Block<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;for ( LocalVariableDeclaration in ValueExpression ) Block<br>
  * </em>
  */
 public final class ASTEnhancedForStatement extends ASTParentNode implements ASTForStatement {
@@ -26,12 +26,12 @@ public final class ASTEnhancedForStatement extends ASTParentNode implements ASTF
     /**
      * Constructs an <code>ASTEnhancedForStatement</code> at the given <code>Location</code>
      * with the given <code>ASTLocalVariableDeclaration</code>, the given
-     * <code>ASTNode</code> representing a Conditional Expression, and the
-     * given <code>ASTBlock</code> representing a Block.
+     * <code>ValueExpression</code> representing the Iterable, and the given
+     * <code>ASTBlock</code>.
      * @param location The <code>Location</code>.
      * @param localVarDecl An <code>ASTLocalVariableDeclaration</code>.
      * @param valueExpr An <code>ASTValueExpression</code>.
-     * @param block An <code>ASTBlock</code> of type <code>BLOCK</code>.
+     * @param block An <code>ASTBlock</code>.
      */
     public ASTEnhancedForStatement(Location location, ASTLocalVariableDeclaration localVarDecl,
                                    ASTValueExpression valueExpr, ASTBlock block) {
@@ -50,10 +50,10 @@ public final class ASTEnhancedForStatement extends ASTParentNode implements ASTF
     }
 
     /**
-     * Returns an <code>ASTValueExpression</code>.
-     * @return An <code>ASTValueExpression</code>.
+     * Returns an <code>ASTValueExpression</code> representing the Iterable.
+     * @return An <code>ASTValueExpression</code> representing the Iterable.
      */
-    public ASTValueExpression getCondExpr() {
+    public ASTValueExpression getValueExpr() {
         return myValueExpr;
     }
 

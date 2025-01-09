@@ -34,11 +34,11 @@ public final class ASTIfStatement extends ASTParentNode implements ASTStatement 
 
     /**
      * Constructs an <code>ASTIfStatement</code> at the given <code>Location</code>,
-     * given <code>ASTInit</code>, the given
-     * <code>ASTNode</code> representing a Conditional Expression, the given
-     * <code>ASTBlock</code> representing the "if" Block, the given
-     * <code>ASTBlock</code> representing the "else" Block, and the given
-     * <code>ASTIfStatement</code> representing the "else if" If Statement.
+     * given <code>ASTInit</code>, the given <code>ASTValueExpression</code>
+     * representing the condition, the given <code>ASTBlock</code> representing
+     * the "if" Block, the given <code>ASTBlock</code> representing the "else"
+     * Block, and the given <code>ASTIfStatement</code> representing the "else if"
+     * If Statement.
      * @param location The <code>Location</code>.
      * @param init A possibly null <code>ASTInit</code>.
      * @param valueExpr An <code>ASTValueExpression</code>.

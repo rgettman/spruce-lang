@@ -62,7 +62,7 @@ public class NamesParser extends BasicParser {
                 DOT,
                 this::parseIdentifier,
                 Arrays.asList(SEMICOLON, USE, OPEN_BRACE, OPEN_PARENTHESIS, STAR, SELF, SUPER, LESS_THAN,
-                        OPEN_BRACKET, OPEN_CLOSE_BRACKET,
+                        OPEN_BRACKET,
                         PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
                         ABSTRACT, FINAL, SEALED, SHARED,  // Type modifiers
                         CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations

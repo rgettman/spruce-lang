@@ -9,11 +9,11 @@ import org.spruce.compiler.scanner.Location;
 
 /**
  * <p>An <code>ASTSwitchExpression</code> is "switch", followed by a
- * conditional expression, followed by a Switch Expression Block.</p>
+ * value expression, followed by a Switch Expression Block.</p>
  *
  * <em>
- * SwitchStatement:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;switch VariableExpression SwitchExpressionBlock
+ * SwitchExpression:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;switch ValueExpression SwitchExpressionBlock
  * </em>
  */
 public final class ASTSwitchExpression extends ASTParentNode implements ASTValueExpression {
@@ -22,8 +22,8 @@ public final class ASTSwitchExpression extends ASTParentNode implements ASTValue
 
     /**
      * Constructs an <code>ASTSwitchStatement</code> at the given <code>Location</code>
-     * with the given <code>ASTNode</code> representing a Condition Expression
-     * and the given <code>ASTSwitchExpressionRules</code>.
+     * with the given <code>ASTValueExpression</code> and the given
+     * <code>ASTSwitchExpressionRules</code>.
      * @param location The <code>Location</code>.
      * @param condExpr An <code>ASTValueExpression</code>.
      * @param switchExprRules An <code>ASTSwitchExpressionRules</code>.

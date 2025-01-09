@@ -28,7 +28,7 @@ public final class ASTUseSharedMultDeclaration extends ASTParentNode implements 
      * with the given <code>ASTTypeName</code> and the given
      * <code>ASTIdentifierList</code>.
      * @param location The <code>Location</code>.
-     * @param typeName An <code>ASTListNode</code>.
+     * @param typeName An <code>ASTTypeName</code>.
      * @param identifierList An <code>ASTIdentifierList</code>.
      */
     public ASTUseSharedMultDeclaration(Location location, ASTTypeName typeName, ASTIdentifierList identifierList) {

@@ -1009,7 +1009,7 @@ public class ParserClassesTest {
     public void testInterfaceMethodDeclarationAccessModifierMethodModifier() {
         ClassesParser parser = getClassesParser("""
             private default void addAll(Collection<T> other) {
-                for (T element : other) {
+                for (T element in other) {
                     add(other);
                 }
             }
@@ -1036,7 +1036,7 @@ public class ParserClassesTest {
     public void testInterfaceMethodDeclarationAnnotation() {
         ClassesParser parser = getClassesParser("""
             @Baz(3.14) private default void addAll(Collection<T> other) {
-                for (T element : other) {
+                for (T element in other) {
                     add(other);
                 }
             }
@@ -1063,10 +1063,10 @@ public class ParserClassesTest {
     public void testInterfaceMethodDeclarationBadMod() {
         ClassesParser parser = getClassesParser("""
             private volatile void addAll(Collection<T> other) {
-                for (T element : other) {
+                for (T element in other) {
                     add(other);
                 }
-            }
+            }d
             """);
         ASTAnnotationList annList = parser.parseAnnotationList();
         ASTKeywordNode accessMod = parser.parseAccessModifier();

@@ -18,7 +18,7 @@ import org.spruce.compiler.scanner.Location;
  */
 public final class ASTFormalParameterList extends ASTListNode<ASTFormalParameter> implements ASTLambdaParameterList {
     /**
-     * Constructs an <code>ASTListNode</code> with a <code>Location</code>, a
+     * Constructs an <code>ASTFormalParameterList</code> with a <code>Location</code>, a
      * list of child nodes, and a list type.
      *
      * @param location The <code>Location</code>.

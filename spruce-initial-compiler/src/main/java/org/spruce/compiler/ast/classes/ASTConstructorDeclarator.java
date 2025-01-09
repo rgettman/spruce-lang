@@ -39,7 +39,7 @@ public class ASTConstructorDeclarator extends ASTParentNode {
 
     /**
      * Constructs an <code>ASTConstructorDeclarator</code> at the given <code>Location</code>
-     * with the given <code>ASTListNode</code> representing the Formal Parameter list.
+     * with the given <code>ASTFormalParameterList</code>.
      * @param location The <code>Location</code>.
      * @param formalParamList An <code>ASTFormalParameterList</code>.
      */

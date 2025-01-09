@@ -10,7 +10,7 @@ import org.spruce.compiler.scanner.Location;
 import org.spruce.compiler.scanner.TokenType;
 
 /**
- * <p>An <code>ASTBinaryExpression</code> is an expression with a binary
+ * <p>An <code>ASTBinaryExpression</code> is a value expression with a binary
  * operator and two operands.</p>
  */
 public final class ASTBinaryExpression extends ASTParentNode implements ASTValueExpression {
@@ -19,9 +19,10 @@ public final class ASTBinaryExpression extends ASTParentNode implements ASTValue
     private final TokenType myOperation;
 
     /**
-     * Constructs an <code>ASTUnaryExpression</code> at the given <code>Location</code>
-     * and with an operator represented by the given <code>TokenType</code>,
-     * and a <code>ASTNode</code> as its child.
+     * Constructs an <code>ASTBinaryExpression</code> at the given <code>Location</code>
+     * with an <code>ASTValueExpression</code> as the first operand, an operator
+     * represented by the given <code>TokenType</code>, and an <code>ASTValueExpression</code>
+     * as the second operand.
      * @param location The <code>Location</code>.
      * @param first The first operand, an <code>ASTValueExpression</code>.
      * @param second The second operand, an <code>ASTValueExpression</code>.
@@ -36,7 +37,7 @@ public final class ASTBinaryExpression extends ASTParentNode implements ASTValue
     }
 
     /**
-     * Returns the name representing the operation on the child.
+     * Returns the name representing the operation on the children.
      * @return The <code>TokenType</code> representing the operation name.
      */
     public TokenType getOperation() {

@@ -271,10 +271,43 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests value expression of if expression.
+     */
+    @Test
+    public void testValueExpressionOfIfExpression() {
+        ExpressionsParser parser = getExpressionsParser("if a use b else c");
+        ASTValueExpression node = parser.parseValueExpression();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTIfExpression.class, node);
+    }
+
+    /**
+     * Tests value expression of for expression.
+     */
+    @Test
+    public void testValueExpressionOfForExpression() {
+        ExpressionsParser parser = getExpressionsParser("for (Int a in list) for (Int b in a.foo()) b + 1");
+        ASTValueExpression node = parser.parseValueExpression();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTForExpression.class, node);
+    }
+
+    /**
+     * Tests value expression of map entry.
+     */
+    @Test
+    public void testValueExpressionOfMapEntry() {
+        ExpressionsParser parser = getExpressionsParser("k : v");
+        ASTValueExpression node = parser.parseValueExpression();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTMapEntry.class, node);
+    }
+
+    /**
      * Tests if expression.
      */
     @Test
-    public void testConditionalExpression() {
+    public void testIfExpression() {
         ExpressionsParser parser = getExpressionsParser("if condition use valueIfTrue else valueIfFalse");
         ASTValueExpression node = parser.parseValueExpression();
         ensureNoErrors(node, parser);
@@ -323,6 +356,89 @@ public class ParserExpressionsTest {
     public void testIfExpressionNoUse() {
         ExpressionsParser parser = getExpressionsParser("if condition valueIfTrue else valueIfFalse");
         ASTValueExpression node = parser.parseValueExpression();
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests for header list.
+     */
+    @Test
+    public void testForHeaderList() {
+        ExpressionsParser parser = getExpressionsParser(
+                "for (Int a in listA) for (Int b in listB) for (Int c in listC) a * b + c");
+        ASTForHeaderList node = parser.parseForHeaderList();
+        ensureNoErrors(node, parser);
+        checkList(node, FOR_EXPR_HEADERS, ASTForHeader.class, 3);
+    }
+
+    /**
+     * Tests for expression.
+     */
+    @Test
+    public void testForExpression() {
+        ExpressionsParser parser = getExpressionsParser("for (Int a in listA if a % 2 == 0) a * 2");
+        ASTForExpression node = parser.parseForExpression();
+        ensureNoErrors(node, parser);
+
+        checkList(node.getForHeaderList(), FOR_EXPR_HEADERS, ASTForHeader.class, 1);
+        assertNotNull(node.getExpr());
+    }
+
+    /**
+     * Tests basic for header.
+     */
+    @Test
+    public void testForHeader() {
+        ExpressionsParser parser = getExpressionsParser("for (Int n in someList)");
+        ASTForHeader node = parser.parseForHeader();
+        ensureNoErrors(node, parser);
+
+        assertNotNull(node.getLocalVarDecl());
+        assertNotNull(node.getValueExpr());
+        assertFalse(node.getCondition().isPresent());
+    }
+
+    /**
+     * Tests for header with a condition.
+     */
+    @Test
+    public void testForHeaderCondition() {
+        ExpressionsParser parser = getExpressionsParser("for (Int n in someList if n > 5)");
+        ASTForHeader node = parser.parseForHeader();
+        ensureNoErrors(node, parser);
+
+        assertNotNull(node.getLocalVarDecl());
+        assertNotNull(node.getValueExpr());
+        assertTrue(node.getCondition().isPresent());
+    }
+
+    /**
+     * Tests bad for header of no open parenthesis.
+     */
+    @Test
+    public void testForHeaderNoOpenParen() {
+        ExpressionsParser parser = getExpressionsParser("for Int n in someList if n > 5)");
+        ASTForHeader node = parser.parseForHeader();
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests bad for header of no "in" keyword.
+     */
+    @Test
+    public void testForHeaderNoInKeyword() {
+        ExpressionsParser parser = getExpressionsParser("for (Int n out someList if n > 5)");
+        ASTForHeader node = parser.parseForHeader();
+        expectError(node, parser, 3);
+    }
+
+    /**
+     * Tests bad for header of no close parenthesis.
+     */
+    @Test
+    public void testForHeaderNoCloseParen() {
+        ExpressionsParser parser = getExpressionsParser("for (Int n in someList if n > 5 n * 2");
+        ASTForHeader node = parser.parseForHeader();
         expectError(node, parser);
     }
 
@@ -1521,6 +1637,196 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests primary of collection comprehension.
+     */
+    @Test
+    public void testPrimaryOfCollectionComprehension() {
+        ExpressionsParser parser = getExpressionsParser("[for (Int a in listA) for (Int b in listB) a + b]");
+        ASTPrimary node = parser.parsePrimary();
+        ensureNoErrors(node, parser);
+        checkPrimary(node, COLLECTION_COMPREHENSION, ASTCollectionComprehension.class);
+
+        ASTCollectionComprehension collCompr = ensureIsa(node.getChild(), ASTCollectionComprehension.class);
+        assertNotNull(collCompr.getForExpr());
+    }
+
+    /**
+     * Tests primary of nested collection comprehensions.
+     */
+    @Test
+    public void testPrimaryOfNestedCollectionComprehension() {
+        ExpressionsParser parser = getExpressionsParser("[for (Int a in listA) [for (Int b in listB) a + b]]");
+        ASTPrimary node = parser.parsePrimary();
+        ensureNoErrors(node, parser);
+        checkPrimary(node, COLLECTION_COMPREHENSION, ASTCollectionComprehension.class);
+
+        ASTCollectionComprehension outer = ensureIsa(node.getChild(), ASTCollectionComprehension.class);
+        ASTForExpression outerForExpr = outer.getForExpr();
+        assertNotNull(outerForExpr);
+        checkList(outerForExpr.getForHeaderList(), FOR_EXPR_HEADERS, ASTForHeader.class, 1);
+        assertNotNull(outerForExpr.getExpr());
+
+        ASTPrimary innerNode = ensureIsa(outerForExpr.getExpr(), ASTPrimary.class);
+        checkPrimary(innerNode, COLLECTION_COMPREHENSION, ASTCollectionComprehension.class);
+        ASTCollectionComprehension inner = ensureIsa(innerNode.getChild(), ASTCollectionComprehension.class);
+        ASTForExpression innerForExpr = inner.getForExpr();
+        assertNotNull(innerForExpr);
+        checkList(innerForExpr.getForHeaderList(), FOR_EXPR_HEADERS, ASTForHeader.class, 1);
+        assertNotNull(innerForExpr.getExpr());
+        assertInstanceOf(ASTBinaryExpression.class, innerForExpr.getExpr());
+    }
+
+    /**
+     * Tests primary of collection expression.
+     */
+    @Test
+    public void testPrimaryOfCollectionExpression() {
+        ExpressionsParser parser = getExpressionsParser("[2, 8, 18, 32, 50]");
+        ASTPrimary node = parser.parsePrimary();
+        ensureNoErrors(node, parser);
+        checkPrimary(node, COLLECTION_EXPR, ASTCollectionExpression.class);
+
+        ASTCollectionExpression collExpr = ensureIsa(node.getChild(), ASTCollectionExpression.class);
+        assertNotNull(collExpr.getArgList());
+    }
+
+    /**
+     * Tests primary of nested collection expressions.
+     */
+    @Test
+    public void testPrimaryOfNestedCollectionExpressions() {
+        ExpressionsParser parser = getExpressionsParser("""
+                [[1, 4, 9, 16, 25],
+                 [2, 8, 18, 32, 50],
+                 [3, 12, 27, 48, 75],
+                 [4, 16, 36, 64, 100],
+                 [5, 20, 45, 80, 125]
+                ]
+                """);
+        ASTPrimary node = parser.parsePrimary();
+        ensureNoErrors(node, parser);
+        checkPrimary(node, COLLECTION_EXPR, ASTCollectionExpression.class);
+
+        ASTCollectionExpression collExpr = ensureIsa(node.getChild(), ASTCollectionExpression.class);
+        assertNotNull(collExpr.getArgList());
+        ASTArgumentList argList = collExpr.getArgList();
+        checkList(argList, ARGUMENTS, ASTGiveExpression.class, 5);
+
+        for (int i = 0; i < 5; i++) {
+            ASTGiveExpression innerArg = argList.get(i);
+            ASTPrimary innerNode = ensureIsa(innerArg.getExpr(), ASTPrimary.class);
+            checkPrimary(innerNode, COLLECTION_EXPR, ASTCollectionExpression.class);
+
+            ASTCollectionExpression innerCollExpr = ensureIsa(innerNode.getChild(), ASTCollectionExpression.class);
+            assertNotNull(innerCollExpr.getArgList());
+        }
+    }
+
+    /**
+     * Tests primary of map comprehension.
+     */
+    @Test
+    public void testPrimaryOfMapComprehension() {
+        ExpressionsParser parser = getExpressionsParser("{for (Int a in listA) a : 2 * a * a}");
+        ASTPrimary node = parser.parsePrimary();
+        ensureNoErrors(node, parser);
+        checkPrimary(node, MAP_COMPREHENSION, ASTMapComprehension.class);
+
+        ASTMapComprehension mapCompr = ensureIsa(node.getChild(), ASTMapComprehension.class);
+        assertNotNull(mapCompr.getForExpr());
+    }
+
+    /**
+     * Tests primary of nested map comprehensions.
+     */
+    @Test
+    public void testPrimaryOfNestedMapComprehensions() {
+        ExpressionsParser parser = getExpressionsParser(
+                "{for (Int k1 in k1List) k1 : {for (Int k2 in k2List) k2 : k1 + k2}}");
+        ASTPrimary node = parser.parsePrimary();
+        ensureNoErrors(node, parser);
+        checkPrimary(node, MAP_COMPREHENSION, ASTMapComprehension.class);
+
+        ASTMapComprehension mapCompr = ensureIsa(node.getChild(), ASTMapComprehension.class);
+        ASTForExpression forExpr = mapCompr.getForExpr();
+        assertNotNull(forExpr);
+        checkList(forExpr.getForHeaderList(), FOR_EXPR_HEADERS, ASTForHeader.class, 1);
+        assertNotNull(forExpr.getExpr());
+
+        ASTMapEntry outerMapEntry = ensureIsa(forExpr.getExpr(), ASTMapEntry.class);
+        assertNotNull(outerMapEntry.getKey());
+        assertNotNull(outerMapEntry.getValue());
+        ASTPrimary innerNode = ensureIsa(outerMapEntry.getValue(), ASTPrimary.class);
+        checkPrimary(innerNode, MAP_COMPREHENSION, ASTMapComprehension.class);
+
+        ASTMapComprehension innerMapCompr = ensureIsa(node.getChild(), ASTMapComprehension.class);
+        ASTForExpression innerForExpr = innerMapCompr.getForExpr();
+        assertNotNull(innerForExpr);
+        checkList(innerForExpr.getForHeaderList(), FOR_EXPR_HEADERS, ASTForHeader.class, 1);
+        assertNotNull(innerForExpr.getExpr());
+
+        ASTMapEntry innerMapEntry = ensureIsa(innerForExpr.getExpr(), ASTMapEntry.class);
+        assertNotNull(innerMapEntry.getKey());
+        assertNotNull(innerMapEntry.getValue());
+    }
+
+    /**
+     * Tests primary of map expression.
+     */
+    @Test
+    public void testPrimaryOfMapExpression() {
+        ExpressionsParser parser = getExpressionsParser("{1 : 2, 2 : 8, 3 : 18, 4 : 32, 5 : 50}");
+        ASTPrimary node = parser.parsePrimary();
+        ensureNoErrors(node, parser);
+        checkPrimary(node, MAP_EXPR, ASTMapExpression.class);
+
+        ASTMapExpression mapExpr = ensureIsa(node.getChild(), ASTMapExpression.class);
+        assertNotNull(mapExpr.getArgList());
+    }
+
+    /**
+     * Tests primary of nested map expressions.
+     */
+    @Test
+    public void testPrimaryOfNestedMapExpressions() {
+        ExpressionsParser parser = getExpressionsParser("""
+                     { 4 : { 4 : 16, 5 : 20},
+                       5 : { 4 : 20, 5 : 25}
+                     }
+                     """
+        );
+        ASTPrimary node = parser.parsePrimary();
+        ensureNoErrors(node, parser);
+        checkPrimary(node, MAP_EXPR, ASTMapExpression.class);
+
+        ASTMapExpression mapExpr = ensureIsa(node.getChild(), ASTMapExpression.class);
+        assertNotNull(mapExpr.getArgList());
+        ASTArgumentList argList = mapExpr.getArgList();
+        checkList(argList, ARGUMENTS, ASTGiveExpression.class, 2);
+
+        for (int i = 0; i < 2; i++) {
+            ASTGiveExpression outerArg = argList.get(i);
+            ASTMapEntry outerMapEntry = ensureIsa(outerArg.getExpr(), ASTMapEntry.class);
+            assertNotNull(outerMapEntry.getKey());
+            assertNotNull(outerMapEntry.getValue());
+            ASTPrimary innerNode = ensureIsa(outerMapEntry.getValue(), ASTPrimary.class);
+            checkPrimary(innerNode, MAP_EXPR, ASTMapExpression.class);
+
+            ASTMapExpression innerMapExpr = ensureIsa(innerNode.getChild(), ASTMapExpression.class);
+            assertNotNull(innerMapExpr.getArgList());
+            ASTArgumentList innerArgList = innerMapExpr.getArgList();
+            checkList(innerArgList, ARGUMENTS, ASTGiveExpression.class, 2);
+
+            for (int j = 0; j < 2; j++) {
+                ASTGiveExpression innerArg = innerArgList.get(j);
+                ASTMapEntry innerMapEntry = ensureIsa(innerArg.getExpr(), ASTMapEntry.class);
+                assertNotNull(innerMapEntry.getKey());
+                assertNotNull(innerMapEntry.getValue());
+            }
+        }
+    }
+
+    /**
      * Tests primary of element access.
      */
     @Test
@@ -1594,6 +1900,20 @@ public class ParserExpressionsTest {
                 false, false);
         ASTExpressionName exprName = mi.getExprName().orElseThrow();
         checkList(exprName, EXPR_NAME_IDS, ASTIdentifier.class, 2);
+    }
+
+    /**
+     * Tests map entry.
+     */
+    @Test
+    public void testMapEntry() {
+        ExpressionsParser parser = getExpressionsParser("a : b");
+        ASTValueExpression valueExpr = parser.parseLogicalOrExpression();
+        ASTMapEntry node = parser.parseMapEntry(valueExpr);
+        ensureNoErrors(node, parser);
+
+        assertNotNull(node.getKey());
+        assertNotNull(node.getValue());
     }
 
     /**
@@ -2058,17 +2378,7 @@ public class ParserExpressionsTest {
         ExpressionsParser parser = getExpressionsParser("new String[10]");
         ASTArrayCreationExpression node = parser.parseArrayCreationExpression();
         ensureNoErrors(node, parser);
-        checkArrayCreationExpression(node, true, false, false);
-    }
-
-    /**
-     * Tests bad array creation expression of dim exprs and array initializer.
-     */
-    @Test
-    public void testArrayCreationExpressionDimExprsArrayInitializer() {
-        ExpressionsParser parser = getExpressionsParser("new Integer[3][] {1, 2, 3}");
-        ASTArrayCreationExpression node = parser.parseArrayCreationExpression();
-        expectError(node, parser);
+        checkArrayCreationExpression(node, false);
     }
 
     /**
@@ -2079,18 +2389,7 @@ public class ParserExpressionsTest {
         ExpressionsParser parser = getExpressionsParser("new String[10][]");
         ASTArrayCreationExpression node = parser.parseArrayCreationExpression();
         ensureNoErrors(node, parser);
-        checkArrayCreationExpression(node, true, true, false);
-    }
-
-    /**
-     * Tests array creation expression of dims and array initializer.
-     */
-    @Test
-    public void testArrayCreationExpressionOfDimsArrayInitializer() {
-        ExpressionsParser parser = getExpressionsParser("new String[] {\"one\", \"two\", \"three\"}");
-        ASTArrayCreationExpression node = parser.parseArrayCreationExpression();
-        ensureNoErrors(node, parser);
-        checkArrayCreationExpression(node, false, true, true);
+        checkArrayCreationExpression(node, true);
     }
 
     /**
@@ -2178,105 +2477,6 @@ public class ParserExpressionsTest {
     }
 
     /**
-     * Tests array initializer of just empty braces.
-     */
-    @Test
-    public void testArrayInitializerEmpty() {
-        ExpressionsParser parser = getExpressionsParser("{}");
-        ASTArrayInitializer node = parser.parseArrayInitializer();
-        ensureNoErrors(node, parser);
-        assertNotNull(node.getVarInitializers());
-        checkList(node.getVarInitializers(), VARIABLE_INITIALIZERS, ASTVariableInitializer.class, 0);
-    }
-
-    /**
-     * Tests array initializer of a variable initializer list.
-     */
-    @Test
-    public void testArrayInitializerOfVariableInitializerList() {
-        ExpressionsParser parser = getExpressionsParser("{x + 1, y - 2}");
-        ASTArrayInitializer node = parser.parseArrayInitializer();
-        ensureNoErrors(node, parser);
-        assertNotNull(node.getVarInitializers());
-        checkList(node.getVarInitializers(), VARIABLE_INITIALIZERS, ASTVariableInitializer.class, 2);
-    }
-
-    /**
-     * Tests bad array initializer, no open brace.
-     */
-    @Test
-    public void testArrayInitializerNoOpenBrace() {
-        ExpressionsParser parser = getExpressionsParser("\"Needs\", \"Open\", \"Brace\"}");
-        ASTArrayInitializer node = parser.parseArrayInitializer();
-        expectError(node, parser);
-    }
-
-    /**
-     * Tests bad array initializer, no close brace.
-     */
-    @Test
-    public void testArrayInitializerNoCloseBrace() {
-        ExpressionsParser parser = getExpressionsParser("{\"Needs\", \"Close\", \"Brace\" class");
-        ASTArrayInitializer node = parser.parseArrayInitializer();
-        expectError(node, parser);
-    }
-
-    /**
-     * Tests variable initializer list of variable initializer.
-     */
-    @Test
-    public void testVariableInitializerListOfVariableInitializer() {
-        ExpressionsParser parser = getExpressionsParser("i + 1");
-        ASTVariableInitializerList node = parser.parseVariableInitializerList();
-        ensureNoErrors(node, parser);
-        checkList(node, VARIABLE_INITIALIZERS, ASTVariableInitializer.class, 1);
-    }
-
-    /**
-     * Tests variable initializer list of "," and variable initializer.
-     */
-    @Test
-    public void testVariableInitializerListOfComma() {
-        ExpressionsParser parser = getExpressionsParser("x + 1, y - 1");
-        ASTVariableInitializerList node = parser.parseVariableInitializerList();
-        ensureNoErrors(node, parser);
-        checkList(node, VARIABLE_INITIALIZERS, ASTVariableInitializer.class, 2);
-    }
-
-    /**
-     * Tests nested variable initializer lists (here, just multiple variable initializers).
-     */
-    @Test
-    public void testVariableInitializerListNested() {
-        ExpressionsParser parser = getExpressionsParser("self, count + 1, sumSoFar + value");
-        ASTVariableInitializerList node = parser.parseVariableInitializerList();
-        ensureNoErrors(node, parser);
-        checkList(node, VARIABLE_INITIALIZERS, ASTVariableInitializer.class, 3);
-    }
-
-    /**
-     * Tests variable initializer of expression.
-     */
-    @Test
-    public void testVariableInitializerOfExpression() {
-        ExpressionsParser parser = getExpressionsParser("a + b");
-        ASTVariableInitializer node = parser.parseVariableInitializer();
-        ensureNoErrors(node, parser);
-        assertInstanceOf(ASTBinaryExpression.class, node);
-    }
-
-    /**
-     * Tests variable initializer of array initializer.
-     */
-    @Test
-    public void testVariableInitializerOfArrayInitializer() {
-        ExpressionsParser parser = getExpressionsParser("{1, 2, 3}");
-        ASTVariableInitializer node = parser.parseVariableInitializer();
-        ensureNoErrors(node, parser);
-        assertInstanceOf(ASTArrayInitializer.class, node);
-    }
-
-    /**
      * Tests a class literal.  Parses a DataType first.
      */
     @Test
@@ -2312,20 +2512,21 @@ public class ParserExpressionsTest {
 
     /**
      * Helper method to test <code>ASTArrayCreationExpression</code> attributes.
+     * @param ace The <code>ASTArrayCreationExpression</code> to test.
+     * @param isDimsPresent Whether to expect Dims to be present.
      */
-    private static void checkArrayCreationExpression(ASTArrayCreationExpression ace, boolean isDimExprsPresent,
-                                                    boolean isDimsPresent, boolean isArrayInitializerPresent) {
+    private static void checkArrayCreationExpression(ASTArrayCreationExpression ace, boolean isDimsPresent) {
         assertNotNull(ace.getTypeToInstantiate());
-        assertEquals(isDimExprsPresent, ace.getDimExprs().isPresent());
+        assertNotNull(ace.getDimExprs());
         assertEquals(isDimsPresent, ace.getDims().isPresent());
-        assertEquals(isArrayInitializerPresent, ace.getArrayInitializer().isPresent());
     }
 
     /**
-     * Helper method to test <code>ASTUnqualifiedClassInstanceCreation</code> attributes.
+     * Helper method to test <code>ASTUnqualifiedClassInstanceCreationExpression</code> attributes.
+     * @param ucice The <code>ASTUnqualifiedClassInstanceCreationExpression</code> to test.
+     * @param isTypeArgsPresent Whether to expect TypeArgs to be present.
      */
-    private static void checkUcice(ASTUnqualifiedClassInstanceCreationExpression ucice,
-        boolean isTypeArgsPresent)
+    private static void checkUcice(ASTUnqualifiedClassInstanceCreationExpression ucice, boolean isTypeArgsPresent)
     {
         assertEquals(isTypeArgsPresent, ucice.getTypeArgs().isPresent());
         assertNotNull(ucice.getTti());

@@ -21,7 +21,7 @@ public final class ASTMarkerAnnotation extends ASTParentNode implements ASTAnnot
 
     /**
      * Constructs an <code>ASTMarkerAnnotation</code> at the given <code>Location</code>
-     * and an <code>ASTListNode</code> representing a TypeName.
+     * and an <code>ASTTypeName</code>.
      * @param location The <code>Location</code>.
      * @param typeName An <code>ASTTypeName</code>.
      */
