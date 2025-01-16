@@ -1,15 +1,16 @@
-package org.spruce.compiler.test;
+package org.spruce.compiler.test.parser;
 
 import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.ast.names.*;
+import org.spruce.compiler.common.BaseMessageProducer;
 import org.spruce.compiler.parser.NamesParser;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
 
 import static org.spruce.compiler.ast.ASTListNode.Type.*;
-import static org.spruce.compiler.test.ParserTestUtility.*;
+import static org.spruce.compiler.test.parser.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
 
@@ -214,7 +215,7 @@ public class ParserNamesTest {
      * @param code The code to test.
      * @return A <code>NamesParser</code> that will parse the given code.
      */
-    private static NamesParser getNamesParser(String code) {
-        return new Parser(new Scanner(code)).getNamesParser();
+    public static NamesParser getNamesParser(String code) {
+        return new Parser(new Scanner(code), new BaseMessageProducer()).getNamesParser();
     }
 }

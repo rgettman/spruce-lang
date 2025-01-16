@@ -1,4 +1,4 @@
-package org.spruce.compiler.test;
+package org.spruce.compiler.test.parser;
 
 import org.spruce.compiler.ast.classes.ASTAdtDeclaration;
 import org.spruce.compiler.ast.classes.ASTAnnotation;
@@ -11,15 +11,17 @@ import org.spruce.compiler.ast.classes.ASTRecordDeclaration;
 import org.spruce.compiler.ast.classes.ASTTypeDeclaration;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.toplevel.*;
+import org.spruce.compiler.common.BaseMessageProducer;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.parser.TopLevelParser;
 import org.spruce.compiler.scanner.Scanner;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.spruce.compiler.ast.ASTListNode.Type.*;
-import static org.spruce.compiler.test.ParserTestUtility.*;
+import static org.spruce.compiler.test.parser.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
+import org.spruce.compiler.test.util.TestUtility;
 
 /**
  * All tests for the parser related to top level productions.
@@ -194,7 +196,7 @@ public class ParserTopLevelTest {
         ASTUseDeclaration node = parser.parseUseDeclaration();
         ensureNoErrors(node, parser);
 
-        ASTUseSharedAllDeclaration usad = ensureIsa(node, ASTUseSharedAllDeclaration.class);
+        ASTUseSharedAllDeclaration usad = TestUtility.ensureIsa(node, ASTUseSharedAllDeclaration.class);
         checkList(usad.getTypename(), TYPENAME_IDS, ASTIdentifier.class, 3);
     }
 
@@ -217,7 +219,7 @@ public class ParserTopLevelTest {
         ASTUseDeclaration node = parser.parseUseDeclaration();
         ensureNoErrors(node, parser);
 
-        ASTUseSharedTypeDeclaration ustd = ensureIsa(node, ASTUseSharedTypeDeclaration.class);
+        ASTUseSharedTypeDeclaration ustd = TestUtility.ensureIsa(node, ASTUseSharedTypeDeclaration.class);
         ASTIdentifier identifier = ustd.getIdentifier();
         assertEquals("assertEquals", identifier.getValue());
         checkList(ustd.getTypeName(), TYPENAME_IDS, ASTIdentifier.class, 3);
@@ -242,7 +244,7 @@ public class ParserTopLevelTest {
         ASTUseDeclaration node = parser.parseUseDeclaration();
         ensureNoErrors(node, parser);
 
-        ASTUseSharedMultDeclaration usmd = ensureIsa(node, ASTUseSharedMultDeclaration.class);
+        ASTUseSharedMultDeclaration usmd = TestUtility.ensureIsa(node, ASTUseSharedMultDeclaration.class);
         checkList(usmd.getIdentifierList(), IDENTIFIERS, ASTIdentifier.class, 3);
         checkList(usmd.getTypeName(), TYPENAME_IDS, ASTIdentifier.class, 3);
     }
@@ -276,7 +278,7 @@ public class ParserTopLevelTest {
         ASTUseDeclaration node = parser.parseUseDeclaration();
         ensureNoErrors(node, parser);
 
-        ASTUseAllDeclaration uad = ensureIsa(node, ASTUseAllDeclaration.class);
+        ASTUseAllDeclaration uad = TestUtility.ensureIsa(node, ASTUseAllDeclaration.class);
         assertNotNull(uad.getNamespaceOrTypeName());
     }
 
@@ -300,7 +302,7 @@ public class ParserTopLevelTest {
         ASTUseDeclaration node = parser.parseUseDeclaration();
         ensureNoErrors(node, parser);
 
-        ASTUseTypeDeclaration utd = ensureIsa(node, ASTUseTypeDeclaration.class);
+        ASTUseTypeDeclaration utd = TestUtility.ensureIsa(node, ASTUseTypeDeclaration.class);
         checkList(utd.getTypename(), TYPENAME_IDS, ASTIdentifier.class, 3);
     }
 
@@ -323,7 +325,7 @@ public class ParserTopLevelTest {
         ASTUseDeclaration node = parser.parseUseDeclaration();
         ensureNoErrors(node, parser);
 
-        ASTUseMultDeclaration umd = ensureIsa(node, ASTUseMultDeclaration.class);
+        ASTUseMultDeclaration umd = TestUtility.ensureIsa(node, ASTUseMultDeclaration.class);
         checkList(umd.getIdentifierList(), IDENTIFIERS, ASTIdentifier.class, 3);
         checkList(umd.getNamespaceOrTypeName(), NAMESPACE_OR_TYPENAME_IDS, ASTIdentifier.class, 2);
     }
@@ -480,7 +482,7 @@ public class ParserTopLevelTest {
      * @param code The code to test.
      * @return A <code>TopLevelParser</code> that will parse the given code.
      */
-    private static TopLevelParser getTopLevelParser(String code) {
-        return new Parser(new Scanner(code)).getTopLevelParser();
+    public static TopLevelParser getTopLevelParser(String code) {
+        return new Parser(new Scanner(code), new BaseMessageProducer()).getTopLevelParser();
     }
 }

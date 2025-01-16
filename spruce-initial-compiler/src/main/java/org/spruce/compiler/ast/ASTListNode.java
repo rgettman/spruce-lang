@@ -2,7 +2,7 @@ package org.spruce.compiler.ast;
 
 import java.util.List;
 
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * An <code>ASTListNode</code> is an <code>ASTParentNode</code> that has a variable

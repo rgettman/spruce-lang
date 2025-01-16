@@ -1,10 +1,11 @@
-package org.spruce.compiler.test;
+package org.spruce.compiler.test.parser;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.expressions.*;
 import org.spruce.compiler.ast.names.*;
 import org.spruce.compiler.ast.statements.*;
 import org.spruce.compiler.ast.types.*;
+import org.spruce.compiler.common.BaseMessageProducer;
 import org.spruce.compiler.parser.ExpressionsParser;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.parser.StatementsParser;
@@ -12,9 +13,10 @@ import org.spruce.compiler.scanner.Scanner;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.spruce.compiler.scanner.TokenType.*;
-import static org.spruce.compiler.test.ParserTestUtility.*;
+import static org.spruce.compiler.test.parser.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
+import org.spruce.compiler.test.util.TestUtility;
 
 import static org.spruce.compiler.ast.ASTListNode.Type.*;
 
@@ -40,7 +42,7 @@ public class ParserStatementsTest {
         ASTBlockStatements blockStmts = node.getBlockStmts();
         checkList(blockStmts, BLOCK_STMTS, ASTBlockStatement.class, 1);
 
-        ASTBlock innerBlock = ensureIsa(blockStmts.getChildren().get(0), ASTBlock.class);
+        ASTBlock innerBlock = TestUtility.ensureIsa(blockStmts.getChildren().get(0), ASTBlock.class);
         ASTBlockStatements innerBlockStmts = innerBlock.getBlockStmts();
         checkList(innerBlockStmts, BLOCK_STMTS, ASTBlockStatement.class, 1);
     }
@@ -71,7 +73,7 @@ public class ParserStatementsTest {
             """);
         ASTBlock node = parser.parseBlock();
         ensureNoErrors(node, parser);
-        ASTBlockStatements blockStmts = ensureIsa(node.getBlockStmts(), ASTBlockStatements.class);
+        ASTBlockStatements blockStmts = TestUtility.ensureIsa(node.getBlockStmts(), ASTBlockStatements.class);
         checkList(blockStmts, BLOCK_STMTS, ASTBlockStatement.class, 3);
     }
 
@@ -143,8 +145,8 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("i = 1;");
         ASTBlockStatement node = parser.parseBlockStatement();
         ensureNoErrors(node, parser);
-        ASTExpressionStatement exprStmt = ensureIsa(node, ASTExpressionStatement.class);
-        ASTAssignment assignment = ensureIsa(exprStmt.getStmtExpr(), ASTAssignment.class);
+        ASTExpressionStatement exprStmt = TestUtility.ensureIsa(node, ASTExpressionStatement.class);
+        ASTAssignment assignment = TestUtility.ensureIsa(exprStmt.getStmtExpr(), ASTAssignment.class);
         assertEquals(EQUAL, assignment.getOperator());
         assertNotNull(assignment.getLeftHandSide());
         assertNotNull(assignment.getExpr());
@@ -158,7 +160,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("i(j);");
         ASTBlockStatement node = parser.parseBlockStatement();
         ensureNoErrors(node, parser);
-        ASTExpressionStatement exprStmt = ensureIsa(node, ASTExpressionStatement.class);
+        ASTExpressionStatement exprStmt = TestUtility.ensureIsa(node, ASTExpressionStatement.class);
         assertInstanceOf(ASTMethodInvocation.class, exprStmt.getStmtExpr());
     }
 
@@ -170,7 +172,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("i.new J();");
         ASTBlockStatement node = parser.parseBlockStatement();
         ensureNoErrors(node, parser);
-        ASTExpressionStatement exprStmt = ensureIsa(node, ASTExpressionStatement.class);
+        ASTExpressionStatement exprStmt = TestUtility.ensureIsa(node, ASTExpressionStatement.class);
         assertInstanceOf(ASTClassInstanceCreationExpression.class, exprStmt.getStmtExpr());
     }
 
@@ -182,7 +184,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("return true;");
         ASTBlockStatement node = parser.parseBlockStatement();
         ensureNoErrors(node, parser);
-        ASTReturnStatement returnStmt = ensureIsa(node, ASTReturnStatement.class);
+        ASTReturnStatement returnStmt = TestUtility.ensureIsa(node, ASTReturnStatement.class);
         assertTrue(returnStmt.getExpr().isPresent());
         assertInstanceOf(ASTPrimary.class, returnStmt.getExpr().get());
     }
@@ -241,7 +243,7 @@ public class ParserStatementsTest {
         ensureNoErrors(node, parser);
         ASTVariableModifierList varModifierList = node.getVarModifierList();
         checkList(varModifierList, VARIABLE_MODIFIERS, ASTKeywordNode.class, 1);
-        ASTKeywordNode modifier = ensureIsa(varModifierList.getChildren().get(0), ASTKeywordNode.class);
+        ASTKeywordNode modifier = TestUtility.ensureIsa(varModifierList.getChildren().get(0), ASTKeywordNode.class);
         assertEquals(MUT, modifier.getKeyword());
         checkList(node.getVarDeclList(), VARIABLE_DECLARATORS, ASTVariableDeclarator.class, 2);
     }
@@ -255,7 +257,7 @@ public class ParserStatementsTest {
         ASTVariableModifierList node = parser.parseVariableModifierList();
         ensureNoErrors(node, parser);
         checkList(node, VARIABLE_MODIFIERS, ASTKeywordNode.class, 1);
-        ASTKeywordNode modifier = ensureIsa(node.getChildren().get(0), ASTKeywordNode.class);
+        ASTKeywordNode modifier = TestUtility.ensureIsa(node.getChildren().get(0), ASTKeywordNode.class);
         assertEquals(VAR, modifier.getKeyword());
     }
     /**
@@ -267,9 +269,9 @@ public class ParserStatementsTest {
         ASTVariableModifierList node = parser.parseVariableModifierList();
         ensureNoErrors(node, parser);
         checkList(node, VARIABLE_MODIFIERS, ASTKeywordNode.class, 2);
-        ASTKeywordNode modifier1 = ensureIsa(node.getChildren().get(0), ASTKeywordNode.class);
+        ASTKeywordNode modifier1 = TestUtility.ensureIsa(node.getChildren().get(0), ASTKeywordNode.class);
         assertEquals(VAR, modifier1.getKeyword());
-        ASTKeywordNode modifier2 = ensureIsa(node.getChildren().get(1), ASTKeywordNode.class);
+        ASTKeywordNode modifier2 = TestUtility.ensureIsa(node.getChildren().get(1), ASTKeywordNode.class);
         assertEquals(MUT, modifier2.getKeyword());
     }
 
@@ -398,8 +400,8 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("x = x + 1;");
         ASTStatement node = parser.parseStatement();
         ensureNoErrors(node, parser);
-        ASTExpressionStatement exprStmt = ensureIsa(node, ASTExpressionStatement.class);
-        ASTAssignment assignment = ensureIsa(exprStmt.getStmtExpr(), ASTAssignment.class);
+        ASTExpressionStatement exprStmt = TestUtility.ensureIsa(node, ASTExpressionStatement.class);
+        ASTAssignment assignment = TestUtility.ensureIsa(exprStmt.getStmtExpr(), ASTAssignment.class);
         assertEquals(EQUAL, assignment.getOperator());
         assertNotNull(assignment.getLeftHandSide());
         assertNotNull(assignment.getExpr());
@@ -534,7 +536,7 @@ public class ParserStatementsTest {
         """);
         ASTStatement node = parser.parseStatement();
         ensureNoErrors(node, parser);
-        ASTCriticalStatement criticalStatement = ensureIsa(node, ASTCriticalStatement.class);
+        ASTCriticalStatement criticalStatement = TestUtility.ensureIsa(node, ASTCriticalStatement.class);
         assertNotNull(criticalStatement.getValueExpr());
         assertNotNull(criticalStatement.getBlock());
     }
@@ -690,7 +692,7 @@ public class ParserStatementsTest {
         ASTSwitchStatement node = parser.parseSwitchStatement();
         ensureNoErrors(node, parser);
         assertNotNull(node.getValueExpr());
-        ASTSwitchStatementRules switchStmtRules = ensureIsa(node.getSwitchStmtRules(), ASTSwitchStatementRules.class);
+        ASTSwitchStatementRules switchStmtRules = TestUtility.ensureIsa(node.getSwitchStmtRules(), ASTSwitchStatementRules.class);
         checkList(switchStmtRules, SWITCH_STMT_RULES, ASTSwitchStatementRule.class, 3);
     }
 
@@ -866,7 +868,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("br");
         ASTResource node = parser.parseResource();
         ensureNoErrors(node, parser);
-        ASTExpressionName exprName = ensureIsa(node, ASTExpressionName.class);
+        ASTExpressionName exprName = TestUtility.ensureIsa(node, ASTExpressionName.class);
         checkList(exprName, EXPR_NAME_IDS, ASTIdentifier.class, 1);
     }
 
@@ -918,7 +920,7 @@ public class ParserStatementsTest {
         ensureNoErrors(node, parser);
         ASTVariableModifierList varModifierList = node.getVarModifierList();
         checkList(varModifierList, VARIABLE_MODIFIERS, ASTKeywordNode.class, 1);
-        ASTKeywordNode modifierVar = ensureIsa(varModifierList.getChildren().get(0), ASTKeywordNode.class);
+        ASTKeywordNode modifierVar = TestUtility.ensureIsa(varModifierList.getChildren().get(0), ASTKeywordNode.class);
         assertEquals(VAR, modifierVar.getKeyword());
         assertInstanceOf(ASTLocalVariableType.class, node.getLocalVarType());
         ASTIdentifier resName = node.getResourceName();
@@ -1035,7 +1037,7 @@ public class ParserStatementsTest {
         ensureNoErrors(node, parser);
         ASTVariableModifierList varModifierList = node.getVarModifierList();
         checkList(varModifierList, VARIABLE_MODIFIERS, ASTKeywordNode.class, 1);
-        ASTKeywordNode modifierVar = ensureIsa(varModifierList.getChildren().get(0), ASTKeywordNode.class);
+        ASTKeywordNode modifierVar = TestUtility.ensureIsa(varModifierList.getChildren().get(0), ASTKeywordNode.class);
         assertEquals(VAR, modifierVar.getKeyword());
         ASTCatchType catchType = node.getCatchType();
         checkList(catchType, INTERSECTION_TYPES, ASTDataType.class, 1);
@@ -1339,7 +1341,7 @@ public class ParserStatementsTest {
                 """);
         ASTForStatement node = parser.parseForStatement();
         ensureNoErrors(node, parser);
-        ASTBasicForStatement basicForStmt = ensureIsa(node, ASTBasicForStatement.class);
+        ASTBasicForStatement basicForStmt = TestUtility.ensureIsa(node, ASTBasicForStatement.class);
         assertTrue(basicForStmt.getInit().isPresent());
         ASTInit init = basicForStmt.getInit().get();
         assertInstanceOf(ASTLocalVariableDeclaration.class, init);
@@ -1361,7 +1363,7 @@ public class ParserStatementsTest {
         """);
         ASTForStatement node = parser.parseForStatement();
         ensureNoErrors(node, parser);
-        ASTBasicForStatement basicForStmt = ensureIsa(node, ASTBasicForStatement.class);
+        ASTBasicForStatement basicForStmt = TestUtility.ensureIsa(node, ASTBasicForStatement.class);
         assertFalse(basicForStmt.getInit().isPresent());
         assertFalse(basicForStmt.getValueExpr().isPresent());
         ASTStatementExpressionList stmtExprList = basicForStmt.getStmtExprList();
@@ -1422,7 +1424,7 @@ public class ParserStatementsTest {
                 """);
         ASTForStatement node = parser.parseForStatement();
         ensureNoErrors(node, parser);
-        ASTEnhancedForStatement enhForStmt = ensureIsa(node, ASTEnhancedForStatement.class);
+        ASTEnhancedForStatement enhForStmt = TestUtility.ensureIsa(node, ASTEnhancedForStatement.class);
         assertNotNull(enhForStmt.getLocalVarDecl());
         assertInstanceOf(ASTPrimary.class, enhForStmt.getValueExpr());
         assertNotNull(enhForStmt.getBlock());
@@ -1723,7 +1725,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("i = 0");
         ASTInit node = parser.parseInit();
         ensureNoErrors(node, parser);
-        ASTStatementExpressionList stmtExprList = ensureIsa(node, ASTStatementExpressionList.class);
+        ASTStatementExpressionList stmtExprList = TestUtility.ensureIsa(node, ASTStatementExpressionList.class);
         checkList(stmtExprList, STMT_EXPRS, ASTStatementExpression.class, 1);
     }
 
@@ -1735,7 +1737,7 @@ public class ParserStatementsTest {
         StatementsParser parser = getStatementsParser("i = 0, j = 0, k = 1");
         ASTInit node = parser.parseInit();
         ensureNoErrors(node, parser);
-        ASTStatementExpressionList stmtExprList = ensureIsa(node, ASTStatementExpressionList.class);
+        ASTStatementExpressionList stmtExprList = TestUtility.ensureIsa(node, ASTStatementExpressionList.class);
         checkList(stmtExprList, STMT_EXPRS, ASTStatementExpression.class, 3);
     }
 
@@ -2075,6 +2077,6 @@ public class ParserStatementsTest {
      * @return A <code>StatementsParser</code> that will parse the given code.
      */
     private static StatementsParser getStatementsParser(String code) {
-        return new Parser(new Scanner(code)).getStatementsParser();
+        return new Parser(new Scanner(code), new BaseMessageProducer()).getStatementsParser();
     }
 }

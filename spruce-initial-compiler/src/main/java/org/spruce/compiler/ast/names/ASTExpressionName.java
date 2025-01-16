@@ -6,7 +6,7 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.expressions.ASTLeftHandSide;
 import org.spruce.compiler.ast.statements.ASTResource;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTExpressionName</code> is a node representing a simple name or

@@ -1,18 +1,20 @@
-package org.spruce.compiler.test;
+package org.spruce.compiler.test.parser;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.classes.ASTAnnotation;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.*;
+import org.spruce.compiler.common.BaseMessageProducer;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.parser.TypesParser;
 import org.spruce.compiler.scanner.Scanner;
 
 import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.spruce.compiler.scanner.TokenType.*;
-import static org.spruce.compiler.test.ParserTestUtility.*;
+import static org.spruce.compiler.test.parser.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
+import org.spruce.compiler.test.util.TestUtility;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -72,7 +74,7 @@ public class ParserTypesTest {
         TypesParser parser = getTypesParser("spruce.lang.String[]");
         ASTBaseDataType node = parser.parseBaseDataType();
         ensureNoErrors(node, parser);
-        ASTArrayType arrayType = ensureIsa(node, ASTArrayType.class);
+        ASTArrayType arrayType = TestUtility.ensureIsa(node, ASTArrayType.class);
         assertNotNull(arrayType.getDataTypeNoArray());
         assertNotNull(arrayType.getDims());
     }
@@ -226,8 +228,8 @@ public class ParserTypesTest {
         ASTTypeArgumentList outer = node.getTypeArgs().get();
         checkList(outer, TYPE_ARGUMENTS, ASTTypeArgument.class, 1);
 
-        ASTDataType first = ensureIsa(outer.get(0), ASTTypeArgumentBounds.class).getDataType();
-        ASTDataTypeNoArray dtna = ensureIsa(first.getBaseDataType(), ASTDataTypeNoArray.class);
+        ASTDataType first = TestUtility.ensureIsa(outer.get(0), ASTTypeArgumentBounds.class).getDataType();
+        ASTDataTypeNoArray dtna = TestUtility.ensureIsa(first.getBaseDataType(), ASTDataTypeNoArray.class);
         checkList(dtna, SIMPLE_TYPES, ASTSimpleType.class, 1);
 
         ASTSimpleType simpleType = dtna.get(0);
@@ -504,6 +506,6 @@ public class ParserTypesTest {
      * @return A <code>TypesParser</code> that will parse the given code.
      */
     private static TypesParser getTypesParser(String code) {
-        return new Parser(new Scanner(code)).getTypesParser();
+        return new Parser(new Scanner(code), new BaseMessageProducer()).getTypesParser();
     }
 }

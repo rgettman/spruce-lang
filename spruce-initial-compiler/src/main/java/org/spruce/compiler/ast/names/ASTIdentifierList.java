@@ -3,7 +3,7 @@ package org.spruce.compiler.ast.names;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 public class ASTIdentifierList extends ASTListNode<ASTIdentifier> {
     /**

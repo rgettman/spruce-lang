@@ -1,12 +1,12 @@
-package org.spruce.compiler.test;
+package org.spruce.compiler.test.scanner;
 
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
-import org.spruce.compiler.message.CompilerMessage;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.CompilerMessage;
+import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 import static org.spruce.compiler.scanner.TokenType.*;

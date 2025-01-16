@@ -1,6 +1,4 @@
-package org.spruce.compiler.message;
-
-import org.spruce.compiler.scanner.Location;
+package org.spruce.compiler.common;
 
 /**
  * A <code>CompilerMessage</code> is something incorrect or important that

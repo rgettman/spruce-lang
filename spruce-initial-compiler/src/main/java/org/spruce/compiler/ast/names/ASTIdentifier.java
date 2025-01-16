@@ -1,7 +1,7 @@
 package org.spruce.compiler.ast.names;
 
 import org.spruce.compiler.ast.ASTValueNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTIdentifier</code> is a simple name that may be combined with

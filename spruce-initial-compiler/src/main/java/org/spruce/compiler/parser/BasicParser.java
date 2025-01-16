@@ -10,8 +10,9 @@ import java.util.function.Supplier;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.Node;
-import org.spruce.compiler.message.CompilerMessage;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.MessageProducer;
+import org.spruce.compiler.common.CompilerMessage;
+import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 import org.spruce.compiler.scanner.TokenType;
@@ -28,16 +29,20 @@ import static org.spruce.compiler.scanner.TokenType.*;
 public class BasicParser {
     private final Scanner myScanner;
     private final Parser myParser;
+    private final MessageProducer myMsgProducer;
 
     /**
-     * Constructs a <code>BasicParser</code> using a <code>Scanner</code>.
+     * Constructs a <code>BasicParser</code> using a <code>Scanner</code>, a
+     * <code>Parser</code>, and a <code>MessageProducer</code>.
      *
      * @param scanner A <code>Scanner</code>.
-     * @param parser The <code>Parser</code> that is creating this object.
+     * @param parser A <code>Parser</code>.
+     * @param msgProducer A <code>MessageProducer</code>.
      */
-    public BasicParser(Scanner scanner, Parser parser) {
+    public BasicParser(Scanner scanner, Parser parser, MessageProducer msgProducer) {
         myScanner = scanner;
         myParser = parser;
+        myMsgProducer = msgProducer;
     }
 
     /**
@@ -48,8 +53,7 @@ public class BasicParser {
      * @param msg The message.
      */
     public void error(Location loc, String msg) {
-        CompilerMessage cm = new CompilerMessage(loc, CompilerMessage.Level.ERROR, msg);
-        addMessage(cm);
+        myMsgProducer.error(loc, msg);
     }
 
     /**
@@ -58,7 +62,7 @@ public class BasicParser {
      * @param cm The <code>CompilerMessage</code>.
      */
     private void addMessage(CompilerMessage cm) {
-        myParser.addCompilerMessage(cm);
+        myMsgProducer.addCompilerMessage(cm);
     }
 
     /**
@@ -66,7 +70,7 @@ public class BasicParser {
      * @return The <code>List</code> of <code>CompilerMessage</code>s.
      */
     public List<CompilerMessage> getCompilerMessages() {
-        return myParser.getCompilerMessages();
+        return myMsgProducer.getCompilerMessages();
     }
 
     /**
@@ -115,6 +119,14 @@ public class BasicParser {
      */
     public ClassesParser getClassesParser() {
         return myParser.getClassesParser();
+    }
+
+    /**
+     * Returns the <code>TopLevelParser</code>.
+     * @return The <code>TopLevelParser</code>.
+     */
+    public TopLevelParser getTopLevelParser() {
+        return myParser.getTopLevelParser();
     }
 
     /**
@@ -494,10 +506,23 @@ public class BasicParser {
         return test(t, Arrays.asList(TRUE, FALSE, INT_LITERAL, FLOATING_POINT_LITERAL, STRING_LITERAL, CHARACTER_LITERAL));
     }
 
+    /**
+     * A helper method that creates and returns, but does not throw, an
+     * <code>IllegalStateException</code> that the given <code>TokenType</code>
+     * was expected.
+     * @param expected The <code>TokenType</code> expected.
+     * @return An <code>IllegalStateException</code>.
+     */
     protected IllegalStateException internalError(TokenType expected) {
         return internalError("'" + expected.getRepresentation() + "'");
     }
 
+    /**
+     * A helper method that creates and returns, but does not throw, an
+     * <code>IllegalStateException</code> with the given error message.
+     * @param expected The error message.
+     * @return An <code>IllegalStateException</code>.
+     */
     protected IllegalStateException internalError(String expected) {
         return new IllegalStateException("Internal error: Expected " + expected + ", got '" +
                 curr().getType().getRepresentation() + "'!");

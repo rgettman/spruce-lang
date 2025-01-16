@@ -1,7 +1,7 @@
 package org.spruce.compiler.ast;
 
 import org.spruce.compiler.ast.classes.ASTAnnotationList;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * An <code>ASTAnnotatedNode</code> is an <code>ASTParentNode</code> that has

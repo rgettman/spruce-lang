@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.types.ASTDataType;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTCatchType</code> is a pipe-separated list of data types.</p>

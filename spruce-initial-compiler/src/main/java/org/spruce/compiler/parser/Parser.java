@@ -1,9 +1,9 @@
 package org.spruce.compiler.parser;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import org.spruce.compiler.message.CompilerMessage;
+import org.spruce.compiler.common.MessageProducer;
+import org.spruce.compiler.common.CompilerMessage;
 import org.spruce.compiler.scanner.Scanner;
 
 /**
@@ -21,22 +21,23 @@ public class Parser {
     private final StatementsParser myStatementsParser;
     private final ClassesParser myClassesParser;
     private final TopLevelParser myTopLevelParser;
-    private final List<CompilerMessage> myMessages;
+    private final MessageProducer myMsgProducer;
 
     /**
      * Constructs a <code>Parser</code> given a <code>Scanner</code>.
      * @param scanner A <code>Scanner</code>.
+     * @param msgProducer A <code>MessageProducer</code>.
      */
-    public Parser(Scanner scanner) {
-        myLiteralsParser = new LiteralsParser(scanner, this);
-        myNamesParser = new NamesParser(scanner, this);
-        myTypesParser = new TypesParser(scanner, this);
-        myExpressionsParser = new ExpressionsParser(scanner, this);
-        myStatementsParser = new StatementsParser(scanner, this);
-        myClassesParser = new ClassesParser(scanner, this);
-        myTopLevelParser = new TopLevelParser(scanner, this);
+    public Parser(Scanner scanner, MessageProducer msgProducer) {
+        myLiteralsParser = new LiteralsParser(scanner, this, msgProducer);
+        myNamesParser = new NamesParser(scanner, this, msgProducer);
+        myTypesParser = new TypesParser(scanner, this, msgProducer);
+        myExpressionsParser = new ExpressionsParser(scanner, this, msgProducer);
+        myStatementsParser = new StatementsParser(scanner, this, msgProducer);
+        myClassesParser = new ClassesParser(scanner, this, msgProducer);
+        myTopLevelParser = new TopLevelParser(scanner, this, msgProducer);
 
-        myMessages = new ArrayList<>();
+        myMsgProducer = msgProducer;
 
         scanner.next();
     }
@@ -102,15 +103,6 @@ public class Parser {
      * @return The <code>List</code> of <code>CompilerMessage</code>s.
      */
     public List<CompilerMessage> getCompilerMessages() {
-        return myMessages;
-    }
-
-    /**
-     * Adds the given <code>CompilerMessage</code> to the internal list of
-     * compiler messages.
-     * @param cm The <code>CompilerMessage</code>.
-     */
-    public void addCompilerMessage(CompilerMessage cm) {
-        myMessages.add(cm);
+        return myMsgProducer.getCompilerMessages();
     }
 }

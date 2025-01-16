@@ -1,6 +1,6 @@
 package org.spruce.compiler.ast;
 
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * The top-level interface for abstract syntax tree nodes.

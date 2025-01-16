@@ -3,7 +3,7 @@ package org.spruce.compiler.ast.expressions;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTSwitchExpressionRules</code> is a list of switch expression rules.</p>

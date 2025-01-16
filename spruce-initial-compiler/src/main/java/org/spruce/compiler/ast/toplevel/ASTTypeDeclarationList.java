@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.classes.ASTTypeDeclaration;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTTypeDeclarationList</code> is multiple type declarations.</p>

@@ -3,7 +3,7 @@ package org.spruce.compiler.ast.classes;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTAnnotationList</code> is a list of annotations.</p>

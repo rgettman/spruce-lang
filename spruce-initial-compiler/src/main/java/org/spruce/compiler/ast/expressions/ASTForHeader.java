@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.statements.ASTLocalVariableDeclaration;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTForHeader</code> is 'for (', a local variable declaration, the keyword

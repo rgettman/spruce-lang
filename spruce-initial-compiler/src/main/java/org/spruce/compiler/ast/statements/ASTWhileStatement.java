@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.expressions.ASTValueExpression;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTWhileStatement</code> is "while", optionally followed by an Init

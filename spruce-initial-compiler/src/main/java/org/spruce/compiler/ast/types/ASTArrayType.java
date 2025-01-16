@@ -6,7 +6,7 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTExpressionName;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTArrayType</code> is a data type (no array) with dimensions.</p>

@@ -7,7 +7,7 @@ import java.util.Optional;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.expressions.ASTSwitchLabel;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTSwitchStatementRule</code> is a switch label, then an arrow

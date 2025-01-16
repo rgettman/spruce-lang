@@ -1,6 +1,6 @@
 package org.spruce.compiler.ast;
 
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * An <code>ASTValueNode</code> is a leaf <code>ASTNode</code> with a value.

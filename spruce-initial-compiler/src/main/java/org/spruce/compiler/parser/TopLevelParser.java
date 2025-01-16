@@ -14,7 +14,8 @@ import org.spruce.compiler.ast.names.ASTIdentifierList;
 import org.spruce.compiler.ast.names.ASTNamespaceOrTypeName;
 import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.ast.toplevel.*;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.MessageProducer;
+import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 
@@ -29,10 +30,11 @@ public class TopLevelParser extends BasicParser {
      * Constructs a <code>TopLevelParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
-     * @param parser The <code>Parser</code> that is creating this object.
+     * @param parser A <code>Parser</code>.
+     * @param msgProducer A <code>MessageProducer</code>.
      */
-    public TopLevelParser(Scanner scanner, Parser parser) {
-        super(scanner, parser);
+    public TopLevelParser(Scanner scanner, Parser parser, MessageProducer msgProducer) {
+        super(scanner, parser, msgProducer);
     }
 
     /**

@@ -6,7 +6,7 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.ast.names.ASTIdentifier;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTDataTypeNoArray</code> is a simple or fully qualified

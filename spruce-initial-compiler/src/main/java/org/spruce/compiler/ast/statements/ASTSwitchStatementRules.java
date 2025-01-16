@@ -3,7 +3,7 @@ package org.spruce.compiler.ast.statements;
 import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTSwitchStatementRules</code> is a list of switch statement rules.</p>

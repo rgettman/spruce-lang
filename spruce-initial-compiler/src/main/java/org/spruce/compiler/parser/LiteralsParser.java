@@ -8,7 +8,8 @@ import org.spruce.compiler.ast.literals.ASTFloatingPointLiteral;
 import org.spruce.compiler.ast.literals.ASTIntegerLiteral;
 import org.spruce.compiler.ast.literals.ASTLiteral;
 import org.spruce.compiler.ast.literals.ASTStringLiteral;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.MessageProducer;
+import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 import org.spruce.compiler.scanner.TokenType;
@@ -24,10 +25,11 @@ public class LiteralsParser extends BasicParser {
      * Constructs a <code>LiteralsParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
-     * @param parser The <code>Parser</code> that is creating this object.
+     * @param parser A <code>Parser</code>.
+     * @param msgProducer A <code>MessageProducer</code>.
      */
-    public LiteralsParser(Scanner scanner, Parser parser) {
-        super(scanner, parser);
+    public LiteralsParser(Scanner scanner, Parser parser, MessageProducer msgProducer) {
+        super(scanner, parser, msgProducer);
     }
 
     /**

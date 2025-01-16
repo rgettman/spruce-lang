@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.spruce.compiler.message.CompilerMessage;
+import org.spruce.compiler.common.CompilerMessage;
+import org.spruce.compiler.common.Location;
 
 /**
  * Reads input from a Reader representing a compilation unit.

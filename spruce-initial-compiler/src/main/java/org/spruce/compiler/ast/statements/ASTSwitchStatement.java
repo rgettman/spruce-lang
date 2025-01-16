@@ -6,7 +6,7 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.expressions.ASTValueExpression;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTSwitchStatement</code> is "switch", followed by a value

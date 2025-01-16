@@ -7,7 +7,8 @@ import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.classes.ASTAnnotationList;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.*;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.MessageProducer;
+import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 import org.spruce.compiler.scanner.TokenType;
@@ -22,10 +23,11 @@ public class TypesParser extends BasicParser {
      * Constructs a <code>TypesParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
-     * @param parser The <code>Parser</code> that is creating this object.
+     * @param parser A <code>Parser</code>.
+     * @param msgProducer A <code>MessageProducer</code>.
      */
-    public TypesParser(Scanner scanner, Parser parser) {
-        super(scanner, parser);
+    public TypesParser(Scanner scanner, Parser parser, MessageProducer msgProducer) {
+        super(scanner, parser, msgProducer);
     }
 
     /**

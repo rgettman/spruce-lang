@@ -1,6 +1,6 @@
 package org.spruce.compiler.ast;
 
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.TokenType;
 
 /**

@@ -12,7 +12,7 @@ import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.ast.statements.ASTStatementExpression;
 import org.spruce.compiler.ast.types.ASTTypeArgumentList;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTMethodInvocation</code> is a primary with an argument list

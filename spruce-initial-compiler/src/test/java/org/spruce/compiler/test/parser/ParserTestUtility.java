@@ -1,4 +1,4 @@
-package org.spruce.compiler.test;
+package org.spruce.compiler.test.parser;
 
 import java.util.List;
 
@@ -6,9 +6,10 @@ import org.spruce.compiler.ast.*;
 import org.spruce.compiler.ast.expressions.ASTBinaryExpression;
 import org.spruce.compiler.ast.expressions.ASTUnaryExpression;
 import org.spruce.compiler.ast.expressions.ASTValueExpression;
-import org.spruce.compiler.message.CompilerMessage;
+import org.spruce.compiler.common.CompilerMessage;
 import org.spruce.compiler.parser.BasicParser;
 import org.spruce.compiler.scanner.TokenType;
+import org.spruce.compiler.test.util.TestUtility;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,20 +29,6 @@ public class ParserTestUtility {
             Node child = children.get(i);
             assertEquals(expectedClasses.get(i), child.getClass(), "Mismatch on child " + i);
         }
-    }
-
-    /**
-     * Fails the test if the given node is <em>not</em> an instance of the
-     * given class.  If it is, this method casts the given node to the given
-     * class.
-     * @param node An <code>ASTNode</code>.
-     * @param nodeClass The node should be an instance of this <code>Class</code>.
-     * @return The node, down-casted to an instance of the given class.
-     * @param <T> The type to cast to.
-     */
-    static <T extends Node> T ensureIsa(Node node, Class<T> nodeClass) {
-        assertInstanceOf(nodeClass, node);
-        return nodeClass.cast(node);
     }
 
     /**
@@ -123,7 +110,7 @@ public class ParserTestUtility {
     static <U extends ASTUnaryExpression> void checkUnaryExpr(ASTUnaryExpression node, TokenType expectedOperation,
                                                         Class<U> parentNodeClass, Class<? extends ASTNode> childClass) {
         assertEquals(expectedOperation, node.getOperation());
-        U unaryNode = ensureIsa(node.getFirst(), parentNodeClass);
+        U unaryNode = TestUtility.ensureIsa(node.getFirst(), parentNodeClass);
         assertInstanceOf(childClass, unaryNode.getFirst());
     }
 

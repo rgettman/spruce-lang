@@ -10,7 +10,7 @@ import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.statements.ASTVariableDeclaratorList;
 import org.spruce.compiler.ast.statements.ASTVariableModifierList;
 import org.spruce.compiler.ast.types.ASTDataType;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTFieldDeclaration</code> is an optional AnnotationList followed

@@ -3,7 +3,8 @@ package org.spruce.compiler.scanner;
 import java.util.Objects;
 import java.util.Optional;
 
-import org.spruce.compiler.message.CompilerMessage;
+import org.spruce.compiler.common.CompilerMessage;
+import org.spruce.compiler.common.Location;
 
 /**
  * A <code>Token</code> consists of a <code>Type</code>, the string value,

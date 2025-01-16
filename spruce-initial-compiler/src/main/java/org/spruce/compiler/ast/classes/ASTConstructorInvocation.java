@@ -9,7 +9,7 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.expressions.ASTArgumentList;
 import org.spruce.compiler.ast.types.ASTTypeArgumentList;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTConstructorInvocation</code> is a colon, with optional type

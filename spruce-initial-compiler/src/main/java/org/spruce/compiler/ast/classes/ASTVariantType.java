@@ -6,7 +6,7 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArray;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTVariantType</code> is an DataTypeNoArray optionally preceded

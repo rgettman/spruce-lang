@@ -7,7 +7,7 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.expressions.ASTExpression;
 import org.spruce.compiler.ast.expressions.ASTLeftHandSide;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.TokenType;
 
 /**

@@ -1,4 +1,4 @@
-package org.spruce.compiler.scanner;
+package org.spruce.compiler.common;
 
 /**
  * A <code>Location</code> describes where a <code>Token</code> can be found in

@@ -8,7 +8,7 @@ import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.statements.ASTBlock;
 import org.spruce.compiler.ast.statements.ASTThrowStatement;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTSwitchExpressionRule</code> is a switch label, then an arrow

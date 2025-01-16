@@ -3,6 +3,7 @@ package org.spruce.compiler.parser;
 import java.util.Arrays;
 
 import org.spruce.compiler.ast.names.*;
+import org.spruce.compiler.common.MessageProducer;
 import org.spruce.compiler.scanner.Scanner;
 import org.spruce.compiler.scanner.Token;
 
@@ -16,10 +17,11 @@ public class NamesParser extends BasicParser {
      * Constructs a <code>NamesParser</code> using a <code>Scanner</code>.
      *
      * @param scanner A <code>Scanner</code>.
-     * @param parser The <code>Parser</code> that is creating this object.
+     * @param parser A <code>Parser</code>.
+     * @param msgProducer A <code>MessageProducer</code>.
      */
-    public NamesParser(Scanner scanner, Parser parser) {
-        super(scanner, parser);
+    public NamesParser(Scanner scanner, Parser parser, MessageProducer msgProducer) {
+        super(scanner, parser, msgProducer);
     }
 
     /**

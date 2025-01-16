@@ -7,7 +7,7 @@ import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.classes.ASTAnnotationList;
 import org.spruce.compiler.ast.names.ASTNamespaceName;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTNamespaceDeclaration</code> is an optional AnnotationList

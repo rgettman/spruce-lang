@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTIfExpression</code> is a logical or expression or

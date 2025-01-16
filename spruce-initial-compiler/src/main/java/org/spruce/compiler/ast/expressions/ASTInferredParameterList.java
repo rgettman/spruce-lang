@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.ast.names.ASTIdentifier;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTInferredParameterList</code> is a list of identifiers

@@ -1,4 +1,4 @@
-package org.spruce.compiler.test;
+package org.spruce.compiler.test.parser;
 
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTListNode;
@@ -7,14 +7,16 @@ import org.spruce.compiler.ast.expressions.*;
 import org.spruce.compiler.ast.names.*;
 import org.spruce.compiler.ast.statements.*;
 import org.spruce.compiler.ast.types.*;
+import org.spruce.compiler.common.BaseMessageProducer;
 import org.spruce.compiler.parser.ClassesParser;
 import org.spruce.compiler.parser.Parser;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.Scanner;
 import static org.spruce.compiler.scanner.TokenType.*;
-import static org.spruce.compiler.test.ParserTestUtility.*;
+import static org.spruce.compiler.test.parser.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
+import org.spruce.compiler.test.util.TestUtility;
 
 import static org.spruce.compiler.ast.ASTListNode.Type.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,7 +64,7 @@ public class ParserClassesTest {
 
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 1);
         assertTrue(node.getAccessMod().isPresent());
-        ASTKeywordNode am = ensureIsa(node.getAccessMod().get(), ASTKeywordNode.class);
+        ASTKeywordNode am = TestUtility.ensureIsa(node.getAccessMod().get(), ASTKeywordNode.class);
         assertEquals(PUBLIC, am.getKeyword());
         checkList(node.getInterfaceModList(), INTERFACE_MODIFIERS, ASTKeywordNode.class, 1);
         ASTIdentifier name = node.getName();
@@ -423,7 +425,7 @@ public class ParserClassesTest {
         ASTElementValue node = parser.parseDefaultValue();
         ensureNoErrors(node, parser);
 
-        ASTElementValueList elementValueArrayInit = ensureIsa(node, ASTElementValueList.class);
+        ASTElementValueList elementValueArrayInit = TestUtility.ensureIsa(node, ASTElementValueList.class);
         checkList(elementValueArrayInit, ELEMENT_VALUES, ASTElementValue.class, 2);
     }
 
@@ -436,7 +438,7 @@ public class ParserClassesTest {
         ASTAnnotation node = parser.parseAnnotation();
         ensureNoErrors(node, parser);
 
-        ASTMarkerAnnotation ma = ensureIsa(node, ASTMarkerAnnotation.class);
+        ASTMarkerAnnotation ma = TestUtility.ensureIsa(node, ASTMarkerAnnotation.class);
         assertNotNull(ma.getTypeName());
     }
 
@@ -449,7 +451,7 @@ public class ParserClassesTest {
         ASTAnnotation node = parser.parseAnnotation();
         ensureNoErrors(node, parser);
 
-        ASTSingleElementAnnotation sea = ensureIsa(node, ASTSingleElementAnnotation.class);
+        ASTSingleElementAnnotation sea = TestUtility.ensureIsa(node, ASTSingleElementAnnotation.class);
         assertNotNull(sea.getTypeName());
         assertNotNull(sea.getElementValue());
     }
@@ -473,7 +475,7 @@ public class ParserClassesTest {
         ASTAnnotation node = parser.parseAnnotation();
         ensureNoErrors(node, parser);
 
-        ASTNormalAnnotation na = ensureIsa(node, ASTNormalAnnotation.class);
+        ASTNormalAnnotation na = TestUtility.ensureIsa(node, ASTNormalAnnotation.class);
         assertNotNull(na.getTypeName());
         checkList(na.getElementValuePairList(), ELEMENT_VALUE_PAIRS, ASTElementValuePair.class, 0);
     }
@@ -487,7 +489,7 @@ public class ParserClassesTest {
         ASTAnnotation node = parser.parseAnnotation();
         ensureNoErrors(node, parser);
 
-        ASTNormalAnnotation na = ensureIsa(node, ASTNormalAnnotation.class);
+        ASTNormalAnnotation na = TestUtility.ensureIsa(node, ASTNormalAnnotation.class);
         assertNotNull(na.getTypeName());
         checkList(na.getElementValuePairList(), ELEMENT_VALUE_PAIRS, ASTElementValuePair.class, 3);
     }
@@ -1165,7 +1167,7 @@ public class ParserClassesTest {
     @Test
     public void testAdtDeclarationNoAdtBody() {
         Scanner scanner = new Scanner("adt Bad;");
-        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ClassesParser parser = new Parser(scanner, new BaseMessageProducer()).getClassesParser();
         ASTAnnotationList annList = parser.parseAnnotationList();
         Location loc = scanner.getCurrToken().getLocation();
         ASTAdtDeclaration node = parser.parseAdtDeclaration(loc, annList, null);
@@ -1178,7 +1180,7 @@ public class ParserClassesTest {
     @Test
     public void testAdtDeclarationNoAdt() {
         Scanner scanner = new Scanner("throw Optional { None() {}, Some(Object value) {}}");
-        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ClassesParser parser = new Parser(scanner, new BaseMessageProducer()).getClassesParser();
         ASTClassPart node = parser.parseClassPart();
         expectError(node, parser, 3);
     }
@@ -1191,7 +1193,7 @@ public class ParserClassesTest {
         Scanner scanner = new Scanner("""
                 @Test public adt Optional<T> extends Bar { None() {}, Some(T value) {}}
                 """);
-        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ClassesParser parser = new Parser(scanner, new BaseMessageProducer()).getClassesParser();
         ASTAnnotationList annList = parser.parseAnnotationList();
         ASTKeywordNode accessMod = parser.parseAccessModifier();
         ASTAdtDeclaration node = parser.parseAdtDeclaration(accessMod.getLocation(), annList, accessMod);
@@ -1211,7 +1213,7 @@ public class ParserClassesTest {
     @Test
     public void testAdtDeclarationSimple() {
         Scanner scanner = new Scanner("adt Optional { None() {}, Some(Object value) {}}");
-        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ClassesParser parser = new Parser(scanner, new BaseMessageProducer()).getClassesParser();
         ASTAnnotationList annList = parser.parseAnnotationList();
         Location loc = scanner.getCurrToken().getLocation();
         ASTAdtDeclaration node = parser.parseAdtDeclaration(loc, annList,null);
@@ -1451,7 +1453,7 @@ public class ParserClassesTest {
                 @Test(val1 = "one", val2 = "two")
                 public record Value<T>(T value) implements Comparable<T> {}
                 """);
-        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ClassesParser parser = new Parser(scanner, new BaseMessageProducer()).getClassesParser();
         ASTAnnotationList annList = parser.parseAnnotationList();
         ASTKeywordNode am = parser.parseAccessModifier();
         ASTRecordDeclaration node = parser.parseRecordDeclaration(am.getLocation(), annList, am);
@@ -1473,7 +1475,7 @@ public class ParserClassesTest {
     @Test
     public void testRecordDeclarationSimple() {
         Scanner scanner = new Scanner("record Person(String first, String last) {}");
-        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ClassesParser parser = new Parser(scanner, new BaseMessageProducer()).getClassesParser();
         ASTAnnotationList annList = parser.parseAnnotationList();
         Location loc = scanner.getCurrToken().getLocation();
         ASTRecordDeclaration node = parser.parseRecordDeclaration(loc, annList,null);
@@ -1551,7 +1553,7 @@ public class ParserClassesTest {
                     b /= 2;
                 }
                 """);
-        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ClassesParser parser = new Parser(scanner, new BaseMessageProducer()).getClassesParser();
         ASTAnnotationList annList = parser.parseAnnotationList();
         Location loc = scanner.getCurrToken().getLocation();
         ASTCompactConstructorDeclaration node = parser.parseCompactConstructorDeclaration(loc, annList,null);
@@ -1573,7 +1575,7 @@ public class ParserClassesTest {
                     b /= 2;
                 }
                 """);
-        ClassesParser parser = new Parser(scanner).getClassesParser();
+        ClassesParser parser = new Parser(scanner, new BaseMessageProducer()).getClassesParser();
         ASTAnnotationList annList = parser.parseAnnotationList();
         Location loc = scanner.getCurrToken().getLocation();
         ASTCompactConstructorDeclaration node = parser.parseCompactConstructorDeclaration(loc, annList,null);
@@ -3112,6 +3114,6 @@ public class ParserClassesTest {
      * @return A <code>ClassesParser</code> that will parse the given code.
      */
     private static ClassesParser getClassesParser(String code) {
-        return new Parser(new Scanner(code)).getClassesParser();
+        return new Parser(new Scanner(code), new BaseMessageProducer()).getClassesParser();
     }
 }

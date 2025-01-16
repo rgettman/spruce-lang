@@ -13,7 +13,7 @@ import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.names.ASTTypeName;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.ast.types.ASTTypeArgumentList;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTMethodReference</code> is a reference to a method or constructor.

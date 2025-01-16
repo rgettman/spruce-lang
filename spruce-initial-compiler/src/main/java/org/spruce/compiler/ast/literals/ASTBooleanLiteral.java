@@ -1,7 +1,7 @@
 package org.spruce.compiler.ast.literals;
 
 import org.spruce.compiler.ast.ASTValueNode;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTBooleanLiteral</code> is <code>true</code> or <code>false</code>.</p>

@@ -1,13 +1,16 @@
-package org.spruce.compiler.test;
+package org.spruce.compiler.test.parser;
 
 import org.spruce.compiler.ast.literals.*;
+import org.spruce.compiler.common.BaseMessageProducer;
 import org.spruce.compiler.parser.LiteralsParser;
 import org.spruce.compiler.parser.Parser;
 import org.spruce.compiler.scanner.Scanner;
 
 import org.junit.jupiter.api.Test;
+import org.spruce.compiler.test.util.TestUtility;
+
 import static org.junit.jupiter.api.Assertions.*;
-import static org.spruce.compiler.test.ParserTestUtility.*;
+import static org.spruce.compiler.test.parser.ParserTestUtility.*;
 
 /**
  * All tests for the parser related to literals.
@@ -21,7 +24,7 @@ public class ParserLiteralsTest {
         LiteralsParser parser = getLiteralsParser("1234");
         ASTLiteral node = parser.parseLiteral();
         ensureNoErrors(node, parser);
-        ASTIntegerLiteral integerLiteral = ensureIsa(node, ASTIntegerLiteral.class);
+        ASTIntegerLiteral integerLiteral = TestUtility.ensureIsa(node, ASTIntegerLiteral.class);
         assertEquals(1234, integerLiteral.getNumericValue());
     }
 
@@ -33,7 +36,7 @@ public class ParserLiteralsTest {
         LiteralsParser parser = getLiteralsParser("1234.5");
         ASTLiteral node = parser.parseLiteral();
         ensureNoErrors(node, parser);
-        ASTFloatingPointLiteral floatingPointLiteral = ensureIsa(node, ASTFloatingPointLiteral.class);
+        ASTFloatingPointLiteral floatingPointLiteral = TestUtility.ensureIsa(node, ASTFloatingPointLiteral.class);
         assertEquals(1234.5, floatingPointLiteral.getNumericValue());
     }
 
@@ -45,7 +48,7 @@ public class ParserLiteralsTest {
         LiteralsParser parser = getLiteralsParser("'c'");
         ASTLiteral node = parser.parseLiteral();
         ensureNoErrors(node, parser);
-        ASTCharacterLiteral charLiteral = ensureIsa(node, ASTCharacterLiteral.class);
+        ASTCharacterLiteral charLiteral = TestUtility.ensureIsa(node, ASTCharacterLiteral.class);
         assertEquals('c', charLiteral.getCharacterValue());
     }
 
@@ -57,7 +60,7 @@ public class ParserLiteralsTest {
         LiteralsParser parser = getLiteralsParser("\"s\\tring\"");
         ASTLiteral node = parser.parseLiteral();
         ensureNoErrors(node, parser);
-        ASTStringLiteral strLiteral = ensureIsa(node, ASTStringLiteral.class);
+        ASTStringLiteral strLiteral = TestUtility.ensureIsa(node, ASTStringLiteral.class);
         assertEquals("s\tring", strLiteral.getStringValue());
     }
 
@@ -69,7 +72,7 @@ public class ParserLiteralsTest {
         LiteralsParser parser = getLiteralsParser("\"\"");
         ASTLiteral node = parser.parseLiteral();
         ensureNoErrors(node, parser);
-        ASTStringLiteral strLiteral = ensureIsa(node, ASTStringLiteral.class);
+        ASTStringLiteral strLiteral = TestUtility.ensureIsa(node, ASTStringLiteral.class);
         assertEquals("", strLiteral.getStringValue());
     }
 
@@ -85,7 +88,7 @@ public class ParserLiteralsTest {
         LiteralsParser parser = getLiteralsParser(str);
         ASTLiteral node = parser.parseLiteral();
         ensureNoErrors(node, parser);
-        ASTStringLiteral strLiteral = ensureIsa(node, ASTStringLiteral.class);
+        ASTStringLiteral strLiteral = TestUtility.ensureIsa(node, ASTStringLiteral.class);
         assertEquals("\"stri\ng\"", strLiteral.getStringValue());
     }
 
@@ -97,7 +100,7 @@ public class ParserLiteralsTest {
         LiteralsParser parser = getLiteralsParser("true");
         ASTLiteral node = parser.parseLiteral();
         ensureNoErrors(node, parser);
-        ASTBooleanLiteral boolLiteral = ensureIsa(node, ASTBooleanLiteral.class);
+        ASTBooleanLiteral boolLiteral = TestUtility.ensureIsa(node, ASTBooleanLiteral.class);
         assertTrue(boolLiteral.getBooleanValue());
     }
 
@@ -109,7 +112,7 @@ public class ParserLiteralsTest {
         LiteralsParser parser = getLiteralsParser("false");
         ASTLiteral node = parser.parseLiteral();
         ensureNoErrors(node, parser);
-        ASTBooleanLiteral boolLiteral = ensureIsa(node, ASTBooleanLiteral.class);
+        ASTBooleanLiteral boolLiteral = TestUtility.ensureIsa(node, ASTBooleanLiteral.class);
         assertFalse(boolLiteral.getBooleanValue());
     }
 
@@ -119,6 +122,6 @@ public class ParserLiteralsTest {
      * @return A <code>LiteralsParser</code> that will parse the given code.
      */
     private static LiteralsParser getLiteralsParser(String code) {
-        return new Parser(new Scanner(code)).getLiteralsParser();
+        return new Parser(new Scanner(code), new BaseMessageProducer()).getLiteralsParser();
     }
 }

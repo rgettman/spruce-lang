@@ -10,7 +10,7 @@ import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.ast.types.ASTSimpleType;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTLocalVariableDeclaration</code> is an optional variable

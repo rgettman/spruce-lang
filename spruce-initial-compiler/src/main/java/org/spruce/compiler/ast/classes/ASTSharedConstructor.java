@@ -6,7 +6,7 @@ import java.util.List;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.statements.ASTBlock;
-import org.spruce.compiler.scanner.Location;
+import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTSharedConstructor</code> is "shared" followed by "constructor",
