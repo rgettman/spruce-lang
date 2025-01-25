@@ -10,6 +10,7 @@ import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTEnumDeclaration</code> is an optional AnnotationList, followed
@@ -145,10 +146,23 @@ public final class ASTEnumDeclaration extends ASTAnnotatedNode implements ASTTyp
         }
     }
 
+    @Override
+    public List<TokenType> getModifiers() {
+        List<TokenType> modifiers = new ArrayList<>();
+        if (myAccessMod != null) {
+            modifiers.add(myAccessMod.getKeyword());
+        }
+        for (ASTKeywordNode modifier : myClassModifierList.getTypedChildren()) {
+            modifiers.add(modifier.getKeyword());
+        }
+        return modifiers;
+    }
+
     /**
      * Returns an <code>ASTKeywordNode</code> representing the AccessModifier, if it exists.
      * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
      */
+    @Override
     public Optional<ASTKeywordNode> getAccessMod() {
         return Optional.ofNullable(myAccessMod);
     }
@@ -165,6 +179,7 @@ public final class ASTEnumDeclaration extends ASTAnnotatedNode implements ASTTyp
      * Returns an <code>ASTIdentifier</code> representing the class name.
      * @return An <code>ASTIdentifier</code>.
      */
+    @Override
     public ASTIdentifier getName() {
         return myName;
     }

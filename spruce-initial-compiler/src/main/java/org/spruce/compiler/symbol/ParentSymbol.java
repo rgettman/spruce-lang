@@ -15,12 +15,13 @@ public class ParentSymbol extends Symbol {
      * a child <code>SymbolTable</code>.
      * @param loc The <code>Location</code>.
      * @param name The name of this symbol.
+     * @param type The <code>Type</code> of this symbol.
      * @param parent The parent <code>SymbolTable</code>.
      * @param flags All flags belonging to this symbol.
-     * @param scope The <code>Scope</code> of this symbol.
+     * @param scope The <code>Scope</code> of this symbol's child table.
      */
-    public ParentSymbol(Location loc, String name, SymbolTable parent, long flags, SymbolTable.Scope scope) {
-        super(loc, name, parent, flags);
+    public ParentSymbol(Location loc, String name, Type type, SymbolTable parent, long flags, SymbolTable.Scope scope) {
+        super(loc, name, type, parent, flags);
         myTable = new ChildSymbolTable(scope, getParent());
     }
 

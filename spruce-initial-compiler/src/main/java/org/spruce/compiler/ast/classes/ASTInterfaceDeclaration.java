@@ -12,6 +12,7 @@ import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTInterfaceDeclaration</code> is an optional AnnotationList,
@@ -26,7 +27,7 @@ import org.spruce.compiler.common.Location;
  */
 public final class ASTInterfaceDeclaration extends ASTAnnotatedNode implements ASTTypeDeclaration {
     private final ASTKeywordNode myAccessMod;
-    private final ASTInterfaceModifierList myInterfaceModifierList;
+    private final ASTInterfaceModifierList myInterfaceModList;
     private final ASTIdentifier myName;
     private final ASTTypeParameterList myTypeParams;
     private final ASTDataTypeNoArrayList myExtendsInterfaces;
@@ -39,7 +40,7 @@ public final class ASTInterfaceDeclaration extends ASTAnnotatedNode implements A
      * @param location The <code>Location</code>.
      * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param accessMod A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
-     * @param interfaceModifierList A possibly empty <code>ASTInterfaceModifierList</code>.
+     * @param interfaceModList A possibly empty <code>ASTInterfaceModifierList</code>.
      * @param name An <code>ASTIdentifier</code> representing the interface name.
      * @param typeParams A possibly null <code>ASTTypeParameterList</code>.
      * @param extendsInterfaces A possibly null <code>ASTDataTypeNoArrayList</code>
@@ -48,12 +49,12 @@ public final class ASTInterfaceDeclaration extends ASTAnnotatedNode implements A
      *                   representing the list of permitted implementing classes.
      * @param interfaceParts A possibly empty <code>ASTInterfacePartList</code> representing the class body.
      */
-    private ASTInterfaceDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod, ASTInterfaceModifierList interfaceModifierList,
+    private ASTInterfaceDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod, ASTInterfaceModifierList interfaceModList,
                                     ASTIdentifier name, ASTTypeParameterList typeParams, ASTDataTypeNoArrayList extendsInterfaces,
                                     ASTDataTypeNoArrayList permits, ASTInterfacePartList interfaceParts) {
         super(location, annList);
         myAccessMod = accessMod;
-        myInterfaceModifierList = interfaceModifierList;
+        myInterfaceModList = interfaceModList;
         myName = name;
         myTypeParams = typeParams;
         myExtendsInterfaces = extendsInterfaces;
@@ -178,10 +179,23 @@ public final class ASTInterfaceDeclaration extends ASTAnnotatedNode implements A
         }
     }
 
+    @Override
+    public List<TokenType> getModifiers() {
+        List<TokenType> modifiers = new ArrayList<>();
+        if (myAccessMod != null) {
+            modifiers.add(myAccessMod.getKeyword());
+        }
+        for (ASTKeywordNode modifier : myInterfaceModList.getTypedChildren()) {
+            modifiers.add(modifier.getKeyword());
+        }
+        return modifiers;
+    }
+
     /**
      * Returns an <code>ASTKeywordNode</code> representing the AccessModifier, if it exists.
      * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
      */
+    @Override
     public Optional<ASTKeywordNode> getAccessMod() {
         return Optional.ofNullable(myAccessMod);
     }
@@ -191,13 +205,14 @@ public final class ASTInterfaceDeclaration extends ASTAnnotatedNode implements A
      * @return An <code>ASTInterfaceModifierList</code>.
      */
     public ASTInterfaceModifierList getInterfaceModifierList() {
-        return myInterfaceModifierList;
+        return myInterfaceModList;
     }
 
     /**
      * Returns an <code>ASTIdentifier</code> representing the interface name.
      * @return An <code>ASTIdentifier</code>.
      */
+    @Override
     public ASTIdentifier getName() {
         return myName;
     }
@@ -241,7 +256,7 @@ public final class ASTInterfaceDeclaration extends ASTAnnotatedNode implements A
         if (myAccessMod != null) {
             children.add(myAccessMod);
         }
-        children.add(myInterfaceModifierList);
+        children.add(myInterfaceModList);
         children.add(myName);
         if (myTypeParams != null) {
             children.add(myTypeParams);

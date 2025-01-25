@@ -11,6 +11,7 @@ import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTAdtDeclaration</code> is an optional AnnotationList, followed
@@ -23,7 +24,7 @@ import org.spruce.compiler.common.Location;
  * </em>
  */
 public final class ASTAdtDeclaration extends ASTAnnotatedNode implements ASTTypeDeclaration {
-    private final ASTKeywordNode myAccessModifier;
+    private final ASTKeywordNode myAccessMod;
     private final ASTIdentifier myName;
     private final ASTTypeParameterList myTypeParams;
     private final ASTDataTypeNoArrayList myExtendsInterfaces;
@@ -34,16 +35,16 @@ public final class ASTAdtDeclaration extends ASTAnnotatedNode implements ASTType
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
      * @param annList A possibly empty <code>ASTAnnotationList</code>.
-     * @param accessModifier A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
+     * @param accessMod A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
      * @param name An <code>ASTIdentifier</code> representing the ADT Name.
      * @param typeParams A possibly null <code>ASTTypeParameterList</code>.
      * @param extendsInterfaces A possibly null <code>ASTDataTypeNoArrayList</code>.
      * @param adtBody An <code>ASTAdtBody</code>.
      */
-    private ASTAdtDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessModifier, ASTIdentifier name,
+    private ASTAdtDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod, ASTIdentifier name,
                               ASTTypeParameterList typeParams, ASTDataTypeNoArrayList extendsInterfaces, ASTAdtBody adtBody) {
         super(location, annList);
-        myAccessModifier = accessModifier;
+        myAccessMod = accessMod;
         myName = name;
         myTypeParams = typeParams;
         myExtendsInterfaces = extendsInterfaces;
@@ -139,18 +140,33 @@ public final class ASTAdtDeclaration extends ASTAnnotatedNode implements ASTType
         }
     }
 
+    @Override
+    public List<TokenType> getModifiers() {
+        List<TokenType> modifiers = new ArrayList<>();
+        if (myAccessMod != null) {
+            modifiers.add(myAccessMod.getKeyword());
+        }
+        // In case there's a need to support general modifiers on an ADT.
+//        for (ASTKeywordNode modifier : myClassModifierList.getTypedChildren()) {
+//            modifiers.add(modifier.getKeyword());
+//        }
+        return modifiers;
+    }
+
     /**
      * Returns an <code>ASTKeywordNode</code> representing an Access Modifier, if it exists.
      * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
      */
-    public Optional<ASTKeywordNode> getAccessModifier() {
-        return Optional.ofNullable(myAccessModifier);
+    @Override
+    public Optional<ASTKeywordNode> getAccessMod() {
+        return Optional.ofNullable(myAccessMod);
     }
 
     /**
      * Returns an <code>ASTIdentifier</code> representing the ADT Name.
      * @return An <code>ASTIdentifier</code> representing the ADT Name.
      */
+    @Override
     public ASTIdentifier getName() {
         return myName;
     }
@@ -183,8 +199,8 @@ public final class ASTAdtDeclaration extends ASTAnnotatedNode implements ASTType
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(6);
         children.add(myAnnList);
-        if (myAccessModifier != null) {
-            children.add(myAccessModifier);
+        if (myAccessMod != null) {
+            children.add(myAccessMod);
         }
         children.add(myName);
         if (myTypeParams != null) {

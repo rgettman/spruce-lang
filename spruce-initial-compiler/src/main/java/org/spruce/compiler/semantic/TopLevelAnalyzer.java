@@ -1,8 +1,12 @@
 package org.spruce.compiler.semantic;
 
+import java.util.List;
+
+import org.spruce.compiler.ast.classes.ASTTypeDeclaration;
 import org.spruce.compiler.ast.names.ASTNamespaceName;
 import org.spruce.compiler.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.ast.toplevel.ASTOrdinaryCompilationUnit;
+import org.spruce.compiler.ast.toplevel.ASTTypeDeclarationList;
 import org.spruce.compiler.common.MessageProducer;
 import org.spruce.compiler.symbol.ChildSymbolTable;
 import org.spruce.compiler.symbol.TopLevelSymbolTable;
@@ -35,6 +39,7 @@ public class TopLevelAnalyzer extends BasicAnalyzer {
             ASTNamespaceDeclaration namespaceDecl = ocu.getNamespaceDecl().get();
             analyzeNamespaceDeclaration(namespaceDecl, topLevel);
         }
+        analyzeTypeDeclarationList(ocu.getTypeDeclList(), topLevel);
     }
 
     /**
@@ -49,5 +54,18 @@ public class TopLevelAnalyzer extends BasicAnalyzer {
 
         ASTNamespaceName namespaceName = namespaceDecl.getNamespace();
         insertSymbol(namespace, getNamesAnalyzer().analyzeNamespaceName(namespaceName, topLevel));
+    }
+
+    /**
+     * Analyzes a <code>TypeDeclarationList</code>.  Adds type declaration symbols
+     * to the given <code>TopLevelSymbolTable</code>.
+     * @param typeDeclList An <code>ASTTypeDeclarationList</code>.
+     * @param topLevel A <code>TypeLevelSymbolTable</code>.
+     */
+    public void analyzeTypeDeclarationList(ASTTypeDeclarationList typeDeclList, TopLevelSymbolTable topLevel) {
+        List<ASTTypeDeclaration> typeDecls = typeDeclList.getTypedChildren();
+        for (ASTTypeDeclaration typeDecl : typeDecls) {
+
+        }
     }
 }

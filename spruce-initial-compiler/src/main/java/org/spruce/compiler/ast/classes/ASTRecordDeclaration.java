@@ -11,6 +11,7 @@ import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTRecordDeclaration</code> is an optional AnnotationList, followed
@@ -162,10 +163,24 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
         }
     }
 
+    @Override
+    public List<TokenType> getModifiers() {
+        List<TokenType> modifiers = new ArrayList<>();
+        if (myAccessMod != null) {
+            modifiers.add(myAccessMod.getKeyword());
+        }
+        // In case there's a need to support general modifiers on a record.
+//        for (ASTKeywordNode modifier : myClassModifierList.getTypedChildren()) {
+//            modifiers.add(modifier.getKeyword());
+//        }
+        return modifiers;
+    }
+
     /**
      * Returns an <code>ASTKeywordNode</code> representing the AccessModifier, if it exists.
      * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
      */
+    @Override
     public Optional<ASTKeywordNode> getAccessMod() {
         return Optional.ofNullable(myAccessMod);
     }
@@ -174,6 +189,7 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
      * Returns an <code>ASTIdentifier</code> representing the record name.
      * @return An <code>ASTIdentifier</code>.
      */
+    @Override
     public ASTIdentifier getName() {
         return myName;
     }

@@ -9,6 +9,7 @@ import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTAnnotationDeclaration</code> is an optional AnnotationList,
@@ -65,10 +66,23 @@ public final class ASTAnnotationDeclaration extends ASTAnnotatedNode implements 
         myBody = body;
     }
 
+    @Override
+    public List<TokenType> getModifiers() {
+        List<TokenType> modifiers = new ArrayList<>();
+        if (myAccessMod != null) {
+            modifiers.add(myAccessMod.getKeyword());
+        }
+        for (ASTKeywordNode modifier : myInterfaceModList.getTypedChildren()) {
+            modifiers.add(modifier.getKeyword());
+        }
+        return modifiers;
+    }
+
     /**
      * Returns an <code>ASTKeywordNode</code> representing the Access Modifier, if it exists.
      * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
      */
+    @Override
     public Optional<ASTKeywordNode> getAccessMod() {
         return Optional.ofNullable(myAccessMod);
     }
@@ -85,6 +99,7 @@ public final class ASTAnnotationDeclaration extends ASTAnnotatedNode implements 
      * Returns an <code>ASTIdentifier</code> representing the annotation name.
      * @return An <code>ASTIdentifier</code> representing the annotation name.
      */
+    @Override
     public ASTIdentifier getName() {
         return myName;
     }

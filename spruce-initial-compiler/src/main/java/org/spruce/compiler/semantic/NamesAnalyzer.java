@@ -41,14 +41,14 @@ public class NamesAnalyzer extends BasicAnalyzer {
             throw internalError("identifier in namespace");
         }
         ASTIdentifier first = identifiers.get(0);
-        ParentSymbol curr = new ParentSymbol(first.getLocation(), first.getValue(), parent, 0, NAMESPACE);
+        ParentSymbol curr = new ParentSymbol(first.getLocation(), first.getValue(), Symbol.Type.NAMESPACE, parent, 0, NAMESPACE);
         Symbol symbol = curr;
 
         // Rest
         for (int i = 1; i < identifiers.size(); i++) {
             parent = curr.getTable();
             ASTIdentifier id = identifiers.get(i);
-            curr = new ParentSymbol(id.getLocation(), id.getValue(), parent, 0, NAMESPACE);
+            curr = new ParentSymbol(id.getLocation(), id.getValue(), Symbol.Type.NAMESPACE, parent, 0, NAMESPACE);
             parent.insertSymbol(curr);
         }
 

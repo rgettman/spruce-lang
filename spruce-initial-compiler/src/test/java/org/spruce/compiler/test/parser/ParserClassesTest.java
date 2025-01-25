@@ -1200,7 +1200,7 @@ public class ParserClassesTest {
         ensureNoErrors(node, parser);
 
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 1);
-        assertTrue(node.getAccessModifier().isPresent());
+        assertTrue(node.getAccessMod().isPresent());
         assertEquals("Optional", node.getName().getValue());
         assertTrue(node.getTypeParams().isPresent());
         assertTrue(node.getExtendsInterfaces().isPresent());
@@ -1220,7 +1220,7 @@ public class ParserClassesTest {
         ensureNoErrors(node, parser);
 
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
-        assertFalse(node.getAccessModifier().isPresent());
+        assertFalse(node.getAccessMod().isPresent());
         assertEquals("Optional", node.getName().getValue());
         assertFalse(node.getTypeParams().isPresent());
         assertFalse(node.getExtendsInterfaces().isPresent());
@@ -1887,6 +1887,29 @@ public class ParserClassesTest {
         checkList(node.getSuperinterfaces().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 2);
         assertTrue(node.getPermits().isPresent());
         checkList(node.getPermits().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 5);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
+    }
+
+    /**
+     * Test final class.
+     */
+    @Test
+    public void testClassFinal() {
+        ClassesParser parser = getClassesParser("final class FinalClass {}");
+        ASTAnnotationList annList = parser.parseAnnotationList();
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTClassDeclaration node = parser.parseClassDeclaration(loc, annList,null, genModList);
+        ensureNoErrors(node, parser);
+
+        checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
+        assertFalse(node.getAccessMod().isPresent());
+        checkList(node.getClassModifierList(), CLASS_MODIFIERS, ASTKeywordNode.class, 1);
+        assertEquals("FinalClass", node.getName().getValue());
+        assertFalse(node.getTypeParams().isPresent());
+        assertFalse(node.getSuperclass().isPresent());
+        assertFalse(node.getSuperinterfaces().isPresent());
+        assertFalse(node.getPermits().isPresent());
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
@@ -2759,7 +2782,29 @@ public class ParserClassesTest {
     }
 
     /**
-     * Tests method modifier list of method modifiers.
+     * Tests general modifier list of class modifiers.
+     */
+    @Test
+    public void testGeneralModifierListOfClassModifiers() {
+        ClassesParser parser = getClassesParser("abstract final sealed shared");
+        ASTGeneralModifierList node = parser.parseGeneralModifierList();
+        ensureNoErrors(node, parser);
+        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 4);
+    }
+
+    /**
+     * Tests general modifier list of interface modifiers.
+     */
+    @Test
+    public void testGeneralModifierListOfInterfaceModifiers() {
+        ClassesParser parser = getClassesParser("abstract final sealed shared");
+        ASTGeneralModifierList node = parser.parseGeneralModifierList();
+        ensureNoErrors(node, parser);
+        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 4);
+    }
+
+    /**
+     * Tests general modifier list of method modifiers.
      */
     @Test
     public void testGeneralModifierListOfMethodModifiers() {
@@ -2781,6 +2826,39 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests general modifier of constant.
+     */
+    @Test
+    public void testGeneralModifierOfConstant() {
+        ClassesParser parser = getClassesParser("constant");
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        ensureNoErrors(node, parser);
+        assertEquals(CONSTANT, node.getKeyword());
+    }
+
+    /**
+     * Tests general modifier of default.
+     */
+    @Test
+    public void testGeneralModifierOfDefault() {
+        ClassesParser parser = getClassesParser("default");
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        ensureNoErrors(node, parser);
+        assertEquals(DEFAULT, node.getKeyword());
+    }
+
+    /**
+     * Tests general modifier of final.
+     */
+    @Test
+    public void testGeneralModifierOfFinal() {
+        ClassesParser parser = getClassesParser("final");
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        ensureNoErrors(node, parser);
+        assertEquals(FINAL, node.getKeyword());
+    }
+
+    /**
      * Tests general modifier of override.
      */
     @Test
@@ -2789,6 +2867,17 @@ public class ParserClassesTest {
         ASTKeywordNode node = parser.parseGeneralModifier();
         ensureNoErrors(node, parser);
         assertEquals(OVERRIDE, node.getKeyword());
+    }
+
+    /**
+     * Tests general modifier of sealed.
+     */
+    @Test
+    public void testGeneralModifierOfSealed() {
+        ClassesParser parser = getClassesParser("sealed");
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        ensureNoErrors(node, parser);
+        assertEquals(SEALED, node.getKeyword());
     }
 
     /**
@@ -3113,7 +3202,7 @@ public class ParserClassesTest {
      * @param code The code to test.
      * @return A <code>ClassesParser</code> that will parse the given code.
      */
-    private static ClassesParser getClassesParser(String code) {
+    public static ClassesParser getClassesParser(String code) {
         return new Parser(new Scanner(code), new BaseMessageProducer()).getClassesParser();
     }
 }

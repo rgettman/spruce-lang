@@ -6,11 +6,11 @@ import org.spruce.compiler.ast.ASTListNode;
 import org.spruce.compiler.common.Location;
 
 /**
- * <p>An <code>ASTClassPartList</code> is a list of interface parts.</p>
+ * <p>An <code>ASTClassPartList</code> is a list of class parts.</p>
  *
  * <em>
- * InterfacePartList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;InterfacePart {InterfacePart}
+ * ClassPartList:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ClassPart {ClassPart}
  * </em>
  */
 public class ASTClassPartList extends ASTListNode<ASTClassPart> {

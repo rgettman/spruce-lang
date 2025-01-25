@@ -688,7 +688,7 @@ public class ClassesParser extends BasicParser {
         }
         builder.setInterfaceModifierList(convertToSpecificList(gms, 
                     "Unexpected interface modifier.",
-                    Arrays.asList(ABSTRACT, SHARED),
+                    Arrays.asList(ABSTRACT, SEALED, SHARED),
                     ASTInterfaceModifierList::new
             ));
         if (accept(INTERFACE) == null) {
@@ -1095,7 +1095,7 @@ public class ClassesParser extends BasicParser {
         }
         builder.setClassModifierList(convertToSpecificList(gms, 
                     "Unexpected enum modifier.",
-                    Arrays.asList(ABSTRACT, SHARED),
+                    Arrays.asList(SHARED),
                     ASTClassModifierList::new
             ));
         if (accept(ENUM) == null) {
@@ -1231,7 +1231,7 @@ public class ClassesParser extends BasicParser {
         }
         builder.setClassModifierList(convertToSpecificList(gms, 
                     "Unexpected class modifier.",
-                    Arrays.asList(ABSTRACT, SHARED),
+                    Arrays.asList(ABSTRACT, FINAL, SEALED, SHARED),
                     ASTClassModifierList::new))
                .setName(getNamesParser().parseIdentifier());
         if (isCurr(LESS_THAN)) {
@@ -1345,7 +1345,8 @@ public class ClassesParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;ConstructorDeclaration<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;FieldDeclaration<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;MethodDeclaration<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration
+     * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;CompactConstructorDeclaration
      * </em>
      * @return An <code>ASTClassPart</code>.
      */

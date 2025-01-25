@@ -368,7 +368,7 @@ public class ParserTopLevelTest {
     @Test
     public void testTypeDeclarationListOfMultipleTypeDeclarations() {
         TopLevelParser parser = getTopLevelParser("""
-                class Foo {}
+                final class Foo {}
                 @Test enum Bar {CHOCOLATE, EXAM, SAND}
                 interface Baz {}
                 """);

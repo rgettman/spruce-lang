@@ -1,28 +1,30 @@
-package org.spruce.compiler.test.semantic;
+package org.spruce.compiler.test.symbol;
 
 import java.util.List;
 
+import org.spruce.compiler.symbol.BasicSymbolCreator;
 import org.spruce.compiler.common.CompilerMessage;
-import org.spruce.compiler.semantic.BasicAnalyzer;
 import org.spruce.compiler.symbol.ParentSymbol;
 import org.spruce.compiler.symbol.Symbol;
 import org.spruce.compiler.symbol.SymbolTable;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Utility methods for analyzer tests.  No test entry points.
+ * Utility methods for symbol creator tests.  No test entry points.
  */
-public class AnalyzerTestUtility {
+public class SymbolCreatorTestUtility {
     /**
      * Prints the symbol table.  Prints any compiler messages.  Ensures that there are
      * no compiler messages representing an error.
      * @param table A <code>SymbolTable</code>.
-     * @param analyzer A <code>BasicAnalyzer</code>.
+     * @param creator A <code>BasicSymbolCreator</code>.
      */
-    static void ensureNoErrors(SymbolTable table, BasicAnalyzer analyzer) {
+    static void ensureNoErrors(SymbolTable table, BasicSymbolCreator creator) {
         System.out.println(table);
-        long errorCount = generalCheckForError(analyzer);
+        long errorCount = generalCheckForError(creator);
         if (errorCount != 0) {
             fail("Error message(s) found!");
         }
@@ -32,66 +34,66 @@ public class AnalyzerTestUtility {
      * Prints the symbol table.  Prints any compiler messages.  Ensures that there is
      * exactly one compiler message representing an error.
      * @param table A <code>SymbolTable</code>.
-     * @param analyzer A <code>BasicAnalyzer</code>.
+     * @param creator A <code>BasicSymbolCreator</code>.
      */
-    static void expectError(SymbolTable table, BasicAnalyzer analyzer) {
-        expectError(table, analyzer, 1);
-    }
-
-    /**
-     * Prints the symbol table.  Prints any compiler messages.  Ensures that there is
-     * exactly the specified number of compiler messages representing an error.
-     * @param symbol A <code>Symbol</code>.
-     * @param analyzer A <code>BasicAnalyzer</code>.
-     */
-    static void expectError(Symbol symbol, BasicAnalyzer analyzer, int count) {
-        System.out.println(symbol);
-        long errorCount = generalCheckForError(analyzer);
-        if (errorCount != count) {
-            fail("Expected " + count + " message(s), got " + errorCount + "!");
-        }
-    }
-
-    /**
-     * Prints the symbol table.  Prints any compiler messages.  Ensures that there are
-     * no compiler messages representing an error.
-     * @param symbol A <code>Symbol</code>.
-     * @param analyzer A <code>BasicAnalyzer</code>.
-     */
-    static void ensureNoErrors(Symbol symbol, BasicAnalyzer analyzer) {
-        System.out.println(symbol);
-        long errorCount = generalCheckForError(analyzer);
-        if (errorCount != 0) {
-            fail("Error message(s) found!");
-        }
-    }
-
-    /**
-     * Prints the symbol table.  Prints any compiler messages.  Ensures that there is
-     * exactly one compiler message representing an error.
-     * @param symbol A <code>Symbol</code>.
-     * @param analyzer A <code>BasicAnalyzer</code>.
-     */
-    static void expectError(Symbol symbol, BasicAnalyzer analyzer) {
-        expectError(symbol, analyzer, 1);
+    static void expectError(SymbolTable table, BasicSymbolCreator creator) {
+        expectError(table, creator, 1);
     }
 
     /**
      * Prints the symbol table.  Prints any compiler messages.  Ensures that there is
      * exactly the specified number of compiler messages representing an error.
      * @param table A <code>SymbolTable</code>.
-     * @param analyzer A <code>BasicAnalyzer</code>.
+     * @param creator A <code>BasicSymbolCreator</code>.
      */
-    static void expectError(SymbolTable table, BasicAnalyzer analyzer, int count) {
+    static void expectError(SymbolTable table, BasicSymbolCreator creator, int count) {
         System.out.println(table);
-        long errorCount = generalCheckForError(analyzer);
+        long errorCount = generalCheckForError(creator);
         if (errorCount != count) {
             fail("Expected " + count + " message(s), got " + errorCount + "!");
         }
     }
 
-    private static long generalCheckForError(BasicAnalyzer analyzer) {
-        List<CompilerMessage> msgs = analyzer.getCompilerMessages();
+    /**
+     * Prints the symbol.  Prints any compiler messages.  Ensures that there are
+     * no compiler messages representing an error.
+     * @param symbol A <code>Symbol</code>.
+     * @param creator A <code>BasicSymbolCreator</code>.
+     */
+    static void ensureNoErrors(Symbol symbol, BasicSymbolCreator creator) {
+        System.out.println(symbol);
+        long errorCount = generalCheckForError(creator);
+        if (errorCount != 0) {
+            fail("Error message(s) found!");
+        }
+    }
+
+    /**
+     * Prints the symbol.  Prints any compiler messages.  Ensures that there is
+     * exactly one compiler message representing an error.
+     * @param symbol A <code>Symbol</code>.
+     * @param creator A <code>BasicSymbolCreator</code>.
+     */
+    static void expectError(Symbol symbol, BasicSymbolCreator creator) {
+        expectError(symbol, creator, 1);
+    }
+
+    /**
+     * Prints the symbol.  Prints any compiler messages.  Ensures that there is
+     * exactly the specified number of compiler messages representing an error.
+     * @param symbol A <code>Symbol</code>.
+     * @param creator A <code>BasicSymbolCreator</code>.
+     */
+    static void expectError(Symbol symbol, BasicSymbolCreator creator, int count) {
+        System.out.println(symbol);
+        long errorCount = generalCheckForError(creator);
+        if (errorCount != count) {
+            fail("Expected " + count + " message(s), got " + errorCount + "!");
+        }
+    }
+
+    private static long generalCheckForError(BasicSymbolCreator creator) {
+        List<CompilerMessage> msgs = creator.getCompilerMessages();
         for (CompilerMessage msg : msgs) {
             System.out.println(msg);
         }
@@ -115,7 +117,7 @@ public class AnalyzerTestUtility {
         assertEquals(expFlags, symbol.getFlags());
         switch (symbol) {
             case ParentSymbol ps -> assertEquals(numExpChildren, ps.getTable().size());
-            case Symbol s -> assertEquals(numExpChildren, 0);
+            case Symbol ignored -> assertEquals(numExpChildren, 0);
         }
     }
 

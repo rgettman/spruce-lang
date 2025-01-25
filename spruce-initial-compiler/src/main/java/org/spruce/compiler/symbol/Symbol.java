@@ -8,8 +8,48 @@ import org.spruce.compiler.common.Location;
  * it has its own child <code>SymbolTable</code>.
  */
 public class Symbol {
+    public static final long FLAG_ACCESS_PRIVATE = 0x1L;
+    public static final long FLAG_ACCESS_PROTECTED = 0x2L;
+    public static final long FLAG_ACCESS_INTERNAL = 0x4L;
+    public static final long FLAG_ACCESS_PUBLIC = 0x8L;
+
+    public static final long FLAG_MOD_ABSTRACT = 0x10L;
+    public static final long FLAG_MOD_DEFAULT = 0x20L;
+    public static final long FLAG_MOD_FINAL = 0x40L;
+    public static final long FLAG_MOD_OVERRIDE = 0x80L;
+    public static final long FLAG_MOD_SEALED = 0x100L;
+    public static final long FLAG_MOD_SHARED = 0x200L;
+    public static final long FLAG_MOD_VOLATILE = 0x400L;
+
+    public static final long FLAG_VARIABLE_MUT = 0x1000L;
+    public static final long FLAG_VARIABLE_VAR = 0x2000L;
+
+    public static final long DEFAULT_ACCESS_CLASS = FLAG_ACCESS_INTERNAL;
+    public static final long DEFAULT_ACCESS_FIELD = FLAG_ACCESS_PRIVATE;
+    public static final long DEFAULT_ACCESS_METHOD = FLAG_ACCESS_PUBLIC;
+
+    /**
+     * The type of symbol.
+     */
+    public enum Type {
+        ADT,
+        ANNOTATION,
+        CLASS,
+        CONSTRUCTOR,
+        ENUM,
+        FIELD,
+        INTERFACE,
+        LAMBDA,
+        LOCAL,
+        METHOD,
+        NAMESPACE,
+        PARAMETER,
+        RECORD,
+        USE
+    }
     private final Location myLocation;
     private final String myName;
+    private final Type myType;
     private final SymbolTable myParent;
     private final long myFlags;
 
@@ -21,9 +61,10 @@ public class Symbol {
      * @param parent The parent <code>SymbolTable</code>.
      * @param flags All flags belonging to this symbol.
      */
-    public Symbol(Location loc, String name, SymbolTable parent, long flags) {
+    public Symbol(Location loc, String name, Type type, SymbolTable parent, long flags) {
         myLocation = loc;
         myName = name;
+        myType = type;
         myParent = parent;
         myFlags = flags;
     }
@@ -42,6 +83,14 @@ public class Symbol {
      */
     public String getName() {
         return myName;
+    }
+
+    /**
+     * Returns the <code>Type</code> of this symbol.
+     * @return The <code>Type</code> of this symbol.
+     */
+    public Type getType() {
+        return myType;
     }
 
     /**
@@ -77,7 +126,7 @@ public class Symbol {
      * @return The String representation of this symbol.
      */
     public String toString(String prefix, boolean isTail) {
-        return prefix + (isTail ? "└── " : "├── ") + "\"" + getName() + "\"(" + getFlags() + ") at "
+        return prefix + (isTail ? "└── " : "├── ") + "\"" + getName() + "\"(" + getType() + "," + getFlags() + ") at "
                 + getLocation() + "\n";
     }
 }

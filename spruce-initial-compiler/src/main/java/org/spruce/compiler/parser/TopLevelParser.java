@@ -314,8 +314,10 @@ public class TopLevelParser extends BasicParser {
         ASTAnnotationList currAnnList = annList;
         List<ASTTypeDeclaration> children = new ArrayList<>();
         Predicate<Token> isOnInitialToken = t ->
-                Arrays.asList(AT_SIGN, PUBLIC, INTERNAL, PROTECTED, PRIVATE, ABSTRACT, SHARED,
-                              CLASS, ENUM, INTERFACE, ANNOTATION, RECORD)
+                Arrays.asList(AT_SIGN, PUBLIC, INTERNAL, PROTECTED, PRIVATE,  // Annotations, Access Modifiers
+                              ABSTRACT, CONSTANT, DEFAULT, FINAL, OVERRIDE, SEALED, SHARED, VOLATILE,  // General Modifiers
+                              CLASS, ENUM, INTERFACE, ANNOTATION, RECORD, ADT  // Types
+                        )
                         .contains(t.getType());
         while (!isCurr(EOF)) {
             if (isOnInitialToken.test(curr())) {
