@@ -1,15 +1,19 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.ast.statements.ASTVariableDeclaratorList;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTConstantDeclaration</code> is an optional AnnotationList
@@ -73,6 +77,7 @@ public final class ASTConstantDeclaration extends ASTAnnotatedNode implements AS
      * Returns an <code>ASTKeywordNode</code> representing an AccessModifier, if it exists.
      * @return An <code>Optional&lt;ASTKeywordNode&gt;</code> representing an AccessModifier.
      */
+    @Override
     public Optional<ASTKeywordNode> getAccessMod() {
         return Optional.ofNullable(myAccessMod);
     }
@@ -99,6 +104,23 @@ public final class ASTConstantDeclaration extends ASTAnnotatedNode implements AS
      */
     public ASTVariableDeclaratorList getVarDeclList() {
         return myVarDeclList;
+    }
+
+    @Override
+    public List<TokenType> getModifiers() {
+        return List.of();
+    }
+
+    /**
+     * Returns a <code>List</code> of all the names of declared constants in
+     * this declaration.
+     * @return A <code>List</code> of <code>ASTIdentifier</code>s.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return myVarDeclList.getTypedChildren().stream()
+                .map(ASTVariableDeclarator::getVarName)
+                .toList();
     }
 
     @Override

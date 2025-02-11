@@ -7,10 +7,13 @@ import java.util.Optional;
 import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.ast.statements.ASTVariableDeclaratorList;
 import org.spruce.compiler.ast.statements.ASTVariableModifierList;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTFieldDeclaration</code> is an optional AnnotationList followed
@@ -76,6 +79,21 @@ public final class ASTFieldDeclaration extends ASTAnnotatedNode implements ASTCl
         myVarDeclList = varDeclList;
     }
 
+    @Override
+    public List<TokenType> getModifiers() {
+        List<TokenType> modifiers = new ArrayList<>();
+        if (myAccessMod != null) {
+            modifiers.add(myAccessMod.getKeyword());
+        }
+        for (ASTKeywordNode modifier : getFieldModList().getTypedChildren()) {
+            modifiers.add(modifier.getKeyword());
+        }
+        for (ASTKeywordNode modifier : getVarModList().getTypedChildren()) {
+            modifiers.add(modifier.getKeyword());
+        }
+        return modifiers;
+    }
+
     /**
      * Returns an <code>ASTKeywordNode</code> representing the AccessModifier, if it exists.
      * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
@@ -114,6 +132,18 @@ public final class ASTFieldDeclaration extends ASTAnnotatedNode implements ASTCl
      */
     public ASTVariableDeclaratorList getVarDeclList() {
         return myVarDeclList;
+    }
+
+    /**
+     * Returns a <code>List</code> of all the names of declared field variables
+     * in this declaration.
+     * @return A <code>List</code> of <code>ASTIdentifier</code>s.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return myVarDeclList.getTypedChildren().stream()
+                .map(ASTVariableDeclarator::getVarName)
+                .toList();
     }
 
     @Override

@@ -1,15 +1,20 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTCompactRecordDeclaration</code> is an optional AnnotationList,
@@ -21,10 +26,10 @@ import org.spruce.compiler.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] Identifier [TypeArguments] RecordHeader [Superinterfaces] ClassBody
  * </em>
  */
-public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implements ASTVariant {
+public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implements ASTVariant, ASTMember, ASTTypeDeclaration {
     private final ASTIdentifier myName;
     private final ASTTypeParameterList myTypeParams;
-    private final ASTFormalParameterList myFormalParamList;
+    private final ASTRecordComponentList myRecordCompList;
     private final ASTDataTypeNoArrayList mySuperinterfaces;
     private final ASTClassPartList myClassParts;
 
@@ -35,18 +40,18 @@ public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implemen
      * @param name An <code>ASTIdentifier</code> representing the record name.
      * @param annList An <code>ASTAnnotationList</code>, possibly empty.
      * @param typeParams A possibly null <code>ASTTypeParameterList</code>.
-     * @param formalParamList An <code>ASTFormalParameterList</code>.
+     * @param recordCompList An <code>ASTRecordComponentList</code>.
      * @param superinterfaces A possibly null <code>ASTDataTypeNoArrayList</code>
      *                        representing the list of superinterfaces.
      * @param classParts A possibly null <code>ASTClassPartList</code> representing the record body.
      */
     private ASTCompactRecordDeclaration(Location location, ASTAnnotationList annList,
-                                 ASTIdentifier name, ASTTypeParameterList typeParams, ASTFormalParameterList formalParamList,
+                                 ASTIdentifier name, ASTTypeParameterList typeParams, ASTRecordComponentList recordCompList,
                                  ASTDataTypeNoArrayList superinterfaces, ASTClassPartList classParts) {
         super(location, annList);
         myName = name;
         myTypeParams = typeParams;
-        myFormalParamList = formalParamList;
+        myRecordCompList = recordCompList;
         mySuperinterfaces = superinterfaces;
         myClassParts = classParts;
     }
@@ -58,7 +63,7 @@ public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implemen
     public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTIdentifier myName;
         private ASTTypeParameterList myTypeParams;
-        private ASTFormalParameterList myFormalParamList;
+        private ASTRecordComponentList myRecordCompList;
         private ASTDataTypeNoArrayList mySuperinterfaces;
         private ASTClassPartList myClassParts;
 
@@ -88,12 +93,12 @@ public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implemen
         }
 
         /**
-         * Sets the <code>ASTFormalParameterList</code>.
-         * @param formalParamList An <code>ASTFormalParameterList</code>.
+         * Sets the <code>ASTRecordComponentList</code>.
+         * @param recordCompList An <code>ASTRecordComponentList</code>.
          * @return This <code>Builder</code>.
          */
-        public Builder setFormalParamList(ASTFormalParameterList formalParamList) {
-            this.myFormalParamList = formalParamList;
+        public Builder setRecordCompList(ASTRecordComponentList recordCompList) {
+            this.myRecordCompList = recordCompList;
             return this;
         }
 
@@ -135,14 +140,14 @@ public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implemen
             if (myName == null) {
                 throw new IllegalStateException("No Name given!");
             }
-            if (myFormalParamList == null) {
+            if (myRecordCompList == null) {
                 throw new IllegalStateException("No Record Header given!");
             }
             if (myClassParts == null) {
                 throw new IllegalStateException("No Compact Record Body given!");
             }
             return new ASTCompactRecordDeclaration(myLocation, myAnnList, myName, myTypeParams,
-                    myFormalParamList, mySuperinterfaces, myClassParts);
+                    myRecordCompList, mySuperinterfaces, myClassParts);
         }
     }
 
@@ -163,11 +168,11 @@ public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implemen
     }
 
     /**
-     * Returns an <code>ASTFormalParameterList</code>.
-     * @return An <code>ASTFormalParameterList</code>.
+     * Returns an <code>ASTRecordComponentList</code>.
+     * @return An <code>ASTRecordComponentList</code>.
      */
-    public ASTFormalParameterList getFormalParamList() {
-        return myFormalParamList;
+    public ASTRecordComponentList getRecordCompList() {
+        return myRecordCompList;
     }
 
     /**
@@ -186,6 +191,49 @@ public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implemen
         return myClassParts;
     }
 
+    /**
+     * There are no modifiers for a compact record declaration.
+     * @return An empty <code>List</code>.
+     */
+    @Override
+    public List<TokenType> getModifiers() {
+        return Collections.emptyList();
+    }
+
+    /**
+     * There is no access modifier for a compact record declaration.
+     * @return An empty <code>Optional</code>.
+     */
+    @Override
+    public Optional<ASTKeywordNode> getAccessMod() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns a <code>List</code> of exactly one <code>ASTIdentifier</code>
+     * representing the record declaration name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myName);
+    }
+
+    /**
+     * Returns a <code>List</code> of <code>ASTMembers</code> consisting of all
+     * interface parts plus any record components.
+     * @return A <code>List</code> of <code>ASTMembers</code>.
+     */
+    @Override
+    public List<ASTMember> getMembers() {
+        return Stream.concat(
+                        myRecordCompList.getTypedChildren().stream(),
+                        myClassParts.getTypedChildren().stream()
+                )
+                .map(part -> (ASTMember) part)
+                .toList();
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(6);
@@ -194,7 +242,7 @@ public final class ASTCompactRecordDeclaration extends ASTAnnotatedNode implemen
         if (myTypeParams != null) {
             children.add(myTypeParams);
         }
-        children.add(myFormalParamList);
+        children.add(myRecordCompList);
         if (mySuperinterfaces != null) {
             children.add(mySuperinterfaces);
         }

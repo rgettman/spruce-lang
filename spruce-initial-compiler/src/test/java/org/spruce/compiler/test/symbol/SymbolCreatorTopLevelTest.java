@@ -64,14 +64,14 @@ public class SymbolCreatorTopLevelTest {
         ChildSymbolTable child = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(child, NAMESPACE, 1, Arrays.asList("collections"));
 
-        symbol = child.get("collections");
-        checkSymbol(symbol, "collections", Symbol.Type.NAMESPACE, 0, 1);
+        Symbol base = child.get("collections");
+        checkSymbol(ensureIsa(base, Symbol.class), "collections", Symbol.Type.NAMESPACE, 0, 1);
 
-        child = ensureIsa(symbol, ParentSymbol.class).getTable();
+        child = ensureIsa(base, ParentSymbol.class).getTable();
         checkSymbolTable(child, NAMESPACE, 1, Arrays.asList("concurrent"));
 
-        symbol = child.get("concurrent");
-        checkSymbol(symbol, "concurrent", Symbol.Type.NAMESPACE, 0, 0);
+        base = child.get("concurrent");
+        checkSymbol(ensureIsa(base, Symbol.class), "concurrent", Symbol.Type.NAMESPACE, 0, 0);
     }
 
     /**
@@ -95,6 +95,21 @@ public class SymbolCreatorTopLevelTest {
         assertFalse(topLevel.getNamespace().isPresent());
         checkSymbolTable(topLevel, TOP, 6,
                 Arrays.asList("TestClass", "TestInterface", "TestAnnotation", "TestEnum", "TestRecord", "TestAdt"));
+    }
+
+    /**
+     * Tests bad classes - same name.
+     */
+    @Test
+    public void testClassesSameName() {
+        TopLevelParser parser = ParserTopLevelTest.getTopLevelParser("""
+                public class SameName {}
+                public class SameName {}
+                """);
+        ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer());
+        TopLevelSymbolTable topLevel = creator.createSymbolsFrom(ocu);
+        expectError(topLevel, creator.getTopLevelSymbolCreator());
     }
 
     /**

@@ -637,7 +637,7 @@ public class ClassesParser extends BasicParser {
         if (isCurr(LESS_THAN)) {
             builder.setTypeParams(getTypesParser().parseTypeParameters());
         }
-        builder.setFormalParamList(parseRecordHeader());
+        builder.setRecordCompList(parseRecordHeader());
         if (isCurr(IMPLEMENTS)) {
             builder.setSuperinterfaces(parseSuperinterfaces());
         }
@@ -1018,7 +1018,7 @@ public class ClassesParser extends BasicParser {
         if (isCurr(LESS_THAN)) {
             builder.setTypeParams(getTypesParser().parseTypeParameters());
         }
-        builder.setFormalParamList(parseRecordHeader());
+        builder.setRecordCompList(parseRecordHeader());
         if (isCurr(IMPLEMENTS)) {
             builder.setSuperinterfaces(parseSuperinterfaces());
         }
@@ -1029,19 +1029,88 @@ public class ClassesParser extends BasicParser {
      * Parses a <code>RecordHeader</code>.
      * <em>
      * RecordHeader:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;( [FormalParameterList] )
+     * &nbsp;&nbsp;&nbsp;&nbsp;( [RecordComponentList] )
      * </em>
-     * @return An <code>ASTFormalParameterList</code>.
+     * @return An <code>ASTRecordComponentList</code>.
      */
-    public ASTFormalParameterList parseRecordHeader() {
+    public ASTRecordComponentList parseRecordHeader() {
         if (accept(OPEN_PARENTHESIS) == null) {
             error(curr().getLocation(), "Expected '('.");
         }
-        ASTFormalParameterList formalParamList = parseFormalParameterList();
+        ASTRecordComponentList recordCompList = parseRecordComponentList();
         if (accept(CLOSE_PARENTHESIS) == null) {
             error(curr().getLocation(), "Expected ')'.");
         }
-        return formalParamList;
+        return recordCompList;
+    }
+
+    /**
+     * Parses a <code>RecordComponentList</code>.
+     * <em>
+     * RecordComponentList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;RecordComponent {, RecordComponent}
+     * </em>
+     * @return An <code>ASTRecordComponentList</code>.
+     */
+    public ASTRecordComponentList parseRecordComponentList() {
+        ASTRecordComponentList node = parseList(
+                t -> test(t, Arrays.asList(TAKE, AT_SIGN, IDENTIFIER)),
+                "Expected data type",
+                COMMA,
+                this::parseRecordComponent,
+                Arrays.asList(CLOSE_PARENTHESIS, CLOSE_BRACE, OPEN_BRACE, SEMICOLON,
+                        PUBLIC, PROTECTED, INTERNAL, PRIVATE,  // Access modifiers
+                        ABSTRACT, FINAL, CONSTANT, DEFAULT, OVERRIDE, SEALED, SHARED, VOLATILE,  // General modifiers
+                        VAR, MUT,  // Variable modifiers (return type, field type)
+                        VOID, CONSTRUCTOR,  // Other class part stuff
+                        CLASS, INTERFACE, ENUM, ANNOTATION, RECORD, ADT,  // Type declarations
+                        EOF),
+                ASTRecordComponentList::new,
+                false
+        );
+
+        // Enforce varargs parameter must be last.
+        List<ASTRecordComponent> children = node.getTypedChildren();
+        boolean ellipsisSeen = false;
+        for (ASTRecordComponent recordComp : children) {
+            if (ellipsisSeen) {
+                error(curr().getLocation(), "Varargs parameter must be last in the list.");
+            }
+            if (recordComp.getEllipsisMod().isPresent()) {
+                ellipsisSeen = true;
+            }
+        }
+
+        return node;
+    }
+
+    /**
+     * Parses a <code>RecordComponent</code>.
+     * <em>
+     * RecordComponent:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [take] DataType Identifier<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [take] DataType ... Identifier<br>
+     * </em>
+     * @return An <code>ASTRecordComponent</code>.
+     */
+    public ASTRecordComponent parseRecordComponent() {
+        Location loc = curr().getLocation();
+        ASTRecordComponent.Builder builder = new ASTRecordComponent.Builder()
+                .setLocation(loc)
+                .setAnnList(parseAnnotationList());
+        if (isCurr(TAKE)) {
+            builder.setTakeMod(parseModifier(Arrays.asList(TAKE),
+                    "'take'"
+            ));
+        }
+        builder.setDataType(getTypesParser().parseDataType());
+        if (isCurr(THREE_DOTS)) {
+            builder.setEllipsisMod(parseModifier(Arrays.asList(THREE_DOTS),
+                    "'...'"
+            ));
+        }
+        return builder.setName(getNamesParser().parseIdentifier())
+                .build();
     }
 
     /**
@@ -2047,7 +2116,7 @@ public class ClassesParser extends BasicParser {
      * <em>
      * FormalParameterList:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;FormalParameter {, FormalParameter}
-     * </em
+     * </em>
      * @return An <code>ASTFormalParameterList</code>.
      */
     public ASTFormalParameterList parseFormalParameterList() {

@@ -1,13 +1,16 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTInterfaceMethodDeclaration</code> is an optional AnnotationList,
@@ -97,6 +100,28 @@ public final class ASTInterfaceMethodDeclaration extends ASTAnnotatedNode implem
      */
     public ASTMethodBody getBody() {
         return myBody;
+    }
+
+    @Override
+    public List<TokenType> getModifiers() {
+        List<TokenType> modifiers = new ArrayList<>();
+        if (myAccessMod != null) {
+            modifiers.add(myAccessMod.getKeyword());
+        }
+        for (ASTKeywordNode modifier : myModifierList.getTypedChildren()) {
+            modifiers.add(modifier.getKeyword());
+        }
+        return modifiers;
+    }
+
+    /**
+     * Returns a <code>List</code> of exactly one <code>ASTIdentifier</code>
+     * representing the method name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myHeader.getMethodDecl().getName());
     }
 
     @Override

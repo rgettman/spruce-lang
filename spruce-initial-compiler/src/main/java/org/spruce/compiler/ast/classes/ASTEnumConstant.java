@@ -2,12 +2,15 @@ package org.spruce.compiler.ast.classes;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.expressions.ASTArgumentList;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTEnumConstant</code> is an optional AnnotationList followed by
@@ -19,7 +22,7 @@ import org.spruce.compiler.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] Identifier [( ArgumentList )] [ClassBody]
  * </em>
  */
-public class ASTEnumConstant extends ASTAnnotatedNode {
+public final class ASTEnumConstant extends ASTAnnotatedNode implements ASTMember {
     private final ASTIdentifier myName;
     private final ASTArgumentList myArgsList;
     private final ASTClassPartList myClassParts;
@@ -68,5 +71,33 @@ public class ASTEnumConstant extends ASTAnnotatedNode {
     @Override
     public List<Node> getChildren() {
         return Arrays.asList(myAnnList, myName, myArgsList, myClassParts);
+    }
+
+    /**
+     * Enum constants don't declare any modifiers.
+     * @return An empty <code>List</code>.
+     */
+    @Override
+    public List<TokenType> getModifiers() {
+        return List.of();
+    }
+
+    /**
+     * Enum constants don't declare an access modifier.
+     * @return An empty <code>Optional</code>.
+     */
+    @Override
+    public Optional<ASTKeywordNode> getAccessMod() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns a <code>List</code> of exactly one <code>ASTIdentifier</code>
+     * representing the enum constant name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myName);
     }
 }

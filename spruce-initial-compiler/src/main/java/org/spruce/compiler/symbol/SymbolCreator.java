@@ -14,6 +14,7 @@ import org.spruce.compiler.common.MessageProducer;
 public class SymbolCreator {
     private final ClassesSymbolCreator myClassesSymbolCreator;
     private final TopLevelSymbolCreator myTopLevelSymbolCreator;
+    private final TypesSymbolCreator myTypesSymbolCreator;
     private final MessageProducer myMsgProducer;
 
     /**
@@ -24,6 +25,7 @@ public class SymbolCreator {
     public SymbolCreator(MessageProducer msgProducer) {
         myClassesSymbolCreator = new ClassesSymbolCreator(this, msgProducer);
         myTopLevelSymbolCreator = new TopLevelSymbolCreator(this, msgProducer);
+        myTypesSymbolCreator = new TypesSymbolCreator(this, msgProducer);
 
         myMsgProducer = msgProducer;
     }
@@ -42,6 +44,14 @@ public class SymbolCreator {
      */
     public TopLevelSymbolCreator getTopLevelSymbolCreator() {
         return myTopLevelSymbolCreator;
+    }
+
+    /**
+     * Returns the <code>TypesSymbolCreator</code>.
+     * @return The <code>TypesSymbolCreator</code>.
+     */
+    public TypesSymbolCreator getTypesSymbolCreator() {
+        return myTypesSymbolCreator;
     }
 
     /**

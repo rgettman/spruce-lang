@@ -1388,7 +1388,7 @@ public class ParserClassesTest {
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 1);
         assertEquals("Some", node.getName().getValue());
         assertTrue(node.getTypeParams().isPresent());
-        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
+        checkList(node.getRecordCompList(), RECORD_COMPONENTS, ASTRecordComponent.class, 1);
         assertTrue(node.getSuperinterfaces().isPresent());
         checkList(node.getSuperinterfaces().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 1);
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 1);
@@ -1407,7 +1407,7 @@ public class ParserClassesTest {
         checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
         assertEquals("None", node.getName().getValue());
         assertFalse(node.getTypeParams().isPresent());
-        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 0);
+        checkList(node.getRecordCompList(), RECORD_COMPONENTS, ASTRecordComponent.class, 0);
         assertFalse(node.getSuperinterfaces().isPresent());
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
@@ -1463,7 +1463,7 @@ public class ParserClassesTest {
         assertTrue(node.getAccessMod().isPresent());
         assertEquals("Value", node.getName().getValue());
         assertTrue(node.getTypeParams().isPresent());
-        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 1);
+        checkList(node.getRecordCompList(), RECORD_COMPONENTS, ASTRecordComponent.class, 1);
         assertTrue(node.getSuperinterfaces().isPresent());
         checkList(node.getSuperinterfaces().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 1);
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
@@ -1485,7 +1485,7 @@ public class ParserClassesTest {
         assertFalse(node.getAccessMod().isPresent());
         assertEquals("Person", node.getName().getValue());
         assertFalse(node.getTypeParams().isPresent());
-        checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 2);
+        checkList(node.getRecordCompList(), RECORD_COMPONENTS, ASTRecordComponent.class, 2);
         assertFalse(node.getSuperinterfaces().isPresent());
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
@@ -1496,7 +1496,7 @@ public class ParserClassesTest {
     @Test
     public void testRecordHeaderMissingCloseParen() {
         ClassesParser parser = getClassesParser("(String filename, Int lineNbr");
-        ASTFormalParameterList node = parser.parseRecordHeader();
+        ASTRecordComponentList node = parser.parseRecordHeader();
         expectError(node, parser);
     }
 
@@ -1506,7 +1506,7 @@ public class ParserClassesTest {
     @Test
     public void testRecordHeaderMissingOpenParen() {
         ClassesParser parser = getClassesParser("String filename, Int lineNbr)");
-        ASTFormalParameterList node = parser.parseRecordHeader();
+        ASTRecordComponentList node = parser.parseRecordHeader();
         expectError(node, parser);
     }
 
@@ -1516,9 +1516,95 @@ public class ParserClassesTest {
     @Test
     public void testRecordHeader() {
         ClassesParser parser = getClassesParser("(String filename, Int lineNbr)");
-        ASTFormalParameterList node = parser.parseRecordHeader();
+        ASTRecordComponentList node = parser.parseRecordHeader();
         ensureNoErrors(node, parser);
-        checkList(node, FORMAL_PARAMETERS, ASTFormalParameter.class, 2);
+        checkList(node, RECORD_COMPONENTS, ASTRecordComponent.class, 2);
+    }
+
+    /**
+     * Tests record component list of record component.
+     */
+    @Test
+    public void testRecordComponentListOfFormalParameter() {
+        ClassesParser parser = getClassesParser("const Int a");
+        ASTRecordComponentList node = parser.parseRecordComponentList();
+        ensureNoErrors(node, parser);
+        checkList(node, RECORD_COMPONENTS, ASTRecordComponent.class, 1);
+    }
+
+    /**
+     * Tests record component list.
+     */
+    @Test
+    public void testRecordComponentList() {
+        ClassesParser parser = getClassesParser("String msg, Foo f, Bar b");
+        ASTRecordComponentList node = parser.parseRecordComponentList();
+        ensureNoErrors(node, parser);
+        checkList(node, RECORD_COMPONENTS, ASTRecordComponent.class, 3);
+    }
+
+    /**
+     * Tests record componentr list with varargs component list.
+     */
+    @Test
+    public void testRecordComponentListOfLastVarargs() {
+        ClassesParser parser = getClassesParser("Point pt, Double... coordinates");
+        ASTRecordComponentList node = parser.parseRecordComponentList();
+        ensureNoErrors(node, parser);
+        checkList(node, RECORD_COMPONENTS, ASTRecordComponent.class, 2);
+    }
+
+    /**
+     * Tests bad record component list if varargs not last, compiler error.
+     */
+    @Test
+    public void testRecordComponentListVarargsNotLastError() {
+        ClassesParser parser = getClassesParser("Double... coordinates, Point pt");
+        ASTRecordComponentList node = parser.parseRecordComponentList();
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests record component list of record components of take and of annotation.
+     */
+    @Test
+    public void testRecordComponentListTakeAnnotation() {
+        ClassesParser parser = getClassesParser("take String foo, @Baz Integer bar");
+        ASTRecordComponentList node = parser.parseRecordComponentList();
+        ensureNoErrors(node, parser);
+        checkList(node, RECORD_COMPONENTS, ASTRecordComponent.class, 2);
+    }
+
+    /**
+     * Tests basic record component.
+     */
+    @Test
+    public void testRecordComponentNoEllipsis() {
+        ClassesParser parser = getClassesParser("String filename");
+        ASTRecordComponent node = parser.parseRecordComponent();
+        ensureNoErrors(node, parser);
+
+        checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 0);
+        assertFalse(node.getTakeMod().isPresent());
+        assertNotNull(node.getDataType());
+        assertFalse(node.getEllipsisMod().isPresent());
+        assertEquals("filename", node.getName().getValue());
+    }
+
+    /**
+     * Tests record component with an annotation, "take", and an ellipsis.
+     */
+    @Test
+    public void testRecordComponentAll() {
+        ClassesParser parser = getClassesParser("@Foo take String ... filenames");
+        ASTRecordComponent node = parser.parseRecordComponent();
+        ensureNoErrors(node, parser);
+
+        checkList(node.getAnnList(), ANNOTATIONS, ASTAnnotation.class, 1);
+        assertTrue(node.getTakeMod().isPresent());
+        assertNotNull(node.getDataType());
+        assertTrue(node.getEllipsisMod().isPresent());
+        assertEquals("filenames", node.getName().getValue());
     }
 
     /**

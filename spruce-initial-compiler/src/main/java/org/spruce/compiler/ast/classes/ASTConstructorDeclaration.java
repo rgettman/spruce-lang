@@ -1,14 +1,17 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.statements.ASTBlock;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTConstructorDeclaration</code> is an optional AnnotationList,
@@ -132,6 +135,7 @@ public final class ASTConstructorDeclaration extends ASTAnnotatedNode implements
      * Returns an <code>ASTKeywordNode</code> representing the AccessModifier, if it exists.
      * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
      */
+    @Override
     public Optional<ASTKeywordNode> getAccessMod() {
         return Optional.ofNullable(myAccessMod);
     }
@@ -158,6 +162,24 @@ public final class ASTConstructorDeclaration extends ASTAnnotatedNode implements
      */
     public ASTBlock getBlock() {
         return myBlock;
+    }
+
+    @Override
+    public List<TokenType> getModifiers() {
+        List<TokenType> modifiers = new ArrayList<>();
+        if (myAccessMod != null) {
+            modifiers.add(myAccessMod.getKeyword());
+        }
+        return modifiers;
+    }
+
+    /**
+     * There are no names on a constructor declaration.
+     * @return An empty <code>List</code>.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Collections.emptyList();
     }
 
     @Override

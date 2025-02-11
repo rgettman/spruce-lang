@@ -1,18 +1,25 @@
 package org.spruce.compiler.symbol;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.common.CompilerMessage;
 import org.spruce.compiler.common.Location;
 import org.spruce.compiler.common.MessageProducer;
 
+import static org.spruce.compiler.symbol.Symbol.Type.*;
+
 /**
  * A <code>BasicSymbolCreator</code> provides basic symbol creation functionality.
  * Subclasses represent symbol creators of various categories of AST elements and
  * can obtain references to each other for creating symbols for AST elements
- * outside their category, using the SymbolCreator class.
+ * outside their category, using the <code>SymbolCreator</code> class.
  */
 public class BasicSymbolCreator {
+    private static final List<Symbol.Type> OVERLOADABLE_TYPES = Arrays.asList(
+            CONSTRUCTOR, METHOD
+    );
+
     private final SymbolCreator mySymbolCreator;
     private final MessageProducer myMsgProducer;
 
@@ -45,6 +52,14 @@ public class BasicSymbolCreator {
     }
 
     /**
+     * Returns the <code>TypesSymbolCreator</code>.
+     * @return The <code>TypesSymbolCreator</code>.
+     */
+    public TypesSymbolCreator getTypesSymbolCreator() {
+        return mySymbolCreator.getTypesSymbolCreator();
+    }
+
+    /**
      * Creates a <code>CompilerMessage</code> of type <code>ERROR</code> at the
      * given <code>Location</code> with the given message, and adds it to the
      * internal list of compiler messages.
@@ -64,6 +79,7 @@ public class BasicSymbolCreator {
      */
     public void insertSymbol(SymbolTable table, Symbol symbol) {
         String name = symbol.getName();
+        Symbol.Type type = symbol.getType();
         if (table.containsSymbolName(name)) {
             error(symbol.getLocation(), "Duplicate identifier found: " + name);
         }

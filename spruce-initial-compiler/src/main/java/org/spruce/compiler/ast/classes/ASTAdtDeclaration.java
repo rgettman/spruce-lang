@@ -1,8 +1,10 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
@@ -163,12 +165,39 @@ public final class ASTAdtDeclaration extends ASTAnnotatedNode implements ASTType
     }
 
     /**
-     * Returns an <code>ASTIdentifier</code> representing the ADT Name.
-     * @return An <code>ASTIdentifier</code> representing the ADT Name.
+     * Returns an <code>ASTIdentifier</code> representing the record name.
+     * @return An <code>ASTIdentifier</code>.
      */
     @Override
     public ASTIdentifier getName() {
         return myName;
+    }
+
+    /**
+     * Returns a <code>List</code> of <code>ASTMembers</code> consisting of all
+     * interface parts
+     * TODO: plus any compact record declarations but not variants in general.
+     * @return A <code>List</code> of <code>ASTMembers</code>.
+     */
+    @Override
+    public List<ASTMember> getMembers() {
+        return Stream.concat(
+                        myAdtBody.getVariantList().getTypedChildren().stream()
+                                .filter(variant -> variant instanceof ASTCompactRecordDeclaration),
+                        myAdtBody.getBodyDecls().getTypedChildren().stream()
+                            )
+                .map(part -> (ASTMember) part)
+                .toList();
+    }
+
+    /**
+     * Returns a <code>List</code> of <code>ASTIdentifier</code> containing
+     * only one identifier - the name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myName);
     }
 
     /**
@@ -186,6 +215,8 @@ public final class ASTAdtDeclaration extends ASTAnnotatedNode implements ASTType
     public Optional<ASTDataTypeNoArrayList> getExtendsInterfaces() {
         return Optional.ofNullable(myExtendsInterfaces);
     }
+
+
 
     /**
      * Returns an <code>ASTAdtBody</code>.

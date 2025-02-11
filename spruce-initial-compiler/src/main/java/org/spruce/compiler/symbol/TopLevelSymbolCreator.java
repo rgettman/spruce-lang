@@ -40,7 +40,7 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
         List<ASTTypeDeclaration> typeDecls = ocu.getTypeDeclList().getTypedChildren();
         ClassesSymbolCreator classesCreator = getClassesSymbolCreator();
         for (ASTTypeDeclaration typeDecl : typeDecls) {
-            insertSymbol(topLevel, classesCreator.createSymbolsForTypeDeclaration(typeDecl, topLevel));
+            insertSymbol(topLevel, classesCreator.createSymbolsForTopLevelTypeDeclaration(typeDecl, topLevel));
         }
     }
 

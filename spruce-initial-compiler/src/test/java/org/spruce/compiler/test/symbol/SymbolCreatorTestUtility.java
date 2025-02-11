@@ -8,9 +8,7 @@ import org.spruce.compiler.symbol.ParentSymbol;
 import org.spruce.compiler.symbol.Symbol;
 import org.spruce.compiler.symbol.SymbolTable;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Utility methods for symbol creator tests.  No test entry points.
@@ -136,7 +134,8 @@ public class SymbolCreatorTestUtility {
         assertEquals(expScope, table.getScope());
         assertEquals(numEntries, table.size());
         for (String expSymbolName : expSymbolNames) {
-            assertTrue(table.containsSymbolName(expSymbolName));
+            assertTrue(table.containsSymbolName(expSymbolName),
+                    "Didn't find expected symbol name \"" + expSymbolName + "\".");
         }
     }
 

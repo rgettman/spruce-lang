@@ -1,6 +1,7 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -8,45 +9,40 @@ import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
-import org.spruce.compiler.ast.statements.ASTVariableModifierList;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
- * <p>An <code>ASTFormalParameter</code> is an optional AnnotationList followed
- * by an optional "take", an optional variable modifier list, a data type,
- * possibly an ellipsis, and an identifier.</p>
+ * <p>An <code>ASTRecordComponent</code> is an optional AnnotationList followed
+ * by an optional "take", a data type, possibly an ellipsis, and an identifier.</p>
  *
  * <em>
- * FormalParameter:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [take] [VariableModifierList] DataType Identifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [take] [VariableModifierList] DataType ... Identifier<br>
+ * RecordComponent:<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [take] DataType Identifier<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [take] DataType ... Identifier<br>
  * </em>
  */
-public class ASTFormalParameter extends ASTAnnotatedNode {
+public final class ASTRecordComponent extends ASTAnnotatedNode implements ASTMember {
     private final ASTKeywordNode myTakeMod;
-    private final ASTVariableModifierList myVarModList;
     private final ASTDataType myDataType;
     private final ASTKeywordNode myEllipsisMod;
     private final ASTIdentifier myName;
 
     /**
-     * Constructs an <code>ASTFormalParameter</code> with arguments supplied by
+     * Constructs an <code>ASTRecordComponent</code> with arguments supplied by
      * the <code>Builder</code>.
      * @param location The <code>Location</code>.
      * @param annList A possibly empty <code>ASTAnnotationList</code>.
      * @param takeMod A possibly null <code>ASTKeywordNode</code> of type <code>TAKE</code>.
-     * @param varModList An <code>ASTVariableModifierList</code>.
      * @param dataType An <code>ASTDataType</code>.
      * @param ellipsisMod A possibly null <code>ASTKeywordNode</code> of type <code>ELLIPSIS</code>.
-     * @param name An <code>ASTIdentifier</code> representing the formal parameter's name.
+     * @param name An <code>ASTIdentifier</code> representing the record component's name.
      */
-    private ASTFormalParameter(Location location, ASTAnnotationList annList, ASTKeywordNode takeMod,
-                               ASTVariableModifierList varModList, ASTDataType dataType, ASTKeywordNode ellipsisMod,
-                               ASTIdentifier name) {
+    private ASTRecordComponent(Location location, ASTAnnotationList annList, ASTKeywordNode takeMod,
+                               ASTDataType dataType, ASTKeywordNode ellipsisMod, ASTIdentifier name) {
         super(location, annList);
         myTakeMod = takeMod;
-        myVarModList = varModList;
         myDataType = dataType;
         myEllipsisMod = ellipsisMod;
         myName = name;
@@ -54,11 +50,10 @@ public class ASTFormalParameter extends ASTAnnotatedNode {
 
     /**
      * Because of the 4 possible cases, use this <code>Builder</code> to build
-     * an instance of <code>ASTFormalParameter</code>.
+     * an instance of <code>ASTRecordComponent</code>.
      */
     public static class Builder extends ASTAnnotatedNode.Builder<Builder> {
         private ASTKeywordNode myTakeMod;
-        private ASTVariableModifierList myVarModList;
         private ASTDataType myDataType;
         private ASTKeywordNode myEllipsisMod;
         private ASTIdentifier myName;
@@ -75,16 +70,6 @@ public class ASTFormalParameter extends ASTAnnotatedNode {
          */
         public Builder setTakeMod(ASTKeywordNode takeMod) {
             this.myTakeMod = takeMod;
-            return this;
-        }
-
-        /**
-         * Sets the <code>ASTVariableModifierList</code>.
-         * @param varModList An <code>ASTVariableModifierList</code>.
-         * @return This <code>Builder</code>.
-         */
-        public Builder setVarModList(ASTVariableModifierList varModList) {
-            this.myVarModList = varModList;
             return this;
         }
 
@@ -109,8 +94,8 @@ public class ASTFormalParameter extends ASTAnnotatedNode {
         }
 
         /**
-         * Sets the <code>ASTIdentifier</code> representing the formal parameter name.
-         * @param name An <code>ASTIdentifier</code> representing the formal parameter name.
+         * Sets the <code>ASTIdentifier</code> representing the record component name.
+         * @param name An <code>ASTIdentifier</code> representing the record component name.
          * @return This <code>Builder</code>.
          */
         public Builder setName(ASTIdentifier name) {
@@ -119,29 +104,26 @@ public class ASTFormalParameter extends ASTAnnotatedNode {
         }
 
         /**
-         * Builds and returns a new <code>ASTFormalParameter</code>.  Enforces
-         * that the productions listed for {@link org.spruce.compiler.ast.classes.ASTFormalParameter}
+         * Builds and returns a new <code>ASTRecordComponent</code>.  Enforces
+         * that the productions listed for {@link ASTRecordComponent}
          * are created and no others, else an <code>IllegalStateException</code>
          * is thrown.
-         * @return An <code>ASTFormalParameter</code>.
+         * @return An <code>ASTRecordComponent</code>.
          */
-        public ASTFormalParameter build() {
+        public ASTRecordComponent build() {
             if (myLocation == null) {
                 throw new IllegalStateException("No Location given!");
             }
             if (myAnnList == null) {
                 throw new IllegalStateException("No Annotation List given (can be empty)!");
             }
-            if (myVarModList == null) {
-                throw new IllegalStateException("No Variable Modifier List given!");
-            }
             if (myDataType == null) {
                 throw new IllegalStateException("No Data Type given!");
             }
             if (myName == null) {
-                throw new IllegalStateException("No Formal Parameter Name given!");
+                throw new IllegalStateException("No Record Component Name given!");
             }
-            return new ASTFormalParameter(myLocation, myAnnList, myTakeMod, myVarModList, myDataType, myEllipsisMod, myName);
+            return new ASTRecordComponent(myLocation, myAnnList, myTakeMod, myDataType, myEllipsisMod, myName);
         }
     }
 
@@ -151,14 +133,6 @@ public class ASTFormalParameter extends ASTAnnotatedNode {
      */
     public Optional<ASTKeywordNode> getTakeMod() {
         return Optional.ofNullable(myTakeMod);
-    }
-
-    /**
-     * Returns an <code>ASTVariableModifierList</code>.
-     * @return An <code>ASTVariableModifierList</code>.
-     */
-    public ASTVariableModifierList getVarModList() {
-        return myVarModList;
     }
 
     /**
@@ -178,11 +152,39 @@ public class ASTFormalParameter extends ASTAnnotatedNode {
     }
 
     /**
-     * Returns an <code>ASTIdentifier</code> representing the formal parameter name.
-     * @return An <code>ASTIdentifier</code> representing the formal parameter name.
+     * Returns an <code>ASTIdentifier</code> representing the record component name.
+     * @return An <code>ASTIdentifier</code> representing the record component name.
      */
     public ASTIdentifier getName() {
         return myName;
+    }
+
+    /**
+     * There are no modifiers on a record component.
+     * @return An empty <code>List</code>.
+     */
+    @Override
+    public List<TokenType> getModifiers() {
+        return List.of();
+    }
+
+    /**
+     * There is no access modifier on a record component.
+     * @return An empty <code>Optional</code>.
+     */
+    @Override
+    public Optional<ASTKeywordNode> getAccessMod() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns a <code>List</code> of exactly one <code>ASTIdentifier</code>
+     * representing the record component name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myName);
     }
 
     @Override
@@ -192,7 +194,6 @@ public class ASTFormalParameter extends ASTAnnotatedNode {
         if (myTakeMod != null) {
             children.add(myTakeMod);
         }
-        children.add(myVarModList);
         children.add(myDataType);
         if (myEllipsisMod != null) {
             children.add(myEllipsisMod);

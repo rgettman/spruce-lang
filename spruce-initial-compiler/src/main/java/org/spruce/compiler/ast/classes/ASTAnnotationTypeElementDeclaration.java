@@ -1,14 +1,17 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
+import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataType;
 import org.spruce.compiler.common.Location;
+import org.spruce.compiler.scanner.TokenType;
 
 /**
  * <p>An <code>ASTAnnotationTypeElementDeclaration</code> is an optional
@@ -88,6 +91,34 @@ public final class ASTAnnotationTypeElementDeclaration extends ASTAnnotatedNode 
      */
     public Optional<ASTElementValue> getDefaultValue() {
         return Optional.ofNullable(myDefaultValue);
+    }
+
+    /**
+     * There are no modifiers on an annotation type element declaration.
+     * @return An empty <code>List</code>.
+     */
+    @Override
+    public List<TokenType> getModifiers() {
+        return List.of();
+    }
+
+    /**
+     * There is no access modifier on an annotation type element declaration.
+     * @return An empty <code>Optional</code>.
+     */
+    @Override
+    public Optional<ASTKeywordNode> getAccessMod() {
+        return Optional.empty();
+    }
+
+    /**
+     * Returns a <code>List</code> of exactly one <code>ASTIdentifier</code>
+     * representing the annotation type element name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myName);
     }
 
     @Override

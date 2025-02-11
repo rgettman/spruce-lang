@@ -13,7 +13,7 @@ import org.spruce.compiler.ast.ParentNode;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration
  * </em>
  */
-public sealed interface ASTAnnotationPart extends ParentNode permits ASTAnnotationTypeElementDeclaration,
+public sealed interface ASTAnnotationPart extends ParentNode, ASTMember permits ASTAnnotationTypeElementDeclaration,
         ASTConstantDeclaration, ASTTypeDeclaration {
 }
 

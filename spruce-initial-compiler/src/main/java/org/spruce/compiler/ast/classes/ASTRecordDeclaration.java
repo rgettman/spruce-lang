@@ -1,8 +1,10 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
@@ -28,7 +30,7 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
     private final ASTKeywordNode myAccessMod;
     private final ASTIdentifier myName;
     private final ASTTypeParameterList myTypeParams;
-    private final ASTFormalParameterList myFormalParamList;
+    private final ASTRecordComponentList myRecordCompList;
     private final ASTDataTypeNoArrayList mySuperinterfaces;
     private final ASTClassPartList myClassParts;
 
@@ -40,19 +42,19 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
      * @param accessMod A possibly null <code>ASTKeywordNode</code> representing the Access Modifier.
      * @param name An <code>ASTIdentifier</code> representing the record name.
      * @param typeParams A possibly null <code>ASTTypeParameterList</code>.
-     * @param formalParamList An <code>ASTFormalParameterList</code>.
+     * @param recordCompList An <code>ASTRecordComponentList</code>.
      * @param superinterfaces A possibly null <code>ASTDataTypeNoArrayList</code>
      *                   representing the list of superinterfaces.
      * @param classParts A possibly null <code>ASTClassPartList</code> representing the record body.
      */
     private ASTRecordDeclaration(Location location, ASTAnnotationList annList, ASTKeywordNode accessMod,
-                                 ASTIdentifier name, ASTTypeParameterList typeParams, ASTFormalParameterList formalParamList,
+                                 ASTIdentifier name, ASTTypeParameterList typeParams, ASTRecordComponentList recordCompList,
                                  ASTDataTypeNoArrayList superinterfaces, ASTClassPartList classParts) {
         super(location, annList);
         myAccessMod = accessMod;
         myName = name;
         myTypeParams = typeParams;
-        myFormalParamList = formalParamList;
+        myRecordCompList = recordCompList;
         mySuperinterfaces = superinterfaces;
         myClassParts = classParts;
     }
@@ -65,7 +67,7 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
         private ASTKeywordNode myAccessMod;
         private ASTIdentifier myName;
         private ASTTypeParameterList myTypeParams;
-        private ASTFormalParameterList myFormalParamList;
+        private ASTRecordComponentList myRecordCompList;
         private ASTDataTypeNoArrayList mySuperinterfaces;
         private ASTClassPartList myClassParts;
 
@@ -105,12 +107,12 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
         }
 
         /**
-         * Sets the <code>ASTFormalParameterList</code>.
-         * @param formalParamList An <code>ASTFormalParameterList</code>.
+         * Sets the <code>ASTRecordComponentList</code>.
+         * @param recordCompList An <code>ASTRecordComponentList</code>.
          * @return This <code>Builder</code>.
          */
-        public Builder setFormalParamList(ASTFormalParameterList formalParamList) {
-            this.myFormalParamList = formalParamList;
+        public Builder setRecordCompList(ASTRecordComponentList recordCompList) {
+            this.myRecordCompList = recordCompList;
             return this;
         }
 
@@ -152,14 +154,14 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
             if (myName == null) {
                 throw new IllegalStateException("No Name given!");
             }
-            if (myFormalParamList  == null) {
+            if (myRecordCompList  == null) {
                 throw new IllegalStateException("No Record Header given!");
             }
             if (myClassParts == null) {
                 throw new IllegalStateException("No Record Body given!");
             }
             return new ASTRecordDeclaration(myLocation, myAnnList, myAccessMod, myName, myTypeParams,
-                    myFormalParamList, mySuperinterfaces, myClassParts);
+                    myRecordCompList, mySuperinterfaces, myClassParts);
         }
     }
 
@@ -195,6 +197,16 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
     }
 
     /**
+     * Returns a <code>List</code> of <code>ASTIdentifier</code> containing
+     * only one identifier - the name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myName);
+    }
+
+    /**
      * Returns an <code>ASTTypeParameterList</code>, if it exists.
      * @return An <code>Optional&lt;ASTTypeParameterList&gt;</code>.
      */
@@ -203,11 +215,11 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
     }
 
     /**
-     * Returns an <code>ASTFormalParameterList</code>.
-     * @return An <code>ASTFormalParameterList</code>.
+     * Returns an <code>ASTRecordComponentList</code>.
+     * @return An <code>ASTRecordComponentList</code>.
      */
-    public ASTFormalParameterList getFormalParamList() {
-        return myFormalParamList;
+    public ASTRecordComponentList getRecordCompList() {
+        return myRecordCompList;
     }
 
     /**
@@ -226,6 +238,21 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
         return myClassParts;
     }
 
+    /**
+     * Returns a <code>List</code> of <code>ASTMembers</code> consisting of all
+     * interface parts plus any record components.
+     * @return A <code>List</code> of <code>ASTMembers</code>.
+     */
+    @Override
+    public List<ASTMember> getMembers() {
+        return Stream.concat(
+                        myRecordCompList.getTypedChildren().stream(),
+                        myClassParts.getTypedChildren().stream()
+                )
+                .map(part -> (ASTMember) part)
+                .toList();
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(7);
@@ -237,7 +264,7 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
         if (myTypeParams != null) {
             children.add(myTypeParams);
         }
-        children.add(myFormalParamList);
+        children.add(myRecordCompList);
         if (mySuperinterfaces != null) {
             children.add(mySuperinterfaces);
         }

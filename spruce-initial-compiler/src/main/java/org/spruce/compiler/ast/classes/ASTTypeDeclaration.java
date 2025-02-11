@@ -1,14 +1,13 @@
 package org.spruce.compiler.ast.classes;
 
-import java.util.Optional;
+import java.util.List;
 
-import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ParentNode;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 
 /**
- * <p>An <code>ASTTypeDeclaration</code> is a class, enum, interface, or
- * annotation declaration.</p>
+ * <p>An <code>ASTTypeDeclaration</code> is an <code>ASTMember</code>
+ * that is a class, enum, interface, annotation, record, or ADT declaration.</p>
  *
  * <em>
  * TypeDeclaration:<br>
@@ -20,22 +19,21 @@ import org.spruce.compiler.ast.names.ASTIdentifier;
  * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
  * </em>
  */
-public sealed interface ASTTypeDeclaration extends ParentNode, ASTAnnotationPart, ASTClassPart, ASTInterfacePart,
-                ASTModifiableDeclaration
+public sealed interface ASTTypeDeclaration extends ParentNode, ASTAnnotationPart, ASTClassPart, ASTInterfacePart
         permits ASTClassDeclaration, ASTEnumDeclaration, ASTInterfaceDeclaration, ASTAnnotationDeclaration,
-                ASTRecordDeclaration, ASTAdtDeclaration {
+                ASTRecordDeclaration, ASTCompactRecordDeclaration, ASTAdtDeclaration {
     /**
-     * Returns an <code>ASTKeywordNode</code> representing the access modifier,
-     * if it exists.
-     * @return An <code>Optional&lt;ASTKeywordNode&gt;</code>.
-     */
-    Optional<ASTKeywordNode> getAccessMod();
-
-    /**
-     * Returns an <code>ASTIdentifier</code> representing the type name.
-     * @return An <code>ASTIdentifier</code> representing the type name.
+     * Returns the <code>ASTIdentifier</code> representing the name of the type
+     * declaration.
+     * @return The <code>ASTIdentifier</code> representing the name of the type
+     *         declaration.
      */
     ASTIdentifier getName();
 
+    /**
+     * Returns a <code>List</code> of <code>ASTMember</code>s.
+     * @return A <code>List</code> of <code>ASTMember</code>s.
+     */
+    List<ASTMember> getMembers();
 }
 

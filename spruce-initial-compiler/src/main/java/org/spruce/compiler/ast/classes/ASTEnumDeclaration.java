@@ -1,8 +1,10 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
@@ -176,12 +178,22 @@ public final class ASTEnumDeclaration extends ASTAnnotatedNode implements ASTTyp
     }
 
     /**
-     * Returns an <code>ASTIdentifier</code> representing the class name.
+     * Returns an <code>ASTIdentifier</code> representing the record name.
      * @return An <code>ASTIdentifier</code>.
      */
     @Override
     public ASTIdentifier getName() {
         return myName;
+    }
+
+    /**
+     * Returns a <code>List</code> of <code>ASTIdentifier</code> containing
+     * only one identifier - the name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myName);
     }
 
     /**
@@ -198,6 +210,21 @@ public final class ASTEnumDeclaration extends ASTAnnotatedNode implements ASTTyp
      */
     public ASTEnumBody getEnumBody() {
         return myEnumBody;
+    }
+
+    /**
+     * Returns a <code>List</code> of <code>ASTMembers</code> consisting of all
+     * class parts plus any enum constants.
+     * @return A <code>List</code> of <code>ASTMembers</code>.
+     */
+    @Override
+    public List<ASTMember> getMembers() {
+        return Stream.concat(
+                        myEnumBody.getEnumConstants().getTypedChildren().stream(),
+                        myEnumBody.getClassParts().getTypedChildren().stream()
+                )
+                .map(part -> (ASTMember) part)
+                .toList();
     }
 
     @Override

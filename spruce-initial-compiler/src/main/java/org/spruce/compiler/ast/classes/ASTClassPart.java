@@ -16,6 +16,6 @@ import org.spruce.compiler.ast.ParentNode;
  * &nbsp;&nbsp;&nbsp;&nbsp;CompactConstructorDeclaration
  * </em>
  */
-public sealed interface ASTClassPart extends ParentNode permits ASTSharedConstructor, ASTConstructorDeclaration,
+public sealed interface ASTClassPart extends ParentNode, ASTMember permits ASTSharedConstructor, ASTConstructorDeclaration,
         ASTFieldDeclaration, ASTMethodDeclaration, ASTTypeDeclaration, ASTCompactConstructorDeclaration {
 }

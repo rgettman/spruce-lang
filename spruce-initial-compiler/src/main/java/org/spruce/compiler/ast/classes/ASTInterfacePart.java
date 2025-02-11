@@ -13,6 +13,6 @@ import org.spruce.compiler.ast.ParentNode;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration
  * </em>
  */
-public sealed interface ASTInterfacePart extends ParentNode permits ASTConstantDeclaration,
+public sealed interface ASTInterfacePart extends ParentNode, ASTMember permits ASTConstantDeclaration,
         ASTInterfaceMethodDeclaration, ASTTypeDeclaration {
 }

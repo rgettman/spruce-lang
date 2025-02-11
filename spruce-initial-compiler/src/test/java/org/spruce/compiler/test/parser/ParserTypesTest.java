@@ -505,7 +505,7 @@ public class ParserTypesTest {
      * @param code The code to test.
      * @return A <code>TypesParser</code> that will parse the given code.
      */
-    private static TypesParser getTypesParser(String code) {
+    public static TypesParser getTypesParser(String code) {
         return new Parser(new Scanner(code), new BaseMessageProducer()).getTypesParser();
     }
 }

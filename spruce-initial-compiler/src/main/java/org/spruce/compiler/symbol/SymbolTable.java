@@ -16,7 +16,7 @@ public class SymbolTable {
         CONSTRUCTOR,
         FOR_EXPR, FOR_STMT,
         IF_STMT,
-        METHOD,
+        MEMBER,
         NAMESPACE,
         SCOPE,
         TOP, TYPE,
@@ -64,7 +64,7 @@ public class SymbolTable {
 
     /**
      * Inserts the given <code>Symbol</code> into this table.  The caller must
-     * ensure that the symbol is not present in this table.
+     * ensure that the symbol is not already present in this table.
      * @param symbol A <code>Symbol</code>.
      * @see #containsSymbolName(String)
      */

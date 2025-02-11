@@ -1,6 +1,7 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,12 +97,22 @@ public final class ASTAnnotationDeclaration extends ASTAnnotatedNode implements 
     }
 
     /**
-     * Returns an <code>ASTIdentifier</code> representing the annotation name.
-     * @return An <code>ASTIdentifier</code> representing the annotation name.
+     * Returns an <code>ASTIdentifier</code> representing the record name.
+     * @return An <code>ASTIdentifier</code>.
      */
     @Override
     public ASTIdentifier getName() {
         return myName;
+    }
+
+    /**
+     * Returns a <code>List</code> of <code>ASTIdentifier</code> containing
+     * only one identifier - the name.
+     * @return A <code>List</code> of <code>ASTIdentifier</code> of size 1.
+     */
+    @Override
+    public List<ASTIdentifier> getNames() {
+        return Arrays.asList(myName);
     }
 
     /**
@@ -110,6 +121,18 @@ public final class ASTAnnotationDeclaration extends ASTAnnotatedNode implements 
      */
     public ASTAnnotationPartList getBody() {
         return myBody;
+    }
+
+    /**
+     * Returns a <code>List</code> of <code>ASTMembers</code> consisting of all
+     * interface parts.
+     * @return A <code>List</code> of <code>ASTMembers</code>.
+     */
+    @Override
+    public List<ASTMember> getMembers() {
+        return myBody.getTypedChildren().stream()
+                .map(part -> (ASTMember) part)
+                .toList();
     }
 
     @Override
