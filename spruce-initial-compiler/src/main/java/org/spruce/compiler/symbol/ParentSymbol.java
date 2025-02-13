@@ -6,11 +6,11 @@ import org.spruce.compiler.common.Location;
  * A <code>ParentSymbol</code> is a <code>Symbol</code> that has its own
  * <code>ChildSymbolTable</code>.
  */
-public final class ParentSymbol extends Symbol {
+public class ParentSymbol extends Symbol {
     private final ChildSymbolTable myTable;
 
     /**
-     * Constructs a <code>Symbol</code> at the given <code>Location</code>,
+     * Constructs a <code>ParentSymbol</code> at the given <code>Location</code>,
      * with the given name, what <code>SymbolTable</code> this belongs to, and
      * a child <code>SymbolTable</code>.
      * @param loc The <code>Location</code>.

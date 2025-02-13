@@ -59,19 +59,19 @@ public class SymbolCreatorTopLevelTest {
         Symbol symbol = creator.createSymbolsForNamespaceName(namespaceName, topLevel);
         ensureNoErrors(symbol, creator);
 
-        checkSymbol(symbol, "spruce", Symbol.Type.NAMESPACE, 0, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "spruce", Symbol.Type.NAMESPACE, 0, 1);
 
         ChildSymbolTable child = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(child, NAMESPACE, 1, Arrays.asList("collections"));
 
         Symbol base = child.get("collections");
-        checkSymbol(ensureIsa(base, Symbol.class), "collections", Symbol.Type.NAMESPACE, 0, 1);
+        checkSymbol(ensureIsa(base, ParentSymbol.class), "collections", Symbol.Type.NAMESPACE, 0, 1);
 
         child = ensureIsa(base, ParentSymbol.class).getTable();
         checkSymbolTable(child, NAMESPACE, 1, Arrays.asList("concurrent"));
 
         base = child.get("concurrent");
-        checkSymbol(ensureIsa(base, Symbol.class), "concurrent", Symbol.Type.NAMESPACE, 0, 0);
+        checkSymbol(ensureIsa(base, ParentSymbol.class), "concurrent", Symbol.Type.NAMESPACE, 0, 0);
     }
 
     /**

@@ -194,8 +194,14 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         if (accessMod.isEmpty()) {
             flags |= DEFAULT_ACCESS_CONSTRUCTOR;
         }
-        ParentSymbol symbol = new ParentSymbol(constrDecl.getLocation(),
+        ParameterizedSymbol symbol = new ParameterizedSymbol(constrDecl.getLocation(),
                 getConstructorSymbolName(constrDecl), Symbol.Type.CONSTRUCTOR, parent, flags, SymbolTable.Scope.MEMBER);
+        List<Symbol> paramSymbols = createSymbolsForFormalParameterList(
+                constrDecl.getConstructorDecl().getFormalParamList(), symbol.getTable());
+        for (Symbol paramSymbol : paramSymbols) {
+            insertSymbol(symbol.getTable(), paramSymbol);
+            symbol.addParameter(paramSymbol);
+        }
         // Loop through body.
 
         return symbol;
@@ -288,9 +294,14 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         if (methodDecl.getHeader().getMethodDecl().getMutModifier().isPresent()) {
             flags |= FLAG_METHOD_MUT;
         }
-        ParentSymbol symbol = new ParentSymbol(methodDecl.getLocation(), getMethodSymbolName(methodDecl),
+        ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getMethodSymbolName(methodDecl),
                 Symbol.Type.METHOD, parent, flags, SymbolTable.Scope.MEMBER);
-        // Loop through parameters.
+        List<Symbol> paramSymbols = createSymbolsForFormalParameterList(
+                methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol.getTable());
+        for (Symbol paramSymbol : paramSymbols) {
+            insertSymbol(symbol.getTable(), paramSymbol);
+            symbol.addParameter(paramSymbol);
+        }
         // Loop through body.
 
         return symbol;
@@ -312,12 +323,71 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
             flags |= FLAG_METHOD_MUT;
         }
         flags |= FLAG_MOD_ABSTRACT;
-        ParentSymbol symbol = new ParentSymbol(methodDecl.getLocation(), getInterfaceMethodSymbolName(methodDecl),
+        ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getInterfaceMethodSymbolName(methodDecl),
                 Symbol.Type.METHOD, parent, flags, SymbolTable.Scope.MEMBER);
-        // Loop through parameters.
+        List<Symbol> paramSymbols = createSymbolsForFormalParameterList(
+                methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol.getTable());
+        for (Symbol paramSymbol : paramSymbols) {
+            insertSymbol(symbol.getTable(), paramSymbol);
+            symbol.addParameter(paramSymbol);
+        }
         // Loop through body.
 
         return symbol;
+    }
+
+    /**
+     * Creates and returns a <code>Symbol</code>s for an <code>EnumConstant</code>.
+     * @param enumConst An <code>ASTEnumConstant</code>.
+     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
+     * @return A <code>Symbol</code>.
+     */
+    public Symbol createSymbolsForEnumConstant(ASTEnumConstant enumConst, SymbolTable parent) {
+        long flags = getFlags(enumConst);
+        flags |= FLAG_ACCESS_PUBLIC | FLAG_MOD_SHARED;
+        ParentSymbol symbol = new ParentSymbol(enumConst.getLocation(), enumConst.getName().getValue(),
+                Symbol.Type.ENUM_CONSTANT, parent, flags, SymbolTable.Scope.MEMBER);
+        // Loop through body.
+
+        return symbol;
+    }
+
+    /**
+     * Creates and returns a <code>Symbol</code>s for a <code>RecordComponent</code>.
+     * @param recordComp An <code>ASTRecordComponent</code>.
+     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
+     * @return A <code>Symbol</code>.
+     */
+    public Symbol createSymbolsForRecordComp(ASTRecordComponent recordComp, SymbolTable parent) {
+        long flags = getFlags(recordComp);
+        flags |= FLAG_ACCESS_PUBLIC;
+        ParentSymbol symbol = new ParentSymbol(recordComp.getLocation(), recordComp.getName().getValue(),
+                Symbol.Type.RECORD_COMPONENT, parent, flags, SymbolTable.Scope.MEMBER);
+        // Loop through body.
+
+        return symbol;
+    }
+
+    /**
+     * Creates and returns symbols for a <code>FormalParameterList</code>.
+     * @param formalParams An <code>ASTFormalParameterList</code>.
+     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
+     * @return A <code>List</code> of <code>Symbol</code>s.
+     */
+    public List<Symbol> createSymbolsForFormalParameterList(ASTFormalParameterList formalParams, SymbolTable parent) {
+        List<Symbol> symbols = new ArrayList<>();
+        for (ASTFormalParameter formalParam : formalParams.getTypedChildren()) {
+            String name = formalParam.getName().getValue();
+            long flags = 0;
+            for (ASTKeywordNode varMod : formalParam.getVarModList().getTypedChildren()) {
+                switch(varMod.getKeyword()) {
+                case VAR -> flags |= FLAG_VARIABLE_VAR;
+                case MUT -> flags |= FLAG_VARIABLE_MUT;
+                }
+            }
+            symbols.add(new Symbol(formalParam.getLocation(), name, Symbol.Type.PARAMETER, parent, flags));
+        }
+        return symbols;
     }
 
     /**
@@ -365,38 +435,6 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
                 .map(ASTFormalParameter::getDataType)
                 .map(creator::getNameForDataType)
                 .collect(Collectors.joining(",", "(", ")"));
-    }
-
-    /**
-     * Creates and returns a <code>Symbol</code>s for an <code>EnumConstant</code>.
-     * @param enumConst An <code>ASTEnumConstant</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
-     */
-    public Symbol createSymbolsForEnumConstant(ASTEnumConstant enumConst, SymbolTable parent) {
-        long flags = getFlags(enumConst);
-        flags |= FLAG_ACCESS_PUBLIC | FLAG_MOD_SHARED;
-        ParentSymbol symbol = new ParentSymbol(enumConst.getLocation(), enumConst.getName().getValue(),
-                Symbol.Type.ENUM_CONSTANT, parent, flags, SymbolTable.Scope.MEMBER);
-        // Loop through body.
-
-        return symbol;
-    }
-
-    /**
-     * Creates and returns a <code>Symbol</code>s for an <code>RecordComponent</code>.
-     * @param recordComp An <code>ASTRecordComponent</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
-     */
-    public Symbol createSymbolsForRecordComp(ASTRecordComponent recordComp, SymbolTable parent) {
-        long flags = getFlags(recordComp);
-        flags |= FLAG_ACCESS_PUBLIC;
-        ParentSymbol symbol = new ParentSymbol(recordComp.getLocation(), recordComp.getName().getValue(),
-                Symbol.Type.RECORD_COMPONENT, parent, flags, SymbolTable.Scope.MEMBER);
-        // Loop through body.
-
-        return symbol;
     }
 
     /**

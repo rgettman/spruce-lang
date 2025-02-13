@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.spruce.compiler.symbol.BasicSymbolCreator;
 import org.spruce.compiler.common.CompilerMessage;
+import org.spruce.compiler.symbol.ParameterizedSymbol;
 import org.spruce.compiler.symbol.ParentSymbol;
 import org.spruce.compiler.symbol.Symbol;
 import org.spruce.compiler.symbol.SymbolTable;
@@ -109,14 +110,43 @@ public class SymbolCreatorTestUtility {
      * @param expName The expected name.
      * @param expFlags The expected flags, exactly.
      */
-    static void checkSymbol(Symbol symbol, String expName, Symbol.Type expType, long expFlags, int numExpChildren) {
+    static void checkSymbol(Symbol symbol, String expName, Symbol.Type expType, long expFlags) {
         assertEquals(expName, symbol.getName());
         assertEquals(expType, symbol.getType());
         assertEquals(expFlags, symbol.getFlags());
-        switch (symbol) {
-            case ParentSymbol ps -> assertEquals(numExpChildren, ps.getTable().size());
-            case Symbol ignored -> assertEquals(numExpChildren, 0);
-        }
+    }
+
+    /**
+     * Checks a <code>Symbol</code> to test if it has the expected name,
+     * exactly the expected flags value, and the expected number of children.
+     * If not, fails the test.
+     * @param symbol The <code>Symbol</code> to test.
+     * @param expType The expected <code>Type</code>.
+     * @param expName The expected name.
+     * @param expFlags The expected flags, exactly.
+     * @param numExpChildren The number of expected children.
+     */
+    static void checkSymbol(ParentSymbol symbol, String expName, Symbol.Type expType, long expFlags,
+                                  int numExpChildren) {
+        checkSymbol(symbol, expName, expType, expFlags);
+        assertEquals(numExpChildren, symbol.getTable().size());
+    }
+
+    /**
+     * Checks a <code>Symbol</code> to test if it has the expected name,
+     * exactly the expected flags value, and the expected number of children.
+     * If not, fails the test.
+     * @param symbol The <code>Symbol</code> to test.
+     * @param expType The expected <code>Type</code>.
+     * @param expName The expected name.
+     * @param expFlags The expected flags, exactly.
+     * @param numExpChildren The number of expected children.
+     * @param numExpParameters The number of expected parameters.
+     */
+    static void checkSymbol(ParameterizedSymbol symbol, String expName, Symbol.Type expType, long expFlags,
+                                         int numExpChildren, int numExpParameters) {
+        checkSymbol(symbol, expName, expType, expFlags, numExpChildren);
+        assertEquals(numExpParameters, symbol.numParameters());
     }
 
     /**

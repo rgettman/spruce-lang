@@ -1,6 +1,7 @@
 package org.spruce.compiler.test.symbol;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.ast.classes.ASTAnnotationList;
@@ -9,6 +10,7 @@ import org.spruce.compiler.common.BaseMessageProducer;
 import org.spruce.compiler.parser.ClassesParser;
 import org.spruce.compiler.parser.TopLevelParser;
 import org.spruce.compiler.symbol.ClassesSymbolCreator;
+import org.spruce.compiler.symbol.ParameterizedSymbol;
 import org.spruce.compiler.symbol.ParentSymbol;
 import org.spruce.compiler.symbol.Symbol;
 import org.spruce.compiler.symbol.SymbolCreator;
@@ -16,10 +18,11 @@ import org.spruce.compiler.symbol.SymbolTable;
 import org.spruce.compiler.symbol.TopLevelSymbolTable;
 import org.spruce.compiler.test.parser.ParserTopLevelTest;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.spruce.compiler.symbol.Symbol.*;
-import static org.spruce.compiler.symbol.SymbolTable.Scope.TYPE;
+import static org.spruce.compiler.symbol.Symbol.Type.PARAMETER;
+import static org.spruce.compiler.symbol.SymbolTable.Scope.*;
 import static org.spruce.compiler.test.symbol.SymbolCreatorTestUtility.*;
-import static org.spruce.compiler.test.symbol.SymbolCreatorTestUtility.checkSymbolTable;
 import static org.spruce.compiler.test.util.TestUtility.ensureIsa;
 
 /**
@@ -34,7 +37,7 @@ public class SymbolCreatorClassesTest {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("final class FinalClass {}");
         String expSymbolName = "FinalClass";
         long expFlags = FLAG_ACCESS_INTERNAL | FLAG_MOD_FINAL;
-        checkSymbol(symbol, expSymbolName, Type.CLASS, expFlags, 0);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.CLASS, expFlags, 0);
     }
 
     /**
@@ -45,7 +48,7 @@ public class SymbolCreatorClassesTest {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("public sealed interface PublicSealedInterface {}");
         String expSymbolName = "PublicSealedInterface";
         long expFlags = FLAG_ACCESS_PUBLIC | FLAG_MOD_ABSTRACT | FLAG_MOD_SEALED;
-        checkSymbol(symbol, expSymbolName, Type.INTERFACE, expFlags, 0);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.INTERFACE, expFlags, 0);
     }
 
     /**
@@ -56,7 +59,7 @@ public class SymbolCreatorClassesTest {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("private shared annotation PrivateSharedAnnotation {}");
         String expSymbolName = "PrivateSharedAnnotation";
         long expFlags = FLAG_ACCESS_PRIVATE | FLAG_MOD_ABSTRACT | FLAG_MOD_SHARED;
-        checkSymbol(symbol, expSymbolName, Type.ANNOTATION, expFlags, 0);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.ANNOTATION, expFlags, 0);
     }
 
     /**
@@ -67,7 +70,7 @@ public class SymbolCreatorClassesTest {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("protected record ProtectedRecord(String foo) {}");
         String expSymbolName = "ProtectedRecord";
         long expFlags = FLAG_ACCESS_PROTECTED | FLAG_MOD_FINAL;
-        checkSymbol(symbol, expSymbolName, Type.RECORD, expFlags, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.RECORD, expFlags, 1);
     }
 
     /**
@@ -77,7 +80,7 @@ public class SymbolCreatorClassesTest {
     public void testInternalEnum() {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("internal enum InternalEnum {FOO}");
         String expSymbolName = "InternalEnum";
-        checkSymbol(symbol, expSymbolName, Type.ENUM, FLAG_ACCESS_INTERNAL, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.ENUM, FLAG_ACCESS_INTERNAL, 1);
     }
 
     /**
@@ -93,7 +96,7 @@ public class SymbolCreatorClassesTest {
                 """);
         String expSymbolName = "PublicAdt";
         long expFlags = FLAG_ACCESS_PUBLIC | FLAG_MOD_SEALED;
-        checkSymbol(symbol, expSymbolName, Type.ADT, expFlags, 2);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.ADT, expFlags, 2);
     }
 
     /**
@@ -106,13 +109,13 @@ public class SymbolCreatorClassesTest {
                     class Inner {}
                 }
                 """);
-        checkSymbol(symbol, "Outer", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("Inner"));
 
         Symbol inner = innerTable.get("Inner");
-        checkSymbol(inner, "Inner", Type.CLASS, FLAG_ACCESS_INTERNAL, 0);
+        checkSymbol(ensureIsa(inner, ParentSymbol.class), "Inner", Type.CLASS, FLAG_ACCESS_INTERNAL, 0);
     }
 
     /**
@@ -125,13 +128,14 @@ public class SymbolCreatorClassesTest {
                     shared class Inner {}
                 }
                 """);
-        checkSymbol(symbol, "Outer", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("Inner"));
 
         Symbol inner = innerTable.get("Inner");
-        checkSymbol(inner, "Inner", Type.CLASS, FLAG_ACCESS_INTERNAL | FLAG_MOD_SHARED, 0);
+        checkSymbol(ensureIsa(inner, ParentSymbol.class), "Inner", Type.CLASS,
+                FLAG_ACCESS_INTERNAL | FLAG_MOD_SHARED, 0);
     }
 
     /**
@@ -144,14 +148,14 @@ public class SymbolCreatorClassesTest {
                     interface Inner {}
                 }
                 """);
-        checkSymbol(symbol, "Outer", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("Inner"));
 
         Symbol inner = innerTable.get("Inner");
         long expFlags = FLAG_ACCESS_INTERNAL | FLAG_MOD_ABSTRACT | FLAG_MOD_SHARED;
-        checkSymbol(inner, "Inner", Type.INTERFACE, expFlags, 0);
+        checkSymbol(ensureIsa(inner, ParentSymbol.class), "Inner", Type.INTERFACE, expFlags, 0);
     }
 
     /**
@@ -164,13 +168,14 @@ public class SymbolCreatorClassesTest {
                     shared constructor () {}
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(NAME_SHARED_CONSTRUCTOR));
 
         Symbol sharedConstr = innerTable.get(NAME_SHARED_CONSTRUCTOR);
-        checkSymbol(sharedConstr, NAME_SHARED_CONSTRUCTOR, Type.SHARED_CONSTRUCTOR, FLAG_MOD_SHARED, 0);
+        checkSymbol(ensureIsa(sharedConstr, ParentSymbol.class), NAME_SHARED_CONSTRUCTOR, Type.SHARED_CONSTRUCTOR,
+                FLAG_MOD_SHARED, 0);
     }
 
     /**
@@ -183,14 +188,15 @@ public class SymbolCreatorClassesTest {
                     constructor() {}
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
 
         String symbolName = NAME_CONSTRUCTOR + "()";
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
 
         Symbol constructorDecl = innerTable.get(symbolName);
-        checkSymbol(constructorDecl, symbolName, Type.CONSTRUCTOR, FLAG_ACCESS_PUBLIC, 0);
+        checkSymbol(ensureIsa(constructorDecl, ParentSymbol.class), symbolName, Type.CONSTRUCTOR, FLAG_ACCESS_PUBLIC,
+                0);
     }
 
     /**
@@ -204,7 +210,7 @@ public class SymbolCreatorClassesTest {
                     constructor(Integer foo) {}
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 2);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 2);
 
         String symbolName = NAME_CONSTRUCTOR + "()";
         String symbolName2 = NAME_CONSTRUCTOR + "(Integer)";
@@ -212,10 +218,12 @@ public class SymbolCreatorClassesTest {
         checkSymbolTable(innerTable, TYPE, 2, Arrays.asList(symbolName, symbolName2));
 
         Symbol constructorDecl = innerTable.get(symbolName);
-        checkSymbol(constructorDecl, symbolName, Type.CONSTRUCTOR, FLAG_ACCESS_PUBLIC, 0);
+        checkSymbol(ensureIsa(constructorDecl, ParameterizedSymbol.class), symbolName, Type.CONSTRUCTOR, FLAG_ACCESS_PUBLIC,
+                0, 0);
 
         Symbol constructorDecl2 = innerTable.get(symbolName2);
-        checkSymbol(constructorDecl2, symbolName2, Type.CONSTRUCTOR, FLAG_ACCESS_PUBLIC, 0);
+        checkSymbol(ensureIsa(constructorDecl2, ParameterizedSymbol.class), symbolName2, Type.CONSTRUCTOR, FLAG_ACCESS_PUBLIC,
+                1, 1);
     }
 
     /**
@@ -231,26 +239,26 @@ public class SymbolCreatorClassesTest {
                     private var mut String both;
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 4);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 4);
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 4, Arrays.asList("immutable", "replaceable", "mutable", "both"));
 
         Symbol immutSymbol = innerTable.get("immutable");
         long expFlags = FLAG_ACCESS_PRIVATE;
-        checkSymbol(immutSymbol, "immutable", Type.FIELD, expFlags, 0);
+        checkSymbol(immutSymbol, "immutable", Type.FIELD, expFlags);
 
         Symbol replaceSymbol = innerTable.get("replaceable");
         expFlags = FLAG_ACCESS_PRIVATE | FLAG_VARIABLE_VAR;
-        checkSymbol(replaceSymbol, "replaceable", Type.FIELD, expFlags, 0);
+        checkSymbol(replaceSymbol, "replaceable", Type.FIELD, expFlags);
 
         Symbol mutSymbol = innerTable.get("mutable");
         expFlags = FLAG_ACCESS_PRIVATE | FLAG_VARIABLE_MUT;
-        checkSymbol(mutSymbol, "mutable", Type.FIELD, expFlags, 0);
+        checkSymbol(mutSymbol, "mutable", Type.FIELD, expFlags);
 
         Symbol bothSymbol = innerTable.get("both");
         expFlags = FLAG_ACCESS_PRIVATE | FLAG_VARIABLE_MUT | FLAG_VARIABLE_VAR;
-        checkSymbol(bothSymbol, "both", Type.FIELD, expFlags, 0);
+        checkSymbol(bothSymbol, "both", Type.FIELD, expFlags);
     }
 
     /**
@@ -264,18 +272,18 @@ public class SymbolCreatorClassesTest {
                     protected Int bar, jazz;
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 3);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 3);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 3, Arrays.asList("foo", "bar", "jazz"));
 
         Symbol fooSymbol = innerTable.get("foo");
-        checkSymbol(fooSymbol, "foo", Type.FIELD, FLAG_ACCESS_PRIVATE, 0);
+        checkSymbol(fooSymbol, "foo", Type.FIELD, FLAG_ACCESS_PRIVATE);
 
         Symbol barSymbol = innerTable.get("bar");
-        checkSymbol(barSymbol, "bar", Type.FIELD, FLAG_ACCESS_PROTECTED, 0);
+        checkSymbol(barSymbol, "bar", Type.FIELD, FLAG_ACCESS_PROTECTED);
 
         Symbol jazzSymbol = innerTable.get("jazz");
-        checkSymbol(jazzSymbol, "jazz", Type.FIELD, FLAG_ACCESS_PROTECTED, 0);
+        checkSymbol(jazzSymbol, "jazz", Type.FIELD, FLAG_ACCESS_PROTECTED);
     }
 
     /**
@@ -301,13 +309,13 @@ public class SymbolCreatorClassesTest {
                     public constant String BAR = "bar";
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("BAR"));
 
         Symbol constantSymbol = innerTable.get("BAR");
         long expFlags = FLAG_ACCESS_PUBLIC | FLAG_MOD_SHARED;
-        checkSymbol(constantSymbol, "BAR", Type.FIELD, expFlags, 0);
+        checkSymbol(constantSymbol, "BAR", Type.FIELD, expFlags);
 
     }
 
@@ -323,42 +331,43 @@ public class SymbolCreatorClassesTest {
                 }
                 """);
         long expFlags = FLAG_ACCESS_PUBLIC | FLAG_MOD_ABSTRACT;
-        checkSymbol(symbol, "HasElements", Type.ANNOTATION, expFlags, 2);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasElements", Type.ANNOTATION, expFlags, 2);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 2, Arrays.asList("foo", "bar"));
 
         Symbol fooSymbol = innerTable.get("foo");
-        checkSymbol(fooSymbol, "foo", Type.ANNOTATION_TYPE_ELEMENT, expFlags, 0);
+        checkSymbol(fooSymbol, "foo", Type.ANNOTATION_TYPE_ELEMENT, expFlags);
 
         Symbol barSymbol = innerTable.get("bar");
-        checkSymbol(barSymbol, "bar", Type.ANNOTATION_TYPE_ELEMENT, expFlags, 0);
+        checkSymbol(barSymbol, "bar", Type.ANNOTATION_TYPE_ELEMENT, expFlags);
     }
 
     /**
      * Tests member of method declaration.
      */
     @Test
-    public void testMemberOfMethodDeclaration() {
+    public void testMemberMethodDeclaration() {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("""
                 public class HasMember {
                     private void foo(String bar) mut {}
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         String symbolName = "foo(String)";
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
 
         Symbol fooSymbol = innerTable.get(symbolName);
         long expFlags = FLAG_ACCESS_PRIVATE | FLAG_METHOD_MUT;
-        checkSymbol(fooSymbol, symbolName, Type.METHOD, expFlags, 0);
+        checkSymbol(ensureIsa(fooSymbol, ParameterizedSymbol.class), symbolName, Type.METHOD, expFlags,
+                1, 1);
     }
 
     /**
      * Tests member of overloaded methods.
      */
     @Test
-    public void testMemberOfMethodOverloads() {
+    public void testMemberMethodOverloads() {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("""
                 public class HasMember {
                     private mut String foo;
@@ -366,57 +375,59 @@ public class SymbolCreatorClassesTest {
                     public void foo(String bar) mut {}
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 3);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 3);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 3, Arrays.asList("foo", "foo()", "foo(String)"));
 
         String symbolName = "foo";
         Symbol fooSymbol = innerTable.get(symbolName);
         long expFlags = FLAG_ACCESS_PRIVATE | FLAG_VARIABLE_MUT;
-        checkSymbol(fooSymbol, symbolName, Type.FIELD, expFlags, 0);
+        checkSymbol(fooSymbol, symbolName, Type.FIELD, expFlags);
 
         symbolName = "foo()";
         Symbol fooSymbol2 = innerTable.get(symbolName);
         long expFlags2 = FLAG_ACCESS_PUBLIC | FLAG_METHOD_MUT;
-        checkSymbol(fooSymbol2, symbolName, Type.METHOD, expFlags2, 0);
+        checkSymbol(ensureIsa(fooSymbol2, ParameterizedSymbol.class), symbolName, Type.METHOD, expFlags2,
+                0, 0);
 
         symbolName = "foo(String)";
         Symbol fooSymbol3 = innerTable.get(symbolName);
         long expFlags3 = FLAG_ACCESS_PUBLIC | FLAG_METHOD_MUT;
-        checkSymbol(fooSymbol3, symbolName, Type.METHOD, expFlags3, 0);
+        checkSymbol(ensureIsa(fooSymbol3, ParameterizedSymbol.class), symbolName, Type.METHOD, expFlags3,
+                1, 1);
     }
 
     /**
      * Tests member of interface method declaration.
      */
     @Test
-    public void testMemberOfInterfaceMethod() {
+    public void testMemberInterfaceMethod() {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("""
                 public interface HasMember {
                     void foo(String bar) mut;
                 }
                 """);
-        checkSymbol(symbol, "HasMember", Type.INTERFACE, FLAG_ACCESS_PUBLIC | FLAG_MOD_ABSTRACT, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.INTERFACE, FLAG_ACCESS_PUBLIC | FLAG_MOD_ABSTRACT, 1);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         String symbolName = "foo(String)";
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
 
         Symbol fooSymbol = innerTable.get(symbolName);
         long expFlags = FLAG_ACCESS_PUBLIC | FLAG_MOD_ABSTRACT | FLAG_METHOD_MUT;
-        checkSymbol(fooSymbol, symbolName, Type.METHOD, expFlags, 0);
+        checkSymbol(ensureIsa(fooSymbol, ParameterizedSymbol.class), symbolName, Type.METHOD, expFlags, 1, 1);
     }
 
     /**
      * Tests member of enum constant.
      */
     @Test
-    public void testMemberOfEnumConstant() {
+    public void testMemberEnumConstant() {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("""
                 public enum TrafficLight {
                     RED, YELLOW, GREEN
                 }
                 """);
-        checkSymbol(symbol, "TrafficLight", Type.ENUM, FLAG_ACCESS_PUBLIC, 3);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "TrafficLight", Type.ENUM, FLAG_ACCESS_PUBLIC, 3);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
 
         String name1 = "RED", name2 = "YELLOW", name3 = "GREEN";
@@ -424,25 +435,25 @@ public class SymbolCreatorClassesTest {
 
         Symbol symbol1 = innerTable.get(name1);
         long expFlags = FLAG_ACCESS_PUBLIC | FLAG_MOD_SHARED;
-        checkSymbol(symbol1, name1, Type.ENUM_CONSTANT, expFlags, 0);
+        checkSymbol(symbol1, name1, Type.ENUM_CONSTANT, expFlags);
 
         Symbol symbol2 = innerTable.get(name2);
-        checkSymbol(symbol2, name2, Type.ENUM_CONSTANT, expFlags, 0);
+        checkSymbol(symbol2, name2, Type.ENUM_CONSTANT, expFlags);
 
         Symbol symbol3 = innerTable.get(name3);
-        checkSymbol(symbol3, name3, Type.ENUM_CONSTANT, expFlags, 0);
+        checkSymbol(symbol3, name3, Type.ENUM_CONSTANT, expFlags);
     }
 
     /**
      * Tests member of record component.
      */
     @Test
-    public void testMemberOfRecordComponent() {
+    public void testMemberRecordComponent() {
         Symbol symbol = createTopLevelTypeSymbolNoErrors("""
                 public record Person(String first, String last, Integer age) {
                 }
                 """);
-        checkSymbol(symbol, "Person", Type.RECORD, FLAG_ACCESS_PUBLIC | FLAG_MOD_FINAL, 3);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Person", Type.RECORD, FLAG_ACCESS_PUBLIC | FLAG_MOD_FINAL, 3);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
 
         String name1 = "first", name2 = "last", name3 = "age";
@@ -450,13 +461,43 @@ public class SymbolCreatorClassesTest {
 
         Symbol symbol1 = innerTable.get(name1);
         long expFlags = FLAG_ACCESS_PUBLIC;
-        checkSymbol(symbol1, name1, Type.RECORD_COMPONENT, expFlags, 0);
+        checkSymbol(symbol1, name1, Type.RECORD_COMPONENT, expFlags);
 
         Symbol symbol2 = innerTable.get(name2);
-        checkSymbol(symbol2, name2, Type.RECORD_COMPONENT, expFlags, 0);
+        checkSymbol(symbol2, name2, Type.RECORD_COMPONENT, expFlags);
 
         Symbol symbol3 = innerTable.get(name3);
-        checkSymbol(symbol3, name3, Type.RECORD_COMPONENT, expFlags, 0);
+        checkSymbol(symbol3, name3, Type.RECORD_COMPONENT, expFlags);
+    }
+
+    /**
+     * Tests formal parameter list in a method.
+     */
+    @Test
+    public void testFormalParameterList() {
+        Symbol symbol = createTopLevelTypeSymbolNoErrors("""
+                public class HasMember {
+                    public String foo(var String first, var mut String last, mut Integer age, String ssn) {}
+                }
+                """);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Type.CLASS, FLAG_ACCESS_PUBLIC, 1);
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        String symbolName = "foo(String,String,Integer,String)";
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+
+        List<String> expNames = Arrays.asList("first", "last", "age", "ssn");
+        ParameterizedSymbol fooSymbol = ensureIsa(innerTable.get(symbolName), ParameterizedSymbol.class);
+        checkSymbol(fooSymbol, symbolName, Type.METHOD, FLAG_ACCESS_PUBLIC, 4, 4);
+        SymbolTable paramTable = fooSymbol.getTable();
+        checkSymbolTable(paramTable, MEMBER, 4, expNames);
+        List<Symbol> parameters = fooSymbol.getParameters();
+
+        assertEquals(4, parameters.size());
+        List<Long> expFlags = Arrays.asList(FLAG_VARIABLE_VAR, FLAG_VARIABLE_MUT | FLAG_VARIABLE_VAR, FLAG_VARIABLE_MUT, 0L);
+        for (int i = 0; i < 4; i++) {
+            Symbol param = parameters.get(i);
+            checkSymbol(param, expNames.get(i), PARAMETER, expFlags.get(i));
+        }
     }
 
     /**
