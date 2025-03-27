@@ -21,10 +21,9 @@ public class ParameterizedSymbol extends ParentSymbol {
      * @param type The <code>Type</code> of this symbol.
      * @param parent The parent <code>SymbolTable</code>.
      * @param flags All flags belonging to this symbol.
-     * @param scope The <code>Scope</code> of this symbol's child table.
      */
-    public ParameterizedSymbol(Location loc, String name, Type type, SymbolTable parent, long flags, SymbolTable.Scope scope) {
-        super(loc, name, type, parent, flags, scope);
+    public ParameterizedSymbol(Location loc, String name, Type type, SymbolTable parent, long flags) {
+        super(loc, name, type, parent, flags);
         myParameters = new ArrayList<>();
     }
 

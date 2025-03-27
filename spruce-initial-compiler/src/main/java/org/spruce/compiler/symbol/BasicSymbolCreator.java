@@ -1,13 +1,10 @@
 package org.spruce.compiler.symbol;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.common.CompilerMessage;
 import org.spruce.compiler.common.Location;
 import org.spruce.compiler.common.MessageProducer;
-
-import static org.spruce.compiler.symbol.Symbol.Type.*;
 
 /**
  * A <code>BasicSymbolCreator</code> provides basic symbol creation functionality.
@@ -16,10 +13,6 @@ import static org.spruce.compiler.symbol.Symbol.Type.*;
  * outside their category, using the <code>SymbolCreator</code> class.
  */
 public class BasicSymbolCreator {
-    private static final List<Symbol.Type> OVERLOADABLE_TYPES = Arrays.asList(
-            CONSTRUCTOR, METHOD
-    );
-
     private final SymbolCreator mySymbolCreator;
     private final MessageProducer myMsgProducer;
 
@@ -41,6 +34,14 @@ public class BasicSymbolCreator {
      */
     public ClassesSymbolCreator getClassesSymbolCreator() {
         return mySymbolCreator.getClassesSymbolCreator();
+    }
+
+    /**
+     * Returns the <code>StatementsSymbolCreator</code>.
+     * @return The <code>StatementsSymbolCreator</code>.
+     */
+    public StatementsSymbolCreator getStatementsSymbolCreator() {
+        return mySymbolCreator.getStatementsSymbolCreator();
     }
 
     /**
@@ -71,6 +72,17 @@ public class BasicSymbolCreator {
     }
 
     /**
+     * Creates a <code>CompilerMessage</code> of type <code>NOTE</code> at the
+     * given <code>Location</code> with the given message, and adds it to the
+     * internal list of compiler messages.
+     * @param loc The <code>Location</code>.
+     * @param msg The message.
+     */
+    public void note(Location loc, String msg) {
+        myMsgProducer.note(loc, msg);
+    }
+
+    /**
      * Inserts the given <code>Symbol</code> into the given <code>SymbolTable</code>,
      * if the symbol's name doesn't already exist.  If it does already exist,
      * produces an error message instead.
@@ -79,12 +91,24 @@ public class BasicSymbolCreator {
      */
     public void insertSymbol(SymbolTable table, Symbol symbol) {
         String name = symbol.getName();
-        Symbol.Type type = symbol.getType();
-        if (table.containsSymbolName(name)) {
-            error(symbol.getLocation(), "Duplicate identifier found: " + name);
-        }
-        else {
-            table.insertSymbol(symbol);
+        SymbolTable current = table;
+        boolean keepChecking = true;
+        while (keepChecking) {
+            if (current.containsSymbolName(name)) {
+                error(symbol.getLocation(), "Duplicate identifier found: " + name);
+                Symbol original = current.get(name);
+                note(original.getLocation(), "Originally declared here.");
+                keepChecking = false;
+            }
+            else if (current.getScope() == SymbolTable.Scope.SCOPE && current instanceof ChildSymbolTable child) {
+                // Can't declare same-name symbols in a SCOPE, up through the first
+                // non-SCOPE symbol table.  Check the parent symbol table.
+                current = child.getParent();
+            }
+            else {
+                table.insertSymbol(symbol);
+                keepChecking = false;
+            }
         }
     }
 

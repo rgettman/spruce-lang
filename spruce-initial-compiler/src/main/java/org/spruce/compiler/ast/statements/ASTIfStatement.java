@@ -11,8 +11,8 @@ import org.spruce.compiler.common.Location;
 
 /**
  * <p>An <code>ASTIfStatement</code> is "if", optionally followed by an Init
- * within braces, followed by a value expression, and a block,
- * optionally followed by "else" and another block or another if statement.</p>
+ * within braces, followed by a value expression, and a block, optionally
+ * followed by "else" and either another block or another if statement.</p>
  *
  * <p>The parser here is greedy; it will consume an "else" that it finds.  It
  * resolves the parser ambiguity known as the "dangling else" problem by being
@@ -44,7 +44,7 @@ public final class ASTIfStatement extends ASTParentNode implements ASTStatement 
      * @param valueExpr An <code>ASTValueExpression</code>.
      * @param ifBlock An <code>ASTBlock</code>; the "if" block.
      * @param elseBlock A possibly null <code>ASTBlock</code>, the "else" block.
-     * @param elseIf A possibly null <code>ASTIfStatement</code> representing "if else".
+     * @param elseIf A possibly null <code>ASTIfStatement</code> representing "else if".
      */
     private ASTIfStatement(Location location, ASTInit init, ASTValueExpression valueExpr, ASTBlock ifBlock,
                            ASTBlock elseBlock, ASTIfStatement elseIf) {
@@ -154,7 +154,7 @@ public final class ASTIfStatement extends ASTParentNode implements ASTStatement 
 
     /**
      * Returns an <code>ASTInit</code>.
-     * @return An <code>Optional&lt;ASTInit&gt;</code> of type <code>INIT</code>.
+     * @return An <code>Optional&lt;ASTInit&gt;</code>.
      */
     public Optional<ASTInit> getInit() {
         return Optional.ofNullable(myInit);

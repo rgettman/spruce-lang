@@ -1,9 +1,12 @@
 package org.spruce.compiler.test.symbol;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.spruce.compiler.ast.classes.ASTAnnotationList;
 import org.spruce.compiler.ast.names.ASTNamespaceName;
+import org.spruce.compiler.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.common.BaseMessageProducer;
 import org.spruce.compiler.parser.NamesParser;
@@ -34,12 +37,12 @@ public class SymbolCreatorTopLevelTest {
         TopLevelParser parser = ParserTopLevelTest.getTopLevelParser("namespace one.two.three;");
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer());
-        TopLevelSymbolTable topLevel = creator.createSymbolsFrom(ocu);
+        TopLevelSymbolTable topLevel = creator.createSymbolTableForOcu(ocu);
         ensureNoErrors(topLevel, creator.getTopLevelSymbolCreator());
 
         checkSymbolTable(topLevel, TOP);
 
-        assertTrue(topLevel.getNamespace().isPresent());
+        assertTrue(topLevel.getNamespace().isPresent(), "Namespace expected but not found!");
         SymbolTable namespace = topLevel.getNamespace().get();
         checkSymbolTable(namespace, NAMESPACE, 1, Arrays.asList("one"));
     }
@@ -49,29 +52,35 @@ public class SymbolCreatorTopLevelTest {
      */
     @Test
     public void testNamespaceName() {
-        NamesParser parser = ParserNamesTest.getNamesParser("""
-                spruce.collections.concurrent;
+        TopLevelParser parser = ParserTopLevelTest.getTopLevelParser("""
+                namespace spruce.collections.concurrent;
                 """);
-        ASTNamespaceName namespaceName = parser.parseNamespaceName();
+        ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
 
-        TopLevelSymbolTable topLevel = new TopLevelSymbolTable();
-        TopLevelSymbolCreator creator = getTopLevelSymbolCreator();
-        Symbol symbol = creator.createSymbolsForNamespaceName(namespaceName, topLevel);
-        ensureNoErrors(symbol, creator);
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer());
+        TopLevelSymbolTable topLevel = creator.createSymbolTableForOcu(ocu);
+        ensureNoErrors(topLevel, creator.getTopLevelSymbolCreator());
 
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "spruce", Symbol.Type.NAMESPACE, 0, 1);
+        assertTrue(topLevel.getNamespace().isPresent(), "Namespace expected but not found!");
+        SymbolTable namespaceTable = topLevel.getNamespace().get();
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of("spruce"));
 
-        ChildSymbolTable child = ensureIsa(symbol, ParentSymbol.class).getTable();
+        Symbol spruceSymbol = namespaceTable.get("spruce");
+        checkSymbol(ensureIsa(spruceSymbol, ParentSymbol.class), "spruce", Symbol.Type.NAMESPACE,
+                0, 1);
+
+        ChildSymbolTable child = ensureIsa(spruceSymbol, ParentSymbol.class).getTable();
         checkSymbolTable(child, NAMESPACE, 1, Arrays.asList("collections"));
 
-        Symbol base = child.get("collections");
-        checkSymbol(ensureIsa(base, ParentSymbol.class), "collections", Symbol.Type.NAMESPACE, 0, 1);
+        Symbol collectionsSymbol = child.get("collections");
+        checkSymbol(ensureIsa(collectionsSymbol, ParentSymbol.class), "collections", Symbol.Type.NAMESPACE,
+                0, 1);
 
-        child = ensureIsa(base, ParentSymbol.class).getTable();
+        child = ensureIsa(collectionsSymbol, ParentSymbol.class).getTable();
         checkSymbolTable(child, NAMESPACE, 1, Arrays.asList("concurrent"));
 
-        base = child.get("concurrent");
-        checkSymbol(ensureIsa(base, ParentSymbol.class), "concurrent", Symbol.Type.NAMESPACE, 0, 0);
+        Symbol concurrentSymbol = child.get("concurrent");
+        checkSymbol(ensureIsa(concurrentSymbol, ParentSymbol.class), "concurrent", Symbol.Type.NAMESPACE, 0, 0);
     }
 
     /**
@@ -89,10 +98,10 @@ public class SymbolCreatorTopLevelTest {
                 """);
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer());
-        TopLevelSymbolTable topLevel = creator.createSymbolsFrom(ocu);
+        TopLevelSymbolTable topLevel = creator.createSymbolTableForOcu(ocu);
         ensureNoErrors(topLevel, creator.getTopLevelSymbolCreator());
 
-        assertFalse(topLevel.getNamespace().isPresent());
+        assertFalse(topLevel.getNamespace().isPresent(), "Unexpected namespace found!");
         checkSymbolTable(topLevel, TOP, 6,
                 Arrays.asList("TestClass", "TestInterface", "TestAnnotation", "TestEnum", "TestRecord", "TestAdt"));
     }
@@ -108,7 +117,7 @@ public class SymbolCreatorTopLevelTest {
                 """);
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer());
-        TopLevelSymbolTable topLevel = creator.createSymbolsFrom(ocu);
+        TopLevelSymbolTable topLevel = creator.createSymbolTableForOcu(ocu);
         expectError(topLevel, creator.getTopLevelSymbolCreator());
     }
 

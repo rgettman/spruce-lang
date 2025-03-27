@@ -14,14 +14,11 @@ public class SymbolTable {
      */
     public enum Scope {
         CONSTRUCTOR,
-        FOR_EXPR, FOR_STMT,
-        IF_STMT,
         MEMBER,
         NAMESPACE,
         SCOPE,
         TOP, TYPE,
-        USE,
-        WHILE_STMT
+        USE
     }
 
     private final Scope myScope;

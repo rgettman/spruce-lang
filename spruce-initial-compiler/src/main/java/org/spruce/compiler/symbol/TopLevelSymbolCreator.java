@@ -8,7 +8,9 @@ import org.spruce.compiler.ast.names.ASTNamespaceName;
 import org.spruce.compiler.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.common.MessageProducer;
+import org.spruce.compiler.symbol.Symbol.Type;
 
+import static org.spruce.compiler.symbol.Symbol.FLAG_NONE;
 import static org.spruce.compiler.symbol.SymbolTable.Scope.NAMESPACE;
 
 /**
@@ -26,64 +28,66 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
     }
 
     /**
-     * Creates symbols for an <code>OrdinaryCompilationUnit</code>.  Populates
-     * the given <code>TopLevelSymbolTable</code> with any namespace
+     * Creates and returns a top level symbol table for an <code>OrdinaryCompilationUnit</code>.
+     * Populates the <code>TopLevelSymbolTable</code> with any namespace
      * declaration symbols, any use declarations, and any type declarations.
      * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
-     * @param topLevel A <code>TopLevelSymbolTable</code>.
      */
-    public void createSymbolsForCompUnit(ASTOrdinaryCompilationUnit ocu, TopLevelSymbolTable topLevel) {
+    public TopLevelSymbolTable createSymbolTableForCompUnit(ASTOrdinaryCompilationUnit ocu) {
+        TopLevelSymbolTable topLevel = new TopLevelSymbolTable();
         if (ocu.getNamespaceDecl().isPresent()) {
             ASTNamespaceDeclaration namespaceDecl = ocu.getNamespaceDecl().get();
-            createSymbolsForNamespaceDeclaration(namespaceDecl, topLevel);
+            ChildSymbolTable namespaceTable = createSymbolTableForNamespaceDeclaration(namespaceDecl, topLevel);
+            topLevel.addNamespace(namespaceTable);
         }
         List<ASTTypeDeclaration> typeDecls = ocu.getTypeDeclList().getTypedChildren();
         ClassesSymbolCreator classesCreator = getClassesSymbolCreator();
         for (ASTTypeDeclaration typeDecl : typeDecls) {
-            insertSymbol(topLevel, classesCreator.createSymbolsForTopLevelTypeDeclaration(typeDecl, topLevel));
+            classesCreator.createSymbolsForTopLevelTypeDeclaration(typeDecl, topLevel);
         }
+        return topLevel;
     }
 
     /**
-     * Creates symbols for a <code>NamespaceDeclaration</code>.  Adds a
-     * <code>NAMESPACE</code> symbol table to the given <code>TopLevelSymbolTable</code>.
+     * Creates and populates a symbol table for a <code>NamespaceDeclaration</code>.
      * @param namespaceDecl An <code>ASTNamespaceDeclaration</code>.
-     * @param topLevel A <code>TopLevelSymbolTable</code>.
+     * @param parent A <code>SymbolTable</code> to be the parent for the symbol table.
+     * @return A <code>ChildSymbolTable</code>.
      */
-    public void createSymbolsForNamespaceDeclaration(ASTNamespaceDeclaration namespaceDecl, TopLevelSymbolTable topLevel) {
-        ChildSymbolTable namespace = new ChildSymbolTable(NAMESPACE, topLevel);
-        topLevel.addNamespace(namespace);
-
+    public ChildSymbolTable createSymbolTableForNamespaceDeclaration(ASTNamespaceDeclaration namespaceDecl,
+                                                                     SymbolTable parent) {
+        ChildSymbolTable table = new ChildSymbolTable(NAMESPACE, parent);
         ASTNamespaceName namespaceName = namespaceDecl.getNamespace();
-        insertSymbol(namespace, createSymbolsForNamespaceName(namespaceName, topLevel));
+        createSymbolsForNamespaceName(namespaceName, table);
+        return table;
     }
 
     /**
-     * Creates symbols for a <code>NamespaceName</code>, which is expected to
-     * contain at least one identifier.
+     * Creates a symbol for a <code>NamespaceName</code> and populates it in
+     * the parent symbol table.  It is expected to contain at least one identifier.
      * @param namespaceName An <code>ASTNamespaceName</code>.
-     * @return A <code>Symbol</code> for the namespace name.
+     * @param parent A <code>SymbolTable</code> to be the parent for the symbol.
      */
-    public Symbol createSymbolsForNamespaceName(ASTNamespaceName namespaceName, TopLevelSymbolTable topLevel) {
+    public void createSymbolsForNamespaceName(ASTNamespaceName namespaceName, SymbolTable parent) {
         List<ASTIdentifier> identifiers = namespaceName.getTypedChildren();
 
         // First
-        SymbolTable parent = topLevel;
         if (identifiers.isEmpty()) {
             throw internalError("identifier in namespace");
         }
         ASTIdentifier first = identifiers.get(0);
-        ParentSymbol curr = new ParentSymbol(first.getLocation(), first.getValue(), Symbol.Type.NAMESPACE, parent, 0, NAMESPACE);
-        Symbol symbol = curr;
+        ParentSymbol curr = new ParentSymbol(first.getLocation(), first.getValue(), Type.NAMESPACE, parent, FLAG_NONE);
+        insertSymbol(parent, curr);
+        ChildSymbolTable table = new ChildSymbolTable(NAMESPACE, parent);
+        curr.setTable(table);
 
         // Rest
         for (int i = 1; i < identifiers.size(); i++) {
-            parent = curr.getTable();
             ASTIdentifier id = identifiers.get(i);
-            curr = new ParentSymbol(id.getLocation(), id.getValue(), Symbol.Type.NAMESPACE, parent, 0, NAMESPACE);
-            parent.insertSymbol(curr);
+            curr = new ParentSymbol(id.getLocation(), id.getValue(), Type.NAMESPACE, table, FLAG_NONE);
+            insertSymbol(table, curr);
+            table = new ChildSymbolTable(NAMESPACE, table);
+            curr.setTable(table);
         }
-
-        return symbol;
     }
 }

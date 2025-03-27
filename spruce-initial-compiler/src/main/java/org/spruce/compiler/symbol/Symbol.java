@@ -10,6 +10,8 @@ public class Symbol {
     public static final String NAME_CONSTRUCTOR = "<init>";
     public static final String NAME_SHARED_CONSTRUCTOR = "<clinit>";
 
+    public static final long FLAG_NONE = 0L;
+
     public static final long FLAG_ACCESS_PRIVATE = 0x1L;
     public static final long FLAG_ACCESS_PROTECTED = 0x2L;
     public static final long FLAG_ACCESS_INTERNAL = 0x4L;
@@ -37,21 +39,23 @@ public class Symbol {
      * The type of symbol.
      */
     public enum Type {
-        ADT,
-        ANNOTATION, ANNOTATION_TYPE_ELEMENT,
-        CLASS,
-        CONSTRUCTOR,
+        ADT, ANNOTATION, ANNOTATION_TYPE_ELEMENT,
+        BLOCK,
+        CATCH, CLASS, CONSTRUCTOR,
+        DO_STMT,
         ENUM, ENUM_CONSTANT,
-        FIELD,
-        INTERFACE,
-        LAMBDA,
-        LOCAL,
+        FIELD, FINALLY, FOR_STMT,
+        IF_STMT, INTERFACE,
+        LAMBDA, LOCAL,
         METHOD,
         NAMESPACE,
         PARAMETER,
+        PATTERN,
         RECORD, RECORD_COMPONENT,
         SHARED_CONSTRUCTOR,
-        USE
+        TRY_STMT,
+        USE,
+        WHILE_STMT
     }
 
     private final Location myLocation;

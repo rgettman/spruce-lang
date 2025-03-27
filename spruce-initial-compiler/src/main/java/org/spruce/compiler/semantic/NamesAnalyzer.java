@@ -1,16 +1,8 @@
 package org.spruce.compiler.semantic;
 
-import java.util.List;
-
-import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.names.ASTNamespaceName;
 import org.spruce.compiler.common.MessageProducer;
-import org.spruce.compiler.symbol.ParentSymbol;
-import org.spruce.compiler.symbol.Symbol;
-import org.spruce.compiler.symbol.SymbolTable;
 import org.spruce.compiler.symbol.TopLevelSymbolTable;
-
-import static org.spruce.compiler.symbol.SymbolTable.Scope.*;
 
 /**
  * A <code>NamesAnalyzer</code> is a <code>BasicAnalyzer</code> that analyzes
@@ -30,28 +22,8 @@ public class NamesAnalyzer extends BasicAnalyzer {
      * Analyzes a <code>NamespaceName</code>, which is expected to contain at
      * least one identifier.
      * @param namespaceName An <code>ASTNamespaceName</code>.
-     * @return A <code>Symbol</code> for the namespace name.
      */
-    public Symbol analyzeNamespaceName(ASTNamespaceName namespaceName, TopLevelSymbolTable topLevel) {
-        List<ASTIdentifier> identifiers = namespaceName.getTypedChildren();
+    public void analyzeNamespaceName(ASTNamespaceName namespaceName, TopLevelSymbolTable topLevel) {
 
-        // First
-        SymbolTable parent = topLevel;
-        if (identifiers.isEmpty()) {
-            throw internalError("identifier in namespace");
-        }
-        ASTIdentifier first = identifiers.get(0);
-        ParentSymbol curr = new ParentSymbol(first.getLocation(), first.getValue(), Symbol.Type.NAMESPACE, parent, 0, NAMESPACE);
-        Symbol symbol = curr;
-
-        // Rest
-        for (int i = 1; i < identifiers.size(); i++) {
-            parent = curr.getTable();
-            ASTIdentifier id = identifiers.get(i);
-            curr = new ParentSymbol(id.getLocation(), id.getValue(), Symbol.Type.NAMESPACE, parent, 0, NAMESPACE);
-            parent.insertSymbol(curr);
-        }
-
-        return symbol;
     }
 }

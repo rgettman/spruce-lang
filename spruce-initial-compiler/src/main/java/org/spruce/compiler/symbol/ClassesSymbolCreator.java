@@ -1,7 +1,5 @@
 package org.spruce.compiler.symbol;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,34 +28,34 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     }
 
     /**
-     * Creates and returns a <code>Symbol</code> for a top-level <code>TypeDeclaration</code>.
+     * Creates a <code>Symbol</code> for a top-level <code>TypeDeclaration</code>,
+     * and inserts it into the parent symbol table.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>ParentSymbol</code>.
      */
-    public Symbol createSymbolsForTopLevelTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
-        return createSymbolsForTypeDeclaration(typeDecl, parent, false);
+    public void createSymbolsForTopLevelTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
+        createSymbolsForTypeDeclaration(typeDecl, parent, false);
     }
 
     /**
-     * Creates and returns a <code>Symbol</code> for a nested <code>TypeDeclaration</code>.
+     * Creates a <code>Symbol</code> for a nested <code>TypeDeclaration</code>,
+     * and inserts it into the parent symbol table.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>ParentSymbol</code>.
      */
-    public Symbol createSymbolsForNestedTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
-        return createSymbolsForTypeDeclaration(typeDecl, parent, true);
+    public void createSymbolsForNestedTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
+        createSymbolsForTypeDeclaration(typeDecl, parent, true);
     }
 
     /**
-     * Creates and returns a <code>Symbol</code> for a <code>TypeDeclaration</code>.
+     * Creates a <code>Symbol</code> for a <code>TypeDeclaration</code>,
+     * and inserts it into the parent symbol table.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
      * @param isNested Whether the <code>TypeDeclaration</code> is nested with
      *                 another <code>TypeDeclaration</code>.
-     * @return A <code>ParentSymbol</code>.
      */
-    public Symbol createSymbolsForTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent, boolean isNested) {
+    public void createSymbolsForTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent, boolean isNested) {
         Optional<ASTKeywordNode> accessMod = typeDecl.getAccessMod();
         long flags = getFlags(typeDecl);
         if (accessMod.isEmpty()) {
@@ -112,180 +110,163 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         }
 
         ParentSymbol symbol = new ParentSymbol(typeDecl.getLocation(), typeDecl.getName().getValue(),
-                type, parent, flags, SymbolTable.Scope.TYPE);
-        for (ASTMember member : typeDecl.getMembers()) {
-            // A member may generate more than one symbol, e.g. a FieldDeclaration
-            // that declares multiple variables.
-            for (Symbol child : createSymbolsForMember(symbol.getTable(), member)) {
-                insertSymbol(symbol.getTable(), child);
-            }
-        }
-        return symbol;
+                type, parent, flags /*, SymbolTable.Scope.TYPE*/);
+        insertSymbol(parent, symbol);
+
+        ChildSymbolTable table = createSymbolTableForTypeDeclaration(typeDecl, parent);
+        symbol.setTable(table);
     }
 
     /**
-     * Creates and returns a <code>List</code> of <code>Symbol</code>s for a
-     * <code>Member</code>.
+     * Creates and returns a child symbol table for a <code>TypeDeclaration</code>.
+     * Creates child symbols and populates them in the symbol table.
+     * @param typeDecl An <code>ASTTypeDeclaration</code>.
+     * @param parent A <code>SymbolTable</code> to be the parent for the <code>SymbolTable</code>.
+     * @return A <code>ChildSymbolTable</code>.
+     */
+    public ChildSymbolTable createSymbolTableForTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.TYPE, parent);
+        for (ASTMember member : typeDecl.getMembers()) {
+            createSymbolsForMember(table, member);
+        }
+        return table;
+    }
+
+    /**
+     * Creates symbols for a <code>Member</code>, and populates them in the
+     * given <code>SymbolTable</code>.
      * @param member An <code>ASTMember</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>List</code> of <code>Symbol</code>s.
      */
-    public List<Symbol> createSymbolsForMember(SymbolTable parent, ASTMember member) {
+    public void createSymbolsForMember(SymbolTable parent, ASTMember member) {
         switch (member) {
-        case ASTTypeDeclaration typeDecl -> {
-            return Arrays.asList(createSymbolsForNestedTypeDeclaration(typeDecl, parent));
-        }
-        case ASTSharedConstructor shConstr -> {
-            return Arrays.asList(createSymbolsForSharedConstructor(shConstr, parent));
-        }
-        case ASTConstructorDeclaration constrDecl -> {
-            return Arrays.asList(createSymbolsForConstructorDeclaration(constrDecl, parent));
-        }
-        case ASTCompactConstructorDeclaration constrDecl -> {
-            return Arrays.asList(createSymbolsForConstructorDeclaration(constrDecl, parent));
-        }
-        case ASTFieldDeclaration fieldDecl -> {
-            return createSymbolsForFieldDeclaration(fieldDecl, parent);
-        }
-        case ASTConstantDeclaration constDecl -> {
-            return createSymbolsForFieldDeclaration(constDecl, parent);
-        }
-        case ASTAnnotationTypeElementDeclaration ated -> {
-            return Arrays.asList(createSymbolsForATED(ated, parent));
-        }
-        case ASTMethodDeclaration methodDecl -> {
-            return Arrays.asList(createSymbolsForMethodDeclaration(methodDecl, parent));
-        }
-        case ASTInterfaceMethodDeclaration interfaceMethodDecl -> {
-            return Arrays.asList(createSymbolsForInterfaceMethodDeclaration(interfaceMethodDecl, parent));
-        }
-        case ASTEnumConstant enumConst -> {
-            return Arrays.asList(createSymbolsForEnumConstant(enumConst, parent));
-        }
-        case ASTRecordComponent recordComp -> {
-            return Arrays.asList(createSymbolsForRecordComp(recordComp, parent));
-        }
+        case ASTTypeDeclaration typeDecl -> createSymbolsForNestedTypeDeclaration(typeDecl, parent);
+        case ASTSharedConstructor shConstr -> createSymbolsForSharedConstructor(shConstr, parent);
+        case ASTConstructorDeclaration constrDecl -> createSymbolsForConstructorDeclaration(constrDecl, parent);
+        case ASTCompactConstructorDeclaration constrDecl -> createSymbolsForConstructorDeclaration(constrDecl, parent);
+        case ASTFieldDeclaration fieldDecl -> createSymbolsForFieldDeclaration(fieldDecl, parent);
+        case ASTConstantDeclaration constDecl -> createSymbolsForFieldDeclaration(constDecl, parent);
+        case ASTAnnotationTypeElementDeclaration ated -> createSymbolsForATED(ated, parent);
+        case ASTMethodDeclaration methodDecl -> createSymbolsForMethodDeclaration(methodDecl, parent);
+        case ASTInterfaceMethodDeclaration interfaceMethodDecl -> createSymbolsForInterfaceMethodDeclaration(interfaceMethodDecl, parent);
+        case ASTEnumConstant enumConst -> createSymbolsForEnumConstant(enumConst, parent);
+        case ASTRecordComponent recordComp -> createSymbolsForRecordComp(recordComp, parent);
         }
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for a <code>SharedConstructor</code>.
+     * Creates a <code>Symbol</code> for a <code>SharedConstructor</code>.
+     * Populates it in the given <code>SymbolTable</code>.
      * @param shConstr An <code>ASTSharedConstructor</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
      */
-    public Symbol createSymbolsForSharedConstructor(ASTSharedConstructor shConstr, SymbolTable parent) {
+    public void createSymbolsForSharedConstructor(ASTSharedConstructor shConstr, SymbolTable parent) {
         ParentSymbol symbol = new ParentSymbol(shConstr.getLocation(),
-                NAME_SHARED_CONSTRUCTOR, Symbol.Type.SHARED_CONSTRUCTOR, parent, FLAG_MOD_SHARED, SymbolTable.Scope.MEMBER);
-        // Loop through body.
+                NAME_SHARED_CONSTRUCTOR, Symbol.Type.SHARED_CONSTRUCTOR, parent, FLAG_MOD_SHARED);
+        insertSymbol(parent, symbol);
 
-        return symbol;
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
+        symbol.setTable(table);
+        getStatementsSymbolCreator().createSymbolsForBlock(shConstr.getBlock(), table);
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for a <code>SharedConstructor</code>.
+     * Creates a <code>Symbol</code> for a <code>SharedConstructor</code>.
+     * Populates it in the given <code>SymbolTable</code>.
      * @param constrDecl An <code>ASTConstructorDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
      */
-    public Symbol createSymbolsForConstructorDeclaration(ASTConstructorDeclaration constrDecl, SymbolTable parent) {
+    public void createSymbolsForConstructorDeclaration(ASTConstructorDeclaration constrDecl, SymbolTable parent) {
         Optional<ASTKeywordNode> accessMod = constrDecl.getAccessMod();
         long flags = getFlags(constrDecl);
         if (accessMod.isEmpty()) {
             flags |= DEFAULT_ACCESS_CONSTRUCTOR;
         }
         ParameterizedSymbol symbol = new ParameterizedSymbol(constrDecl.getLocation(),
-                getConstructorSymbolName(constrDecl), Symbol.Type.CONSTRUCTOR, parent, flags, SymbolTable.Scope.MEMBER);
-        List<Symbol> paramSymbols = createSymbolsForFormalParameterList(
-                constrDecl.getConstructorDecl().getFormalParamList(), symbol.getTable());
-        for (Symbol paramSymbol : paramSymbols) {
-            insertSymbol(symbol.getTable(), paramSymbol);
-            symbol.addParameter(paramSymbol);
-        }
-        // Loop through body.
+                getConstructorSymbolName(constrDecl), Symbol.Type.CONSTRUCTOR, parent, flags);
+        insertSymbol(parent, symbol);
 
-        return symbol;
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
+        symbol.setTable(table);
+        createSymbolsForFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList(), symbol);
+        getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), table);
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for a <code>CompactSharedConstructor</code>.
+     * Creates a <code>Symbol</code> for a <code>CompactSharedConstructor</code>.
+     * Populates it in the given <code>SymbolTable</code>.
      * @param constrDecl An <code>ASTCompactConstructorDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
      */
-    public Symbol createSymbolsForConstructorDeclaration(ASTCompactConstructorDeclaration constrDecl, SymbolTable parent) {
+    public void createSymbolsForConstructorDeclaration(ASTCompactConstructorDeclaration constrDecl, SymbolTable parent) {
         Optional<ASTKeywordNode> accessMod = constrDecl.getAccessMod();
         long flags = getFlags(constrDecl);
         if (accessMod.isEmpty()) {
             flags |= DEFAULT_ACCESS_FIELD;
         }
         ParentSymbol symbol = new ParentSymbol(constrDecl.getLocation(),
-                NAME_CONSTRUCTOR, Symbol.Type.CONSTRUCTOR, parent, flags, SymbolTable.Scope.MEMBER);
-        // Loop through body.
+                NAME_CONSTRUCTOR, Symbol.Type.CONSTRUCTOR, parent, flags);
 
-        return symbol;
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
+        symbol.setTable(table);
+        getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), table);
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for a <code>FieldDeclaration</code>.
+     * Creates <code>Symbol</code>s for a <code>FieldDeclaration</code>.
+     * Populates them in the given <code>SymbolTable</code>.
      * @param fieldDecl An <code>ASTFieldDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>List</code> of <code>Symbol</code>s.
      */
-    public List<Symbol> createSymbolsForFieldDeclaration(ASTFieldDeclaration fieldDecl, SymbolTable parent) {
+    public void createSymbolsForFieldDeclaration(ASTFieldDeclaration fieldDecl, SymbolTable parent) {
         Optional<ASTKeywordNode> accessMod = fieldDecl.getAccessMod();
         long flags = getFlags(fieldDecl);
         if (accessMod.isEmpty()) {
             flags |= DEFAULT_ACCESS_FIELD;
         }
-        List<Symbol> symbols = new ArrayList<>();
         for (String name : fieldDecl.getNames().stream().map(ASTIdentifier::getValue).toList()) {
             Symbol symbol = new Symbol(fieldDecl.getLocation(), name, Symbol.Type.FIELD, parent, flags);
-            symbols.add(symbol);
+            insertSymbol(parent, symbol);
         }
-        return symbols;
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for a <code>ConstantDeclaration</code>.
+     * Creates <code>Symbol</code>s for a <code>ConstantDeclaration</code>.
+     * Populates them in the given <code>SymbolTable</code>.
      * @param constDecl An <code>ASTConstantDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>List</code> of <code>Symbol</code>s.
      */
-    public List<Symbol> createSymbolsForFieldDeclaration(ASTConstantDeclaration constDecl, SymbolTable parent) {
+    public void createSymbolsForFieldDeclaration(ASTConstantDeclaration constDecl, SymbolTable parent) {
         Optional<ASTKeywordNode> accessMod = constDecl.getAccessMod();
         long flags = getFlags(constDecl);
         if (accessMod.isEmpty()) {
             flags |= DEFAULT_ACCESS_FIELD;
         }
         flags |= FLAG_MOD_FINAL | FLAG_MOD_SHARED;
-        List<Symbol> symbols = new ArrayList<>();
         for (String name : constDecl.getNames().stream().map(ASTIdentifier::getValue).toList()) {
             Symbol symbol = new Symbol(constDecl.getLocation(), name, Symbol.Type.FIELD, parent, flags);
-            symbols.add(symbol);
+            insertSymbol(parent, symbol);
         }
-        return symbols;
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for an <code>AnnotationTypeElementDeclaration</code>.
+     * Creates a <code>Symbol</code> for an <code>AnnotationTypeElementDeclaration</code>.
      * @param ated An <code>ASTAnnotationTypeElementDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
      */
-    public Symbol createSymbolsForATED(ASTAnnotationTypeElementDeclaration ated, SymbolTable parent) {
+    public void createSymbolsForATED(ASTAnnotationTypeElementDeclaration ated, SymbolTable parent) {
         long flags = FLAG_ACCESS_PUBLIC | FLAG_MOD_ABSTRACT;
-        return new Symbol(ated.getLocation(), ated.getName().getValue(),
-                Type.ANNOTATION_TYPE_ELEMENT, parent, flags);
+        insertSymbol(parent, new Symbol(ated.getLocation(), ated.getName().getValue(),
+                Type.ANNOTATION_TYPE_ELEMENT, parent, flags));
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for a <code>MethodDeclaration</code>.
+     * Creates a <code>Symbol</code>s for a <code>MethodDeclaration</code>.
+     * Populates it in the given <code>SymbolTable</code>.
      * @param methodDecl An <code>ASTMethodDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
      */
-    public Symbol createSymbolsForMethodDeclaration(ASTMethodDeclaration methodDecl, SymbolTable parent) {
+    public void createSymbolsForMethodDeclaration(ASTMethodDeclaration methodDecl, SymbolTable parent) {
         Optional<ASTKeywordNode> accessMod = methodDecl.getAccessMod();
         long flags = getFlags(methodDecl);
         if (accessMod.isEmpty()) {
@@ -295,25 +276,25 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
             flags |= FLAG_METHOD_MUT;
         }
         ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getMethodSymbolName(methodDecl),
-                Symbol.Type.METHOD, parent, flags, SymbolTable.Scope.MEMBER);
-        List<Symbol> paramSymbols = createSymbolsForFormalParameterList(
-                methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol.getTable());
-        for (Symbol paramSymbol : paramSymbols) {
-            insertSymbol(symbol.getTable(), paramSymbol);
-            symbol.addParameter(paramSymbol);
-        }
-        // Loop through body.
+                Symbol.Type.METHOD, parent, flags);
+        insertSymbol(parent, symbol);
 
-        return symbol;
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
+        symbol.setTable(table);
+        createSymbolsForFormalParameterList(methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol);
+
+        if (methodDecl.getBody().getBlock().isPresent()) {
+            getStatementsSymbolCreator().createSymbolsForBlock(methodDecl.getBody().getBlock().get(), table);
+        }
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for an <code>InterfaceMethodDeclaration</code>.
+     * Creates a <code>Symbol</code> for an <code>InterfaceMethodDeclaration</code>.
+     * Populates it in the given <code>SymbolTable</code>/
      * @param methodDecl An <code>ASTInterfaceMethodDeclaration</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
      */
-    public Symbol createSymbolsForInterfaceMethodDeclaration(ASTInterfaceMethodDeclaration methodDecl, SymbolTable parent) {
+    public void createSymbolsForInterfaceMethodDeclaration(ASTInterfaceMethodDeclaration methodDecl, SymbolTable parent) {
         Optional<ASTKeywordNode> accessMod = methodDecl.getAccessMod();
         long flags = getFlags(methodDecl);
         if (accessMod.isEmpty()) {
@@ -324,58 +305,62 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         }
         flags |= FLAG_MOD_ABSTRACT;
         ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getInterfaceMethodSymbolName(methodDecl),
-                Symbol.Type.METHOD, parent, flags, SymbolTable.Scope.MEMBER);
-        List<Symbol> paramSymbols = createSymbolsForFormalParameterList(
-                methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol.getTable());
-        for (Symbol paramSymbol : paramSymbols) {
-            insertSymbol(symbol.getTable(), paramSymbol);
-            symbol.addParameter(paramSymbol);
-        }
-        // Loop through body.
+                Symbol.Type.METHOD, parent, flags);
+        insertSymbol(parent, symbol);
 
-        return symbol;
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
+        symbol.setTable(table);
+        createSymbolsForFormalParameterList( methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol);
+
+        if (methodDecl.getBody().getBlock().isPresent()) {
+            getStatementsSymbolCreator().createSymbolsForBlock(methodDecl.getBody().getBlock().get(), table);
+        }
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for an <code>EnumConstant</code>.
+     * Creates a <code>Symbol</code> for an <code>EnumConstant</code>.
+     * Populates it in the given <code>SymbolTable</code>.
      * @param enumConst An <code>ASTEnumConstant</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
      */
-    public Symbol createSymbolsForEnumConstant(ASTEnumConstant enumConst, SymbolTable parent) {
+    public void createSymbolsForEnumConstant(ASTEnumConstant enumConst, SymbolTable parent) {
         long flags = getFlags(enumConst);
         flags |= FLAG_ACCESS_PUBLIC | FLAG_MOD_SHARED;
         ParentSymbol symbol = new ParentSymbol(enumConst.getLocation(), enumConst.getName().getValue(),
-                Symbol.Type.ENUM_CONSTANT, parent, flags, SymbolTable.Scope.MEMBER);
-        // Loop through body.
+                Symbol.Type.ENUM_CONSTANT, parent, flags);
+        insertSymbol(parent, symbol);
 
-        return symbol;
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
+        symbol.setTable(table);
+        for (ASTClassPart member : enumConst.getClassParts().getTypedChildren()) {
+            // A member may generate more than one symbol, e.g. a FieldDeclaration
+            // that declares multiple variables.
+            createSymbolsForMember(table, member);
+        }
     }
 
     /**
-     * Creates and returns a <code>Symbol</code>s for a <code>RecordComponent</code>.
+     * Creates a <code>Symbol</code>s for a <code>RecordComponent</code>.
+     * Populates it in the given <code>SymbolTable</code>.
      * @param recordComp An <code>ASTRecordComponent</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>Symbol</code>.
      */
-    public Symbol createSymbolsForRecordComp(ASTRecordComponent recordComp, SymbolTable parent) {
+    public void createSymbolsForRecordComp(ASTRecordComponent recordComp, SymbolTable parent) {
         long flags = getFlags(recordComp);
         flags |= FLAG_ACCESS_PUBLIC;
-        ParentSymbol symbol = new ParentSymbol(recordComp.getLocation(), recordComp.getName().getValue(),
-                Symbol.Type.RECORD_COMPONENT, parent, flags, SymbolTable.Scope.MEMBER);
-        // Loop through body.
-
-        return symbol;
+        insertSymbol(parent, new Symbol(recordComp.getLocation(), recordComp.getName().getValue(),
+                Symbol.Type.RECORD_COMPONENT, parent, flags));
     }
 
     /**
-     * Creates and returns symbols for a <code>FormalParameterList</code>.
+     * Creates symbols for a <code>FormalParameterList</code> and inserts them
+     * into the given <code>ParameterizedSymbol</code>.
      * @param formalParams An <code>ASTFormalParameterList</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
-     * @return A <code>List</code> of <code>Symbol</code>s.
+     * @param param A <code>ParameterizedSymbol</code> to be the parent for
+     *              the <code>Symbol</code>s.
      */
-    public List<Symbol> createSymbolsForFormalParameterList(ASTFormalParameterList formalParams, SymbolTable parent) {
-        List<Symbol> symbols = new ArrayList<>();
+    public void createSymbolsForFormalParameterList(ASTFormalParameterList formalParams, ParameterizedSymbol param) {
+        SymbolTable parent = param.getParent();
         for (ASTFormalParameter formalParam : formalParams.getTypedChildren()) {
             String name = formalParam.getName().getValue();
             long flags = 0;
@@ -385,9 +370,11 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
                 case MUT -> flags |= FLAG_VARIABLE_MUT;
                 }
             }
-            symbols.add(new Symbol(formalParam.getLocation(), name, Symbol.Type.PARAMETER, parent, flags));
+            Symbol symbol = new Symbol(formalParam.getLocation(), name, Symbol.Type.PARAMETER, parent, flags);
+            ChildSymbolTable table = param.getTable();
+            insertSymbol(table, symbol);
+            param.addParameter(symbol);
         }
-        return symbols;
     }
 
     /**

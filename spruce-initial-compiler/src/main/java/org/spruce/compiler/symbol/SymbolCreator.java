@@ -13,6 +13,7 @@ import org.spruce.compiler.common.MessageProducer;
  */
 public class SymbolCreator {
     private final ClassesSymbolCreator myClassesSymbolCreator;
+    private final StatementsSymbolCreator myStatementsSymbolCreator;
     private final TopLevelSymbolCreator myTopLevelSymbolCreator;
     private final TypesSymbolCreator myTypesSymbolCreator;
     private final MessageProducer myMsgProducer;
@@ -24,6 +25,7 @@ public class SymbolCreator {
      */
     public SymbolCreator(MessageProducer msgProducer) {
         myClassesSymbolCreator = new ClassesSymbolCreator(this, msgProducer);
+        myStatementsSymbolCreator = new StatementsSymbolCreator(this, msgProducer);
         myTopLevelSymbolCreator = new TopLevelSymbolCreator(this, msgProducer);
         myTypesSymbolCreator = new TypesSymbolCreator(this, msgProducer);
 
@@ -36,6 +38,14 @@ public class SymbolCreator {
      */
     public ClassesSymbolCreator getClassesSymbolCreator() {
         return myClassesSymbolCreator;
+    }
+
+    /**
+     * Returns the <code>StatementsSymbolCreator</code>.
+     * @return The <code>StatementsSymbolCreator</code>.
+     */
+    public StatementsSymbolCreator getStatementsSymbolCreator() {
+        return myStatementsSymbolCreator;
     }
 
     /**
@@ -62,10 +72,8 @@ public class SymbolCreator {
      * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
      * @return A <code>TopLevelSymbolTable</code>.
      */
-    public TopLevelSymbolTable createSymbolsFrom(ASTOrdinaryCompilationUnit ocu) {
-        TopLevelSymbolTable topLevel = new TopLevelSymbolTable();
-        getTopLevelSymbolCreator().createSymbolsForCompUnit(ocu, topLevel);
-        return topLevel;
+    public TopLevelSymbolTable createSymbolTableForOcu(ASTOrdinaryCompilationUnit ocu) {
+        return getTopLevelSymbolCreator().createSymbolTableForCompUnit(ocu);
     }
 
     /**

@@ -7,7 +7,7 @@ import org.spruce.compiler.common.Location;
  * <code>ChildSymbolTable</code>.
  */
 public class ParentSymbol extends Symbol {
-    private final ChildSymbolTable myTable;
+    private ChildSymbolTable myTable;
 
     /**
      * Constructs a <code>ParentSymbol</code> at the given <code>Location</code>,
@@ -18,11 +18,9 @@ public class ParentSymbol extends Symbol {
      * @param type The <code>Type</code> of this symbol.
      * @param parent The parent <code>SymbolTable</code>.
      * @param flags All flags belonging to this symbol.
-     * @param scope The <code>Scope</code> of this symbol's child table.
      */
-    public ParentSymbol(Location loc, String name, Type type, SymbolTable parent, long flags, SymbolTable.Scope scope) {
+    public ParentSymbol(Location loc, String name, Type type, SymbolTable parent, long flags) {
         super(loc, name, type, parent, flags);
-        myTable = new ChildSymbolTable(scope, getParent());
     }
 
     /**
@@ -34,6 +32,14 @@ public class ParentSymbol extends Symbol {
     }
 
     /**
+     * Sets the <code>ChildSymbolTable</code>.
+     * @param table The <code>ChildSymbolTable</code>.
+     */
+    public void setTable(ChildSymbolTable table) {
+        myTable = table;
+    }
+
+    /**
      * Helper method to create a string representation of this symbol.  It takes
      * into account where in the tree this node is.
      * @param prefix A string to indent the printing of this symbol.
@@ -42,6 +48,6 @@ public class ParentSymbol extends Symbol {
      */
     @Override
     public String toString(String prefix, boolean isTail) {
-        return super.toString(prefix, isTail) + myTable.toString(prefix, isTail);
+        return super.toString(prefix, isTail) + (myTable != null ? myTable.toString(prefix, isTail) : "");
     }
 }
