@@ -10,27 +10,27 @@ import org.spruce.compiler.common.Location;
 
 /**
  * An <code>ASTIsaExpression</code> is an Expression followed by "isa",
- * followed by a DataType.
+ * followed by an IsaTarget.
  * <em>
  * IsaExpression:
- * &nbsp;&nbsp;&nbsp;&nbsp;Expression isa DataType
+ * &nbsp;&nbsp;&nbsp;&nbsp;Expression isa IsaTarget
  * </em>
  */
 public final class ASTIsaExpression extends ASTParentNode implements ASTValueExpression {
     private final ASTExpression myExpr;
-    private final ASTDataType myDataType;
+    private final ASTIsaTarget myIsaTarget;
 
     /**
      * Constructs an <code>ASTCastExpression</code> at the given <code>Location</code>
-     * with the given <code>ASTExpression</code> and the given <code>ASTDataType</code>.
+     * with the given <code>ASTExpression</code> and the given <code>ASTIsaTarget</code>.
      * @param location The <code>Location</code>.
      * @param expr An <code>ASTExpression</code>.
-     * @param dataType An <code>ASTDataType</code>.
+     * @param isaTarget An <code>ASTIsaTarget</code>.
      */
-    public ASTIsaExpression(Location location, ASTExpression expr, ASTDataType dataType) {
+    public ASTIsaExpression(Location location, ASTExpression expr, ASTIsaTarget isaTarget) {
         super(location);
         myExpr = expr;
-        myDataType = dataType;
+        myIsaTarget = isaTarget;
     }
 
     /**
@@ -42,15 +42,15 @@ public final class ASTIsaExpression extends ASTParentNode implements ASTValueExp
     }
 
     /**
-     * Returns an <code>ASTDataType</code>.
-     * @return An <code>ASTDataType</code>.
+     * Returns an <code>ASTIsaTarget</code>.
+     * @return An <code>ASTIsaTarget</code>.
      */
-    public ASTDataType getIntersectionType() {
-        return myDataType;
+    public ASTIsaTarget getIsaTarget() {
+        return myIsaTarget;
     }
 
     @Override
     public List<Node> getChildren() {
-        return Arrays.asList(myExpr, myDataType);
+        return Arrays.asList(myExpr, myIsaTarget);
     }
 }

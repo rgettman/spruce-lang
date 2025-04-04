@@ -656,16 +656,31 @@ public class ParserExpressionsTest {
     }
 
     /**
-     * Tests relational expression of "isa" and compare expression.
+     * Tests relational expression of "isa" and compare expression with a DataType.
      */
     @Test
-    public void testRelationalExpressionOfIsa() {
+    public void testRelationalExpressionOfIsaDataType() {
         ExpressionsParser parser = getExpressionsParser("node isa ASTBinaryExpression");
         ASTValueExpression node = parser.parseRelationalExpression();
         ensureNoErrors(node, parser);
         ASTIsaExpression isaExpr = TestUtility.ensureIsa(node, ASTIsaExpression.class);
         assertNotNull(isaExpr.getExpr());
-        assertNotNull(isaExpr.getIntersectionType());
+        assertNotNull(isaExpr.getIsaTarget());
+        assertInstanceOf(ASTDataType.class, isaExpr.getIsaTarget());
+    }
+
+    /**
+     * Tests relational expression of "isa" and compare expression with a Pattern.
+     */
+    @Test
+    public void testRelationalExpressionOfIsaPattern() {
+        ExpressionsParser parser = getExpressionsParser("node isa ASTBinaryExpression binExpr");
+        ASTValueExpression node = parser.parseRelationalExpression();
+        ensureNoErrors(node, parser);
+        ASTIsaExpression isaExpr = TestUtility.ensureIsa(node, ASTIsaExpression.class);
+        assertNotNull(isaExpr.getExpr());
+        assertNotNull(isaExpr.getIsaTarget());
+        assertInstanceOf(ASTPattern.class, isaExpr.getIsaTarget());
     }
 
     /**

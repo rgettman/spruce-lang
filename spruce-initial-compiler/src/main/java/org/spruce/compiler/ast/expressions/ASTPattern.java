@@ -10,5 +10,5 @@ import org.spruce.compiler.ast.ParentNode;
  * &nbsp;&nbsp;&nbsp;&nbsp;RecordPattern
  * </em>
  */
-public sealed interface ASTPattern extends ParentNode permits ASTTypePattern, ASTRecordPattern {
+public sealed interface ASTPattern extends ParentNode, ASTIsaTarget permits ASTTypePattern, ASTRecordPattern {
 }

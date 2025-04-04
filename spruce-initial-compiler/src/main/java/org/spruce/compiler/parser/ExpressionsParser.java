@@ -421,13 +421,32 @@ public class ExpressionsParser extends BasicParser {
         while ( (curr = isAcceptedOperator(Arrays.asList(LESS_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, DOUBLE_EQUAL, NOT_EQUAL, ISA, IS, ISNT)) ) != null) {
             accept(curr);
             if (curr == ISA) {
-                result = new ASTIsaExpression(loc, result, getTypesParser().parseDataType());
+                result = new ASTIsaExpression(loc, result, parseIsaTarget());
             }
             else {
                 result = new ASTBinaryExpression(loc, result, parseCompareExpression(), curr);
             }
         }
         return result;
+    }
+
+    /**
+     * Parses an <code>IsaExpression</code>.
+     * <em>
+     * IsaTarget:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;DataType<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;Pattern<
+     * </em>
+     * @return An <code>ASTIsaTarget</code>.
+     */
+    public ASTIsaTarget parseIsaTarget() {
+        ASTDataType dataType = getTypesParser().parseDataType();
+        if (isAcceptedOperator(Arrays.asList(OPEN_PARENTHESIS, IDENTIFIER)) != null) {
+            return parsePattern(dataType);
+        }
+        else {
+            return dataType;
+        }
     }
 
     /**
@@ -780,6 +799,20 @@ public class ExpressionsParser extends BasicParser {
             return parseTypePattern();
         }
         ASTDataType dataType = getTypesParser().parseDataType();
+        return parsePattern(dataType);
+    }
+
+    /**
+     * Parses a <code>Pattern</code> given an already parsed <code>DataType</code>.
+     * <em>
+     * Pattern:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;TypePattern<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;RecordPattern
+     * </em>
+     * @return An <code>ASTPattern</code> which could be an <code>ASTTypePattern</code>
+     *     or an <code>ASTRecordPattern</code>.
+     */
+    public ASTPattern parsePattern(ASTDataType dataType) {
         if (isCurr(OPEN_PARENTHESIS)) {
             return parseRecordPattern(dataType);
         }

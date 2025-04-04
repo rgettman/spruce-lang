@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.ASTParentNode;
 import org.spruce.compiler.ast.Node;
+import org.spruce.compiler.ast.expressions.ASTIsaTarget;
 import org.spruce.compiler.ast.names.ASTExpressionName;
 import org.spruce.compiler.common.Location;
 
@@ -21,7 +22,7 @@ import org.spruce.compiler.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;BaseDataType ?
  * </em>
  */
-public class ASTDataType extends ASTParentNode {
+public final class ASTDataType extends ASTParentNode implements ASTIsaTarget {
     private final ASTBaseDataType myBaseDataType;
     private final ASTKeywordNode mySuffixOperator;
 
