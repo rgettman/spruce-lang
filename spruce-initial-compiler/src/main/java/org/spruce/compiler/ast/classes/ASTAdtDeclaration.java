@@ -204,6 +204,7 @@ public final class ASTAdtDeclaration extends ASTAnnotatedNode implements ASTType
      * Returns an <code>ASTTypeParameterList</code> representing the TypeParameters, if it exists.
      * @return An <code>Optional&lt;ASTTypeParameterList&gt;</code>.
      */
+    @Override
     public Optional<ASTTypeParameterList> getTypeParams() {
         return Optional.ofNullable(myTypeParams);
     }

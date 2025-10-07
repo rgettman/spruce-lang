@@ -232,6 +232,7 @@ public final class ASTInterfaceDeclaration extends ASTAnnotatedNode implements A
      * Returns an <code>ASTTypeParameterList</code>, if it exists.
      * @return An <code>Optional&lt;ASTTypeParameterList&gt;</code>.
      */
+    @Override
     public Optional<ASTTypeParameterList> getTypeParams() {
         return Optional.ofNullable(myTypeParams);
     }

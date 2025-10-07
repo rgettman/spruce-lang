@@ -9,6 +9,7 @@ import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.TokenType;
 
@@ -122,6 +123,15 @@ public final class ASTInterfaceMethodDeclaration extends ASTAnnotatedNode implem
     @Override
     public List<ASTIdentifier> getNames() {
         return Arrays.asList(myHeader.getMethodDecl().getName());
+    }
+
+    /**
+     * Returns an <code>ASTTypeParameterList</code>, if it exists.
+     * @return An <code>Optional&lt;ASTTypeParameterList&gt;</code>.
+     */
+    @Override
+    public Optional<ASTTypeParameterList> getTypeParams() {
+        return myHeader.getTypeParams();
     }
 
     @Override

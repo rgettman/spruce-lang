@@ -9,6 +9,7 @@ import org.spruce.compiler.ast.ASTAnnotatedNode;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.TokenType;
 
@@ -113,6 +114,15 @@ public final class ASTAnnotationDeclaration extends ASTAnnotatedNode implements 
     @Override
     public List<ASTIdentifier> getNames() {
         return Arrays.asList(myName);
+    }
+
+    /**
+     * Returns no <code>ASTTypeParameterList</code>.
+     * @return An empty <code>Optional</code>.
+     */
+    @Override
+    public Optional<ASTTypeParameterList> getTypeParams() {
+        return Optional.empty();
     }
 
     /**

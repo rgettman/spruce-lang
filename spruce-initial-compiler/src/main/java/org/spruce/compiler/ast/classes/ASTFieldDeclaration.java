@@ -12,6 +12,7 @@ import org.spruce.compiler.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.ast.statements.ASTVariableDeclaratorList;
 import org.spruce.compiler.ast.statements.ASTVariableModifierList;
 import org.spruce.compiler.ast.types.ASTDataType;
+import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.TokenType;
 
@@ -144,6 +145,15 @@ public final class ASTFieldDeclaration extends ASTAnnotatedNode implements ASTCl
         return myVarDeclList.getTypedChildren().stream()
                 .map(ASTVariableDeclarator::getVarName)
                 .toList();
+    }
+
+    /**
+     * Returns no <code>ASTTypeParameterList</code>.
+     * @return An empty <code>Optional</code>.
+     */
+    @Override
+    public Optional<ASTTypeParameterList> getTypeParams() {
+        return Optional.empty();
     }
 
     @Override

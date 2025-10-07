@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.scanner.TokenType;
 
 /**
@@ -36,4 +37,10 @@ public sealed interface ASTMember extends Node permits ASTClassPart, ASTInterfac
      * @return A possibly empty <code>List</code> of <code>ASTIdentifier</code>s.
      */
     List<ASTIdentifier> getNames();
+
+    /**
+     * Returns an <code>ASTTypeParameterList</code>, if it exists.
+     * @return An <code>Optional&lt;ASTTypeParameterList&gt;</code>.
+     */
+    Optional<ASTTypeParameterList> getTypeParams();
 }

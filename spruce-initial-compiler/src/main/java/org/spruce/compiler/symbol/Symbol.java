@@ -53,7 +53,7 @@ public class Symbol {
         PATTERN,
         RECORD, RECORD_COMPONENT,
         SHARED_CONSTRUCTOR,
-        TRY_STMT,
+        TRY_STMT, TYPE_PARAMETER,
         USE,
         WHILE_STMT
     }

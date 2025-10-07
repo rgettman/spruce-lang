@@ -10,6 +10,7 @@ import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.statements.ASTBlock;
+import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.TokenType;
 
@@ -180,6 +181,15 @@ public final class ASTConstructorDeclaration extends ASTAnnotatedNode implements
     @Override
     public List<ASTIdentifier> getNames() {
         return Collections.emptyList();
+    }
+
+    /**
+     * Returns an <code>ASTTypeParameterList</code>, if it exists.
+     * @return An <code>Optional&lt;ASTTypeParameterList&gt;</code>.
+     */
+    @Override
+    public Optional<ASTTypeParameterList> getTypeParams() {
+        return myConstructorDecl.getTypeParams();
     }
 
     @Override

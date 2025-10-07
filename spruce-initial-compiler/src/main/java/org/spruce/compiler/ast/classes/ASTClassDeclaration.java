@@ -246,6 +246,7 @@ public final class ASTClassDeclaration extends ASTAnnotatedNode implements ASTTy
      * Returns an <code>ASTTypeParameterList</code>.
      * @return An <code>Optional&lt;ASTTypeParameterList&gt;</code>.
      */
+    @Override
     public Optional<ASTTypeParameterList> getTypeParams() {
         return Optional.ofNullable(myTypeParams);
     }

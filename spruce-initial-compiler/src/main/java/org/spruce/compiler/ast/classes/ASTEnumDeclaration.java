@@ -11,6 +11,7 @@ import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.Node;
 import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.types.ASTDataTypeNoArrayList;
+import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.TokenType;
 
@@ -202,6 +203,15 @@ public final class ASTEnumDeclaration extends ASTAnnotatedNode implements ASTTyp
      */
     public Optional<ASTDataTypeNoArrayList> getSuperinterfaces() {
         return Optional.ofNullable(mySuperinterfaces);
+    }
+
+    /**
+     * Returns no <code>ASTTypeParameterList</code>.
+     * @return An empty <code>Optional</code>.
+     */
+    @Override
+    public Optional<ASTTypeParameterList> getTypeParams() {
+        return Optional.empty();
     }
 
     /**

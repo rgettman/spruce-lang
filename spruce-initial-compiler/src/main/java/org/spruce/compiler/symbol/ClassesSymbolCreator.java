@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.spruce.compiler.ast.ASTKeywordNode;
 import org.spruce.compiler.ast.classes.*;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.types.ASTTypeParameter;
 import org.spruce.compiler.common.MessageProducer;
 import org.spruce.compiler.scanner.TokenType;
 
@@ -59,7 +60,12 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         Optional<ASTKeywordNode> accessMod = typeDecl.getAccessMod();
         long flags = getFlags(typeDecl);
         if (accessMod.isEmpty()) {
-            flags |= DEFAULT_ACCESS_CLASS;
+            if (typeDecl instanceof ASTCompactRecordDeclaration) {
+                flags |= FLAG_ACCESS_PUBLIC;
+            }
+            else {
+                flags |= DEFAULT_ACCESS_CLASS;
+            }
         }
 
         Symbol.Type type;
@@ -110,7 +116,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         }
 
         ParentSymbol symbol = new ParentSymbol(typeDecl.getLocation(), typeDecl.getName().getValue(),
-                type, parent, flags /*, SymbolTable.Scope.TYPE*/);
+                type, parent, flags);
         insertSymbol(parent, symbol);
 
         ChildSymbolTable table = createSymbolTableForTypeDeclaration(typeDecl, parent);
@@ -126,6 +132,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      */
     public ChildSymbolTable createSymbolTableForTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.TYPE, parent);
+        createSymbolsForTypeParams(table, typeDecl);
         for (ASTMember member : typeDecl.getMembers()) {
             createSymbolsForMember(table, member);
         }
@@ -133,10 +140,26 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     }
 
     /**
+     * Creates symbols for any <code>TypeParameter</code>s in a <code>Member</code>,
+     * and populates them in the given <code>SymbolTable</code>.
+     * @param parent A <code>SymbolTable to be the parent for the <code>TypeParameter</code>s.
+     * @param member An <code>ASTMember</code>.
+     */
+    public void createSymbolsForTypeParams(SymbolTable parent, ASTMember member) {
+        if (member.getTypeParams().isPresent()) {
+            for (ASTTypeParameter typeParam : member.getTypeParams().get().getTypedChildren()) {
+                Symbol symbol = new Symbol(typeParam.getLocation(), typeParam.getName().getValue(),
+                        Type.TYPE_PARAMETER, parent, FLAG_NONE);
+                insertSymbol(parent, symbol);
+            }
+        }
+    }
+
+    /**
      * Creates symbols for a <code>Member</code>, and populates them in the
      * given <code>SymbolTable</code>.
-     * @param member An <code>ASTMember</code>.
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
+     * @param member An <code>ASTMember</code>.
      */
     public void createSymbolsForMember(SymbolTable parent, ASTMember member) {
         switch (member) {
@@ -167,6 +190,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
+        createSymbolsForTypeParams(table, shConstr);
         getStatementsSymbolCreator().createSymbolsForBlock(shConstr.getBlock(), table);
     }
 
@@ -188,6 +212,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
+        createSymbolsForTypeParams(table, constrDecl);
         createSymbolsForFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList(), symbol);
         getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), table);
     }
@@ -209,6 +234,8 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
+
+        createSymbolsForTypeParams(table, constrDecl);
         getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), table);
     }
 
@@ -281,6 +308,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
+        createSymbolsForTypeParams(table, methodDecl);
         createSymbolsForFormalParameterList(methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol);
 
         if (methodDecl.getBody().getBlock().isPresent()) {
@@ -310,6 +338,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
+        createSymbolsForTypeParams(table, methodDecl);
         createSymbolsForFormalParameterList( methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol);
 
         if (methodDecl.getBody().getBlock().isPresent()) {

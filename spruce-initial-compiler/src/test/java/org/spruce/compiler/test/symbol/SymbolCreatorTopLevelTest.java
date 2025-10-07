@@ -4,12 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.spruce.compiler.ast.classes.ASTAnnotationList;
-import org.spruce.compiler.ast.names.ASTNamespaceName;
-import org.spruce.compiler.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.common.BaseMessageProducer;
-import org.spruce.compiler.parser.NamesParser;
 import org.spruce.compiler.parser.TopLevelParser;
 import org.spruce.compiler.symbol.SymbolCreator;
 import org.spruce.compiler.symbol.ChildSymbolTable;

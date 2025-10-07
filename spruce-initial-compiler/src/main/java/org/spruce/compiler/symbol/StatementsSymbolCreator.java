@@ -105,7 +105,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
             createSymbolsForTryStatement(tryStmt, parent, scopePrefix, blockNbr);
         case ASTWhileStatement whileStmt ->
             createSymbolsForWhileStatement(whileStmt, parent, scopePrefix, blockNbr);
-        // Any other statements that declare symbols go here.
+        // Any other statements that declare symbols go above.
 
         // All other statements don't declare any symbols.
         default -> {}

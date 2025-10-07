@@ -37,6 +37,14 @@ public class BasicSymbolCreator {
     }
 
     /**
+     * Returns the <code>ExpressionsSymbolCreator</code>.
+     * @return The <code>ExpressionsSymbolCreator</code>.
+     */
+    public ExpressionsSymbolCreator getExpressionsSymbolCreator() {
+        return mySymbolCreator.getExpressionsSymbolCreator();
+    }
+
+    /**
      * Returns the <code>StatementsSymbolCreator</code>.
      * @return The <code>StatementsSymbolCreator</code>.
      */

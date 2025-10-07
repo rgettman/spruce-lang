@@ -1,9 +1,11 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.spruce.compiler.ast.ParentNode;
 import org.spruce.compiler.ast.names.ASTIdentifier;
+import org.spruce.compiler.ast.types.ASTTypeParameterList;
 
 /**
  * <p>An <code>ASTTypeDeclaration</code> is an <code>ASTMember</code>

@@ -13,6 +13,7 @@ import org.spruce.compiler.common.MessageProducer;
  */
 public class SymbolCreator {
     private final ClassesSymbolCreator myClassesSymbolCreator;
+    private final ExpressionsSymbolCreator myExpressionsSymbolCreator;
     private final StatementsSymbolCreator myStatementsSymbolCreator;
     private final TopLevelSymbolCreator myTopLevelSymbolCreator;
     private final TypesSymbolCreator myTypesSymbolCreator;
@@ -25,6 +26,7 @@ public class SymbolCreator {
      */
     public SymbolCreator(MessageProducer msgProducer) {
         myClassesSymbolCreator = new ClassesSymbolCreator(this, msgProducer);
+        myExpressionsSymbolCreator = new ExpressionsSymbolCreator(this, msgProducer);
         myStatementsSymbolCreator = new StatementsSymbolCreator(this, msgProducer);
         myTopLevelSymbolCreator = new TopLevelSymbolCreator(this, msgProducer);
         myTypesSymbolCreator = new TypesSymbolCreator(this, msgProducer);
@@ -38,6 +40,14 @@ public class SymbolCreator {
      */
     public ClassesSymbolCreator getClassesSymbolCreator() {
         return myClassesSymbolCreator;
+    }
+
+    /**
+     * Returns the <code>ExpressionsSymbolCreator</code>.
+     * @return The <code>ExpressionsSymbolCreator</code>.
+     */
+    public ExpressionsSymbolCreator getExpressionsSymbolCreator() {
+        return myExpressionsSymbolCreator;
     }
 
     /**

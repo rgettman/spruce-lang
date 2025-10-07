@@ -1,7 +1,6 @@
 package org.spruce.compiler.ast.classes;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,6 +11,7 @@ import org.spruce.compiler.ast.names.ASTIdentifier;
 import org.spruce.compiler.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.ast.statements.ASTVariableDeclaratorList;
 import org.spruce.compiler.ast.types.ASTDataType;
+import org.spruce.compiler.ast.types.ASTTypeParameterList;
 import org.spruce.compiler.common.Location;
 import org.spruce.compiler.scanner.TokenType;
 
@@ -121,6 +121,15 @@ public final class ASTConstantDeclaration extends ASTAnnotatedNode implements AS
         return myVarDeclList.getTypedChildren().stream()
                 .map(ASTVariableDeclarator::getVarName)
                 .toList();
+    }
+
+    /**
+     * Returns no <code>ASTTypeParameterList</code>.
+     * @return An empty <code>Optional</code>.
+     */
+    @Override
+    public Optional<ASTTypeParameterList> getTypeParams() {
+        return Optional.empty();
     }
 
     @Override

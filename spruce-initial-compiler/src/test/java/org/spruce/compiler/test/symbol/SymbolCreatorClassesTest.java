@@ -43,6 +43,24 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
+     * Tests type parameter on class.
+     */
+    @Test
+    public void testClassTypeParam() {
+        TopLevelSymbolTable topLevel = createTopLevelSymbolTableNoErrors("class TypedClass<T> {}");
+        String expSymbolName = "TypedClass";
+        checkSymbolTable(topLevel, TOP, 1, List.of(expSymbolName));
+        Symbol symbol = topLevel.get(expSymbolName);
+        ParentSymbol classSymbol = ensureIsa(symbol, ParentSymbol.class);
+        checkSymbol(classSymbol, expSymbolName, Type.CLASS, FLAG_ACCESS_INTERNAL, 1);
+
+        SymbolTable innerTable = classSymbol.getTable();
+        checkSymbolTable(innerTable, TYPE, 1, List.of("T"));
+        Symbol typeParam = innerTable.get("T");
+        checkSymbol(typeParam, "T", Type.TYPE_PARAMETER, FLAG_NONE);
+    }
+
+    /**
      * Tests public sealed interface.
      */
     @Test
@@ -53,6 +71,24 @@ public class SymbolCreatorClassesTest {
         Symbol symbol = topLevel.get(expSymbolName);
         long expFlags = FLAG_ACCESS_PUBLIC | FLAG_MOD_ABSTRACT | FLAG_MOD_SEALED;
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.INTERFACE, expFlags, 0);
+    }
+
+    /**
+     * Tests type parameter on interface.
+     */
+    @Test
+    public void testInterfaceTypeParam() {
+        TopLevelSymbolTable topLevel = createTopLevelSymbolTableNoErrors("interface TypedInterface<U> {}");
+        String expSymbolName = "TypedInterface";
+        checkSymbolTable(topLevel, TOP, 1, List.of(expSymbolName));
+        Symbol symbol = topLevel.get(expSymbolName);
+        ParentSymbol interfaceSymbol = ensureIsa(symbol, ParentSymbol.class);
+        checkSymbol(interfaceSymbol, expSymbolName, Type.INTERFACE, FLAG_ACCESS_INTERNAL | FLAG_MOD_ABSTRACT, 1);
+
+        SymbolTable innerTable = interfaceSymbol.getTable();
+        checkSymbolTable(innerTable, TYPE, 1, List.of("U"));
+        Symbol typeParam = innerTable.get("U");
+        checkSymbol(typeParam, "U", Type.TYPE_PARAMETER, FLAG_NONE);
     }
 
     /**
@@ -78,7 +114,31 @@ public class SymbolCreatorClassesTest {
         checkSymbolTable(topLevel, TOP, 1, List.of(expSymbolName));
         Symbol symbol = topLevel.get(expSymbolName);
         long expFlags = FLAG_ACCESS_PROTECTED | FLAG_MOD_FINAL;
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.RECORD, expFlags, 1);
+
+        ParentSymbol recordSymbol = ensureIsa(symbol, ParentSymbol.class);
+        checkSymbol(recordSymbol, expSymbolName, Type.RECORD, expFlags, 1);
+
+        SymbolTable innerTable = recordSymbol.getTable();
+        checkSymbol(innerTable.get("foo"), "foo", Type.RECORD_COMPONENT, FLAG_ACCESS_PUBLIC);
+    }
+
+    /**
+     * Tests type parameter on record.
+     */
+    @Test
+    public void testRecordTypeParam() {
+        TopLevelSymbolTable topLevel = createTopLevelSymbolTableNoErrors("record TypedRecord<U> (U u, U you) {}");
+        String expSymbolName = "TypedRecord";
+        checkSymbolTable(topLevel, TOP, 1, List.of(expSymbolName));
+        Symbol symbol = topLevel.get(expSymbolName);
+        ParentSymbol recordSymbol = ensureIsa(symbol, ParentSymbol.class);
+        checkSymbol(recordSymbol, expSymbolName, Type.RECORD, FLAG_ACCESS_INTERNAL | FLAG_MOD_FINAL, 3);
+
+        SymbolTable innerTable = recordSymbol.getTable();
+        checkSymbolTable(innerTable, TYPE, 3, List.of("U", "u", "you"));
+        checkSymbol(innerTable.get("U"), "U", Type.TYPE_PARAMETER, FLAG_NONE);
+        checkSymbol(innerTable.get("u"), "u", Type.RECORD_COMPONENT, FLAG_ACCESS_PUBLIC);
+        checkSymbol(innerTable.get("you"), "you", Type.RECORD_COMPONENT, FLAG_ACCESS_PUBLIC);
     }
 
     /**
@@ -108,7 +168,14 @@ public class SymbolCreatorClassesTest {
         checkSymbolTable(topLevel, TOP, 1, List.of(expSymbolName));
         Symbol symbol = topLevel.get(expSymbolName);
         long expFlags = FLAG_ACCESS_PUBLIC | FLAG_MOD_SEALED;
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Type.ADT, expFlags, 2);
+        ParentSymbol adtSymbol = ensureIsa(symbol, ParentSymbol.class);
+        checkSymbol(adtSymbol, expSymbolName, Type.ADT, expFlags, 2);
+
+        long expCompactRecordFlags = FLAG_MOD_SHARED | FLAG_MOD_FINAL | FLAG_ACCESS_PUBLIC;
+        SymbolTable innerTable = adtSymbol.getTable();
+        checkSymbolTable(innerTable, TYPE, 2, List.of("One", "Two"));
+        checkSymbol(innerTable.get("One"), "One", Type.RECORD, expCompactRecordFlags);
+        checkSymbol(innerTable.get("Two"), "Two", Type.RECORD, expCompactRecordFlags);
     }
 
     /**

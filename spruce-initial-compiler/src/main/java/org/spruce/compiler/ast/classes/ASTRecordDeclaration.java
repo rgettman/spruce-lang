@@ -210,6 +210,7 @@ public final class ASTRecordDeclaration extends ASTAnnotatedNode implements ASTT
      * Returns an <code>ASTTypeParameterList</code>, if it exists.
      * @return An <code>Optional&lt;ASTTypeParameterList&gt;</code>.
      */
+    @Override
     public Optional<ASTTypeParameterList> getTypeParams() {
         return Optional.ofNullable(myTypeParams);
     }
