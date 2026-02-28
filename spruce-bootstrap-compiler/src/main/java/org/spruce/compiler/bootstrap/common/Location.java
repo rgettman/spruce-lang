@@ -1,0 +1,105 @@
+package org.spruce.compiler.bootstrap.common;
+
+/**
+ * A <code>Location</code> describes where a <code>Token</code> can be found in
+ * source code.  It consists of a filename, a line number (1-based), a
+ * character position (1-based), and the line on which the token starts.
+ */
+public class Location {
+    private final String myFilename;
+    private final int myLineNbr;
+    private final int myCharPos;
+    private final String myLine;
+
+    /**
+     * Constructs a <code>Location</code> based on the given attributes.
+     * @param filename The filename.
+     * @param zeroBasedLineNbr The 0-based line number (0 is top).
+     * @param zeroBasedCharPos The 0-based character position (0 is far left).
+     * @param line The line on which the token starts.
+     */
+    public Location(String filename, int zeroBasedLineNbr, int zeroBasedCharPos, String line) {
+        if (zeroBasedLineNbr < 0) {
+            throw new IllegalArgumentException("Line number must not be negative: " + zeroBasedLineNbr);
+        }
+        if (zeroBasedCharPos < 0) {
+            throw new IllegalArgumentException("Char position must not be negative: " + zeroBasedCharPos);
+        }
+        myFilename = filename;
+        myLineNbr = zeroBasedLineNbr + 1;
+        myCharPos = zeroBasedCharPos + 1;
+        myLine = line;
+    }
+
+    /**
+     * Returns the filename.
+     * @return The filename.
+     */
+    public String getFilename() {
+        return myFilename;
+    }
+
+    /**
+     * Returns the one-based line number (1 is top).
+     * @return The one-based line number (1 is top).
+     */
+    public int getLineNbr() {
+        return myLineNbr;
+    }
+
+    /**
+     * Returns the one-based character position (1 is far left).
+     * @return The one-based character position (1 is far left).
+     */
+    public int getCharPos() {
+        return myCharPos;
+    }
+
+    /**
+     * Returns the line on which the token starts.
+     * @return The line on which the token starts.
+     */
+    public String getLine() {
+        return myLine;
+    }
+
+    /**
+     * Returns a string of the format "Location{filename:line, pos fromLeft, line "source_code_line"}".
+     * @return A string representation of this <code>Location</code>.
+     */
+    @Override
+    public String toString() {
+        return "Location{" + getFilename() + ":" + getLineNbr() + ", pos " + getCharPos() + ", line \"" + getLine() + "\"}";
+    }
+
+    /**
+     * Returns a string of the format "filename:lineNbr:charPos".
+     * @return A string of the format "filename:lineNbr:charPos".
+     */
+    public String getFileLinePos() {
+        return myFilename + ":" + getLineNbr() + ":" + getCharPos();
+    }
+
+    /**
+     * Returns a string of <code>pos - 1</code> spaces followed by a caret
+     * <code>^</code>.  This is used to point to the token in the line,
+     * assuming it's printed in the line above.
+     * <code>String test;</code>
+     * <code>       ^</code>
+     * @return A string of <code>pos - 1</code> spaces followed by a caret
+     *     <code>^</code>.
+     */
+    public String getPosIndicator() {
+        return " ".repeat(getCharPos() - 1) + "^";
+    }
+
+    /**
+     * Returns a String representing where the <code>CompilerException</code>
+     * occurred.
+     * @return A String representing where the <code>CompilerException</code>
+     *     occurred.
+     */
+    public String where() {
+        return String.join(System.lineSeparator(), getLine(), getPosIndicator());
+    }
+}

@@ -645,6 +645,30 @@ public class ScannerTest {
     }
 
     /**
+     * Tests recognizing <code>for</code> and <code>in</code>.
+     */
+    @Test
+    public void testForIn() {
+        String line = "for (Int i in integers) {";
+        line += "\n    break;";
+        line += "\n}";
+
+        List<Token> expectedTokens = Arrays.asList(
+                new Token(FOR, "for"), new Token(OPEN_PARENTHESIS, "("),
+                new Token(IDENTIFIER, "Int"),
+                new Token(IDENTIFIER, "i"), new Token(IN, "in"),
+                new Token(IDENTIFIER, "integers"),
+                new Token(CLOSE_PARENTHESIS, ")"), new Token(OPEN_BRACE, "{"),
+
+                new Token(BREAK, "break"), new Token(SEMICOLON, ";"),
+                new Token(CLOSE_BRACE, "}")
+        );
+
+        Scanner scanner = new Scanner(line);
+        compareToExpected(expectedTokens, scanner);
+    }
+
+    /**
      * Tests recognizing <code>switch</code>, <code>case</code>, <code>fallthrough</code>,
      * and <code>default</code>.
      */
