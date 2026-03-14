@@ -2,13 +2,12 @@ package org.spruce.compiler.bootstrap.ast.classes;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
  * <p>An <code>ASTMethodDeclarator</code> is an identifier followed by an
@@ -23,24 +22,7 @@ import org.spruce.compiler.bootstrap.common.Location;
 public class ASTMethodDeclarator extends ASTParentNode {
     private final ASTIdentifier myName;
     private final ASTFormalParameterList myFormalParamList;
-    private final ASTKeywordNode myMutModifier;
-
-    /**
-     * Constructs an <code>ASTMethodDeclarator</code> at the given <code>Location</code>
-     * with the given <code>ASTIdentifier</code> representing the method name,
-     * the given <code>ASTFormalParameterList</code>,
-     * and the given <code>ASTKeywordNode</code> representing the MutModifier.
-     * @param location The <code>Location</code>.
-     * @param name An <code>ASTIdentifier</code> representing the method name.
-     * @param formalParamList An <code>ASTFormalParameterList</code>.
-     * @param mutMod An <code>ASTKeywordNode</code> of keyword <code>mut</code>.
-     */
-    public ASTMethodDeclarator(Location location, ASTIdentifier name, ASTFormalParameterList formalParamList, ASTKeywordNode mutMod) {
-        super(location);
-        myName = name;
-        myFormalParamList = formalParamList;
-        myMutModifier = mutMod;
-    }
+    private Symbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTMethodDeclarator</code> at the given <code>Location</code>
@@ -54,7 +36,6 @@ public class ASTMethodDeclarator extends ASTParentNode {
         super(location);
         myName = name;
         myFormalParamList = formalParamList;
-        myMutModifier = null;
     }
 
     /**
@@ -74,21 +55,26 @@ public class ASTMethodDeclarator extends ASTParentNode {
     }
 
     /**
-     * Returns an <code>ASTKeywordNode</code> representing the MutModifier, if it exists.
-     * @return An <code>Optional&lt;ASTKeywordNode&gt;</code> of keyword <code>mut</code>.
+     * Sets the declaration <code>Symbol</code>.
+     * @param symbol The declaration <code>Symbol</code>.
      */
-    public Optional<ASTKeywordNode> getMutModifier() {
-        return Optional.ofNullable(myMutModifier);
+    public void setDeclSymbol(Symbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    /**
+     * Returns the declaration <code>Symbol</code>.
+     * @return The declaration <code>Symbol</code>.
+     */
+    public Symbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>(3);
+        List<Node> children = new ArrayList<>(2);
         children.add(myName);
         children.add(myFormalParamList);
-        if (myMutModifier != null) {
-            children.add(myMutModifier);
-        }
         return children;
     }
 }

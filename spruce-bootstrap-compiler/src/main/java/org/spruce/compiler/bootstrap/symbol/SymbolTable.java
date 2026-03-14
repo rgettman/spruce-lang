@@ -13,12 +13,10 @@ public class SymbolTable {
      * The scope of a symbol table.
      */
     public enum Scope {
-        CONSTRUCTOR,
         MEMBER,
         NAMESPACE,
         SCOPE,
-        TOP, TYPE,
-        USE
+        TOP, TYPE
     }
 
     private final Scope myScope;

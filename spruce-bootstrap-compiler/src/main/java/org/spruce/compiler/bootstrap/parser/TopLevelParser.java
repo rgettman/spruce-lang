@@ -7,7 +7,6 @@ import java.util.function.Predicate;
 
 import org.spruce.compiler.bootstrap.ast.classes.ASTGeneralModifierList;
 import org.spruce.compiler.bootstrap.ast.classes.ASTTypeDeclaration;
-import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifierList;
 import org.spruce.compiler.bootstrap.ast.names.ASTNamespaceOrTypeName;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
@@ -135,30 +134,6 @@ public class TopLevelParser extends BasicParser {
     }
 
     /**
-     * Parses a <code>UseSharedMultDeclaration</code>, given an already
-     * parsed type name.
-     * <em>
-     * UseSharedMultDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . { IdentifierList } ;
-     * </em>
-     * @param tn An already parsed <code>ASTTypeName</code>.
-     * @return An <code>ASTUseSharedMultDeclaration</code>.
-     */
-    public ASTUseSharedMultDeclaration parseUseSharedMultDeclaration(Location loc, ASTTypeName tn) {
-        if (accept(DOT) == null || accept(OPEN_BRACE) == null) {
-            throw internalError(curr().getType());
-        }
-        ASTIdentifierList identifierList = getNamesParser().parseIdentifierList();
-        if (accept(CLOSE_BRACE) == null) {
-            error(curr().getLocation(), "Expected '}'.");
-        }
-        if (accept(SEMICOLON) == null) {
-            error(curr().getLocation(), "Expected ';'.");
-        }
-        return new ASTUseSharedMultDeclaration(loc, tn, identifierList);
-    }
-
-    /**
      * Parses a <code>UseMultDeclaration</code>, given an already
      * parsed type name.
      * <em>
@@ -184,27 +159,6 @@ public class TopLevelParser extends BasicParser {
     }
 
     /**
-     * Parses a <code>UseSharedAllDeclaration</code>, given an already
-     * parsed type name.
-     * <em>
-     * UseSharedAllDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . * ;
-     * </em>
-     * @param tn An already parsed <code>ASTTypeName</code>.
-     * @return An <code>ASTUseSharedAllDeclaration</code>.
-     */
-    public ASTUseSharedAllDeclaration parseUseSharedAllDeclaration(Location loc, ASTTypeName tn) {
-        ASTUseSharedAllDeclaration node = new ASTUseSharedAllDeclaration(loc, tn);
-        if (accept(DOT) == null || accept(PLUS) == null) {
-            throw internalError(curr().getType());
-        }
-        if (accept(SEMICOLON) == null) {
-            error(curr().getLocation(), "Expected ';'.");
-        }
-        return node;
-    }
-
-    /**
      * Parses a <code>UseAllDeclaration</code>, given an already
      * parsed type name.
      * <em>
@@ -223,28 +177,6 @@ public class TopLevelParser extends BasicParser {
             error(curr().getLocation(), "Expected ';'.");
         }
         return node;
-    }
-
-    /**
-     * Parses a <code>UseSharedTypeDeclaration</code>, given an already
-     * parsed type name.
-     * <em>
-     * UseSharedTypeDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;use shared TypeName . Identifier;
-     * </em>
-     * @param tn An already parsed <code>ASTTypeName</code> as a type name.
-     * @return An <code>ASTUseSharedTypeDeclaration</code>.
-     */
-    public ASTUseSharedTypeDeclaration parseUseSharedTypeDeclaration(Location loc, ASTTypeName tn) {
-        if (accept(SEMICOLON) == null) {
-            error(curr().getLocation(), "Expected ';'.");
-        }
-        // Extract identifier, last child of type name.
-        List<ASTIdentifier> children = tn.getTypedChildren();
-        ASTIdentifier identifier = children.get(children.size() - 1);
-        children.remove(children.size() - 1);
-        ASTTypeName actual = new ASTTypeName(tn.getLocation(), children);
-        return new ASTUseSharedTypeDeclaration(loc, actual, identifier);
     }
 
     /**

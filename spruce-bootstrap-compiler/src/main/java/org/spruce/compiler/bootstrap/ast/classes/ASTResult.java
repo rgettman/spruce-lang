@@ -11,12 +11,10 @@ import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.common.Location;
 
 /**
- * <p>An <code>ASTResult</code> is "void", or an optional MutModifier
- * followed by a DataType.</p>
+ * <p>An <code>ASTResult</code> is "void", or a DataType.</p>
  *
  * <em>
  * Result:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;MutModifier DataType<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;DataType<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;void<br>
  * </em>

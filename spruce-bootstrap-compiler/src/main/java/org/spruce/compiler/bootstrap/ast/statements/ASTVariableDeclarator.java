@@ -9,6 +9,7 @@ import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTExpression;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
  * <p>An <code>ASTVariableDeclarator</code> is an identifier optionally
@@ -23,6 +24,7 @@ import org.spruce.compiler.bootstrap.common.Location;
 public class ASTVariableDeclarator extends ASTParentNode {
     private final ASTIdentifier myVarName;
     private final ASTExpression myExpr;
+    private Symbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTVariableDeclarator</code> at the given <code>Location</code>
@@ -64,6 +66,22 @@ public class ASTVariableDeclarator extends ASTParentNode {
      */
     public Optional<ASTExpression> getVarInitializer() {
         return Optional.ofNullable(myExpr);
+    }
+
+    /**
+     * Sets the declaration <code>Symbol</code>.
+     * @param symbol The declaration <code>Symbol</code>.
+     */
+    public void setDeclSymbol(Symbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    /**
+     * Returns the declaration <code>Symbol</code>.
+     * @return The declaration <code>Symbol</code>.
+     */
+    public Symbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     @Override

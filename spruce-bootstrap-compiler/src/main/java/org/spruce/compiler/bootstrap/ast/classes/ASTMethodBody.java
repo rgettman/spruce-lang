@@ -10,12 +10,11 @@ import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
 import org.spruce.compiler.bootstrap.common.Location;
 
 /**
- * <p>An <code>ASTMethodBody</code> is a block or a semicolon.</p>
+ * <p>An <code>ASTMethodBody</code> is a block.</p>
  *
  * <em>
  * MethodBody:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Block<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;;
+ * &nbsp;&nbsp;&nbsp;&nbsp;Block
  * </em>
  */
 public class ASTMethodBody extends ASTParentNode {

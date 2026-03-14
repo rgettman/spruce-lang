@@ -4,19 +4,15 @@ import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ParentNode;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
  * <p>An <code>ASTTypeDeclaration</code> is an <code>ASTMember</code>
- * that is a class, enum, interface, annotation, record, or ADT declaration.</p>
+ * that is a class.</p>
  *
  * <em>
  * TypeDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;EnumDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;AnnotationDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;RecordDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;AdtDeclaration
+ * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration
  * </em>
  */
 public sealed interface ASTTypeDeclaration extends ParentNode, ASTClassPart
@@ -34,5 +30,17 @@ public sealed interface ASTTypeDeclaration extends ParentNode, ASTClassPart
      * @return A <code>List</code> of <code>ASTMember</code>s.
      */
     List<ASTMember> getMembers();
+
+    /**
+     * Sets the declaration <code>Symbol</code>.
+     * @param symbol The declaration <code>Symbol</code>.
+     */
+    void setDeclSymbol(Symbol symbol);
+
+    /**
+     * Returns the declaration <code>Symbol</code>.
+     * @return The declaration <code>Symbol</code>.
+     */
+    Symbol getDeclSymbol();
 }
 

@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.spruce.compiler.bootstrap.ast.classes.*;
-import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
+import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
 
@@ -64,6 +64,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         ParentSymbol symbol = new ParentSymbol(typeDecl.getLocation(), typeDecl.getName().getValue(),
                 type, parent, flags);
         insertSymbol(parent, symbol);
+        typeDecl.setDeclSymbol(symbol);
 
         ChildSymbolTable table = createSymbolTableForTypeDeclaration(typeDecl, parent);
         symbol.setTable(table);
@@ -113,8 +114,10 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
+        constrDecl.getConstructorDecl().setDeclSymbol(symbol);
+
         createSymbolsForFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList(), symbol);
-        //getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), table);
+        getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), table);
     }
 
     /**
@@ -125,9 +128,11 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      */
     public void createSymbolsForFieldDeclaration(ASTFieldDeclaration fieldDecl, SymbolTable parent) {
         long flags = getFlags(fieldDecl);
-        for (String name : fieldDecl.getNames().stream().map(ASTIdentifier::getValue).toList()) {
+        for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
+            String name = varDecl.getVarName().getValue();
             Symbol symbol = new Symbol(fieldDecl.getLocation(), name, Symbol.Type.FIELD, parent, flags);
             insertSymbol(parent, symbol);
+            varDecl.setDeclSymbol(symbol);
         }
     }
 
@@ -142,6 +147,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getMethodSymbolName(methodDecl),
                 Symbol.Type.METHOD, parent, flags);
         insertSymbol(parent, symbol);
+        methodDecl.getHeader().getMethodDecl().setDeclSymbol(symbol);
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
@@ -167,6 +173,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
             ChildSymbolTable table = param.getTable();
             insertSymbol(table, symbol);
             param.addParameter(symbol);
+            formalParam.setDeclSymbol(symbol);
         }
     }
 

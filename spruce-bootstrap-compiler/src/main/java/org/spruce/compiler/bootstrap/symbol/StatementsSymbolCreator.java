@@ -124,6 +124,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
+        basicForStmt.setDeclSymbol(symbol);
         if (basicForStmt.getInit().isPresent() &&
                 basicForStmt.getInit().get() instanceof ASTLocalVariableDeclaration localVarDecl) {
             createSymbolsForLocalVarDecl(localVarDecl, subTable);
@@ -150,6 +151,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
+        enhancedForStmt.setDeclSymbol(symbol);
         createSymbolsForLocalVarDecl(enhancedForStmt.getLocalVarDecl(), subTable);
         createSymbolsForBlock(enhancedForStmt.getBlock(), subTable, prefix);
     }
@@ -173,6 +175,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
+        ifStmt.setDeclSymbol(symbol);
         // Declarations in Init are in scope throughout the entire if statement,
         // including the if block, the else block, and the sub-if statement!
         if (ifStmt.getInit().isPresent() &&
@@ -195,6 +198,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
+        subBlock.setDeclSymbol(symbol);
         createSymbolsForBlock(subBlock, subTable, symbol.getName());
     }
 
@@ -217,6 +221,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
+        whileStmt.setDeclSymbol(symbol);
         if (whileStmt.getInit().isPresent() &&
                 whileStmt.getInit().get() instanceof ASTLocalVariableDeclaration localVarDecl) {
             createSymbolsForLocalVarDecl(localVarDecl, subTable);
@@ -246,6 +251,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
             String name = varDecl.getVarName().getValue();
             Symbol symbol = new Symbol(varDecl.getLocation(), name, Type.LOCAL, parent, FLAG_NONE);
             insertSymbol(parent, symbol);
+            varDecl.setDeclSymbol(symbol);
         }
     }
 

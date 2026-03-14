@@ -6,6 +6,7 @@ import java.util.List;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
  * <p>An <code>ASTConstructorDeclarator</code> is optionally Type Arguments,
@@ -19,6 +20,7 @@ import org.spruce.compiler.bootstrap.common.Location;
  */
 public class ASTConstructorDeclarator extends ASTParentNode {
     private final ASTFormalParameterList myFormalParamList;
+    private Symbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTConstructorDeclarator</code> at the given <code>Location</code>
@@ -37,6 +39,22 @@ public class ASTConstructorDeclarator extends ASTParentNode {
      */
     public ASTFormalParameterList getFormalParamList() {
         return myFormalParamList;
+    }
+
+    /**
+     * Sets the declaration <code>Symbol</code>.
+     * @param symbol The declaration <code>Symbol</code>.
+     */
+    public void setDeclSymbol(Symbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    /**
+     * Returns the declaration <code>Symbol</code>.
+     * @return The declaration <code>Symbol</code>.
+     */
+    public Symbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     @Override

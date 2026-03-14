@@ -8,6 +8,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTValueExpression;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
  * <p>An <code>ASTWhileStatement</code> is "while", optionally followed by an Init
@@ -23,6 +24,7 @@ public final class ASTWhileStatement extends ASTParentNode implements ASTStateme
     private final ASTInit myInit;
     private final ASTValueExpression myValueExpr;
     private final ASTBlock myBlock;
+    private Symbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTWhileStatement</code> at the given <code>Location</code>
@@ -77,6 +79,22 @@ public final class ASTWhileStatement extends ASTParentNode implements ASTStateme
      */
     public ASTBlock getBlock() {
         return myBlock;
+    }
+
+    /**
+     * Sets the declaration <code>Symbol</code>.
+     * @param symbol The declaration <code>Symbol</code>.
+     */
+    public void setDeclSymbol(Symbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    /**
+     * Returns the declaration <code>Symbol</code>.
+     * @return The declaration <code>Symbol</code>.
+     */
+    public Symbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     @Override

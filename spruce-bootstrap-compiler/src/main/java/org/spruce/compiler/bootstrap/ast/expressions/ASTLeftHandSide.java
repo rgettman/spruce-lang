@@ -13,5 +13,5 @@ import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
  * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess
  * </em>
  */
-public sealed interface ASTLeftHandSide extends ParentNode permits ASTExpressionName/*, ASTElementAccess*/, ASTFieldAccess {
+public sealed interface ASTLeftHandSide extends ParentNode permits ASTExpressionName, ASTFieldAccess {
 }

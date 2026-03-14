@@ -8,12 +8,10 @@ import org.spruce.compiler.bootstrap.ast.ParentNode;
  *
  * <em>
  * ClassPart:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;SharedConstructor<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ConstructorDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;FieldDeclaration<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;CompactConstructorDeclaration
+ * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration
  * </em>
  */
 public sealed interface ASTClassPart extends ParentNode, ASTMember permits ASTConstructorDeclaration,

@@ -71,6 +71,9 @@ public class SymbolCreatorTopLevelTest {
 
         Symbol concurrentSymbol = child.get("concurrent");
         checkSymbol(ensureIsa(concurrentSymbol, ParentSymbol.class), "concurrent", Symbol.Type.NAMESPACE, 0, 0);
+
+        // AST -> Symbol
+        assertSame(spruceSymbol, ocu.getNamespaceDecl().get().getNamespace().getDeclSymbol());
     }
 
     /**

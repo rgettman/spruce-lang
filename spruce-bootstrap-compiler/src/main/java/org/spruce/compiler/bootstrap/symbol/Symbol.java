@@ -8,11 +8,9 @@ import org.spruce.compiler.bootstrap.common.Location;
  */
 public class Symbol {
     public static final String NAME_CONSTRUCTOR = "<init>";
-    public static final String NAME_SHARED_CONSTRUCTOR = "<clinit>";
 
     public static final long FLAG_NONE = 0L;
 
-    public static final long FLAG_MOD_FINAL = 0x40L;
     public static final long FLAG_MOD_OVERRIDE = 0x80L;
     public static final long FLAG_MOD_SHARED = 0x200L;
 
@@ -28,7 +26,6 @@ public class Symbol {
         METHOD,
         NAMESPACE,
         PARAMETER,
-        USE,
         WHILE_STMT
     }
 

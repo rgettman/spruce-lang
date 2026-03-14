@@ -10,7 +10,6 @@ import org.spruce.compiler.bootstrap.ast.expressions.ASTMethodInvocation;
  * <em>
  * StatementExpression:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Assignment<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Postfix<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;MethodInvocationExpression<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassInstanceCreationExpression
  * </em>

@@ -1,9 +1,7 @@
 package org.spruce.compiler.bootstrap.ast.classes;
 
 import java.util.List;
-import java.util.Optional;
 
-import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.scanner.TokenType;

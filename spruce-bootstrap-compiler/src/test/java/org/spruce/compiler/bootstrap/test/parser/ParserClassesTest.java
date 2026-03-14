@@ -513,7 +513,6 @@ public class ParserClassesTest {
 
         assertEquals("update", node.getName().getValue());
         checkList(node.getFormalParamList(), FORMAL_PARAMETERS, ASTFormalParameter.class, 0);
-        assertFalse(node.getMutModifier().isPresent());
     }
 
     /**

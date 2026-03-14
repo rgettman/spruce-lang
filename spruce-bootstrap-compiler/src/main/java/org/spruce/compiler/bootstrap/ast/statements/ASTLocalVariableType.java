@@ -36,18 +36,6 @@ public class ASTLocalVariableType extends ASTParentNode {
     }
 
     /**
-     * Constructs an <code>ASTLocalVariableType</code> at the given <code>Location</code>
-     * with the given <code>TokenType</code> as the operation.
-     * @param location The <code>Location</code>.
-     * @param autoKeyword An <code>ASTKeywordNode</code> with the keyword <code>AUTO</code>.
-     */
-    public ASTLocalVariableType(Location location, ASTKeywordNode autoKeyword) {
-        super(location);
-        myDataType = null;
-        myKeyword = autoKeyword;
-    }
-
-    /**
      * Returns an <code>ASTDataType</code>, if it exists.
      * @return An <code>Optional&lt;ASTDataType&gt;</code>.
      */

@@ -2,7 +2,6 @@ package org.spruce.compiler.bootstrap.ast.types;
 
 import java.util.ArrayList;
 import java.util.List;
-//import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
@@ -10,31 +9,15 @@ import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.common.Location;
 
 /**
- * <p>An <code>ASTSimpleType</code> is a simple type with optional type arguments.</p>
+ * <p>An <code>ASTSimpleType</code> is an identifier.</p>
  *
  * <em>
  * SimpleType:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Identifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;Identifier TypeArguments
+ * &nbsp;&nbsp;&nbsp;&nbsp;Identifier
  * </em>
  */
 public class ASTSimpleType extends ASTParentNode {
     private final ASTIdentifier myName;
-    //private final ASTTypeArgumentList myTypeArgs;
-
-//    /**
-//     * Constructs an <code>ASTSimpleType</code> at the given <code>Location</code>
-//     * with the given <code>ASTIdentifier</code> representing the name, and the
-//     * given <code>ASTTypeArgumentList</code>.
-//     * @param location The <code>Location</code>.
-//     * @param name An <code>ASTIdentifier</code> representing the name.
-//     * @param typeArgs An <code>ASTTypeArgumentList</code>.
-//     */
-//    public ASTSimpleType(Location location, ASTIdentifier name, ASTTypeArgumentList typeArgs) {
-//        super(location);
-//        myName = name;
-//        myTypeArgs = typeArgs;
-//    }
 
     /**
      * Constructs an <code>ASTSimpleType</code> at the given <code>Location</code>
@@ -45,7 +28,6 @@ public class ASTSimpleType extends ASTParentNode {
     public ASTSimpleType(Location location, ASTIdentifier name) {
         super(location);
         myName = name;
-        //myTypeArgs = null;
     }
 
     /**
@@ -56,21 +38,10 @@ public class ASTSimpleType extends ASTParentNode {
         return myName;
     }
 
-//    /**
-//     * Returns an <code>ASTTypeArgumentList</code>, if it exists.
-//     * @return An <code>Optional&lt;ASTTypeArgumentList&gt;</code>.
-//     */
-//    public Optional<ASTTypeArgumentList> getTypeArgs() {
-//        return Optional.ofNullable(myTypeArgs);
-//    }
-
     @Override
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(2);
         children.add(myName);
-//        if (myTypeArgs != null) {
-//            children.add(myTypeArgs);
-//        }
         return children;
     }
 }

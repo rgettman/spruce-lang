@@ -8,21 +8,22 @@ import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
  * <p>An <code>ASTFormalParameter</code> is an optional AnnotationList followed
  * by an optional "take", an optional variable modifier list, a data type,
- * possibly an ellipsis, and an identifier.</p>
+ * and an identifier.</p>
  *
  * <em>
  * FormalParameter:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[VariableModifierList] DataType Identifier<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;[VariableModifierList] DataType ... Identifier<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;[VariableModifierList] DataType Identifier
  * </em>
  */
 public class ASTFormalParameter extends ASTParentNode {
     private final ASTDataType myDataType;
     private final ASTIdentifier myName;
+    private Symbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTFormalParameter</code> with arguments supplied by
@@ -111,6 +112,22 @@ public class ASTFormalParameter extends ASTParentNode {
      */
     public ASTIdentifier getName() {
         return myName;
+    }
+
+    /**
+     * Sets the declaration <code>Symbol</code>.
+     * @param symbol The declaration <code>Symbol</code>.
+     */
+    public void setDeclSymbol(Symbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    /**
+     * Returns the declaration <code>Symbol</code>.
+     * @return The declaration <code>Symbol</code>.
+     */
+    public Symbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     @Override

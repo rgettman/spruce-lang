@@ -89,5 +89,7 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
             table = new ChildSymbolTable(NAMESPACE, table);
             curr.setTable(table);
         }
+
+        namespaceName.setDeclSymbol(curr);
     }
 }

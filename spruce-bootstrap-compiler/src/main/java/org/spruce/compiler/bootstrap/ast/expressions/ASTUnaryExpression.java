@@ -17,9 +17,7 @@ import org.spruce.compiler.bootstrap.scanner.TokenType;
  * UnaryExpression:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Primary<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;- UnaryExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;~ UnaryExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;! UnaryExpression<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;SwitchExpression<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;! UnaryExpression
  * </em>
  */
 public final class ASTUnaryExpression extends ASTParentNode implements ASTValueExpression {

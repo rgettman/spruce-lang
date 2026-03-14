@@ -12,6 +12,7 @@ import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
  * <p>An <code>ASTClassDeclaration</code> is  "class", an Identifier,
@@ -26,6 +27,7 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
     private final ASTIdentifier myName;
     private final ASTDataTypeNoArray mySuperclass;
     private final ASTClassPartList myClassParts;
+    private Symbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTClassDeclaration</code> with arguments supplied by
@@ -136,6 +138,24 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
     @Override
     public List<ASTIdentifier> getNames() {
         return Arrays.asList(myName);
+    }
+
+    /**
+     * Sets the declaration <code>Symbol</code>.
+     * @param symbol The declaration <code>Symbol</code>.
+     */
+    @Override
+    public void setDeclSymbol(Symbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    /**
+     * Returns the declaration <code>Symbol</code>.
+     * @return The declaration <code>Symbol</code>.
+     */
+    @Override
+    public Symbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     /**

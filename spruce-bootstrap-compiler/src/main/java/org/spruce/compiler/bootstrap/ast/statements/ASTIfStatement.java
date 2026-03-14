@@ -8,6 +8,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTValueExpression;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
  * <p>An <code>ASTIfStatement</code> is "if", optionally followed by an Init
@@ -31,6 +32,7 @@ public final class ASTIfStatement extends ASTParentNode implements ASTStatement 
     private final ASTBlock myIfBlock;
     private final ASTBlock myElseBlock;
     private final ASTIfStatement myElseIf;
+    private Symbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTIfStatement</code> at the given <code>Location</code>,
@@ -190,6 +192,22 @@ public final class ASTIfStatement extends ASTParentNode implements ASTStatement 
      */
     public Optional<ASTIfStatement> getElseIf() {
         return Optional.ofNullable(myElseIf);
+    }
+
+    /**
+     * Sets the declaration <code>Symbol</code>.
+     * @param symbol The declaration <code>Symbol</code>.
+     */
+    public void setDeclSymbol(Symbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    /**
+     * Returns the declaration <code>Symbol</code>.
+     * @return The declaration <code>Symbol</code>.
+     */
+    public Symbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     @Override
