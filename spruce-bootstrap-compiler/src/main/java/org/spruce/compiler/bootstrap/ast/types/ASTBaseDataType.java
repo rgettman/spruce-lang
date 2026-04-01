@@ -23,4 +23,10 @@ public sealed interface ASTBaseDataType extends ParentNode permits ASTDataTypeNo
      * @return An <code>ASTExpressionName</code>.
      */
     ASTExpressionName convertToExpressionName();
+
+    /**
+     * Returns a normalized String representation of this base data type.
+     * @return A normalized String representation.
+     */
+    String getTypeName();
 }

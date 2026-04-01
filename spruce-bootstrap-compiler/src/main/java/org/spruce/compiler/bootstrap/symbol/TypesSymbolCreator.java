@@ -14,9 +14,10 @@ public class TypesSymbolCreator extends BasicSymbolCreator {
      * Constructs a <code>TypesSymbolCreator</code>.
      * @param symbolCreator A <code>SymbolCreator</code>.
      * @param msgProducer A <code>MessageProducer</code>.
+     * @param typeLookup A <code>TypeLookup</code>.
      */
-    public TypesSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer) {
-        super(symbolCreator, msgProducer);
+    public TypesSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, TypeLookup typeLookup) {
+        super(symbolCreator, msgProducer, typeLookup);
     }
 
     /**

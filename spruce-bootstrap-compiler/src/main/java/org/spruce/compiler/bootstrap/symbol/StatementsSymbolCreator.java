@@ -26,9 +26,10 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
      * Constructs a <code>StatementsSymbolCreator</code>.
      * @param symbolCreator A <code>SymbolCreator</code>.
      * @param msgProducer A <code>MessageProducer</code>.
+     * @param typeLookup A <code>TypeLookup</code>.
      */
-    public StatementsSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer) {
-        super(symbolCreator, msgProducer);
+    public StatementsSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, TypeLookup typeLookup) {
+        super(symbolCreator, msgProducer, typeLookup);
     }
 
     /**
@@ -120,7 +121,8 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
     public void createSymbolsForBasicForStatement(ASTBasicForStatement basicForStmt, SymbolTable parent,
                                                     String prefix, int blockNbr) {
         String name = createScopeSymbolName(basicForStmt, prefix, blockNbr);
-        ParentSymbol symbol = new ParentSymbol(basicForStmt.getLocation(), name, Type.FOR_STMT, parent, FLAG_NONE);
+        ParentSymbol symbol = new ParentSymbol(basicForStmt.getLocation(), name, Kind.FOR_STMT, parent,
+                DataType.NONE, FLAG_NONE);
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
@@ -146,8 +148,8 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
     public void createSymbolsForEnhancedForStatement(ASTEnhancedForStatement enhancedForStmt, SymbolTable parent,
                                                        String prefix, int blockNbr) {
         String name = createScopeSymbolName(enhancedForStmt, prefix, blockNbr);
-        ParentSymbol symbol = new ParentSymbol(enhancedForStmt.getLocation(), name, Type.FOR_STMT, parent,
-                FLAG_NONE);
+        ParentSymbol symbol = new ParentSymbol(enhancedForStmt.getLocation(), name, Kind.FOR_STMT, parent,
+                DataType.NONE, FLAG_NONE);
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
@@ -170,8 +172,8 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
     public void createSymbolsForIfStatement(ASTIfStatement ifStmt, SymbolTable parent, String prefix, int blockNbr) {
         String scopeName = appendScopeName(ifStmt, prefix, blockNbr);
         String name = createScopeSymbolName(scopeName);
-        ParentSymbol symbol = new ParentSymbol(ifStmt.getLocation(), name, Type.IF_STMT, parent,
-                FLAG_NONE);
+        ParentSymbol symbol = new ParentSymbol(ifStmt.getLocation(), name, Kind.IF_STMT, parent,
+                DataType.NONE, FLAG_NONE);
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
@@ -194,7 +196,8 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
 
     private void createSymbolsForGeneralBlock(ASTBlock subBlock, SymbolTable parent, String prefix, int blockNbr) {
         String name = createScopeSymbolName(subBlock, prefix, blockNbr);
-        ParentSymbol symbol = new ParentSymbol(subBlock.getLocation(), name, Type.BLOCK, parent, FLAG_NONE);
+        ParentSymbol symbol = new ParentSymbol(subBlock.getLocation(), name, Kind.BLOCK, parent,
+                DataType.NONE, FLAG_NONE);
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
@@ -216,8 +219,8 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
     public void createSymbolsForWhileStatement(ASTWhileStatement whileStmt, SymbolTable parent,
                                                  String prefix, int blockNbr) {
         String name = createScopeSymbolName(whileStmt, prefix, blockNbr);
-        ParentSymbol symbol = new ParentSymbol(whileStmt.getLocation(), name, Type.WHILE_STMT, parent,
-                FLAG_NONE);
+        ParentSymbol symbol = new ParentSymbol(whileStmt.getLocation(), name, Kind.WHILE_STMT, parent,
+                DataType.NONE, FLAG_NONE);
         insertSymbol(parent, symbol);
         ChildSymbolTable subTable = new ChildSymbolTable(SCOPE, parent);
         symbol.setTable(subTable);
@@ -247,9 +250,15 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
      * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
      */
     public void createSymbolsForLocalVarDecl(ASTLocalVariableDeclaration localVarDecl, SymbolTable parent) {
+        String typeName = localVarDecl.getLocalVarType().getTypeName();
         for (ASTVariableDeclarator varDecl : localVarDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
-            Symbol symbol = new Symbol(varDecl.getLocation(), name, Type.LOCAL, parent, FLAG_NONE);
+            // For the local variable data type:
+            // Later we'll need to determine where a namespace ends and a type
+            // name begins, which could involve multiple type names, outer
+            // through inner.
+            DataType dtVar = new DataType("", typeName);
+            Symbol symbol = new Symbol(varDecl.getLocation(), name, Kind.LOCAL, parent, dtVar, FLAG_NONE);
             insertSymbol(parent, symbol);
             varDecl.setDeclSymbol(symbol);
         }

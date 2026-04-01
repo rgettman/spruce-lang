@@ -8,7 +8,7 @@ import org.spruce.compiler.bootstrap.ast.names.ASTNamespaceName;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
-import org.spruce.compiler.bootstrap.symbol.Symbol.Type;
+import org.spruce.compiler.bootstrap.symbol.Symbol.Kind;
 
 import static org.spruce.compiler.bootstrap.symbol.Symbol.FLAG_NONE;
 import static org.spruce.compiler.bootstrap.symbol.SymbolTable.Scope.NAMESPACE;
@@ -22,74 +22,84 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
      * Constructs a <code>TopLevelSymbolCreator</code>.
      * @param symbolCreator A <code>SymbolCreator</code>.
      * @param msgProducer A <code>MessageProducer</code>.
+     * @param typeLookup A <code>TypeLookup</code>.
      */
-    public TopLevelSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer) {
-        super(symbolCreator, msgProducer);
+    public TopLevelSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, TypeLookup typeLookup) {
+        super(symbolCreator, msgProducer, typeLookup);
     }
 
     /**
-     * Creates and returns a top level symbol table for an <code>OrdinaryCompilationUnit</code>.
-     * Populates the <code>TopLevelSymbolTable</code> with any namespace
-     * declaration symbols, any use declarations, and any type declarations.
+     * Finds or creates a namespace symbol table in the global type lookup for
+     * an <code>OrdinaryCompilationUnit</code>.  Populates the namespace symbol
+     * hierarchically with symbols representing what's found in the compilation
+     * unit.
      * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
      */
-    public TopLevelSymbolTable createSymbolTableForCompUnit(ASTOrdinaryCompilationUnit ocu) {
-        TopLevelSymbolTable topLevel = new TopLevelSymbolTable();
+    public void createSymbolTableForCompUnit(ASTOrdinaryCompilationUnit ocu) {
+        ParentSymbol namespace;
         if (ocu.getNamespaceDecl().isPresent()) {
             ASTNamespaceDeclaration namespaceDecl = ocu.getNamespaceDecl().get();
-            ChildSymbolTable namespaceTable = createSymbolTableForNamespaceDeclaration(namespaceDecl, topLevel);
-            topLevel.addNamespace(namespaceTable);
+            namespace = createSymbolsForNamespaceDeclaration(namespaceDecl);
         }
+        else {
+            namespace = getTypeLookup().getNamespace(TypeLookup.UNNAMED_NAMESPACE_NAME)
+                    .orElseThrow(() -> internalError("Unnamed namespace not found!"));
+        }
+
         List<ASTTypeDeclaration> typeDecls = ocu.getTypeDeclList().getTypedChildren();
         ClassesSymbolCreator classesCreator = getClassesSymbolCreator();
         for (ASTTypeDeclaration typeDecl : typeDecls) {
-            classesCreator.createSymbolsForTopLevelTypeDeclaration(typeDecl, topLevel);
+            classesCreator.createSymbolsForTopLevelTypeDeclaration(typeDecl, namespace.getTable());
         }
-        return topLevel;
     }
 
     /**
-     * Creates and populates a symbol table for a <code>NamespaceDeclaration</code>.
+     * Finds or creates a namespace symbol table in the global type lookup for
+     * a <code>NamespaceDeclaration</code>.
      * @param namespaceDecl An <code>ASTNamespaceDeclaration</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the symbol table.
-     * @return A <code>ChildSymbolTable</code>.
+     * @return The <code>ParentSymbol</code> for the last part of the namespace, e.g.
+     *     "concurrent" for "spruce.collections.concurrent".
      */
-    public ChildSymbolTable createSymbolTableForNamespaceDeclaration(ASTNamespaceDeclaration namespaceDecl,
-                                                                     SymbolTable parent) {
-        ChildSymbolTable table = new ChildSymbolTable(NAMESPACE, parent);
+    public ParentSymbol createSymbolsForNamespaceDeclaration(ASTNamespaceDeclaration namespaceDecl) {
         ASTNamespaceName namespaceName = namespaceDecl.getNamespace();
-        createSymbolsForNamespaceName(namespaceName, table);
-        return table;
+        return createSymbolsForNamespaceName(namespaceName);
     }
 
     /**
      * Creates a symbol for a <code>NamespaceName</code> and populates it in
      * the parent symbol table.  It is expected to contain at least one identifier.
      * @param namespaceName An <code>ASTNamespaceName</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the symbol.
+     * @return The canonical <code>ParentSymbol</code> for the last part of the
+     *     namespace, e.g. "concurrent" for "spruce.collections.concurrent".
      */
-    public void createSymbolsForNamespaceName(ASTNamespaceName namespaceName, SymbolTable parent) {
+    public ParentSymbol createSymbolsForNamespaceName(ASTNamespaceName namespaceName) {
         List<ASTIdentifier> identifiers = namespaceName.getTypedChildren();
+        SymbolTable parent = getTypeLookup();
 
         // First
         if (identifiers.isEmpty()) {
             throw internalError("identifier in namespace");
         }
         ASTIdentifier first = identifiers.get(0);
-        ParentSymbol curr = new ParentSymbol(first.getLocation(), first.getValue(), Type.NAMESPACE, parent, FLAG_NONE);
-        insertSymbol(parent, curr);
+        String name = first.getValue();
+        ParentSymbol curr = new ParentSymbol(first.getLocation(), name, Kind.NAMESPACE, parent,
+                DataType.NONE, FLAG_NONE);
         ChildSymbolTable table = new ChildSymbolTable(NAMESPACE, parent);
         curr.setTable(table);
+        ParentSymbol canonical = parent.findOrAddSymbol(curr);
 
         // Rest
         for (int i = 1; i < identifiers.size(); i++) {
+            parent = canonical.getTable();
             ASTIdentifier id = identifiers.get(i);
-            curr = new ParentSymbol(id.getLocation(), id.getValue(), Type.NAMESPACE, table, FLAG_NONE);
-            insertSymbol(table, curr);
+            name = id.getValue();
+            curr = new ParentSymbol(id.getLocation(), name, Kind.NAMESPACE, table,
+                    DataType.NONE, FLAG_NONE);
             table = new ChildSymbolTable(NAMESPACE, table);
             curr.setTable(table);
+            canonical = parent.findOrAddSymbol(curr);
         }
 
-        namespaceName.setDeclSymbol(curr);
+        return canonical;
     }
 }

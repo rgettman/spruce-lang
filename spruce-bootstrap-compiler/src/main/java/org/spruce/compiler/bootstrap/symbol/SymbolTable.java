@@ -13,6 +13,7 @@ public class SymbolTable {
      * The scope of a symbol table.
      */
     public enum Scope {
+        GLOBAL,
         MEMBER,
         NAMESPACE,
         SCOPE,
@@ -90,6 +91,18 @@ public class SymbolTable {
      */
     public Map<String, Symbol> getTable() {
         return myTable;
+    }
+
+    /**
+     * Adds a <code>ParentSymbol</code>, or returns an existing
+     * <code>ParentSymbol</code> that matches, if found as a direct child.
+     * @param ifAbsent The <code>ParentSymbol</code>.
+     * @return The found <code>ParentSymbol</code>, or <code>ifAbsent</code>
+     *     if not found.
+     */
+    public ParentSymbol findOrAddSymbol(ParentSymbol ifAbsent) {
+        String name = ifAbsent.getName();
+        return (ParentSymbol) getTable().computeIfAbsent(name, _ -> ifAbsent);
     }
 
     /**

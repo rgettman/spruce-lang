@@ -69,6 +69,20 @@ public final class ASTDataType extends ASTParentNode implements ASTIsaTarget {
         return Optional.ofNullable(mySuffixOperator);
     }
 
+    /**
+     * Returns a normalized String representation of this data type.  It
+     * consists of the base data type's normalized String representation, with
+     * the suffix operator appended if it exists.
+     * @return A normalized String representation of this data type.
+     */
+    public String getTypeName() {
+        StringBuilder buf = new StringBuilder(myBaseDataType.getTypeName());
+        if (mySuffixOperator != null) {
+            buf.append(mySuffixOperator.getKeyword().getRepresentation());
+        }
+        return buf.toString();
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(2);

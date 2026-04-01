@@ -18,14 +18,17 @@ import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationS
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclaratorList;
 import org.spruce.compiler.bootstrap.ast.statements.ASTWhileStatement;
 import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
+import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.parser.ClassesParser;
 import org.spruce.compiler.bootstrap.symbol.ClassesSymbolCreator;
+import org.spruce.compiler.bootstrap.symbol.DataType;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.StatementsSymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
+import org.spruce.compiler.bootstrap.symbol.TypeLookup;
 import org.spruce.compiler.bootstrap.test.parser.ParserClassesTest;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -67,34 +70,36 @@ public class SymbolCreatorStatementsTest {
         Symbol symbol = table.get("testing(String,String)");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "testing(String,String)", Type.METHOD, FLAG_NONE,
+        DataType expDtString = new DataType("", "String");
+        DataType expDtInt = new DataType("", "Int");
+        checkSymbol(paraSymbol, "testing(String,String)", Kind.METHOD, expDtString, FLAG_NONE,
                 7, 2);
 
         SymbolTable innerTable = paraSymbol.getTable();
         checkSymbolTable(innerTable, MEMBER, 7, List.of("one", "two", "three", "four", "five", "six", "seven"));
 
         Symbol three = innerTable.get("three");
-        checkSymbol(three, "three", Type.LOCAL, FLAG_NONE);
+        checkSymbol(three, "three", Kind.LOCAL, expDtString, FLAG_NONE);
         ASTLocalVariableDeclarationStatement stmt3 = varDeclStmts.get(0);
         assertSame(three, stmt3.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol four = innerTable.get("four");
-        checkSymbol(four, "four", Type.LOCAL, FLAG_NONE);
+        checkSymbol(four, "four", Kind.LOCAL, expDtInt, FLAG_NONE);
         ASTLocalVariableDeclarationStatement stmt4 = varDeclStmts.get(1);
         assertSame(four, stmt4.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol five = innerTable.get("five");
-        checkSymbol(five, "five", Type.LOCAL, FLAG_NONE);
+        checkSymbol(five, "five", Kind.LOCAL, expDtInt, FLAG_NONE);
         ASTLocalVariableDeclarationStatement stmt5 = varDeclStmts.get(2);
         assertSame(five, stmt5.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol six = innerTable.get("six");
-        checkSymbol(six, "six", Type.LOCAL, FLAG_NONE);
+        checkSymbol(six, "six", Kind.LOCAL, expDtInt, FLAG_NONE);
         ASTLocalVariableDeclarationStatement stmt6 = varDeclStmts.get(3);
         assertSame(six, stmt6.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol seven = innerTable.get("seven");
-        checkSymbol(seven, "seven", Type.LOCAL, FLAG_NONE);
+        checkSymbol(seven, "seven", Kind.LOCAL, expDtInt, FLAG_NONE);
         ASTLocalVariableDeclarationStatement stmt7 = varDeclStmts.get(4);
         assertSame(seven, stmt7.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
     }
@@ -120,24 +125,27 @@ public class SymbolCreatorStatementsTest {
         List<ASTBlockStatement> blockStmts = testingMethod.getBody().getBlock().get()
                 .getBlockStmts().getTypedChildren();
 
+        DataType expDtString = new DataType("", "String");
+        DataType expDtBaz = new DataType("", "Baz");
+
         checkSymbolTable(table, TYPE, 1, List.of("nestedBlock()"));
         Symbol symbol = table.get("nestedBlock()");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "nestedBlock()", Type.METHOD, FLAG_NONE,
+        checkSymbol(paraSymbol, "nestedBlock()", Kind.METHOD, expDtString, FLAG_NONE,
                 3, 0);
 
         SymbolTable innerTable = paraSymbol.getTable();
         checkSymbolTable(innerTable, MEMBER, 3, List.of("foo", "<block0>", "baz"));
 
         Symbol foo = innerTable.get("foo");
-        checkSymbol(foo, "foo", Type.LOCAL, FLAG_NONE);
+        checkSymbol(foo, "foo", Kind.LOCAL, expDtString, FLAG_NONE);
         ASTLocalVariableDeclarationStatement stmtFoo = ensureIsa(
                 blockStmts.get(0), ASTLocalVariableDeclarationStatement.class);
         assertSame(foo, stmtFoo.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         ParentSymbol scope0 = ensureIsa(innerTable.get("<block0>"), ParentSymbol.class);
-        checkSymbol(scope0, "<block0>", Type.BLOCK, FLAG_NONE, 1);
+        checkSymbol(scope0, "<block0>", Kind.BLOCK, DataType.NONE, FLAG_NONE, 1);
         ASTBlock innerBlock = ensureIsa(blockStmts.get(1), ASTBlock.class);
         assertSame(scope0, innerBlock.getDeclSymbol());
 
@@ -145,13 +153,13 @@ public class SymbolCreatorStatementsTest {
         checkSymbolTable(scope0Table, SCOPE, 1, List.of("bar"));
 
         Symbol bar = scope0Table.get("bar");
-        checkSymbol(bar, "bar", Type.LOCAL, FLAG_NONE);
+        checkSymbol(bar, "bar", Kind.LOCAL, expDtString, FLAG_NONE);
         ASTLocalVariableDeclarationStatement stmtBar = ensureIsa(
                 innerBlock.getBlockStmts().get(0), ASTLocalVariableDeclarationStatement.class);
         assertSame(bar, stmtBar.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol baz = innerTable.get("baz");
-        checkSymbol(baz, "baz", Type.LOCAL, FLAG_NONE);
+        checkSymbol(baz, "baz", Kind.LOCAL, expDtBaz, FLAG_NONE);
         ASTLocalVariableDeclarationStatement stmtBaz = ensureIsa(
                 blockStmts.get(2), ASTLocalVariableDeclarationStatement.class);
         assertSame(baz, stmtBaz.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
@@ -180,7 +188,7 @@ public class SymbolCreatorStatementsTest {
     @Test
     public void testBasicForStatement() {
         String code = """
-                String basicForStmt() {
+                void basicForStmt() {
                     for (Int i = 0, j = 0; i < 10; i++, j++) {
                         String output = "i: " + i + ", j: " + j;
                         stdout.println(output);
@@ -193,19 +201,22 @@ public class SymbolCreatorStatementsTest {
         assertTrue(testingMethod.getBody().getBlock().isPresent());
         List<ASTBlockStatement> blockStmts = testingMethod.getBody().getBlock().get()
                 .getBlockStmts().getTypedChildren();
+        DataType expDtVoid = new DataType("", "void");
+        DataType expDtInt = new DataType("", "Int");
+        DataType expDtString = new DataType("", "String");
 
         checkSymbolTable(table, TYPE, 1, List.of("basicForStmt()"));
         Symbol symbol = table.get("basicForStmt()");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "basicForStmt()", Type.METHOD, FLAG_NONE,
+        checkSymbol(paraSymbol, "basicForStmt()", Kind.METHOD, expDtVoid, FLAG_NONE,
                 1, 0);
 
         SymbolTable innerTable = paraSymbol.getTable();
         checkSymbolTable(innerTable, MEMBER, 1, List.of("<for0>"));
 
         ParentSymbol for0 = ensureIsa(innerTable.get("<for0>"), ParentSymbol.class);
-        checkSymbol(for0, "<for0>", Type.FOR_STMT, FLAG_NONE, 3);
+        checkSymbol(for0, "<for0>", Kind.FOR_STMT, DataType.NONE, FLAG_NONE, 3);
         assertTrue(testingMethod.getBody().getBlock().isPresent());
         ASTBasicForStatement basicForStmt = ensureIsa(blockStmts.get(0), ASTBasicForStatement.class);
         assertSame(for0, basicForStmt.getDeclSymbol());
@@ -218,15 +229,15 @@ public class SymbolCreatorStatementsTest {
         ASTVariableDeclaratorList varDeclList = initDecl.getVarDeclList();
 
         Symbol i = for0Table.get("i");
-        checkSymbol(i, "i", Type.LOCAL, FLAG_NONE);
+        checkSymbol(i, "i", Kind.LOCAL, expDtInt, FLAG_NONE);
         assertSame(i, varDeclList.get(0).getDeclSymbol());
 
         Symbol j = for0Table.get("j");
-        checkSymbol(j, "j", Type.LOCAL, FLAG_NONE);
+        checkSymbol(j, "j", Kind.LOCAL, expDtInt, FLAG_NONE);
         assertSame(j, varDeclList.get(1).getDeclSymbol());
 
         Symbol output = for0Table.get("output");
-        checkSymbol(output, "output", Type.LOCAL, FLAG_NONE);
+        checkSymbol(output, "output", Kind.LOCAL, expDtString, FLAG_NONE);
         ASTBlockStatements forBlockStmts = basicForStmt.getBlock().getBlockStmts();
         ASTLocalVariableDeclarationStatement outputVarDeclStmt = ensureIsa(
                 forBlockStmts.get(0), ASTLocalVariableDeclarationStatement.class);
@@ -252,19 +263,20 @@ public class SymbolCreatorStatementsTest {
         assertTrue(testingMethod.getBody().getBlock().isPresent());
         List<ASTBlockStatement> blockStmts = testingMethod.getBody().getBlock().get()
                 .getBlockStmts().getTypedChildren();
+        DataType expDtString = new DataType("", "String");
 
         checkSymbolTable(table, TYPE, 1, List.of("enhancedForStmt()"));
         Symbol symbol = table.get("enhancedForStmt()");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "enhancedForStmt()", Type.METHOD, FLAG_NONE,
-                1, 0);
+        checkSymbol(paraSymbol, "enhancedForStmt()", Kind.METHOD, expDtString,
+                FLAG_NONE, 1, 0);
 
         SymbolTable innerTable = paraSymbol.getTable();
         checkSymbolTable(innerTable, MEMBER, 1, List.of("<for0>"));
 
         ParentSymbol for0 = ensureIsa(innerTable.get("<for0>"), ParentSymbol.class);
-        checkSymbol(for0, "<for0>", Type.FOR_STMT, FLAG_NONE, 2);
+        checkSymbol(for0, "<for0>", Kind.FOR_STMT, DataType.NONE, FLAG_NONE, 2);
         ASTEnhancedForStatement enhancedForStmt = ensureIsa(blockStmts.get(0), ASTEnhancedForStatement.class);
         assertSame(for0, enhancedForStmt.getDeclSymbol());
 
@@ -274,11 +286,11 @@ public class SymbolCreatorStatementsTest {
         ASTVariableDeclaratorList varDeclList = initDecl.getVarDeclList();
 
         Symbol line = for0Table.get("line");
-        checkSymbol(line, "line", Type.LOCAL, FLAG_NONE);
+        checkSymbol(line, "line", Kind.LOCAL, expDtString, FLAG_NONE);
         assertSame(line, varDeclList.get(0).getDeclSymbol());
 
         Symbol output = for0Table.get("output");
-        checkSymbol(output, "output", Type.LOCAL, FLAG_NONE);
+        checkSymbol(output, "output", Kind.LOCAL, expDtString, FLAG_NONE);
         ASTBlockStatements forBlockStmts = enhancedForStmt.getBlock().getBlockStmts();
         ASTLocalVariableDeclarationStatement outputVarDeclStmt = ensureIsa(
                 forBlockStmts.get(0), ASTLocalVariableDeclarationStatement.class);
@@ -304,19 +316,20 @@ public class SymbolCreatorStatementsTest {
         assertTrue(testingMethod.getBody().getBlock().isPresent());
         List<ASTBlockStatement> blockStmts = testingMethod.getBody().getBlock().get()
                 .getBlockStmts().getTypedChildren();
+        DataType expDtString = new DataType("", "String");
 
         checkSymbolTable(table, TYPE, 1, List.of("ifStmt()"));
         Symbol symbol = table.get("ifStmt()");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "ifStmt()", Type.METHOD, FLAG_NONE,
+        checkSymbol(paraSymbol, "ifStmt()", Kind.METHOD, expDtString, FLAG_NONE,
                 1, 0);
 
         SymbolTable innerTable = paraSymbol.getTable();
         checkSymbolTable(innerTable, MEMBER, 1, List.of("<if0>"));
 
         ParentSymbol if0 = ensureIsa(innerTable.get("<if0>"), ParentSymbol.class);
-        checkSymbol(if0, "<if0>", Type.IF_STMT, FLAG_NONE, 2);
+        checkSymbol(if0, "<if0>", Kind.IF_STMT, DataType.NONE, FLAG_NONE, 2);
         ASTIfStatement ifStmt = ensureIsa(blockStmts.get(0), ASTIfStatement.class);
         assertSame(if0, ifStmt.getDeclSymbol());
 
@@ -328,11 +341,11 @@ public class SymbolCreatorStatementsTest {
         ASTVariableDeclaratorList varDeclList = initDecl.getVarDeclList();
 
         Symbol line = if0Table.get("line");
-        checkSymbol(line, "line", Type.LOCAL, FLAG_NONE);
+        checkSymbol(line, "line", Kind.LOCAL, expDtString, FLAG_NONE);
         assertSame(line, varDeclList.get(0).getDeclSymbol());
 
         ParentSymbol if0_block0 = ensureIsa(if0Table.get("<if0_block0>"), ParentSymbol.class);
-        checkSymbol(if0_block0, "<if0_block0>", Type.BLOCK, FLAG_NONE);
+        checkSymbol(if0_block0, "<if0_block0>", Kind.BLOCK, DataType.NONE, FLAG_NONE);
         ASTBlock ifBlock = ifStmt.getIfBlock();
         assertSame(if0_block0, ifBlock.getDeclSymbol());
 
@@ -340,7 +353,7 @@ public class SymbolCreatorStatementsTest {
         checkSymbolTable(if0_block0Table, SCOPE, 1, List.of("output"));
 
         Symbol output = if0_block0Table.get("output");
-        checkSymbol(output, "output", Type.LOCAL, FLAG_NONE);
+        checkSymbol(output, "output", Kind.LOCAL, expDtString, FLAG_NONE);
         List<ASTBlockStatement> ifBlockStmts = ifBlock.getBlockStmts().getTypedChildren();
         ASTLocalVariableDeclarationStatement outputVarDeclStmt = ensureIsa(ifBlockStmts.get(0),
                 ASTLocalVariableDeclarationStatement.class);
@@ -369,19 +382,20 @@ public class SymbolCreatorStatementsTest {
         assertTrue(testingMethod.getBody().getBlock().isPresent());
         List<ASTBlockStatement> blockStmts = testingMethod.getBody().getBlock().get()
                 .getBlockStmts().getTypedChildren();
+        DataType expDtString = new DataType("", "String");
 
         checkSymbolTable(table, TYPE, 1, List.of("ifElseStmt()"));
         Symbol symbol = table.get("ifElseStmt()");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "ifElseStmt()", Type.METHOD, FLAG_NONE,
+        checkSymbol(paraSymbol, "ifElseStmt()", Kind.METHOD, expDtString, FLAG_NONE,
                 1, 0);
 
         SymbolTable innerTable = paraSymbol.getTable();
         checkSymbolTable(innerTable, MEMBER, 1, List.of("<if0>"));
 
         ParentSymbol if0 = ensureIsa(innerTable.get("<if0>"), ParentSymbol.class);
-        checkSymbol(if0, "<if0>", Type.IF_STMT, FLAG_NONE, 3);
+        checkSymbol(if0, "<if0>", Kind.IF_STMT, DataType.NONE, FLAG_NONE, 3);
         ASTIfStatement ifStmt = ensureIsa(blockStmts.get(0), ASTIfStatement.class);
         assertSame(if0, ifStmt.getDeclSymbol());
 
@@ -393,11 +407,11 @@ public class SymbolCreatorStatementsTest {
         ASTVariableDeclaratorList varDeclList = initDecl.getVarDeclList();
 
         Symbol line = if0Table.get("line");
-        checkSymbol(line, "line", Type.LOCAL, FLAG_NONE);
+        checkSymbol(line, "line", Kind.LOCAL, expDtString, FLAG_NONE);
         assertSame(line, varDeclList.get(0).getDeclSymbol());
 
         ParentSymbol if0_block0 = ensureIsa(if0Table.get("<if0_block0>"), ParentSymbol.class);
-        checkSymbol(if0_block0, "<if0_block0>", Type.BLOCK, FLAG_NONE);
+        checkSymbol(if0_block0, "<if0_block0>", Kind.BLOCK, DataType.NONE, FLAG_NONE);
         ASTBlock ifBlock = ifStmt.getIfBlock();
         assertSame(if0_block0, ifBlock.getDeclSymbol());
 
@@ -405,14 +419,14 @@ public class SymbolCreatorStatementsTest {
         checkSymbolTable(if0_block0Table, SCOPE, 1, List.of("output"));
 
         Symbol output = if0_block0Table.get("output");
-        checkSymbol(output, "output", Type.LOCAL, FLAG_NONE);
+        checkSymbol(output, "output", Kind.LOCAL, expDtString, FLAG_NONE);
         List<ASTBlockStatement> ifBlockStmts = ifBlock.getBlockStmts().getTypedChildren();
         ASTLocalVariableDeclarationStatement outputVarDeclStmt = ensureIsa(ifBlockStmts.get(0),
                 ASTLocalVariableDeclarationStatement.class);
         assertSame(output, outputVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         ParentSymbol if0_block1 = ensureIsa(if0Table.get("<if0_block1>"), ParentSymbol.class);
-        checkSymbol(if0_block1, "<if0_block1>", Type.BLOCK, FLAG_NONE);
+        checkSymbol(if0_block1, "<if0_block1>", Kind.BLOCK, DataType.NONE, FLAG_NONE);
 
         checkSymbolTable(if0_block1.getTable(), SCOPE, 0, List.of());
         assertTrue(ifStmt.getElseBlock().isPresent());
@@ -447,12 +461,14 @@ public class SymbolCreatorStatementsTest {
         assertTrue(testingMethod.getBody().getBlock().isPresent());
         List<ASTBlockStatement> blockStmts = testingMethod.getBody().getBlock().get()
                 .getBlockStmts().getTypedChildren();
+        DataType expDtString = new DataType("", "String");
+        DataType expDtInt = new DataType("", "Int");
 
         checkSymbolTable(table, TYPE, 1, List.of("ifElseStmt()"));
         Symbol symbol = table.get("ifElseStmt()");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "ifElseStmt()", Type.METHOD, FLAG_NONE,
+        checkSymbol(paraSymbol, "ifElseStmt()", Kind.METHOD, expDtString, FLAG_NONE,
                 1, 0);
 
         SymbolTable innerTable = paraSymbol.getTable();
@@ -460,7 +476,7 @@ public class SymbolCreatorStatementsTest {
 
         // if
         ParentSymbol if0 = ensureIsa(innerTable.get("<if0>"), ParentSymbol.class);
-        checkSymbol(if0, "<if0>", Type.IF_STMT, FLAG_NONE, 3);
+        checkSymbol(if0, "<if0>", Kind.IF_STMT, DataType.NONE, FLAG_NONE, 3);
         ASTIfStatement ifStmt = ensureIsa(blockStmts.get(0), ASTIfStatement.class);
         assertSame(if0, ifStmt.getDeclSymbol());
 
@@ -472,12 +488,12 @@ public class SymbolCreatorStatementsTest {
         ASTVariableDeclaratorList varDeclList = initDecl.getVarDeclList();
 
         Symbol line = if0Table.get("line");
-        checkSymbol(line, "line", Type.LOCAL, FLAG_NONE);
+        checkSymbol(line, "line", Kind.LOCAL, expDtString, FLAG_NONE);
         assertSame(line, varDeclList.get(0).getDeclSymbol());
 
         // if block
         ParentSymbol if0_block0 = ensureIsa(if0Table.get("<if0_block0>"), ParentSymbol.class);
-        checkSymbol(if0_block0, "<if0_block0>", Type.BLOCK, FLAG_NONE);
+        checkSymbol(if0_block0, "<if0_block0>", Kind.BLOCK, DataType.NONE, FLAG_NONE);
         ASTBlock ifBlock = ifStmt.getIfBlock();
         assertSame(if0_block0, ifBlock.getDeclSymbol());
 
@@ -485,7 +501,7 @@ public class SymbolCreatorStatementsTest {
         checkSymbolTable(if0_block0Table, SCOPE, 1, List.of("output"));
 
         Symbol output = if0_block0Table.get("output");
-        checkSymbol(output, "output", Type.LOCAL, FLAG_NONE);
+        checkSymbol(output, "output", Kind.LOCAL, expDtString, FLAG_NONE);
         List<ASTBlockStatement> ifBlockStmts = ifBlock.getBlockStmts().getTypedChildren();
         ASTLocalVariableDeclarationStatement outputVarDeclStmt = ensureIsa(ifBlockStmts.get(0),
                 ASTLocalVariableDeclarationStatement.class);
@@ -493,7 +509,7 @@ public class SymbolCreatorStatementsTest {
 
         // else if
         ParentSymbol if0_if1 = ensureIsa(if0Table.get("<if0_if1>"), ParentSymbol.class);
-        checkSymbol(if0_if1, "<if0_if1>", Type.IF_STMT, FLAG_NONE);
+        checkSymbol(if0_if1, "<if0_if1>", Kind.IF_STMT, DataType.NONE, FLAG_NONE);
         assertTrue(ifStmt.getElseIf().isPresent());
         ASTIfStatement elseIfStmt = ifStmt.getElseIf().get();
         assertSame(if0_if1, elseIfStmt.getDeclSymbol());
@@ -506,12 +522,13 @@ public class SymbolCreatorStatementsTest {
         ASTVariableDeclaratorList elseIfVarDeclList = elseIfInitDecl.getVarDeclList();
 
         Symbol if0_if1_someOtherCondition = if0_if1Table.get("someOtherCondition");
-        checkSymbol(if0_if1_someOtherCondition, "someOtherCondition", Type.LOCAL, FLAG_NONE);
+        checkSymbol(if0_if1_someOtherCondition, "someOtherCondition", Kind.LOCAL,
+                expDtInt, FLAG_NONE);
         assertSame(if0_if1_someOtherCondition, elseIfVarDeclList.get(0).getDeclSymbol());
 
         // else if block
         ParentSymbol if0_if1_block0 = ensureIsa(if0_if1Table.get("<if0_if1_block0>"), ParentSymbol.class);
-        checkSymbol(if0_if1_block0, "<if0_if1_block0>", Type.BLOCK, FLAG_NONE);
+        checkSymbol(if0_if1_block0, "<if0_if1_block0>", Kind.BLOCK, DataType.NONE, FLAG_NONE);
         assertSame(if0_if1_block0, elseIfStmt.getIfBlock().getDeclSymbol());
 
         SymbolTable if0_if1_block0Table = if0_if1_block0.getTable();
@@ -521,13 +538,13 @@ public class SymbolCreatorStatementsTest {
                 ASTLocalVariableDeclarationStatement.class);
 
         Symbol otherCondition = if0_if1_block0Table.get("otherCondition");
-        checkSymbol(otherCondition, "otherCondition", Type.LOCAL, FLAG_NONE);
+        checkSymbol(otherCondition, "otherCondition", Kind.LOCAL, expDtString, FLAG_NONE);
         assertSame(otherCondition, otherCondVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
 
         // else block
         ParentSymbol if0_if1_block1 = ensureIsa(if0_if1Table.get("<if0_if1_block1>"), ParentSymbol.class);
-        checkSymbol(if0_if1_block1, "<if0_if1_block1>", Type.BLOCK, FLAG_NONE);
+        checkSymbol(if0_if1_block1, "<if0_if1_block1>", Kind.BLOCK, DataType.NONE, FLAG_NONE);
         assertTrue(elseIfStmt.getElseBlock().isPresent());
         assertSame(if0_if1_block1, elseIfStmt.getElseBlock().get().getDeclSymbol());
 
@@ -535,7 +552,7 @@ public class SymbolCreatorStatementsTest {
         checkSymbolTable(if0_if1_block1Table, SCOPE, 1, List.of("dummy"));
 
         Symbol dummy = if0_if1_block1Table.get("dummy");
-        checkSymbol(dummy, "dummy", Type.LOCAL, FLAG_NONE);
+        checkSymbol(dummy, "dummy", Kind.LOCAL, expDtString, FLAG_NONE);
     }
 
     /**
@@ -557,19 +574,22 @@ public class SymbolCreatorStatementsTest {
         assertTrue(testingMethod.getBody().getBlock().isPresent());
         List<ASTBlockStatement> blockStmts = testingMethod.getBody().getBlock().get()
                 .getBlockStmts().getTypedChildren();
+        DataType expDtString = new DataType("", "String");
+        DataType expDtInt = new DataType("", "Int");
 
         checkSymbolTable(table, TYPE, 1, List.of("whileStmt()"));
         Symbol symbol = table.get("whileStmt()");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "whileStmt()", Type.METHOD, FLAG_NONE,
+        checkSymbol(paraSymbol, "whileStmt()", Kind.METHOD, expDtString, FLAG_NONE,
                 1, 0);
 
         SymbolTable paraTable = paraSymbol.getTable();
         checkSymbolTable(paraTable, MEMBER, 1, List.of("<while0>"));
 
         ParentSymbol whileSymbol = ensureIsa(paraTable.get("<while0>"), ParentSymbol.class);
-        checkSymbol(whileSymbol, "<while0>", Type.WHILE_STMT, FLAG_NONE, 2);
+        checkSymbol(whileSymbol, "<while0>", Kind.WHILE_STMT, DataType.NONE,
+                FLAG_NONE, 2);
         ASTWhileStatement whileStmt = ensureIsa(blockStmts.get(0), ASTWhileStatement.class);
         assertSame(whileSymbol, whileStmt.getDeclSymbol());
 
@@ -577,7 +597,7 @@ public class SymbolCreatorStatementsTest {
         checkSymbolTable(whileTable, SCOPE, 2, List.of("line", "lineNbr"));
 
         Symbol lineSymbol = whileTable.get("line");
-        checkSymbol(lineSymbol, "line", Type.LOCAL, FLAG_NONE);
+        checkSymbol(lineSymbol, "line", Kind.LOCAL, expDtString, FLAG_NONE);
         assertTrue(whileStmt.getInit().isPresent());
         ASTInit init = whileStmt.getInit().get();
         ASTLocalVariableDeclaration initDecl = ensureIsa(init, ASTLocalVariableDeclaration.class);
@@ -585,7 +605,7 @@ public class SymbolCreatorStatementsTest {
         assertSame(lineSymbol, varDeclList.get(0).getDeclSymbol());
 
         Symbol lineNbrSymbol = whileTable.get("lineNbr");
-        checkSymbol(lineNbrSymbol, "lineNbr", Type.LOCAL, FLAG_NONE);
+        checkSymbol(lineNbrSymbol, "lineNbr", Kind.LOCAL, expDtInt, FLAG_NONE);
         List<ASTBlockStatement> whileBlockStmts = whileStmt.getBlock().getBlockStmts().getTypedChildren();
         ASTLocalVariableDeclarationStatement lineNbrDeclStmt = ensureIsa(whileBlockStmts.get(0),
                 ASTLocalVariableDeclarationStatement.class);
@@ -597,7 +617,7 @@ public class SymbolCreatorStatementsTest {
      * @return A <code>StatementsSymbolCreator</code>.
      */
     public static StatementsSymbolCreator getStatementsSymbolCreator() {
-        return new SymbolCreator(new BaseMessageProducer()).getStatementsSymbolCreator();
+        return new SymbolCreator(new BaseMessageProducer(), new TypeLookup()).getStatementsSymbolCreator();
     }
 
     /**
@@ -639,7 +659,11 @@ public class SymbolCreatorStatementsTest {
         ClassesParser classesParser = ParserClassesTest.getClassesParser(code);
         ASTMember member = memberParser.apply(classesParser);
         SymbolTable parent = new SymbolTable(SymbolTable.Scope.TYPE);
-        // Only one symbol expected --
+        ParentSymbol enclosingType = new ParentSymbol(
+                new Location("<dummy>", 0, 0, "unavailable"),
+                "TestType", Kind.CLASS, null, new DataType("", "TestType"),
+                FLAG_NONE);
+
         creator.createSymbolsForMember(parent, member);
         return new Pair(member, parent);
     }

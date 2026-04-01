@@ -15,20 +15,23 @@ public class SymbolCreator {
     private final StatementsSymbolCreator myStatementsSymbolCreator;
     private final TopLevelSymbolCreator myTopLevelSymbolCreator;
     private final TypesSymbolCreator myTypesSymbolCreator;
+
     private final MessageProducer myMsgProducer;
+    private final TypeLookup myTypeLookup;
 
     /**
      * Constructs a <code>SymbolCreator</code> with the given
      * <code>MessageProducer</code>.
      * @param msgProducer A <code>MessageProducer</code>.
      */
-    public SymbolCreator(MessageProducer msgProducer) {
-        myClassesSymbolCreator = new ClassesSymbolCreator(this, msgProducer);
-        myStatementsSymbolCreator = new StatementsSymbolCreator(this, msgProducer);
-        myTopLevelSymbolCreator = new TopLevelSymbolCreator(this, msgProducer);
-        myTypesSymbolCreator = new TypesSymbolCreator(this, msgProducer);
+    public SymbolCreator(MessageProducer msgProducer, TypeLookup typeLookup) {
+        myClassesSymbolCreator = new ClassesSymbolCreator(this, msgProducer, typeLookup);
+        myStatementsSymbolCreator = new StatementsSymbolCreator(this, msgProducer, typeLookup);
+        myTopLevelSymbolCreator = new TopLevelSymbolCreator(this, msgProducer, typeLookup);
+        myTypesSymbolCreator = new TypesSymbolCreator(this, msgProducer, typeLookup);
 
         myMsgProducer = msgProducer;
+        myTypeLookup = typeLookup;
     }
 
     /**
@@ -64,15 +67,13 @@ public class SymbolCreator {
     }
 
     /**
-     * Creates a <code>TopLevelSymbolTable</code> from the given
-     * <code>ASTOrdinaryCompilationUnit</code>.  Populates the symbol table
-     * hierarchically with all declared symbols found within the compilation
-     * unit.
+     * Creates symbols for the given <code>ASTOrdinaryCompilationUnit</code>.
+     * Populates symbols hierarchically with all declared symbols found within
+     * the compilation unit.
      * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
-     * @return A <code>TopLevelSymbolTable</code>.
      */
-    public TopLevelSymbolTable createSymbolTableForOcu(ASTOrdinaryCompilationUnit ocu) {
-        return getTopLevelSymbolCreator().createSymbolTableForCompUnit(ocu);
+    public void createSymbolTableForOcu(ASTOrdinaryCompilationUnit ocu) {
+        getTopLevelSymbolCreator().createSymbolTableForCompUnit(ocu);
     }
 
     /**
@@ -81,5 +82,13 @@ public class SymbolCreator {
      */
     public List<CompilerMessage> getCompilerMessages() {
         return myMsgProducer.getCompilerMessages();
+    }
+
+    /**
+     * Returns the <code>TypeLookup</code>.
+     * @return The <code>TypeLookup</code>.
+     */
+    public TypeLookup getTypeLookup() {
+        return myTypeLookup;
     }
 }

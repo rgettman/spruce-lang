@@ -62,6 +62,14 @@ public class ASTResult extends ASTParentNode {
         return Optional.ofNullable(myVoid);
     }
 
+    /**
+     * Returns the normalized string for the data type or "void" if void.
+     * @return The normalized string for the data type or "void" if void.
+     */
+    public String getTypeName() {
+        return myDataType != null ? myDataType.getTypeName() : "void";
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(2);

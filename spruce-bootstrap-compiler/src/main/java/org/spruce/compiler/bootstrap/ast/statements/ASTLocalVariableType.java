@@ -51,6 +51,15 @@ public class ASTLocalVariableType extends ASTParentNode {
         return Optional.ofNullable(myKeyword);
     }
 
+    /**
+     * Returns a normalized String representation of this declaration.  It
+     * consists of the data type's normalized String representation or "auto".
+     * @return A normalized String representation of this data type.
+     */
+    public String getTypeName() {
+        return myDataType != null ? myDataType.getTypeName() : "auto";
+    }
+
     @Override
     public List<Node> getChildren() {
         List<Node> children = new ArrayList<>(1);

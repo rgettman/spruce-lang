@@ -15,9 +15,9 @@ public class Symbol {
     public static final long FLAG_MOD_SHARED = 0x200L;
 
     /**
-     * The type of symbol.
+     * The kind of symbol.
      */
-    public enum Type {
+    public enum Kind {
         BLOCK,
         CLASS, CONSTRUCTOR,
         FIELD, FOR_STMT,
@@ -32,22 +32,27 @@ public class Symbol {
     private final Location myLocation;
     private final String myName;
     private final SymbolTable myParent;
-    private final Type myType;
+    private final Kind myKind;
+    private final DataType myDataType;
     private final long myFlags;
 
     /**
      * Constructs a <code>Symbol</code> at the given <code>Location</code>,
      * with the given name, what <code>SymbolTable</code> this belongs to, and
      * a child <code>SymbolTable</code>.
+     * @param loc The <code>Location</code> of this <code>Symbol</code>.
      * @param name The name of this symbol.
+     * @param kind the <code>Kind</code> of this <code>Symbol</code>.
      * @param parent The parent <code>SymbolTable</code>.
+     * @param dataType The <code>DataType</code> of this <code>Symbol</code>.
      * @param flags All flags belonging to this symbol.
      */
-    public Symbol(Location loc, String name, Type type, SymbolTable parent, long flags) {
+    public Symbol(Location loc, String name, Kind kind, SymbolTable parent, DataType dataType, long flags) {
         myName = name;
         myParent = parent;
         myLocation = loc;
-        myType = type;
+        myKind = kind;
+        myDataType = dataType;
         myFlags = flags;
     }
 
@@ -76,11 +81,19 @@ public class Symbol {
     }
 
     /**
-     * Returns the <code>Type</code> of this symbol.
-     * @return The <code>Type</code> of this symbol.
+     * Returns the <code>Kind</code> of this symbol.
+     * @return The <code>Kind</code> of this symbol.
      */
-    public Type getType() {
-        return myType;
+    public Kind getKind() {
+        return myKind;
+    }
+
+    /**
+     * Returns the <code>DataType</code> of this symbol.
+     * @return The <code>DataType</code> of this symbol.
+     */
+    public DataType getDataType() {
+        return myDataType;
     }
 
     /**
@@ -108,7 +121,19 @@ public class Symbol {
      * @return The String representation of this symbol.
      */
     public String toString(String prefix, boolean isTail) {
-        return prefix + (isTail ? "└── " : "├── ") + "\"" + getName() + "\"(" + getType() + "," +
-                String.format("0x%08X", getFlags()) + ") at " + getLocation() + "\n";
+        StringBuilder buf = new StringBuilder(prefix);
+        if (isTail) {
+            buf.append("└── ");
+        }
+        else {
+            buf.append("├── ");
+        }
+        if (myDataType != DataType.NONE) {
+            buf.append("\"").append(myDataType).append("\"");
+        }
+        buf.append(" \"").append(getName()).append("\"(").append(getKind()).append(",")
+                .append(String.format("0x%08X", getFlags())).append(") at ")
+                .append(getLocation()).append("\n");
+        return buf.toString();
     }
 }

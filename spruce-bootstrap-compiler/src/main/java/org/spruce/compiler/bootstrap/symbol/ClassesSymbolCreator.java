@@ -19,16 +19,18 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      * Constructs a <code>ClassesSymbolCreator</code>.
      * @param symbolCreator A <code>SymbolCreator</code>.
      * @param msgProducer A <code>MessageProducer</code>.
+     * @param typeLookup A <code>TypeLookup</code>.
      */
-    public ClassesSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer) {
-        super(symbolCreator, msgProducer);
+    public ClassesSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, TypeLookup typeLookup) {
+        super(symbolCreator, msgProducer, typeLookup);
     }
 
     /**
      * Creates a <code>Symbol</code> for a top-level <code>TypeDeclaration</code>,
      * and inserts it into the parent symbol table.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
+     * @param parent A <code>SymbolTable</code> of scope <code>NAMESPACE</code>
+     *               that will be the parent of the new type declaration.
      */
     public void createSymbolsForTopLevelTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
         createSymbolsForTypeDeclaration(typeDecl, parent, false);
@@ -38,7 +40,8 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      * Creates a <code>Symbol</code> for a nested <code>TypeDeclaration</code>,
      * and inserts it into the parent symbol table.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
+     * @param parent A <code>SymbolTable</code> of scope <code>TYPE</code>
+     *               that will be the parent of the new type declaration.
      */
     public void createSymbolsForNestedTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
         createSymbolsForTypeDeclaration(typeDecl, parent, true);
@@ -48,36 +51,40 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      * Creates a <code>Symbol</code> for a <code>TypeDeclaration</code>,
      * and inserts it into the parent symbol table.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the <code>Symbol</code>.
+     * @param parent A <code>SymbolTable</code> that will hold the new type
+     *               declaration symbol.
      * @param isNested Whether the <code>TypeDeclaration</code> is nested with
      *                 another <code>TypeDeclaration</code>.
      */
-    public void createSymbolsForTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent, boolean isNested) {
+    public void createSymbolsForTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent,
+                                                boolean isNested) {
         long flags = getFlags(typeDecl);
 
-        Symbol.Type type;
+        Kind kind;
         switch (typeDecl) {
             case ASTClassDeclaration ignored ->
-                type = Symbol.Type.CLASS;
+                kind = Kind.CLASS;
         }
 
         ParentSymbol symbol = new ParentSymbol(typeDecl.getLocation(), typeDecl.getName().getValue(),
-                type, parent, flags);
+                kind, parent, DataType.NONE, flags);
         insertSymbol(parent, symbol);
         typeDecl.setDeclSymbol(symbol);
 
-        ChildSymbolTable table = createSymbolTableForTypeDeclaration(typeDecl, parent);
-        symbol.setTable(table);
+        ChildSymbolTable childTable = createSymbolTableForTypeDeclaration(typeDecl, parent);
+        symbol.setTable(childTable);
     }
 
     /**
      * Creates and returns a child symbol table for a <code>TypeDeclaration</code>.
-     * Creates child symbols and populates them in the symbol table.
+     * Creates child symbols for the type's members and populates them in the symbol table.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
-     * @param parent A <code>SymbolTable</code> to be the parent for the <code>SymbolTable</code>.
-     * @return A <code>ChildSymbolTable</code>.
+     * @param parent A <code>SymbolTable</code> to be the parent for the new
+     *               <code>SymbolTable</code>.
+     * @return A <code>ChildSymbolTable</code> for the type's members.
      */
-    public ChildSymbolTable createSymbolTableForTypeDeclaration(ASTTypeDeclaration typeDecl, SymbolTable parent) {
+    public ChildSymbolTable createSymbolTableForTypeDeclaration(ASTTypeDeclaration typeDecl,
+                                                                SymbolTable parent) {
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.TYPE, parent);
         for (ASTMember member : typeDecl.getMembers()) {
             createSymbolsForMember(table, member);
@@ -109,7 +116,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     public void createSymbolsForConstructorDeclaration(ASTConstructorDeclaration constrDecl, SymbolTable parent) {
         long flags = getFlags(constrDecl);
         ParameterizedSymbol symbol = new ParameterizedSymbol(constrDecl.getLocation(),
-                getConstructorSymbolName(constrDecl), Symbol.Type.CONSTRUCTOR, parent, flags);
+                getConstructorSymbolName(constrDecl), Kind.CONSTRUCTOR, parent, DataType.NONE, flags);
         insertSymbol(parent, symbol);
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
@@ -128,9 +135,15 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      */
     public void createSymbolsForFieldDeclaration(ASTFieldDeclaration fieldDecl, SymbolTable parent) {
         long flags = getFlags(fieldDecl);
+        String dataType = fieldDecl.getDataType().getTypeName();
         for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
-            Symbol symbol = new Symbol(fieldDecl.getLocation(), name, Symbol.Type.FIELD, parent, flags);
+            // For the field data type:
+            // Later we'll need to determine where a namespace ends and a type
+            // name begins, which could involve multiple type names, outer
+            // through inner.
+            DataType dtField = new DataType("", dataType);
+            Symbol symbol = new Symbol(fieldDecl.getLocation(), name, Kind.FIELD, parent, dtField, flags);
             insertSymbol(parent, symbol);
             varDecl.setDeclSymbol(symbol);
         }
@@ -144,8 +157,13 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      */
     public void createSymbolsForMethodDeclaration(ASTMethodDeclaration methodDecl, SymbolTable parent) {
         long flags = getFlags(methodDecl);
+        // For the result data type:
+        // Later we'll need to determine where a namespace ends and a type
+        // name begins, which could involve multiple type names, outer
+        // through inner.
+        DataType dtMethod = new DataType("", methodDecl.getHeader().getResult().getTypeName());
         ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getMethodSymbolName(methodDecl),
-                Symbol.Type.METHOD, parent, flags);
+                Kind.METHOD, parent, dtMethod, flags);
         insertSymbol(parent, symbol);
         methodDecl.getHeader().getMethodDecl().setDeclSymbol(symbol);
 
@@ -169,7 +187,13 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         SymbolTable parent = param.getParent();
         for (ASTFormalParameter formalParam : formalParams.getTypedChildren()) {
             String name = formalParam.getName().getValue();
-            Symbol symbol = new Symbol(formalParam.getLocation(), name, Symbol.Type.PARAMETER, parent, FLAG_NONE);
+            // For the formal parameter data type:
+            // Later we'll need to determine where a namespace ends and a type
+            // name begins, which could involve multiple type names, outer
+            // through inner.
+            DataType dtParam = new DataType("", formalParam.getDataType().getTypeName());
+            Symbol symbol = new Symbol(formalParam.getLocation(), name, Kind.PARAMETER, parent,
+                    dtParam, FLAG_NONE);
             ChildSymbolTable table = param.getTable();
             insertSymbol(table, symbol);
             param.addParameter(symbol);

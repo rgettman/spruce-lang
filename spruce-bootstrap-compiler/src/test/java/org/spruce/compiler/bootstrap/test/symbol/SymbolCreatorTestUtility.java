@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.symbol.BasicSymbolCreator;
+import org.spruce.compiler.bootstrap.symbol.DataType;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
@@ -54,20 +55,6 @@ public class SymbolCreatorTestUtility {
     }
 
     /**
-     * Prints the symbol.  Prints any compiler messages.  Ensures that there are
-     * no compiler messages representing an error.
-     * @param symbol A <code>Symbol</code>.
-     * @param creator A <code>BasicSymbolCreator</code>.
-     */
-    static void ensureNoErrors(Symbol symbol, BasicSymbolCreator creator) {
-        System.out.println(symbol);
-        long errorCount = generalCheckForError(creator);
-        if (errorCount != 0) {
-            fail("Error message(s) found!");
-        }
-    }
-
-    /**
      * Prints the symbol.  Prints any compiler messages.  Ensures that there is
      * exactly one compiler message representing an error.
      * @param symbol A <code>Symbol</code>.
@@ -106,13 +93,16 @@ public class SymbolCreatorTestUtility {
      * exactly the expected flags value, and the expected number of children.
      * If not, fails the test.
      * @param symbol The <code>Symbol</code> to test.
-     * @param expType The expected <code>Type</code>.
      * @param expName The expected name.
+     * @param expKind The expected <code>Kind</code>.
+     * @param expDataType The expected <code>DataType</code>.
      * @param expFlags The expected flags, exactly.
      */
-    static void checkSymbol(Symbol symbol, String expName, Symbol.Type expType, long expFlags) {
+    static void checkSymbol(Symbol symbol, String expName, Symbol.Kind expKind, DataType expDataType,
+                            long expFlags) {
         assertEquals(expName, symbol.getName());
-        assertEquals(expType, symbol.getType());
+        assertEquals(expKind, symbol.getKind());
+        assertEquals(expDataType, symbol.getDataType());
         assertEquals(expFlags, symbol.getFlags());
     }
 
@@ -121,14 +111,15 @@ public class SymbolCreatorTestUtility {
      * exactly the expected flags value, and the expected number of children.
      * If not, fails the test.
      * @param symbol The <code>Symbol</code> to test.
-     * @param expType The expected <code>Type</code>.
      * @param expName The expected name.
+     * @param expKind The expected <code>Kind</code>.
+     * @param expDataType The expected <code>DataType</code>.
      * @param expFlags The expected flags, exactly.
      * @param numExpChildren The number of expected children.
      */
-    static void checkSymbol(ParentSymbol symbol, String expName, Symbol.Type expType, long expFlags,
-                                  int numExpChildren) {
-        checkSymbol(symbol, expName, expType, expFlags);
+    static void checkSymbol(ParentSymbol symbol, String expName, Symbol.Kind expKind, DataType expDataType,
+                            long expFlags, int numExpChildren) {
+        checkSymbol(symbol, expName, expKind, expDataType, expFlags);
         assertEquals(numExpChildren, symbol.getTable().size());
     }
 
@@ -137,15 +128,16 @@ public class SymbolCreatorTestUtility {
      * exactly the expected flags value, and the expected number of children.
      * If not, fails the test.
      * @param symbol The <code>Symbol</code> to test.
-     * @param expType The expected <code>Type</code>.
      * @param expName The expected name.
+     * @param expKind The expected <code>Kind</code>.
+     * @param expDataType The expected <code>DataType</code>.
      * @param expFlags The expected flags, exactly.
      * @param numExpChildren The number of expected children.
      * @param numExpParameters The number of expected parameters.
      */
-    static void checkSymbol(ParameterizedSymbol symbol, String expName, Symbol.Type expType, long expFlags,
-                                         int numExpChildren, int numExpParameters) {
-        checkSymbol(symbol, expName, expType, expFlags, numExpChildren);
+    static void checkSymbol(ParameterizedSymbol symbol, String expName, Symbol.Kind expKind, DataType expDataType,
+                            long expFlags, int numExpChildren, int numExpParameters) {
+        checkSymbol(symbol, expName, expKind, expDataType, expFlags, numExpChildren);
         assertEquals(numExpParameters, symbol.numParameters());
     }
 
@@ -167,17 +159,6 @@ public class SymbolCreatorTestUtility {
             assertTrue(table.containsSymbolName(expSymbolName),
                     "Didn't find expected symbol name \"" + expSymbolName + "\".");
         }
-    }
-
-    /**
-     * Checks a <code>SymbolTable</code> to test if it has the expected
-     * <code>Scope</code> and has no symbol entries.
-     * @param table The <code>SymbolTable</code> to test.
-     * @param expScope The expected <code>Scope</code>.
-     */
-    static void checkSymbolTable(SymbolTable table, SymbolTable.Scope expScope) {
-        assertEquals(expScope, table.getScope());
-        assertEquals(0, table.size());
     }
 }
 

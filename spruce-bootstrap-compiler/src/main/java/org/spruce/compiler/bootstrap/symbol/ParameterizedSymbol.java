@@ -18,12 +18,13 @@ public class ParameterizedSymbol extends ParentSymbol {
      * a child <code>SymbolTable</code>.
      * @param loc The <code>Location</code>.
      * @param name The name of this symbol.
-     * @param type The <code>Type</code> of this symbol.
+     * @param kind The <code>Type</code> of this symbol.
      * @param parent The parent <code>SymbolTable</code>.
+     * @param dataType The <code>DataType</code> of this <code>Symbol</code>.
      * @param flags All flags belonging to this symbol.
      */
-    public ParameterizedSymbol(Location loc, String name, Type type, SymbolTable parent, long flags) {
-        super(loc, name, type, parent, flags);
+    public ParameterizedSymbol(Location loc, String name, Kind kind, SymbolTable parent, DataType dataType, long flags) {
+        super(loc, name, kind, parent, dataType, flags);
         myParameters = new ArrayList<>();
     }
 

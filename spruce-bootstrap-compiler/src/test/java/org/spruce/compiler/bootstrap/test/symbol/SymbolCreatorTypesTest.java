@@ -5,6 +5,7 @@ import org.spruce.compiler.bootstrap.ast.types.*;
 import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
 import org.spruce.compiler.bootstrap.parser.TypesParser;
 import org.spruce.compiler.bootstrap.symbol.SymbolCreator;
+import org.spruce.compiler.bootstrap.symbol.TypeLookup;
 import org.spruce.compiler.bootstrap.symbol.TypesSymbolCreator;
 import org.spruce.compiler.bootstrap.test.parser.ParserTypesTest;
 
@@ -60,6 +61,6 @@ public class SymbolCreatorTypesTest {
      * @return A <code>TypesSymbolCreator</code>.
      */
     public static TypesSymbolCreator getClassesSymbolCreator() {
-        return new SymbolCreator(new BaseMessageProducer()).getTypesSymbolCreator();
+        return new SymbolCreator(new BaseMessageProducer(), new TypeLookup()).getTypesSymbolCreator();
     }
 }

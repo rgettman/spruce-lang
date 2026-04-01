@@ -2,6 +2,7 @@ package org.spruce.compiler.bootstrap.ast.types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.spruce.compiler.bootstrap.ast.ASTListNode;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
@@ -31,18 +32,24 @@ public final class ASTDataTypeNoArray extends ASTListNode<ASTSimpleType> impleme
     }
 
     /**
+     * Returns a normalized name with each simple type separated by a dot,
+     * without any spaces.
+     * @return The normalized name.
+     */
+    @Override
+    public String getTypeName() {
+        return getTypedChildren().stream()
+                .map(simpleType -> simpleType.getName().getValue())
+                .collect(Collectors.joining("."));
+    }
+
+    /**
      * Returns whether this DataTypeNoArray can be converted to an ExpressionName.
      * Must not have any SimpleType children with type arguments.
      * @return Whether this DataTypeNoArray can be converted to an ExpressionName.
      */
     @Override
     public boolean canConvertToExpressionName() {
-        List<ASTSimpleType> children = getTypedChildren();
-//        for (ASTSimpleType st : children) {
-//            if (st.getTypeArgs().isPresent()) {
-//                return false;
-//            }
-//        }
         return true;
     }
 
@@ -66,9 +73,6 @@ public final class ASTDataTypeNoArray extends ASTListNode<ASTSimpleType> impleme
         List<ASTSimpleType> children = getTypedChildren();
         List<ASTIdentifier> convertedChildren = new ArrayList<>(children.size());
         for (ASTSimpleType st : children) {
-//            if (st.getTypeArgs().isPresent()) {
-//                throw new IllegalStateException("Internal error: Expected a variable, got a data type!");
-//            }
             convertedChildren.add(st.getName());
         }
         return convertedChildren;
