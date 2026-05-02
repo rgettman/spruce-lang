@@ -2,8 +2,8 @@ package org.spruce.compiler.bootstrap.ast.expressions;
 
 /**
  * An <code>ASTValueExpression</code> is an expression that represents a value.
- * It can be a Binary Expression, a Unary Expression, an Is-a Expression, or a
- * Primary.
+ * It can be a Binary Expression, a Cast Expression, a Unary Expression, an
+ * Is-a Expression, or a Primary.
  * <em>
  * ValueExpression:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;BinaryExpression<br>
@@ -14,6 +14,6 @@ package org.spruce.compiler.bootstrap.ast.expressions;
  * </em>
  */
 public sealed interface ASTValueExpression extends ASTExpression//, ASTElementValue
-        permits ASTBinaryExpression, /*ASTCastExpression, ASTForExpression, ASTIfExpression,*/ ASTIsaExpression,
+        permits ASTBinaryExpression, ASTCastExpression, /*ASTForExpression, ASTIfExpression,*/ ASTIsaExpression,
                 /*ASTMapEntry,*/ ASTPrimary/*, ASTSwitchExpression*/, ASTUnaryExpression {
 }

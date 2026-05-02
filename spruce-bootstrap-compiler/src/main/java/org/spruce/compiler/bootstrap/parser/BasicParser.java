@@ -473,7 +473,7 @@ public class BasicParser {
      * @return Whether the give token is a literal.
      */
     protected static boolean isLiteral(Token t) {
-        return test(t, Arrays.asList(INT_LITERAL, FLOATING_POINT_LITERAL, STRING_LITERAL, CHARACTER_LITERAL));
+        return test(t, Arrays.asList(TRUE, FALSE, INT_LITERAL, FLOATING_POINT_LITERAL, STRING_LITERAL, CHARACTER_LITERAL));
     }
 
     /**

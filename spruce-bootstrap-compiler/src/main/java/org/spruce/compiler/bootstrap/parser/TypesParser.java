@@ -24,6 +24,24 @@ public class TypesParser extends BasicParser {
     }
 
     /**
+     * Parses an <code>IntersectionType</code>.
+     * <em>
+     * IntersectionType:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;DataType {& DataType}
+     * </em>
+     * @return An <code>ASTIntersectionType</code>.
+     */
+    public ASTIntersectionType parseIntersectionType() {
+        return parseList(
+                t -> test(t, IDENTIFIER),
+                "Expected an identifier.",
+                DOUBLE_AMPERSAND,
+                this::parseDataType,
+                ASTIntersectionType::new
+        );
+    }
+
+    /**
      * Parses a <code>DataType</code>.
      * <em>
      * DataType:<br>

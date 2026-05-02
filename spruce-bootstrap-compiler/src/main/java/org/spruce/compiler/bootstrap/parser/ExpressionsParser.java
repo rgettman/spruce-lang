@@ -185,9 +185,9 @@ public class ExpressionsParser extends BasicParser {
      * associative with each other.
      * <em>
      * AdditiveExpression:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AdditiveExpression + UnaryExpression<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;AdditiveExpression - UnaryExpression
+     * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;AdditiveExpression + CastExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;AdditiveExpression - CastExpression
      * </em>
      * @return An <code>ASTValueExpression</code>.
      */
@@ -195,8 +195,28 @@ public class ExpressionsParser extends BasicParser {
         return parseBinaryExpressionLeftAssociative(
                 ExpressionsParser::isValueExpression,
                 Arrays.asList(PLUS, MINUS),
-                this::parseUnaryExpression
+                this::parseCastExpression
         );
+    }
+
+    /**
+     * Parses a <code>CastExpression</code>; they are left-associative with
+     * each other.
+     * <em>
+     * CastExpression:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;UnaryExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;CastExpression as IntersectionType<br>
+     * </em>
+     * @return An <code>ASTValueExpression</code>.
+     */
+    public ASTValueExpression parseCastExpression() {
+        Location loc = curr().getLocation();
+        ASTValueExpression result = parseUnaryExpression();
+        while (isCurr(AS)) {
+            accept(AS);
+            result = new ASTCastExpression(loc, result, getTypesParser().parseIntersectionType());
+        }
+        return result;
     }
 
     /**

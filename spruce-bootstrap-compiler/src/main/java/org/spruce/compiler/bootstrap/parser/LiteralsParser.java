@@ -51,8 +51,11 @@ public class LiteralsParser extends BasicParser {
         else if (isCurr(CHARACTER_LITERAL)) {
             return parseCharacterLiteral();
         }
+        else if (isCurr(TRUE) || isCurr(FALSE)) {
+            return parseBooleanLiteral();
+        }
         else {
-            throw internalError("a literal.");
+            throw internalError("a literal");
         }
     }
 
@@ -119,6 +122,30 @@ public class LiteralsParser extends BasicParser {
      */
     public ASTCharacterLiteral parseCharacterLiteral() {
         return parseSpecificLiteral(CHARACTER_LITERAL, ASTCharacterLiteral::new);
+    }
+
+    /**
+     * Parses a <code>BooleanLiteral</code>.
+     * <em>
+     * BooleanLiteral:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;true<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;false
+     * </em>
+     * @return An <code>ASTBooleanLiteral</code>.
+     */
+    public ASTBooleanLiteral parseBooleanLiteral() {
+        Token t;
+        if (isCurr(TRUE)) {
+            t = accept(TRUE);
+            return new ASTBooleanLiteral(t.getLocation(), t.getValue());
+        }
+        else if (isCurr(FALSE)) {
+            t = accept(FALSE);
+            return new ASTBooleanLiteral(t.getLocation(), t.getValue());
+        }
+        else {
+            throw internalError("true or false");
+        }
     }
 
     /**

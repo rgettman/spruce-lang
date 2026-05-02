@@ -93,6 +93,30 @@ public class ParserLiteralsTest {
     }
 
     /**
+     * Tests a true boolean literal.
+     */
+    @Test
+    public void testLiteralOfBooleanTrue() {
+        LiteralsParser parser = getLiteralsParser("true");
+        ASTLiteral node = parser.parseLiteral();
+        ensureNoErrors(node, parser);
+        ASTBooleanLiteral boolLiteral = TestUtility.ensureIsa(node, ASTBooleanLiteral.class);
+        assertTrue(boolLiteral.getBooleanValue());
+    }
+
+    /**
+     * Tests a false boolean literal.
+     */
+    @Test
+    public void testLiteralOfBooleanFalse() {
+        LiteralsParser parser = getLiteralsParser("false");
+        ASTLiteral node = parser.parseLiteral();
+        ensureNoErrors(node, parser);
+        ASTBooleanLiteral boolLiteral = TestUtility.ensureIsa(node, ASTBooleanLiteral.class);
+        assertFalse(boolLiteral.getBooleanValue());
+    }
+
+    /**
      * Helper method to get a <code>LiteralsParser</code> directly from code.
      * @param code The code to test.
      * @return A <code>LiteralsParser</code> that will parse the given code.

@@ -182,6 +182,10 @@ public enum TokenType {
      */
     EXTENDS,
     /**
+     * The literal <code>false</code>.
+     */
+    FALSE,
+    /**
      * For statements, traditional and "enhanced".
      */
     FOR,
@@ -222,6 +226,10 @@ public enum TokenType {
      * Refer to superclass method/instance; lower bound generics wildcard.
      */
     SUPER,
+    /**
+     * The literal <code>true</code>.
+     */
+    TRUE,
     /**
      * Allow simple names for identifiers not in same package or in spruce.lang.
      * Also used for "use statements" inside switch expressions.

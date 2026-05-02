@@ -17,7 +17,7 @@ public class ASTListNode<T extends Node> extends ASTParentNode {
         ARGUMENTS,
         BLOCK_STMTS,
         CLASS_PARTS,
-        DATA_TYPES_NO_ARRAY,
+        DATA_TYPES, DATA_TYPES_NO_ARRAY,
         EXPR_NAME_IDS,
         FIELD_MODIFIERS, FORMAL_PARAMETERS,
         GENERAL_MODIFIERS,

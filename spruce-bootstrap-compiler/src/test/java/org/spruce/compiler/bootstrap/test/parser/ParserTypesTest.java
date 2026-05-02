@@ -126,6 +126,39 @@ public class ParserTypesTest {
     }
 
     /**
+     * Tests intersection type of data type.
+     */
+    @Test
+    public void testIntersectionTypeOfDataType() {
+        TypesParser parser = getTypesParser("Student");
+        ASTIntersectionType node = parser.parseIntersectionType();
+        ensureNoErrors(node, parser);
+        checkList(node, DATA_TYPES, ASTDataType.class, 1);
+    }
+
+    /**
+     * Tests intersection type.
+     */
+    @Test
+    public void testIntersectionType() {
+        TypesParser parser = getTypesParser("Student && Person");
+        ASTIntersectionType node = parser.parseIntersectionType();
+        ensureNoErrors(node, parser);
+        checkList(node, DATA_TYPES, ASTDataType.class, 2);
+    }
+
+    /**
+     * Tests many intersection types.
+     */
+    @Test
+    public void testIntersectionTypeMany() {
+        TypesParser parser = getTypesParser("Student && Person && Learner");
+        ASTIntersectionType node = parser.parseIntersectionType();
+        ensureNoErrors(node, parser);
+        checkList(node, DATA_TYPES, ASTDataType.class, 3);
+    }
+
+    /**
      * Helper method to get a <code>TypesParser</code> directly from code.
      * @param code The code to test.
      * @return A <code>TypesParser</code> that will parse the given code.

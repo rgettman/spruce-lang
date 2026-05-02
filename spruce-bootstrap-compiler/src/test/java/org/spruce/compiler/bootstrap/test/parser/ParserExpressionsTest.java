@@ -233,6 +233,49 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests cast expression of unary expression.
+     */
+    @Test
+    public void testCastExpressionOfUnaryExpression() {
+        ExpressionsParser parser = getExpressionsParser("varName");
+        ASTValueExpression node = parser.parseCastExpression();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTPrimary.class, node);
+    }
+
+    /**
+     * Tests cast expression of unary expression, "as", and an intersection
+     * type consisting solely of a data type name.
+     */
+    @Test
+    public void testCastExpressionOfIntersectionType() {
+        ExpressionsParser parser = getExpressionsParser("d as Double");
+        ASTValueExpression node = parser.parseCastExpression();
+        ensureNoErrors(node, parser);
+        ASTCastExpression castExpr = TestUtility.ensureIsa(node, ASTCastExpression.class);
+        assertNotNull(castExpr.getExpr());
+        assertNotNull(castExpr.getIntersectionType());
+    }
+
+    /**
+     * Tests nested cast expressions.
+     */
+    @Test
+    public void testCastExpressionNested() {
+        ExpressionsParser parser = getExpressionsParser("\"2\" as Object as String & Serializable");
+        ASTValueExpression node = parser.parseCastExpression();
+        ensureNoErrors(node, parser);
+
+        ASTCastExpression castExpr = TestUtility.ensureIsa(node, ASTCastExpression.class);
+        assertNotNull(castExpr.getExpr());
+        assertNotNull(castExpr.getIntersectionType());
+
+        ASTCastExpression inner = TestUtility.ensureIsa(castExpr.getExpr(), ASTCastExpression.class);
+        assertNotNull(inner.getExpr());
+        assertNotNull(inner.getIntersectionType());
+    }
+
+    /**
      * Tests unary expression of primary.
      */
     @Test

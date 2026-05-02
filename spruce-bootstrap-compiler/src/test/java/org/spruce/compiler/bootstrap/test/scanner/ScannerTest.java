@@ -144,6 +144,8 @@ public class ScannerTest {
     public void testMethodAndPrimitiveTypes() {
         String line = """
             override void testMethod() {
+                boolean t = true;
+                boolean f = false;
                 byte b = 1;
                 short s = 2;
                 int i = 3;
@@ -160,6 +162,14 @@ public class ScannerTest {
                 new Token(VOID, "void"), new Token(IDENTIFIER, "testMethod"),
                 new Token(OPEN_PARENTHESIS, "("), new Token(CLOSE_PARENTHESIS, ")"),
                 new Token(OPEN_BRACE, "{"),
+
+                new Token(IDENTIFIER, "boolean"),
+                new Token(IDENTIFIER, "t"), new Token(EQUAL, "="),
+                new Token(TRUE, "true"), new Token(SEMICOLON, ";"),
+
+                new Token(IDENTIFIER, "boolean"),
+                new Token(IDENTIFIER, "f"), new Token(EQUAL, "="),
+                new Token(FALSE, "false"), new Token(SEMICOLON, ";"),
 
                 new Token(IDENTIFIER, "byte"),
                 new Token(IDENTIFIER, "b"), new Token(EQUAL, "="),
