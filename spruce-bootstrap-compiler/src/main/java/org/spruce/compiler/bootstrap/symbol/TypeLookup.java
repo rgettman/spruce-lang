@@ -27,8 +27,8 @@ public class TypeLookup extends SymbolTable {
     public TypeLookup() {
         super(Scope.GLOBAL);
         ParentSymbol unnamedNamespace = new ParentSymbol(new Location("<unnamed>", 0, 0, "unavailable"),
-                UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE, this, DataType.NONE, FLAG_NONE);
-        unnamedNamespace.setTable(new ChildSymbolTable(Scope.NAMESPACE, this));
+                UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE, this, FLAG_NONE);
+        unnamedNamespace.setTable(new ChildSymbolTable(Scope.NAMESPACE, unnamedNamespace));
         getTable().put(UNNAMED_NAMESPACE_NAME, unnamedNamespace);
     }
 

@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.Symbol;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTConstructorDeclarator</code> is optionally Type Arguments,
@@ -18,9 +19,9 @@ import org.spruce.compiler.bootstrap.symbol.Symbol;
  * &nbsp;&nbsp;&nbsp;&nbsp;constructor ( [FormalParameterList] )
  * </em>
  */
-public class ASTConstructorDeclarator extends ASTParentNode {
+public class ASTConstructorDeclarator extends ASTParentNode implements SymbolDeclaration<ParentSymbol> {
     private final ASTFormalParameterList myFormalParamList;
-    private Symbol myDeclSymbol;
+    private ParentSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTConstructorDeclarator</code> at the given <code>Location</code>
@@ -41,19 +42,13 @@ public class ASTConstructorDeclarator extends ASTParentNode {
         return myFormalParamList;
     }
 
-    /**
-     * Sets the declaration <code>Symbol</code>.
-     * @param symbol The declaration <code>Symbol</code>.
-     */
-    public void setDeclSymbol(Symbol symbol) {
+    @Override
+    public void setDeclSymbol(ParentSymbol symbol) {
         myDeclSymbol = symbol;
     }
 
-    /**
-     * Returns the declaration <code>Symbol</code>.
-     * @return The declaration <code>Symbol</code>.
-     */
-    public Symbol getDeclSymbol(){
+    @Override
+    public ParentSymbol getDeclSymbol(){
         return myDeclSymbol;
     }
 

@@ -8,6 +8,7 @@ import org.spruce.compiler.bootstrap.ast.ASTListNode;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTDataTypeNoArray</code> is a simple or fully qualified
@@ -20,6 +21,8 @@ import org.spruce.compiler.bootstrap.common.Location;
  * </em>
  */
 public final class ASTDataTypeNoArray extends ASTListNode<ASTSimpleType> implements ASTBaseDataType {
+    private ParentSymbol myResolvedSymbol;
+
     /**
      * Constructs an <code>ASTDataTypeNoArray</code> with a <code>Location</code>, a
      * list of child nodes, and a list type.
@@ -76,5 +79,15 @@ public final class ASTDataTypeNoArray extends ASTListNode<ASTSimpleType> impleme
             convertedChildren.add(st.getName());
         }
         return convertedChildren;
+    }
+
+    @Override
+    public void setResolvedSymbol(ParentSymbol symbol) {
+        myResolvedSymbol = symbol;
+    }
+
+    @Override
+    public ParentSymbol getResolvedSymbol() {
+        return myResolvedSymbol;
     }
 }

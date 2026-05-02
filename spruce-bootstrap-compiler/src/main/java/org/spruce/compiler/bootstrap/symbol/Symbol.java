@@ -7,6 +7,7 @@ import org.spruce.compiler.bootstrap.common.Location;
  * compilation unit.  It keeps a reference back to its parent <code>SymbolTable</code>.
  */
 public class Symbol {
+
     public static final String NAME_CONSTRUCTOR = "<init>";
 
     public static final long FLAG_NONE = 0L;
@@ -26,14 +27,31 @@ public class Symbol {
         METHOD,
         NAMESPACE,
         PARAMETER,
-        WHILE_STMT
+        VOID,
+        WHILE_STMT;
+
+        /**
+         * Returns whether this <code>Kind</code> is a type.
+         * @return Whether this <code>Kind</code> is a type.
+         */
+        public boolean isType() {
+            // There will be more types!
+            return this == CLASS;
+        }
+
+        /**
+         * Returns whether this <code>Kind</code> is a local declaration.
+         * @return Whether this <code>Kind</code> is a local declaration.
+         */
+        public boolean isLocal() {
+            return this == LOCAL || this == PARAMETER;
+        }
     }
 
     private final Location myLocation;
     private final String myName;
     private final SymbolTable myParent;
     private final Kind myKind;
-    private final DataType myDataType;
     private final long myFlags;
 
     /**
@@ -44,15 +62,13 @@ public class Symbol {
      * @param name The name of this symbol.
      * @param kind the <code>Kind</code> of this <code>Symbol</code>.
      * @param parent The parent <code>SymbolTable</code>.
-     * @param dataType The <code>DataType</code> of this <code>Symbol</code>.
      * @param flags All flags belonging to this symbol.
      */
-    public Symbol(Location loc, String name, Kind kind, SymbolTable parent, DataType dataType, long flags) {
+    public Symbol(Location loc, String name, Kind kind, SymbolTable parent, long flags) {
         myName = name;
         myParent = parent;
         myLocation = loc;
         myKind = kind;
-        myDataType = dataType;
         myFlags = flags;
     }
 
@@ -89,14 +105,6 @@ public class Symbol {
     }
 
     /**
-     * Returns the <code>DataType</code> of this symbol.
-     * @return The <code>DataType</code> of this symbol.
-     */
-    public DataType getDataType() {
-        return myDataType;
-    }
-
-    /**
      * Returns the flags.
      * @return The flags.
      */
@@ -127,9 +135,6 @@ public class Symbol {
         }
         else {
             buf.append("├── ");
-        }
-        if (myDataType != DataType.NONE) {
-            buf.append("\"").append(myDataType).append("\"");
         }
         buf.append(" \"").append(getName()).append("\"(").append(getKind()).append(",")
                 .append(String.format("0x%08X", getFlags())).append(") at ")

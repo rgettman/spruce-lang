@@ -2,27 +2,27 @@ package org.spruce.compiler.bootstrap.symbol;
 
 /**
  * A <code>ChildSymbolTable</code> is a <code>SymbolTable</code> that has a
- * parent <code>SymbolTable</code>.
+ * <code>ParentSymbol</code>.
  */
 public class ChildSymbolTable extends SymbolTable {
-    private final SymbolTable myParent;
+    private final ParentSymbol myParent;
 
     /**
      * Constructs a <code>SymbolTable</code> with the given <code>Scope</code>
      * and with the given parent <code>SymbolTable</code>.
      * @param scope A <code>Scope</code>.
-     * @param parent The parent <code>SymbolTable</code>.
+     * @param parent The <code>ParentSymbol</code>.
      */
-    public ChildSymbolTable(SymbolTable.Scope scope, SymbolTable parent) {
+    public ChildSymbolTable(SymbolTable.Scope scope, ParentSymbol parent) {
         super(scope);
         myParent = parent;
     }
 
     /**
-     * Returns the parent <code>SymbolTable</code>.
-     * @return A <code>SymbolTable</code>.
+     * Returns the <code>ParentSymbol</code>.
+     * @return A <code>ParentSymbol</code>.
      */
-    public SymbolTable getParent() {
+    public ParentSymbol getParent() {
         return myParent;
     }
 }

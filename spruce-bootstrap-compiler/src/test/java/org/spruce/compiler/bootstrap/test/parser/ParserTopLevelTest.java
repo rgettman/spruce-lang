@@ -139,6 +139,16 @@ public class ParserTopLevelTest {
     }
 
     /**
+     * Tests bad use type declaration that is empty.
+     */
+    @Test
+    public void testUseDeclarationEmpty() {
+        TopLevelParser parser = getTopLevelParser("use ;");
+        ASTUseDeclaration node = parser.parseUseDeclaration();
+        expectError(node, parser);
+    }
+
+    /**
      * Tests bad use declaration of bad use type declaration of no semicolon.
      */
     @Test

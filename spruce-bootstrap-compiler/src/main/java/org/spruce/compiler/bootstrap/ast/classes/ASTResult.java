@@ -7,8 +7,10 @@ import java.util.Optional;
 import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
+import org.spruce.compiler.bootstrap.ast.SymbolReference;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTResult</code> is "void", or a DataType.</p>
@@ -19,9 +21,10 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;void<br>
  * </em>
  */
-public class ASTResult extends ASTParentNode {
+public class ASTResult extends ASTParentNode implements SymbolReference<ParentSymbol> {
     private final ASTDataType myDataType;
     private final ASTKeywordNode myVoid;
+    private ParentSymbol myResolvedSymbol;
 
     /**
      * Constructs an <code>ASTResult</code> at the given <code>Location</code>
@@ -68,6 +71,16 @@ public class ASTResult extends ASTParentNode {
      */
     public String getTypeName() {
         return myDataType != null ? myDataType.getTypeName() : "void";
+    }
+
+    @Override
+    public void setResolvedSymbol(ParentSymbol symbol) {
+        myResolvedSymbol = symbol;
+    }
+
+    @Override
+    public ParentSymbol getResolvedSymbol() {
+        return myResolvedSymbol;
     }
 
     @Override

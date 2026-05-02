@@ -7,6 +7,14 @@ import org.spruce.compiler.bootstrap.common.Location;
  * <code>ChildSymbolTable</code>.
  */
 public class ParentSymbol extends Symbol {
+    /**
+     * The "symbol" for a void method return type.
+     */
+    public static final ParentSymbol VOID = new ParentSymbol(
+            new Location("<void>", 0, 0, "void"),
+            "void", Kind.VOID, new SymbolTable(SymbolTable.Scope.GLOBAL), FLAG_NONE
+    );
+
     private ChildSymbolTable myTable;
 
     /**
@@ -17,11 +25,10 @@ public class ParentSymbol extends Symbol {
      * @param name The name of this symbol.
      * @param kind The <code>Type</code> of this symbol.
      * @param parent The parent <code>SymbolTable</code>.
-     * @param dataType The <code>DataType</code> of this <code>Symbol</code>.
      * @param flags All flags belonging to this symbol.
      */
-    public ParentSymbol(Location loc, String name, Kind kind, SymbolTable parent, DataType dataType, long flags) {
-        super(loc, name, kind, parent, dataType, flags);
+    public ParentSymbol(Location loc, String name, Kind kind, SymbolTable parent, long flags) {
+        super(loc, name, kind, parent, flags);
     }
 
     /**

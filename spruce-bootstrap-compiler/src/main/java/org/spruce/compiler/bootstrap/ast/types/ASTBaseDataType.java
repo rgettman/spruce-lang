@@ -1,7 +1,9 @@
 package org.spruce.compiler.bootstrap.ast.types;
 
 import org.spruce.compiler.bootstrap.ast.ParentNode;
+import org.spruce.compiler.bootstrap.ast.SymbolReference;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTBaseDataType</code> is a data type (no array).</p>
@@ -11,7 +13,7 @@ import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataTypeNoArray
  * </em>
  */
-public sealed interface ASTBaseDataType extends ParentNode permits ASTDataTypeNoArray {
+public sealed interface ASTBaseDataType extends ParentNode, SymbolReference<ParentSymbol> permits ASTDataTypeNoArray {
     /**
      * Returns whether this BaseDataType can be converted to an ExpressionName.
      * @return Whether this BaseDataType can be converted to an ExpressionName.

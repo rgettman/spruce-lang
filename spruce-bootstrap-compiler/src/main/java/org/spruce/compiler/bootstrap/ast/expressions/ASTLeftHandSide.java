@@ -4,8 +4,8 @@ import org.spruce.compiler.bootstrap.ast.ParentNode;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
 
 /**
- * <p>An <code>ASTLeftHandSide</code> is an expression suitable for the left-
- * hand side of an assignment statement.</p>
+ * <p>An <code>ASTLeftHandSide</code> is a primary that is suitable for the
+ * left-hand side of an assignment statement.</p>
  *
  * <em>
  * LeftHandSide:<br>

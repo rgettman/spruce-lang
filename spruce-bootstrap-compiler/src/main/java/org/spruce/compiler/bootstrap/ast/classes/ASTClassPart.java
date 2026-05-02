@@ -3,8 +3,8 @@ package org.spruce.compiler.bootstrap.ast.classes;
 import org.spruce.compiler.bootstrap.ast.ParentNode;
 
 /**
- * <p>An <code>ASTClassPart</code> is a shared constructor, a constructor, a
- * field declaration, a method declaration, or a type declaration.</p>
+ * <p>An <code>ASTClassPart</code> is a constructor, a field declaration, a
+ * method declaration, or a type declaration.</p>
  *
  * <em>
  * ClassPart:<br>

@@ -75,6 +75,6 @@ public class CompilerMessage {
     public String toString() {
         Location loc = getLocation();
         return String.join(System.lineSeparator(), getLevel() + " at: " + loc.getFileLinePos(),
-                loc.where(), getMessage());
+                getMessage(), loc.where());
     }
 }

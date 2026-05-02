@@ -5,7 +5,7 @@ import org.spruce.compiler.bootstrap.ast.expressions.ASTClassInstanceCreationExp
 import org.spruce.compiler.bootstrap.ast.expressions.ASTMethodInvocation;
 
 /**
- * An <code>ASTStatementExpression</code> is an Assignment, a Postfix, a
+ * An <code>ASTStatementExpression</code> is an Assignment, a
  * MethodInvocationExpression, or a ClassInstanceCreationExpression.
  * <em>
  * StatementExpression:<br>

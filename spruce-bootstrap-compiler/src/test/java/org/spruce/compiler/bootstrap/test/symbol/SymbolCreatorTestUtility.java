@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.symbol.BasicSymbolCreator;
-import org.spruce.compiler.bootstrap.symbol.DataType;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
@@ -95,14 +94,11 @@ public class SymbolCreatorTestUtility {
      * @param symbol The <code>Symbol</code> to test.
      * @param expName The expected name.
      * @param expKind The expected <code>Kind</code>.
-     * @param expDataType The expected <code>DataType</code>.
      * @param expFlags The expected flags, exactly.
      */
-    static void checkSymbol(Symbol symbol, String expName, Symbol.Kind expKind, DataType expDataType,
-                            long expFlags) {
+    static void checkSymbol(Symbol symbol, String expName, Symbol.Kind expKind, long expFlags) {
         assertEquals(expName, symbol.getName());
         assertEquals(expKind, symbol.getKind());
-        assertEquals(expDataType, symbol.getDataType());
         assertEquals(expFlags, symbol.getFlags());
     }
 
@@ -113,13 +109,11 @@ public class SymbolCreatorTestUtility {
      * @param symbol The <code>Symbol</code> to test.
      * @param expName The expected name.
      * @param expKind The expected <code>Kind</code>.
-     * @param expDataType The expected <code>DataType</code>.
      * @param expFlags The expected flags, exactly.
      * @param numExpChildren The number of expected children.
      */
-    static void checkSymbol(ParentSymbol symbol, String expName, Symbol.Kind expKind, DataType expDataType,
-                            long expFlags, int numExpChildren) {
-        checkSymbol(symbol, expName, expKind, expDataType, expFlags);
+    static void checkSymbol(ParentSymbol symbol, String expName, Symbol.Kind expKind, long expFlags, int numExpChildren) {
+        checkSymbol(symbol, expName, expKind, expFlags);
         assertEquals(numExpChildren, symbol.getTable().size());
     }
 
@@ -130,14 +124,13 @@ public class SymbolCreatorTestUtility {
      * @param symbol The <code>Symbol</code> to test.
      * @param expName The expected name.
      * @param expKind The expected <code>Kind</code>.
-     * @param expDataType The expected <code>DataType</code>.
      * @param expFlags The expected flags, exactly.
      * @param numExpChildren The number of expected children.
      * @param numExpParameters The number of expected parameters.
      */
-    static void checkSymbol(ParameterizedSymbol symbol, String expName, Symbol.Kind expKind, DataType expDataType,
+    static void checkSymbol(ParameterizedSymbol symbol, String expName, Symbol.Kind expKind,
                             long expFlags, int numExpChildren, int numExpParameters) {
-        checkSymbol(symbol, expName, expKind, expDataType, expFlags, numExpChildren);
+        checkSymbol(symbol, expName, expKind, expFlags, numExpChildren);
         assertEquals(numExpParameters, symbol.numParameters());
     }
 

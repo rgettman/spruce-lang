@@ -94,10 +94,10 @@ public class Location {
     }
 
     /**
-     * Returns a String representing where the <code>CompilerException</code>
+     * Returns a String representing where the <code>CompilerMessage</code>
      * occurred.
-     * @return A String representing where the <code>CompilerException</code>
-     *     occurred.
+     * @return A String representing where the <code>CompilerMessage</code>
+     *         occurred.
      */
     public String where() {
         return String.join(System.lineSeparator(), getLine(), getPosIndicator());

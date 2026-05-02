@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTOrdinaryCompilationUnit</code> is an optional namespace declaration
@@ -19,10 +21,11 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;UseDeclarationList TypeDeclarationList
  * </em>
  */
-public class ASTOrdinaryCompilationUnit extends ASTParentNode {
+public class ASTOrdinaryCompilationUnit extends ASTParentNode implements SymbolDeclaration<ParentSymbol> {
     private final ASTNamespaceDeclaration myNamespaceDecl;
     private final ASTUseDeclarationList myUseDeclList;
     private final ASTTypeDeclarationList myTypeDeclList;
+    private ParentSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTOrdinaryCompilationUnit</code> at the given <code>Location</code>
@@ -78,6 +81,16 @@ public class ASTOrdinaryCompilationUnit extends ASTParentNode {
      */
     public ASTTypeDeclarationList getTypeDeclList() {
         return myTypeDeclList;
+    }
+
+    @Override
+    public void setDeclSymbol(ParentSymbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    @Override
+    public ParentSymbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     @Override

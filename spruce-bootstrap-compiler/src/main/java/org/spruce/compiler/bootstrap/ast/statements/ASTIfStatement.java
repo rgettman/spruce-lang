@@ -5,10 +5,11 @@ import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTValueExpression;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.Symbol;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTIfStatement</code> is "if", optionally followed by an Init
@@ -26,13 +27,13 @@ import org.spruce.compiler.bootstrap.symbol.Symbol;
  * &nbsp;&nbsp;&nbsp;&nbsp;if [{ Init }] ValueExpression Block<br>
  * </em>
  */
-public final class ASTIfStatement extends ASTParentNode implements ASTStatement {
+public final class ASTIfStatement extends ASTParentNode implements ASTStatement, SymbolDeclaration<ParentSymbol> {
     private final ASTInit myInit;
     private final ASTValueExpression myValueExpr;
     private final ASTBlock myIfBlock;
     private final ASTBlock myElseBlock;
     private final ASTIfStatement myElseIf;
-    private Symbol myDeclSymbol;
+    private ParentSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTIfStatement</code> at the given <code>Location</code>,
@@ -194,19 +195,13 @@ public final class ASTIfStatement extends ASTParentNode implements ASTStatement 
         return Optional.ofNullable(myElseIf);
     }
 
-    /**
-     * Sets the declaration <code>Symbol</code>.
-     * @param symbol The declaration <code>Symbol</code>.
-     */
-    public void setDeclSymbol(Symbol symbol) {
+    @Override
+    public void setDeclSymbol(ParentSymbol symbol) {
         myDeclSymbol = symbol;
     }
 
-    /**
-     * Returns the declaration <code>Symbol</code>.
-     * @return The declaration <code>Symbol</code>.
-     */
-    public Symbol getDeclSymbol(){
+    @Override
+    public ParentSymbol getDeclSymbol(){
         return myDeclSymbol;
     }
 

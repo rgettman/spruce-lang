@@ -331,7 +331,7 @@ public class ExpressionsParser extends BasicParser {
                     ASTPrimary.Type.CLASS_INSTANCE_CREATION_EXPR);
         }
         else {
-            throw internalError("Primary");
+            primary = parseBadPrimary(PRIMARY_STOPPERS);
         }
 
         // Qualified Class Instance Creation, Element Access, and Method Invocations may chain up.

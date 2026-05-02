@@ -5,8 +5,10 @@ import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
+import org.spruce.compiler.bootstrap.ast.SymbolReference;
 import org.spruce.compiler.bootstrap.ast.names.ASTNamespaceOrTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTUseAllDeclaration</code> is "use" followed
@@ -17,8 +19,10 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;use NamespaceOrTypeName . * ;
  * </em>
  */
-public final class ASTUseAllDeclaration extends ASTParentNode implements ASTUseDeclaration {
+public final class ASTUseAllDeclaration extends ASTParentNode
+        implements ASTUseDeclaration, SymbolReference<ParentSymbol> {
     private final ASTNamespaceOrTypeName myNamespaceOrTypeName;
+    private ParentSymbol myResolvedSymbol;
 
     /**
      * Constructs an <code>ASTUseAllDeclaration</code> at the given <code>Location</code>
@@ -37,6 +41,16 @@ public final class ASTUseAllDeclaration extends ASTParentNode implements ASTUseD
      */
     public ASTNamespaceOrTypeName getNamespaceOrTypeName() {
         return myNamespaceOrTypeName;
+    }
+
+    @Override
+    public void setResolvedSymbol(ParentSymbol symbol) {
+        myResolvedSymbol = symbol;
+    }
+
+    @Override
+    public ParentSymbol getResolvedSymbol() {
+        return myResolvedSymbol;
     }
 
     @Override

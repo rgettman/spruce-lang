@@ -49,8 +49,10 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
         List<ASTTypeDeclaration> typeDecls = ocu.getTypeDeclList().getTypedChildren();
         ClassesSymbolCreator classesCreator = getClassesSymbolCreator();
         for (ASTTypeDeclaration typeDecl : typeDecls) {
-            classesCreator.createSymbolsForTopLevelTypeDeclaration(typeDecl, namespace.getTable());
+            classesCreator.createSymbolsForTopLevelTypeDeclaration(typeDecl, namespace);
         }
+
+        ocu.setDeclSymbol(namespace);
     }
 
     /**
@@ -74,32 +76,40 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
      */
     public ParentSymbol createSymbolsForNamespaceName(ASTNamespaceName namespaceName) {
         List<ASTIdentifier> identifiers = namespaceName.getTypedChildren();
-        SymbolTable parent = getTypeLookup();
-
+        SymbolTable global = getTypeLookup();
         // First
         if (identifiers.isEmpty()) {
             throw internalError("identifier in namespace");
         }
         ASTIdentifier first = identifiers.get(0);
         String name = first.getValue();
-        ParentSymbol curr = new ParentSymbol(first.getLocation(), name, Kind.NAMESPACE, parent,
-                DataType.NONE, FLAG_NONE);
-        ChildSymbolTable table = new ChildSymbolTable(NAMESPACE, parent);
+        ParentSymbol curr = new ParentSymbol(first.getLocation(), name, Kind.NAMESPACE, global, FLAG_NONE);
+        ChildSymbolTable table = new ChildSymbolTable(NAMESPACE, curr);
         curr.setTable(table);
-        ParentSymbol canonical = parent.findOrAddSymbol(curr);
+        ParentSymbol canonical = global.findOrAddSymbol(curr);
+        table = canonical.getTable();
+        checkNameConflict(curr, canonical);
 
         // Rest
         for (int i = 1; i < identifiers.size(); i++) {
-            parent = canonical.getTable();
+            ChildSymbolTable currTable = table;
             ASTIdentifier id = identifiers.get(i);
             name = id.getValue();
-            curr = new ParentSymbol(id.getLocation(), name, Kind.NAMESPACE, table,
-                    DataType.NONE, FLAG_NONE);
-            table = new ChildSymbolTable(NAMESPACE, table);
+            curr = new ParentSymbol(id.getLocation(), name, Kind.NAMESPACE, table, FLAG_NONE);
+            table = new ChildSymbolTable(NAMESPACE, curr);
             curr.setTable(table);
-            canonical = parent.findOrAddSymbol(curr);
+            canonical = currTable.findOrAddSymbol(curr);
+            table = canonical.getTable();
+            checkNameConflict(curr, canonical);
         }
 
         return canonical;
+    }
+
+    private void checkNameConflict(Symbol symbol, Symbol canonical) {
+        Kind existingType = canonical.getKind();
+        if (existingType.isType()) {
+            handleNameConflictError(symbol, canonical);
+        }
     }
 }

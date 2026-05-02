@@ -6,9 +6,12 @@ import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
+import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
+import org.spruce.compiler.bootstrap.ast.SymbolReference;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTExpression;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 
 /**
@@ -21,10 +24,11 @@ import org.spruce.compiler.bootstrap.symbol.Symbol;
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier = Expression
  * </em>
  */
-public class ASTVariableDeclarator extends ASTParentNode {
+public class ASTVariableDeclarator extends ASTParentNode implements SymbolDeclaration<Symbol>, SymbolReference<ParentSymbol> {
     private final ASTIdentifier myVarName;
     private final ASTExpression myExpr;
-    private Symbol myDeclSymbol;
+    private Symbol myDeclSymbol;  // Declaring a variable name
+    private ParentSymbol myResolvedSymbol;  // Resolving the datatype
 
     /**
      * Constructs an <code>ASTVariableDeclarator</code> at the given <code>Location</code>
@@ -68,20 +72,24 @@ public class ASTVariableDeclarator extends ASTParentNode {
         return Optional.ofNullable(myExpr);
     }
 
-    /**
-     * Sets the declaration <code>Symbol</code>.
-     * @param symbol The declaration <code>Symbol</code>.
-     */
+    @Override
     public void setDeclSymbol(Symbol symbol) {
         myDeclSymbol = symbol;
     }
 
-    /**
-     * Returns the declaration <code>Symbol</code>.
-     * @return The declaration <code>Symbol</code>.
-     */
+    @Override
     public Symbol getDeclSymbol(){
         return myDeclSymbol;
+    }
+
+    @Override
+    public void setResolvedSymbol(ParentSymbol symbol) {
+        myResolvedSymbol = symbol;
+    }
+
+    @Override
+    public ParentSymbol getResolvedSymbol() {
+        return myResolvedSymbol;
     }
 
     @Override

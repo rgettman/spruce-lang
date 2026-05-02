@@ -38,8 +38,7 @@ public class SymbolCreatorTopLevelTest {
         Optional<ParentSymbol> optNamespaceOne = lookup.getNamespace("one");
         assertTrue(optNamespaceOne.isPresent(), "Namespace one is not present!");
         ParentSymbol namespaceOne = optNamespaceOne.get();
-        checkSymbol(namespaceOne, "one", Symbol.Kind.NAMESPACE, DataType.NONE,
-                FLAG_NONE, 1);
+        checkSymbol(namespaceOne, "one", Symbol.Kind.NAMESPACE, FLAG_NONE, 1);
     }
 
     /**
@@ -61,22 +60,20 @@ public class SymbolCreatorTopLevelTest {
         Optional<ParentSymbol> optFirstNamespace = lookup.getNamespace("spruce");
         assertTrue(optFirstNamespace.isPresent(), "Namespace spruce is not found!");
         ParentSymbol spruceSymbol = optFirstNamespace.get();
-        checkSymbol(spruceSymbol, "spruce", Symbol.Kind.NAMESPACE, DataType.NONE,
-                FLAG_NONE, 1);
+        checkSymbol(spruceSymbol, "spruce", Symbol.Kind.NAMESPACE, FLAG_NONE, 1);
 
         ChildSymbolTable child = spruceSymbol.getTable();
         checkSymbolTable(child, NAMESPACE, 1, Arrays.asList("collections"));
 
         ParentSymbol collectionsSymbol = ensureIsa(child.get("collections"), ParentSymbol.class);
-        checkSymbol(collectionsSymbol, "collections", Symbol.Kind.NAMESPACE,
-                DataType.NONE, FLAG_NONE, 1);
+        checkSymbol(collectionsSymbol, "collections", Symbol.Kind.NAMESPACE, FLAG_NONE, 1);
 
         child = ensureIsa(collectionsSymbol, ParentSymbol.class).getTable();
         checkSymbolTable(child, NAMESPACE, 1, Arrays.asList("concurrent"));
 
         ParentSymbol concurrentSymbol = ensureIsa(child.get("concurrent"), ParentSymbol.class);
-        checkSymbol(concurrentSymbol, "concurrent", Symbol.Kind.NAMESPACE,
-                DataType.NONE, FLAG_NONE, 0);
+        checkSymbol(concurrentSymbol, "concurrent", Symbol.Kind.NAMESPACE, FLAG_NONE, 0);
+        assertSame(concurrentSymbol, ocu.getDeclSymbol());
     }
 
     /**
@@ -103,8 +100,9 @@ public class SymbolCreatorTopLevelTest {
         Optional<ParentSymbol> optUnnamedNamespace = lookup.getNamespace(TypeLookup.UNNAMED_NAMESPACE_NAME);
         assertTrue(optUnnamedNamespace.isPresent(), "Unnamed namespace is not found!");
         ParentSymbol unnamedNamespace = optUnnamedNamespace.get();
-        checkSymbol(unnamedNamespace, TypeLookup.UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE, DataType.NONE,
+        checkSymbol(unnamedNamespace, TypeLookup.UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE,
                 FLAG_NONE, 6);
+        assertSame(unnamedNamespace, ocu.getDeclSymbol());
 
         ChildSymbolTable childTable = unnamedNamespace.getTable();
         List<String> expSymbolNames =
@@ -136,26 +134,24 @@ public class SymbolCreatorTopLevelTest {
         Optional<ParentSymbol> optSpruceNamespace = lookup.getNamespace("spruce");
         assertTrue(optSpruceNamespace.isPresent(), "Namespace spruce is not found!");
         ParentSymbol spruceNamespace = optSpruceNamespace.get();
-        checkSymbol(spruceNamespace, "spruce", Symbol.Kind.NAMESPACE, DataType.NONE,
-                FLAG_NONE, 2);
+        checkSymbol(spruceNamespace, "spruce", Symbol.Kind.NAMESPACE, FLAG_NONE, 2);
 
         ChildSymbolTable spruceTable = spruceNamespace.getTable();
         checkSymbolTable(spruceTable, NAMESPACE, 2, Arrays.asList("lang", "collections"));
 
         ParentSymbol langNamespace = ensureIsa(spruceTable.get("lang"), ParentSymbol.class);
-        checkSymbol(langNamespace, "lang", Symbol.Kind.NAMESPACE, DataType.NONE,
-                FLAG_NONE, 0);
+        checkSymbol(langNamespace, "lang", Symbol.Kind.NAMESPACE, FLAG_NONE, 0);
+        assertSame(langNamespace, ocu1.getDeclSymbol());
 
         ParentSymbol collectionsNamespace = ensureIsa(spruceTable.get("collections"), ParentSymbol.class);
-        checkSymbol(collectionsNamespace, "collections", Symbol.Kind.NAMESPACE, DataType.NONE,
-                FLAG_NONE, 1);
+        checkSymbol(collectionsNamespace, "collections", Symbol.Kind.NAMESPACE, FLAG_NONE, 1);
 
         ChildSymbolTable collectionsTable = collectionsNamespace.getTable();
         checkSymbolTable(collectionsTable, NAMESPACE, 1, Arrays.asList("concurrent"));
 
         ParentSymbol concurrentNamespace = ensureIsa(collectionsTable.get("concurrent"), ParentSymbol.class);
-        checkSymbol(concurrentNamespace, "concurrent", Symbol.Kind.NAMESPACE, DataType.NONE,
-                FLAG_NONE, 0);
+        checkSymbol(concurrentNamespace, "concurrent", Symbol.Kind.NAMESPACE, FLAG_NONE, 0);
+        assertSame(concurrentNamespace, ocu2.getDeclSymbol());
     }
 
     /**
@@ -170,7 +166,27 @@ public class SymbolCreatorTopLevelTest {
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
         creator.createSymbolTableForOcu(ocu);
-        expectError(creator.getTypeLookup(), creator.getTopLevelSymbolCreator());
+        expectError(creator.getTypeLookup(), creator.getTopLevelSymbolCreator(), 2);
+    }
+
+    /**
+     * Tests conflict of type name and namespace name.
+     */
+    @Test
+    public void testConflictTypeNameNamespaceName() {
+        TopLevelParser parser1 = ParserTopLevelTest.getTopLevelParser("""
+                namespace spruce.conflict;
+                """);
+        ASTOrdinaryCompilationUnit ocu1 = parser1.parseOrdinaryCompilationUnit();
+        TopLevelParser parser2 = ParserTopLevelTest.getTopLevelParser("""
+                namespace spruce;
+                class conflict() {}
+                """);
+        ASTOrdinaryCompilationUnit ocu2 = parser2.parseOrdinaryCompilationUnit();
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
+        creator.createSymbolTableForOcu(ocu1);
+        creator.createSymbolTableForOcu(ocu2);
+        expectError(creator.getTypeLookup(), creator.getTopLevelSymbolCreator(), 2);
     }
 
     /**

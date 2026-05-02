@@ -8,7 +8,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTValueExpression;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.Symbol;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTBasicForStatement</code> is "for (", an optional Init, a
@@ -25,7 +25,7 @@ public final class ASTBasicForStatement extends ASTParentNode implements ASTForS
     private final ASTValueExpression myValueExpr;
     private final ASTStatementExpressionList myStmtExprList;
     private final ASTBlock myBlock;
-    private Symbol myDeclSymbol;
+    private ParentSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTBasicForStatement</code> at the given <code>Location</code>
@@ -159,19 +159,13 @@ public final class ASTBasicForStatement extends ASTParentNode implements ASTForS
         return myBlock;
     }
 
-    /**
-     * Sets the declaration <code>Symbol</code>.
-     * @param symbol The declaration <code>Symbol</code>.
-     */
-    public void setDeclSymbol(Symbol symbol) {
+    @Override
+    public void setDeclSymbol(ParentSymbol symbol) {
         myDeclSymbol = symbol;
     }
 
-    /**
-     * Returns the declaration <code>Symbol</code>.
-     * @return The declaration <code>Symbol</code>.
-     */
-    public Symbol getDeclSymbol(){
+    @Override
+    public ParentSymbol getDeclSymbol(){
         return myDeclSymbol;
     }
 

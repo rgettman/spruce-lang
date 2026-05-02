@@ -12,22 +12,22 @@ import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
-import org.spruce.compiler.bootstrap.symbol.Symbol;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
- * <p>An <code>ASTClassDeclaration</code> is  "class", an Identifier,
+ * <p>An <code>ASTClassDeclaration</code> is "class", an Identifier,
  * followed by optional Type Parameters, optional Superclass, then a ClassBody.</p>
  *
  * <em>
  * ClassDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;class Identifier [TypeParameters] [Superclass] ClassBody
+ * &nbsp;&nbsp;&nbsp;&nbsp;class Identifier [Superclass] ClassBody
  * </em>
  */
 public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeDeclaration {
     private final ASTIdentifier myName;
     private final ASTDataTypeNoArray mySuperclass;
     private final ASTClassPartList myClassParts;
-    private Symbol myDeclSymbol;
+    private ParentSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTClassDeclaration</code> with arguments supplied by
@@ -145,7 +145,7 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
      * @param symbol The declaration <code>Symbol</code>.
      */
     @Override
-    public void setDeclSymbol(Symbol symbol) {
+    public void setDeclSymbol(ParentSymbol symbol) {
         myDeclSymbol = symbol;
     }
 
@@ -154,7 +154,7 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
      * @return The declaration <code>Symbol</code>.
      */
     @Override
-    public Symbol getDeclSymbol(){
+    public ParentSymbol getDeclSymbol(){
         return myDeclSymbol;
     }
 

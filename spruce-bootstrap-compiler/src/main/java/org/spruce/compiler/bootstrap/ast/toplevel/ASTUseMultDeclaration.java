@@ -1,13 +1,18 @@
 package org.spruce.compiler.bootstrap.ast.toplevel;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.ast.MultSymbolReference;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifierList;
 import org.spruce.compiler.bootstrap.ast.names.ASTNamespaceOrTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTUseMultDeclaration</code> is "use" followed
@@ -18,9 +23,11 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;use NamespaceOrTypeName . { IdentifierList } ;
  * </em>
  */
-public final class ASTUseMultDeclaration extends ASTParentNode implements ASTUseDeclaration {
+public final class ASTUseMultDeclaration extends ASTParentNode
+        implements ASTUseDeclaration, MultSymbolReference<ParentSymbol> {
     private final ASTNamespaceOrTypeName myNamespaceOrTypeName;
     private final ASTIdentifierList myIdentifierList;
+    private final Map<String, ParentSymbol> myResolvedSymbols;
 
     /**
      * Constructs an <code>ASTUseMultDeclaration</code> at the given <code>Location</code>
@@ -34,6 +41,7 @@ public final class ASTUseMultDeclaration extends ASTParentNode implements ASTUse
         super(location);
         myNamespaceOrTypeName = namespaceOrTypeName;
         myIdentifierList = identifierList;
+        myResolvedSymbols = new HashMap<>();
     }
 
     /**
@@ -50,6 +58,16 @@ public final class ASTUseMultDeclaration extends ASTParentNode implements ASTUse
      */
     public ASTIdentifierList getIdentifierList() {
         return myIdentifierList;
+    }
+
+    @Override
+    public void addResolvedSymbol(ParentSymbol symbol) {
+        myResolvedSymbols.put(symbol.getName(), symbol);
+    }
+
+    @Override
+    public Optional<ParentSymbol> getResolvedSymbol(String name) {
+        return Optional.ofNullable(myResolvedSymbols.get(name));
     }
 
     @Override

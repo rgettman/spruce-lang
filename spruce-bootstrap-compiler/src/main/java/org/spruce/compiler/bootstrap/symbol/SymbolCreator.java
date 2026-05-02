@@ -7,8 +7,10 @@ import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 
 /**
- * A <code>SymbolCreator</code> creates a <code>TopLevelSymbolTable</code> that
- * contains all declared symbols within a Compilation Unit.
+ * A <code>SymbolCreator</code> creates <code>Symbol</code>s for all
+ * declarations being compiled - namespaces, types, type members, parameters,
+ * and local variables.  Populates a global <code>TypeLookup</code> for all
+ * namespaces and types for use by a semantic Resolver.
  */
 public class SymbolCreator {
     private final ClassesSymbolCreator myClassesSymbolCreator;

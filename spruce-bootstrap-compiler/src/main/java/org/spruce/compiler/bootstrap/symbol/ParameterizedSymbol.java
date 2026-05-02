@@ -20,11 +20,10 @@ public class ParameterizedSymbol extends ParentSymbol {
      * @param name The name of this symbol.
      * @param kind The <code>Type</code> of this symbol.
      * @param parent The parent <code>SymbolTable</code>.
-     * @param dataType The <code>DataType</code> of this <code>Symbol</code>.
      * @param flags All flags belonging to this symbol.
      */
-    public ParameterizedSymbol(Location loc, String name, Kind kind, SymbolTable parent, DataType dataType, long flags) {
-        super(loc, name, kind, parent, dataType, flags);
+    public ParameterizedSymbol(Location loc, String name, Kind kind, SymbolTable parent, long flags) {
+        super(loc, name, kind, parent, flags);
         myParameters = new ArrayList<>();
     }
 
@@ -51,7 +50,7 @@ public class ParameterizedSymbol extends ParentSymbol {
      * @return How many parameters exist in this parameterized symbol.
      */
     public int numParameters() {
-        return myParameters.size();
+        return  myParameters.size();
     }
 
     /**

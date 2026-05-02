@@ -6,6 +6,8 @@ import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 
+import org.spruce.compiler.bootstrap.symbol.Symbol.Kind;
+
 /**
  * A <code>BasicSymbolCreator</code> provides basic symbol creation functionality.
  * Subclasses represent symbol creators of various categories of AST elements and
@@ -88,7 +90,9 @@ public class BasicSymbolCreator {
     /**
      * Inserts the given <code>Symbol</code> into the given <code>SymbolTable</code>,
      * if the symbol's name doesn't already exist.  If it does already exist,
-     * produces an error message instead.
+     * produces an error message instead.  This shouldn't be called to insert a
+     * namespace symbol; it's expected for different compilation units to
+     * declare the same namespace.
      * @param table The <code>SymbolTable</code>.
      * @param symbol The <code>Symbol</code>.
      */
@@ -98,21 +102,88 @@ public class BasicSymbolCreator {
         boolean keepChecking = true;
         while (keepChecking) {
             if (current.containsSymbolName(name)) {
-                error(symbol.getLocation(), "Duplicate identifier found: " + name);
                 Symbol original = current.get(name);
-                note(original.getLocation(), "Originally declared here.");
+                handleSameSymbolName(symbol, original);
                 keepChecking = false;
             }
             else if (current.getScope() == SymbolTable.Scope.SCOPE && current instanceof ChildSymbolTable child) {
                 // Can't declare same-name symbols in a SCOPE, up through the first
                 // non-SCOPE symbol table.  Check the parent symbol table.
-                current = child.getParent();
+                current = child.getParent().getParent();
             }
             else {
                 table.insertSymbol(symbol);
                 keepChecking = false;
             }
         }
+    }
+
+    // These symbol kind combinations can exist at the same scope level, so
+    // symbols of the same name with one of these combinations is a conflict
+    // error:
+    // - Namespace and Type
+    // - Type and Namespace
+    // - Type and Type
+    // - Type and Field
+    // - Field and Type
+    // - Method and Method
+    // - Local var/parameter and Local var/parameter
+    private void handleSameSymbolName(Symbol symbol, Symbol original) {
+        if (symbol.getKind() == Kind.NAMESPACE) {
+            // Handled specially in TopLevelSymbolCreator.  Shouldn't get here.
+            throw internalError("Creating namespace symbol " + symbol.getName() +
+                    " unexpected here!");
+        }
+        else if (symbol.getKind().isType()) {
+            if (original.getKind() == Kind.NAMESPACE || original.getKind().isType() ||
+                    original.getKind() == Kind.FIELD) {
+                handleNameConflictError(symbol, original);
+                return;
+            }
+        }
+        else if (symbol.getKind() == Kind.FIELD) {
+            if (original.getKind().isType() || original.getKind() == Kind.FIELD) {
+                handleNameConflictError(symbol, original);
+                return;
+            }
+        }
+        else if (symbol.getKind() == Kind.METHOD && original.getKind() == Kind.METHOD) {
+            // Method symbol names (includes signatures) only conflict with
+            // other methods.
+            error(symbol.getLocation(), "Duplicate method found: " + symbol.getName());
+            note(original.getLocation(), "Originally declared here.");
+            return;
+        }
+        else if (symbol.getKind().isLocal() && original.getKind().isLocal()) {
+            // Parameters and local variables only conflict with themselves.
+            error(symbol.getLocation(), "Duplicate identifier found: " + symbol.getName());
+            note(original.getLocation(), "Originally declared here.");
+            return;
+        }
+        // Shadowed and obscured symbols are never at the same scope level,
+        // so those situations are still legal.
+        // But if we get here, somehow an illegal combinations of kinds with
+        // the same name has occurred at the same scope level, but the symbol
+        // table cannot hold same-named symbols.
+        throw internalError("Unexpected conflict on name " + symbol.getName() +
+                ", kinds " + symbol.getKind() + " and " + original.getKind() + "!");
+    }
+
+    /**
+     * Used when two symbol names conflict with each other.
+     * Symbol names are already determined to be the same at this point.
+     * @param symbol The newly created <code>Symbol</code>.
+     * @param original An already existing <code>Symbol</code>.
+     */
+    protected void handleNameConflictError(Symbol symbol, Symbol original) {
+        String name = symbol.getName();
+        String originalKind = original.getKind().toString().toLowerCase();
+        String symbolKind = symbol.getKind().toString().toLowerCase();
+
+        error(original.getLocation(), originalKind + " " + name + " conflicts with " +
+                symbolKind + " of the same name.");
+        error(symbol.getLocation(), symbolKind + " " + name + " conflicts with " +
+                originalKind + " of the same name.");
     }
 
     /**

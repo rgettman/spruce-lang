@@ -619,6 +619,16 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests bad primary with keyword void.
+     */
+    @Test
+    public void testPrimaryBadVoid() {
+        ExpressionsParser parser = getExpressionsParser("void param");
+        ASTPrimary node = parser.parsePrimary();
+        expectError(node, parser);
+    }
+
+    /**
      * Tests bad primary of no dot after super.
      */
     @Test
