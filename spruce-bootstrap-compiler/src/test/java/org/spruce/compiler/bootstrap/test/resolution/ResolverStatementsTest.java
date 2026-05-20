@@ -6,15 +6,11 @@ import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.statements.*;
-import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
-import org.spruce.compiler.bootstrap.resolution.TopLevelResolver;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
-import static org.spruce.compiler.bootstrap.test.resolution.ResolverTopLevelTest.getTopLevelResolver;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
 /**
@@ -29,6 +25,7 @@ public class ResolverStatementsTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 """,
                 """
@@ -40,17 +37,14 @@ public class ResolverStatementsTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
 
-        ASTClassDeclaration test = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration test = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTMethodDeclaration testMethod = ensureIsa(test.getClassParts().get(0), ASTMethodDeclaration.class);
         assertTrue(testMethod.getBody().getBlock().isPresent());
         ASTBlock block = testMethod.getBody().getBlock().get();
@@ -58,7 +52,7 @@ public class ResolverStatementsTest {
                 ensureIsa(block.getBlockStmts().get(0), ASTLocalVariableDeclarationStatement.class);
         assertTrue(testIntStmt.getLocalVarDecl().getLocalVarType().getDataType().isPresent());
         ASTDataType dtInteger = testIntStmt.getLocalVarDecl().getLocalVarType().getDataType().get();
-        assertSame(integer, dtInteger.getResolvedSymbol());
+        assertSame(integer, dtInteger.getResolvedDataType());
     }
 
     /**
@@ -69,6 +63,7 @@ public class ResolverStatementsTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 """,
                 """
@@ -80,11 +75,8 @@ public class ResolverStatementsTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, resolver);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**
@@ -96,6 +88,7 @@ public class ResolverStatementsTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 class List {}
                 """,
@@ -109,17 +102,14 @@ public class ResolverStatementsTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
 
-        ASTClassDeclaration test = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration test = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTMethodDeclaration testMethod = ensureIsa(test.getClassParts().get(0), ASTMethodDeclaration.class);
         assertTrue(testMethod.getBody().getBlock().isPresent());
         ASTBlock block = testMethod.getBody().getBlock().get();
@@ -127,7 +117,7 @@ public class ResolverStatementsTest {
                 ensureIsa(block.getBlockStmts().get(0), ASTEnhancedForStatement.class);
         assertTrue(enhancedForStmt.getLocalVarDecl().getLocalVarType().getDataType().isPresent());
         ASTDataType dtInteger = enhancedForStmt.getLocalVarDecl().getLocalVarType().getDataType().get();
-        assertSame(integer, dtInteger.getResolvedSymbol());
+        assertSame(integer, dtInteger.getResolvedDataType());
     }
 
     /**
@@ -139,6 +129,7 @@ public class ResolverStatementsTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 class List {}
                 """,
@@ -152,17 +143,14 @@ public class ResolverStatementsTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
 
-        ASTClassDeclaration test = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration test = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTMethodDeclaration testMethod = ensureIsa(test.getClassParts().get(0), ASTMethodDeclaration.class);
         assertTrue(testMethod.getBody().getBlock().isPresent());
         ASTBlock block = testMethod.getBody().getBlock().get();
@@ -173,7 +161,7 @@ public class ResolverStatementsTest {
                 basicForStmt.getInit().get(), ASTLocalVariableDeclaration.class);
         assertTrue(localVarDecl.getLocalVarType().getDataType().isPresent());
         ASTDataType dtInteger = localVarDecl.getLocalVarType().getDataType().get();
-        assertSame(integer, dtInteger.getResolvedSymbol());
+        assertSame(integer, dtInteger.getResolvedDataType());
     }
 
     /**
@@ -185,6 +173,7 @@ public class ResolverStatementsTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 class List {}
                 """,
@@ -205,17 +194,14 @@ public class ResolverStatementsTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
 
-        ASTClassDeclaration test = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration test = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTMethodDeclaration testMethod = ensureIsa(test.getClassParts().get(0), ASTMethodDeclaration.class);
         assertTrue(testMethod.getBody().getBlock().isPresent());
         ASTBlock block = testMethod.getBody().getBlock().get();
@@ -226,7 +212,7 @@ public class ResolverStatementsTest {
                 ifStmt.getInit().get(), ASTLocalVariableDeclaration.class);
         assertTrue(localVarDecl.getLocalVarType().getDataType().isPresent());
         ASTDataType dtInteger = localVarDecl.getLocalVarType().getDataType().get();
-        assertSame(integer, dtInteger.getResolvedSymbol());
+        assertSame(integer, dtInteger.getResolvedDataType());
 
         assertTrue(ifStmt.getElseIf().isPresent());
         ASTIfStatement elseIfStmt = ifStmt.getElseIf().get();
@@ -235,7 +221,7 @@ public class ResolverStatementsTest {
                 elseIfStmt.getInit().get(), ASTLocalVariableDeclaration.class);
         assertTrue(localVarDecl2.getLocalVarType().getDataType().isPresent());
         ASTDataType dtInteger2 = localVarDecl.getLocalVarType().getDataType().get();
-        assertSame(integer, dtInteger2.getResolvedSymbol());
+        assertSame(integer, dtInteger2.getResolvedDataType());
     }
 
     /**
@@ -247,6 +233,7 @@ public class ResolverStatementsTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 class List {}
                 """,
@@ -261,17 +248,14 @@ public class ResolverStatementsTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
 
-        ASTClassDeclaration test = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration test = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTMethodDeclaration testMethod = ensureIsa(test.getClassParts().get(0), ASTMethodDeclaration.class);
         assertTrue(testMethod.getBody().getBlock().isPresent());
         ASTBlock block = testMethod.getBody().getBlock().get();
@@ -282,6 +266,6 @@ public class ResolverStatementsTest {
                 whileStmt.getInit().get(), ASTLocalVariableDeclaration.class);
         assertTrue(localVarDecl.getLocalVarType().getDataType().isPresent());
         ASTDataType dtInteger = localVarDecl.getLocalVarType().getDataType().get();
-        assertSame(integer, dtInteger.getResolvedSymbol());
+        assertSame(integer, dtInteger.getResolvedDataType());
     }
 }

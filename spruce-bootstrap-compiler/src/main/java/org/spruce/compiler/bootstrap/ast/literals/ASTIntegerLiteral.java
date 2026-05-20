@@ -2,6 +2,7 @@ package org.spruce.compiler.bootstrap.ast.literals;
 
 import org.spruce.compiler.bootstrap.ast.ASTValueNode;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTIntegerLiteral</code> is an integer value.</p>
@@ -14,8 +15,9 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;0-9
  * </em>
  */
-public final class ASTIntegerLiteral extends ASTValueNode implements ASTLiteral
-{
+public final class ASTIntegerLiteral extends ASTValueNode implements ASTLiteral {
+    private TypeSymbol myResolvedDataType;
+
     /**
      * Constructs an <code>ASTIntegerLiteral</code> given the <code>Location</code>
      * and the string value of the token.
@@ -32,5 +34,15 @@ public final class ASTIntegerLiteral extends ASTValueNode implements ASTLiteral
      */
     public long getNumericValue() {
         return Long.parseLong(getValue());
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 }

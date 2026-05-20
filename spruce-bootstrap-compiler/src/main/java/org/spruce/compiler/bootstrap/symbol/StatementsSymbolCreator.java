@@ -26,10 +26,10 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
      * Constructs a <code>StatementsSymbolCreator</code>.
      * @param symbolCreator A <code>SymbolCreator</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param typeLookup A <code>TypeLookup</code>.
+     * @param globalLookup A <code>GlobalLookup</code>.
      */
-    public StatementsSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, TypeLookup typeLookup) {
-        super(symbolCreator, msgProducer, typeLookup);
+    public StatementsSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, GlobalLookup globalLookup) {
+        super(symbolCreator, msgProducer, globalLookup);
     }
 
     /**
@@ -258,7 +258,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
         for (ASTVariableDeclarator varDecl : localVarDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
             ChildSymbolTable parentTable = parent.getTable();
-            Symbol symbol = new Symbol(varDecl.getLocation(), name, Kind.LOCAL, parentTable, FLAG_NONE);
+            VariableSymbol symbol = new VariableSymbol(varDecl.getLocation(), name, Kind.LOCAL, parentTable, FLAG_NONE);
             insertSymbol(parentTable, symbol);
             varDecl.setDeclSymbol(symbol);
         }

@@ -17,7 +17,7 @@ import org.spruce.compiler.bootstrap.symbol.Symbol.Kind;
 public class BasicSymbolCreator {
     private final SymbolCreator mySymbolCreator;
     private final MessageProducer myMsgProducer;
-    private final TypeLookup myTypeLookup;
+    private final GlobalLookup myGlobalLookup;
 
     /**
      * Constructs a <code>BasicSymbolCreator</code> using a
@@ -25,12 +25,12 @@ public class BasicSymbolCreator {
      *
      * @param symbolCreator A <code>SymbolCreator</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param typeLookup A <code>TypeLookup</code>.
+     * @param globalLookup A <code>GlobalLookup</code>.
      */
-    public BasicSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, TypeLookup typeLookup) {
+    public BasicSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, GlobalLookup globalLookup) {
         mySymbolCreator = symbolCreator;
         myMsgProducer = msgProducer;
-        myTypeLookup = typeLookup;
+        myGlobalLookup = globalLookup;
     }
 
     /**
@@ -195,11 +195,11 @@ public class BasicSymbolCreator {
     }
 
     /**
-     * Returns the <code>TypeLookup</code>.
-     * @return The <code>TypeLookup</code>.
+     * Returns the <code>GlobalLookup</code>.
+     * @return The <code>GlobalLookup</code>.
      */
-    public TypeLookup getTypeLookup() {
-        return myTypeLookup;
+    public GlobalLookup getGlobalLookup() {
+        return myGlobalLookup;
     }
 
     /**

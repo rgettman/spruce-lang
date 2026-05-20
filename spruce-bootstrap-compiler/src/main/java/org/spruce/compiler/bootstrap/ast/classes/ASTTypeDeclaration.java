@@ -2,10 +2,10 @@ package org.spruce.compiler.bootstrap.ast.classes;
 
 import java.util.List;
 
-import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
+import org.spruce.compiler.bootstrap.symbol.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.ParentNode;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
-import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTTypeDeclaration</code> is an <code>ASTMember</code>
@@ -16,7 +16,7 @@ import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
  * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration
  * </em>
  */
-public sealed interface ASTTypeDeclaration extends ParentNode, ASTClassPart, SymbolDeclaration<ParentSymbol>
+public sealed interface ASTTypeDeclaration extends ParentNode, ASTClassPart, SymbolDeclaration<TypeSymbol>
         permits ASTClassDeclaration {
     /**
      * Returns the <code>ASTIdentifier</code> representing the name of the type

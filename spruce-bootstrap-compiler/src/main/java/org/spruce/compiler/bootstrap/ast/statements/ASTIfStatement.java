@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
-import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
+import org.spruce.compiler.bootstrap.symbol.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTValueExpression;
 import org.spruce.compiler.bootstrap.common.Location;

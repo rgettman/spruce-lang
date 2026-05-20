@@ -8,6 +8,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTBinaryExpression</code> is a value expression with a binary
@@ -17,6 +18,7 @@ public final class ASTBinaryExpression extends ASTParentNode implements ASTValue
     private final ASTValueExpression myFirst;
     private final ASTValueExpression mySecond;
     private final TokenType myOperation;
+    private TypeSymbol myResolvedDataType;
 
     /**
      * Constructs an <code>ASTBinaryExpression</code> at the given <code>Location</code>
@@ -58,6 +60,16 @@ public final class ASTBinaryExpression extends ASTParentNode implements ASTValue
      */
     public ASTValueExpression getSecond() {
         return mySecond;
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 
     @Override

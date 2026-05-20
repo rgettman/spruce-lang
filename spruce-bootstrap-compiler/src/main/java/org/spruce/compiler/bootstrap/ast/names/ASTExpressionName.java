@@ -4,8 +4,12 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTListNode;
+import org.spruce.compiler.bootstrap.symbol.EntityResolution;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTLeftHandSide;
+import org.spruce.compiler.bootstrap.ast.expressions.ASTPrimaryChild;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTExpressionName</code> is a node representing a simple name or
@@ -17,7 +21,10 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;AmbiguousName . Identifier<br>
  * </em>
  */
-public final class ASTExpressionName extends ASTListNode<ASTIdentifier> implements ASTLeftHandSide {
+public final class ASTExpressionName extends ASTListNode<ASTIdentifier>
+        implements ASTLeftHandSide, ASTPrimaryChild, EntityResolution {
+    private EntitySymbol myResolvedEntity;
+
     /**
      * Constructs an <code>ASTExpressionName</code> at the given <code>Location</code>
      * and with at least one node as its children.
@@ -46,5 +53,25 @@ public final class ASTExpressionName extends ASTListNode<ASTIdentifier> implemen
      */
     public ASTTypeName convertToTypeName() {
         return new ASTTypeName(getLocation(), getTypedChildren());
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedEntity.setDataType(symbol);
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedEntity == null ? null : myResolvedEntity.getDataType();
+    }
+
+    @Override
+    public void setResolvedEntity(EntitySymbol symbol) {
+        myResolvedEntity = symbol;
+    }
+
+    @Override
+    public EntitySymbol getResolvedEntity() {
+        return myResolvedEntity;
     }
 }

@@ -7,7 +7,7 @@ import org.spruce.compiler.bootstrap.scanner.TokenType;
  * An <code>ASTKeywordNode</code> is a leaf <code>ASTNode</code> with a keyword
  * but no value.
  */
-public class ASTKeywordNode extends ASTNode {
+public final class ASTKeywordNode extends ASTNode {
     private final TokenType myKeyword;
 
     /**

@@ -12,7 +12,7 @@ import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
-import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTClassDeclaration</code> is "class", an Identifier,
@@ -27,7 +27,7 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
     private final ASTIdentifier myName;
     private final ASTDataTypeNoArray mySuperclass;
     private final ASTClassPartList myClassParts;
-    private ParentSymbol myDeclSymbol;
+    private TypeSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTClassDeclaration</code> with arguments supplied by
@@ -141,20 +141,20 @@ public final class ASTClassDeclaration extends ASTParentNode implements ASTTypeD
     }
 
     /**
-     * Sets the declaration <code>Symbol</code>.
-     * @param symbol The declaration <code>Symbol</code>.
+     * Sets the declaration <code>TypeSymbol</code>.
+     * @param symbol The declaration <code>TypeSymbol</code>.
      */
     @Override
-    public void setDeclSymbol(ParentSymbol symbol) {
+    public void setDeclSymbol(TypeSymbol symbol) {
         myDeclSymbol = symbol;
     }
 
     /**
-     * Returns the declaration <code>Symbol</code>.
-     * @return The declaration <code>Symbol</code>.
+     * Returns the declaration <code>TypeSymbol</code>.
+     * @return The declaration <code>TypeSymbol</code>.
      */
     @Override
-    public ParentSymbol getDeclSymbol(){
+    public TypeSymbol getDeclSymbol(){
         return myDeclSymbol;
     }
 

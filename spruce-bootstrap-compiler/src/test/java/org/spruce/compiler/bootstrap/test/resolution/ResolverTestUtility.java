@@ -8,9 +8,11 @@ import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.parser.TopLevelParser;
 import org.spruce.compiler.bootstrap.resolution.BasicResolver;
+import org.spruce.compiler.bootstrap.resolution.Resolver;
+import org.spruce.compiler.bootstrap.resolution.TopLevelResolver;
 import org.spruce.compiler.bootstrap.symbol.SymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.test.parser.ParserTopLevelTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -32,6 +34,9 @@ public class ResolverTestUtility {
         for (String codeUnit : codeUnits) {
             TopLevelParser parser = ParserTopLevelTest.getTopLevelParser(codeUnit);
             ocus.add(parser.parseOrdinaryCompilationUnit());
+            for (CompilerMessage msg : parser.getCompilerMessages()) {
+                System.out.println(msg);
+            }
             assertEquals(0, parser.getCompilerMessages().size());
         }
         return ocus;
@@ -41,25 +46,29 @@ public class ResolverTestUtility {
      * Helper method to create the global symbol table using the given
      * <code>OrdinaryCompilationUnit</code>s.
      * @param ocus A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
-     * @return A <code>TypeLookup</code> representing the global symbol table.
+     * @return A <code>GlobalLookup</code> representing the global symbol table.
      */
-    static TypeLookup createGlobalSymbolTable(List<ASTOrdinaryCompilationUnit> ocus) {
-        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
+    static GlobalLookup createGlobalSymbolTable(List<ASTOrdinaryCompilationUnit> ocus) {
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
         for (ASTOrdinaryCompilationUnit ocu : ocus) {
             creator.createSymbolTableForOcu(ocu);
         }
-        return creator.getTypeLookup();
+        for (CompilerMessage msg : creator.getCompilerMessages()) {
+            System.out.println(msg);
+        }
+        assertEquals(0, creator.getCompilerMessages().size());
+        return creator.getGlobalLookup();
     }
 
     /**
      * Prints any compiler messages.  Ensures that there are no compiler
      * messages representing an error.
      * @param table A <code>SymbolTable</code>.
-     * @param Resolver A <code>BasicResolver</code>.
+     * @param resolver A <code>BasicResolver</code>.
      */
-    static void ensureNoErrors(SymbolTable table, BasicResolver Resolver) {
+    static void ensureNoErrors(SymbolTable table, BasicResolver resolver) {
         System.out.println(table);
-        long errorCount = generalCheckForError(Resolver);
+        long errorCount = generalCheckForError(resolver);
         if (errorCount != 0) {
             fail("Error message(s) found!");
         }
@@ -69,33 +78,54 @@ public class ResolverTestUtility {
      * Prints any compiler messages.  Ensures that there is exactly one
      * compiler message representing an error.
      * @param table A <code>SymbolTable</code>.
-     * @param Resolver A <code>BasicResolver</code>.
+     * @param resolver A <code>BasicResolver</code>.
      */
-    static void expectError(SymbolTable table, BasicResolver Resolver) {
-        expectError(table, Resolver, 1);
+    static void expectError(SymbolTable table, BasicResolver resolver) {
+        expectError(table, resolver, 1);
     }
 
     /**
      * Prints any compiler messages.  Ensures that there is exactly the
      * specified number of compiler messages representing an error.
      * @param table A <code>SymbolTable</code>.
-     * @param Resolver A <code>BasicResolver</code>.
+     * @param resolver A <code>BasicResolver</code>.
      */
-    static void expectError(SymbolTable table, BasicResolver Resolver, int count) {
+    static void expectError(SymbolTable table, BasicResolver resolver, int count) {
         System.out.println(table);
-        long errorCount = generalCheckForError(Resolver);
+        long errorCount = generalCheckForError(resolver);
         if (errorCount != count) {
             fail("Expected " + count + " message(s), got " + errorCount + "!");
         }
     }
 
-    private static long generalCheckForError(BasicResolver Resolver) {
-        List<CompilerMessage> msgs = Resolver.getCompilerMessages();
+    private static long generalCheckForError(BasicResolver resolver) {
+        List<CompilerMessage> msgs = resolver.getCompilerMessages();
         for (CompilerMessage msg : msgs) {
             System.out.println(msg);
         }
         return msgs.stream()
                 .filter(cm -> cm.getLevel() == CompilerMessage.Level.ERROR)
                 .count();
+    }
+
+    /**
+     * Helper method to parse all codes, create the symbols, and resolve all
+     * symbols.
+     * @param codes A <code>List</code> of string codes, one per compilation unit.
+     * @return A <code>Trio</code> consisting of a <code>List</code> of
+     *     <code>ASTOrdinaryCompilationUnit</code>s, a <code>GlobalLookup</code>,
+     *     and a <code>TopLevelResolver</code>.
+     */
+    static Trio compileSoFar(List<String> codes) {
+        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
+        GlobalLookup global = createGlobalSymbolTable(ocus);
+        TopLevelResolver resolver = new Resolver(new BaseMessageProducer(), global).getTopLevelResolver();
+        resolver.resolveOrdinaryCompilationUnits(ocus);
+
+        return new Trio(ocus, global, resolver);
+    }
+
+    public record Trio(List<ASTOrdinaryCompilationUnit> ocus, GlobalLookup global, TopLevelResolver resolver) {
+
     }
 }

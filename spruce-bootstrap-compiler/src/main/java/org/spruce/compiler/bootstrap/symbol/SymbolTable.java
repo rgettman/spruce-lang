@@ -129,7 +129,7 @@ public class SymbolTable {
      *      or one of "type" kinds.
      */
     public boolean containsNamespaceOrType(String name) {
-        return containsName(name, List.of(NAMESPACE, CLASS));
+        return containsName(name, List.of(NAMESPACE)) || containsType(name);
     }
 
     /**
@@ -141,6 +141,39 @@ public class SymbolTable {
      */
     public boolean containsType(String name) {
         return containsName(name, List.of(NAMESPACE, CLASS));
+    }
+
+    /**
+     * Returns whether this table directly contains a field <code>Symbol</code>
+     * of the given name.
+     * @param name The name of the <code>Symbol</code> to find.
+     * @return Whether this table directly contains a <code>Symbol</code> with
+     *      the given name and of the kind <code>FIELD</code>.
+     */
+    public boolean containsField(String name) {
+        return containsName(name, List.of(FIELD));
+    }
+
+    /**
+     * Returns whether this table directly contains a variable <code>Symbol</code>
+     * of the given name.
+     * @param name The name of the <code>Symbol</code> to find.
+     * @return Whether this table directly contains a <code>Symbol</code> with
+     *      the given name and of one of "variable" kinds: field, parameter, local.
+     */
+    public boolean containsVariable(String name) {
+        return containsName(name, List.of(FIELD, PARAMETER, LOCAL));
+    }
+
+    /**
+     * Returns whether this table directly contains a <code>Symbol</code> of
+     * the given name that could be a namespace, type, or variable.
+     * @param name The name of the <code>Symbol</code> to find.
+     * @return Whether this table directly contains a <code>Symbol</code> with
+     *      the given name and of one of "variable" kinds: field, parameter, local.
+     */
+    public boolean containsNamespaceTypeOrVariable(String name) {
+        return containsNamespaceOrType(name) || containsVariable(name);
     }
 
     /**

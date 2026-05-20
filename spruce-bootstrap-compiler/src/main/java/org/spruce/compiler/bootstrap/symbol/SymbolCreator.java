@@ -9,7 +9,7 @@ import org.spruce.compiler.bootstrap.common.MessageProducer;
 /**
  * A <code>SymbolCreator</code> creates <code>Symbol</code>s for all
  * declarations being compiled - namespaces, types, type members, parameters,
- * and local variables.  Populates a global <code>TypeLookup</code> for all
+ * and local variables.  Populates a <code>GlobalLookup</code> for all
  * namespaces and types for use by a semantic Resolver.
  */
 public class SymbolCreator {
@@ -19,21 +19,21 @@ public class SymbolCreator {
     private final TypesSymbolCreator myTypesSymbolCreator;
 
     private final MessageProducer myMsgProducer;
-    private final TypeLookup myTypeLookup;
+    private final GlobalLookup myGlobalLookup;
 
     /**
      * Constructs a <code>SymbolCreator</code> with the given
      * <code>MessageProducer</code>.
      * @param msgProducer A <code>MessageProducer</code>.
      */
-    public SymbolCreator(MessageProducer msgProducer, TypeLookup typeLookup) {
-        myClassesSymbolCreator = new ClassesSymbolCreator(this, msgProducer, typeLookup);
-        myStatementsSymbolCreator = new StatementsSymbolCreator(this, msgProducer, typeLookup);
-        myTopLevelSymbolCreator = new TopLevelSymbolCreator(this, msgProducer, typeLookup);
-        myTypesSymbolCreator = new TypesSymbolCreator(this, msgProducer, typeLookup);
+    public SymbolCreator(MessageProducer msgProducer, GlobalLookup globalLookup) {
+        myClassesSymbolCreator = new ClassesSymbolCreator(this, msgProducer, globalLookup);
+        myStatementsSymbolCreator = new StatementsSymbolCreator(this, msgProducer, globalLookup);
+        myTopLevelSymbolCreator = new TopLevelSymbolCreator(this, msgProducer, globalLookup);
+        myTypesSymbolCreator = new TypesSymbolCreator(this, msgProducer, globalLookup);
 
         myMsgProducer = msgProducer;
-        myTypeLookup = typeLookup;
+        myGlobalLookup = globalLookup;
     }
 
     /**
@@ -87,10 +87,10 @@ public class SymbolCreator {
     }
 
     /**
-     * Returns the <code>TypeLookup</code>.
-     * @return The <code>TypeLookup</code>.
+     * Returns the <code>GlobalLookup</code>.
+     * @return The <code>GlobalLookup</code>.
      */
-    public TypeLookup getTypeLookup() {
-        return myTypeLookup;
+    public GlobalLookup getGlobalLookup() {
+        return myGlobalLookup;
     }
 }

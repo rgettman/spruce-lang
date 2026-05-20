@@ -10,7 +10,7 @@ import org.spruce.compiler.bootstrap.common.Location;
  *
  * <em>
  * ArgumentList:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ValueExpression {, ValueExpression}
+ * &nbsp;&nbsp;&nbsp;&nbsp;Expression {, Expression}
  * </em>
  */
 public class ASTArgumentList extends ASTListNode<ASTExpression> {

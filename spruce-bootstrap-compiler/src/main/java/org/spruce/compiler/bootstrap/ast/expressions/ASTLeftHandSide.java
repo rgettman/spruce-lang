@@ -1,5 +1,6 @@
 package org.spruce.compiler.bootstrap.ast.expressions;
 
+import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.ParentNode;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
 
@@ -13,5 +14,5 @@ import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
  * &nbsp;&nbsp;&nbsp;&nbsp;FieldAccess
  * </em>
  */
-public sealed interface ASTLeftHandSide extends ParentNode permits ASTExpressionName, ASTFieldAccess {
+public sealed interface ASTLeftHandSide extends ParentNode, DataTypeResolution permits ASTExpressionName, ASTFieldAccess {
 }

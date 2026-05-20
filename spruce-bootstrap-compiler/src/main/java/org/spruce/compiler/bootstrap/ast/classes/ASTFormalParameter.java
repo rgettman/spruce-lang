@@ -5,11 +5,12 @@ import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
-import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
+import org.spruce.compiler.bootstrap.symbol.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
+import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 
 /**
  * <p>An <code>ASTFormalParameter</code> is an optional AnnotationList followed
@@ -21,10 +22,10 @@ import org.spruce.compiler.bootstrap.symbol.Symbol;
  * &nbsp;&nbsp;&nbsp;&nbsp;[VariableModifierList] DataType Identifier
  * </em>
  */
-public class ASTFormalParameter extends ASTParentNode implements SymbolDeclaration<Symbol> {
+public class ASTFormalParameter extends ASTParentNode implements SymbolDeclaration<VariableSymbol> {
     private final ASTDataType myDataType;
     private final ASTIdentifier myName;
-    private Symbol myDeclSymbol;
+    private VariableSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTFormalParameter</code> with arguments supplied by
@@ -116,12 +117,12 @@ public class ASTFormalParameter extends ASTParentNode implements SymbolDeclarati
     }
 
     @Override
-    public void setDeclSymbol(Symbol symbol) {
+    public void setDeclSymbol(VariableSymbol symbol) {
         myDeclSymbol = symbol;
     }
 
     @Override
-    public Symbol getDeclSymbol(){
+    public VariableSymbol getDeclSymbol(){
         return myDeclSymbol;
     }
 

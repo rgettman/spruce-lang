@@ -19,10 +19,10 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      * Constructs a <code>ClassesSymbolCreator</code>.
      * @param symbolCreator A <code>SymbolCreator</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param typeLookup A <code>TypeLookup</code>.
+     * @param globalLookup A <code>GlobalLookup</code>.
      */
-    public ClassesSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, TypeLookup typeLookup) {
-        super(symbolCreator, msgProducer, typeLookup);
+    public ClassesSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, GlobalLookup globalLookup) {
+        super(symbolCreator, msgProducer, globalLookup);
     }
 
     /**
@@ -62,12 +62,12 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         Kind kind;
         switch (typeDecl) {
-            case ASTClassDeclaration ignored ->
-                kind = Kind.CLASS;
+        case ASTClassDeclaration ignored ->
+            kind = Kind.CLASS;
         }
 
         ChildSymbolTable parentTable = parent.getTable();
-        ParentSymbol symbol = new ParentSymbol(typeDecl.getLocation(), typeDecl.getName().getValue(),
+        TypeSymbol symbol = new TypeSymbol(typeDecl.getLocation(), typeDecl.getName().getValue(),
                 kind, parentTable, flags);
         insertSymbol(parentTable, symbol);
         typeDecl.setDeclSymbol(symbol);
@@ -119,7 +119,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
-        constrDecl.getConstructorDecl().setDeclSymbol(symbol);
+        constrDecl.setDeclSymbol(symbol);
 
         createSymbolsForFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList(), symbol);
         getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), symbol);
@@ -136,7 +136,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
             ChildSymbolTable parentTable = parent.getTable();
-            Symbol symbol = new Symbol(fieldDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
+            VariableSymbol symbol = new VariableSymbol(fieldDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
             insertSymbol(parentTable, symbol);
             varDecl.setDeclSymbol(symbol);
         }
@@ -154,7 +154,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getMethodSymbolName(methodDecl),
                 Kind.METHOD, parentTable, flags);
         insertSymbol(parentTable, symbol);
-        methodDecl.getHeader().getMethodDecl().setDeclSymbol(symbol);
+        methodDecl.setDeclSymbol(symbol);
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, symbol);
         symbol.setTable(table);
@@ -176,7 +176,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         SymbolTable parent = param.getParent();
         for (ASTFormalParameter formalParam : formalParams.getTypedChildren()) {
             String name = formalParam.getName().getValue();
-            Symbol symbol = new Symbol(formalParam.getLocation(), name, Kind.PARAMETER, parent, FLAG_NONE);
+            VariableSymbol symbol = new VariableSymbol(formalParam.getLocation(), name, Kind.PARAMETER, parent, FLAG_NONE);
             ChildSymbolTable table = param.getTable();
             insertSymbol(table, symbol);
             param.addParameter(symbol);

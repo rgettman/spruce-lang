@@ -6,6 +6,7 @@ import java.util.List;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * An <code>ASTIsaExpression</code> is an Expression followed by "isa",
@@ -18,6 +19,7 @@ import org.spruce.compiler.bootstrap.common.Location;
 public final class ASTIsaExpression extends ASTParentNode implements ASTValueExpression {
     private final ASTExpression myExpr;
     private final ASTIsaTarget myIsaTarget;
+    private TypeSymbol myResolvedDataType;
 
     /**
      * Constructs an <code>ASTCastExpression</code> at the given <code>Location</code>
@@ -46,6 +48,16 @@ public final class ASTIsaExpression extends ASTParentNode implements ASTValueExp
      */
     public ASTIsaTarget getIsaTarget() {
         return myIsaTarget;
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 
     @Override

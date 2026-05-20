@@ -1,5 +1,6 @@
 package org.spruce.compiler.bootstrap.ast.expressions;
 
+import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.ParentNode;
 
 /**
@@ -10,5 +11,6 @@ import org.spruce.compiler.bootstrap.ast.ParentNode;
  * &nbsp;&nbsp;&nbsp;&nbsp;ValueExpression<br>
  * </em>
  */
-public sealed interface ASTExpression extends ParentNode permits ASTValueExpression {
+public sealed interface ASTExpression extends ParentNode, ASTPrimaryChild, DataTypeResolution
+        permits ASTValueExpression {
 }

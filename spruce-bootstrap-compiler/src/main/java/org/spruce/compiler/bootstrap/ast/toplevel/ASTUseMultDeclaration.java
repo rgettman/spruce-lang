@@ -7,12 +7,12 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
-import org.spruce.compiler.bootstrap.ast.MultSymbolReference;
+import org.spruce.compiler.bootstrap.symbol.MultDataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifierList;
 import org.spruce.compiler.bootstrap.ast.names.ASTNamespaceOrTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTUseMultDeclaration</code> is "use" followed
@@ -24,10 +24,10 @@ import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
  * </em>
  */
 public final class ASTUseMultDeclaration extends ASTParentNode
-        implements ASTUseDeclaration, MultSymbolReference<ParentSymbol> {
+        implements ASTUseDeclaration, MultDataTypeResolution {
     private final ASTNamespaceOrTypeName myNamespaceOrTypeName;
     private final ASTIdentifierList myIdentifierList;
-    private final Map<String, ParentSymbol> myResolvedSymbols;
+    private final Map<String, TypeSymbol> myResolvedDataTypes;
 
     /**
      * Constructs an <code>ASTUseMultDeclaration</code> at the given <code>Location</code>
@@ -41,7 +41,7 @@ public final class ASTUseMultDeclaration extends ASTParentNode
         super(location);
         myNamespaceOrTypeName = namespaceOrTypeName;
         myIdentifierList = identifierList;
-        myResolvedSymbols = new HashMap<>();
+        myResolvedDataTypes = new HashMap<>();
     }
 
     /**
@@ -61,13 +61,13 @@ public final class ASTUseMultDeclaration extends ASTParentNode
     }
 
     @Override
-    public void addResolvedSymbol(ParentSymbol symbol) {
-        myResolvedSymbols.put(symbol.getName(), symbol);
+    public void addResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataTypes.put(symbol.getName(), symbol);
     }
 
     @Override
-    public Optional<ParentSymbol> getResolvedSymbol(String name) {
-        return Optional.ofNullable(myResolvedSymbols.get(name));
+    public Optional<TypeSymbol> getResolvedDataType(String name) {
+        return Optional.ofNullable(myResolvedDataTypes.get(name));
     }
 
     @Override

@@ -4,16 +4,14 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.*;
-import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
+
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
-import org.spruce.compiler.bootstrap.resolution.TopLevelResolver;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
-import static org.spruce.compiler.bootstrap.test.resolution.ResolverTopLevelTest.getTopLevelResolver;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
 /**
@@ -28,6 +26,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Number {}
                 """,
                 """
@@ -35,20 +34,17 @@ public class ResolverClassesTest {
                 class Integer extends Number {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol number = ensureIsa(lang.getTable().get("Number"), ParentSymbol.class);
 
-        ASTClassDeclaration integer = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration integer = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         assertTrue(integer.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = integer.getSuperclass().get();
-        assertEquals(number, superclass.getResolvedSymbol());
+        assertEquals(number, superclass.getResolvedDataType());
     }
 
     /**
@@ -63,24 +59,25 @@ public class ResolverClassesTest {
                     class Entry {}
                     class SubclassEntry extends Entry {}
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol collections = ensureIsa(spruce.getTable().get("collections"), ParentSymbol.class);
         ParentSymbol map = ensureIsa(collections.getTable().get("Map"), ParentSymbol.class);
         ParentSymbol entry = ensureIsa(map.getTable().get("Entry"), ParentSymbol.class);
 
-        ASTClassDeclaration mapDecl = ensureIsa(ocus.get(0).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration mapDecl = ensureIsa(trio.ocus().get(0).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTClassDeclaration subclassEntry = ensureIsa(mapDecl.getClassParts().get(1), ASTClassDeclaration.class);
         assertTrue(subclassEntry.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = subclassEntry.getSuperclass().get();
-        assertEquals(entry, superclass.getResolvedSymbol());
+        assertEquals(entry, superclass.getResolvedDataType());
     }
 
     /**
@@ -97,22 +94,23 @@ public class ResolverClassesTest {
                 namespace spruce.collections.concurrent;
                 use spruce.collections.HashMap;
                 class ConcurrentHashMap extends HashMap {}
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol collections = ensureIsa(spruce.getTable().get("collections"), ParentSymbol.class);
         ParentSymbol hashMap = ensureIsa(collections.getTable().get("HashMap"), ParentSymbol.class);
 
-        ASTClassDeclaration concurrentHashMapDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration concurrentHashMapDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         assertTrue(concurrentHashMapDecl.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = concurrentHashMapDecl.getSuperclass().get();
-        assertEquals(hashMap, superclass.getResolvedSymbol());
+        assertEquals(hashMap, superclass.getResolvedDataType());
     }
 
     /**
@@ -129,22 +127,23 @@ public class ResolverClassesTest {
                 namespace spruce.collections.concurrent;
                 use spruce.collections.+;
                 class ConcurrentHashMap extends HashMap {}
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol collections = ensureIsa(spruce.getTable().get("collections"), ParentSymbol.class);
         ParentSymbol hashMap = ensureIsa(collections.getTable().get("HashMap"), ParentSymbol.class);
 
-        ASTClassDeclaration concurrentHashMapDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration concurrentHashMapDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         assertTrue(concurrentHashMapDecl.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = concurrentHashMapDecl.getSuperclass().get();
-        assertEquals(hashMap, superclass.getResolvedSymbol());
+        assertEquals(hashMap, superclass.getResolvedDataType());
     }
 
     /**
@@ -161,13 +160,14 @@ public class ResolverClassesTest {
                 namespace spruce.collections.concurrent;
                 use spruce.collections.+;
                 class ConcurrentHashMap extends DoesNotExist {}
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, resolver);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**
@@ -190,26 +190,27 @@ public class ResolverClassesTest {
                     }
                   }
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol test = ensureIsa(global.get("test"), ParentSymbol.class);
+        ParentSymbol test = ensureIsa(trio.global().get("test"), ParentSymbol.class);
         ParentSymbol nesting = ensureIsa(test.getTable().get("Nesting"), ParentSymbol.class);
         ParentSymbol nested = ensureIsa(nesting.getTable().get("Nested"), ParentSymbol.class);
         ParentSymbol dn = ensureIsa(nested.getTable().get("DeepNested"), ParentSymbol.class);
         ParentSymbol ddn = ensureIsa(dn.getTable().get("DeepDeepNested"), ParentSymbol.class);
 
-        ASTClassDeclaration nestingDecl = ensureIsa(ocus.get(0).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration nestingDecl = ensureIsa(trio.ocus().get(0).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTClassDeclaration nestedDecl = ensureIsa(nestingDecl.getClassParts().get(0), ASTClassDeclaration.class);
         ASTClassDeclaration dummyDecl = ensureIsa(nestedDecl.getClassParts().get(1), ASTClassDeclaration.class);
         assertTrue(dummyDecl.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = dummyDecl.getSuperclass().get();
-        assertEquals(ddn, superclass.getResolvedSymbol());
+        assertEquals(ddn, superclass.getResolvedDataType());
     }
 
     /**
@@ -232,27 +233,28 @@ public class ResolverClassesTest {
                     }
                   }
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol test = ensureIsa(global.get("test"), ParentSymbol.class);
+        ParentSymbol test = ensureIsa(trio.global().get("test"), ParentSymbol.class);
         ParentSymbol nesting = ensureIsa(test.getTable().get("Nesting"), ParentSymbol.class);
         ParentSymbol nested = ensureIsa(nesting.getTable().get("Nested"), ParentSymbol.class);
         ParentSymbol dummy = ensureIsa(nested.getTable().get("Dummy"), ParentSymbol.class);
 
-        ASTClassDeclaration nestingDecl = ensureIsa(ocus.get(0).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration nestingDecl = ensureIsa(trio.ocus().get(0).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTClassDeclaration nestedDecl = ensureIsa(nestingDecl.getClassParts().get(0), ASTClassDeclaration.class);
         ASTClassDeclaration dnDecl = ensureIsa(nestedDecl.getClassParts().get(0), ASTClassDeclaration.class);
         ASTClassDeclaration ddnDecl = ensureIsa(dnDecl.getClassParts().get(0), ASTClassDeclaration.class);
         ASTClassDeclaration dddnDecl = ensureIsa(ddnDecl.getClassParts().get(0), ASTClassDeclaration.class);
         assertTrue(dddnDecl.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = dddnDecl.getSuperclass().get();
-        assertEquals(dummy, superclass.getResolvedSymbol());
+        assertEquals(dummy, superclass.getResolvedDataType());
     }
 
     /**
@@ -273,22 +275,23 @@ public class ResolverClassesTest {
                 use test.Nesting;
                 class Target extends Nesting.Nested {
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol test = ensureIsa(global.get("test"), ParentSymbol.class);
+        ParentSymbol test = ensureIsa(trio.global().get("test"), ParentSymbol.class);
         ParentSymbol nesting = ensureIsa(test.getTable().get("Nesting"), ParentSymbol.class);
         ParentSymbol nested = ensureIsa(nesting.getTable().get("Nested"), ParentSymbol.class);
 
-        ASTClassDeclaration targetDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration targetDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         assertTrue(targetDecl.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = targetDecl.getSuperclass().get();
-        assertEquals(nested, superclass.getResolvedSymbol());
+        assertEquals(nested, superclass.getResolvedDataType());
     }
 
     // Test qualified name data type resolution, first name is in use all declaration.
@@ -307,26 +310,27 @@ public class ResolverClassesTest {
                 use test.+;
                 class Target extends Nesting.Nested {
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol test = ensureIsa(global.get("test"), ParentSymbol.class);
+        ParentSymbol test = ensureIsa(trio.global().get("test"), ParentSymbol.class);
         ParentSymbol nesting = ensureIsa(test.getTable().get("Nesting"), ParentSymbol.class);
         ParentSymbol nested = ensureIsa(nesting.getTable().get("Nested"), ParentSymbol.class);
 
-        ASTClassDeclaration targetDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration targetDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         assertTrue(targetDecl.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = targetDecl.getSuperclass().get();
-        assertEquals(nested, superclass.getResolvedSymbol());
+        assertEquals(nested, superclass.getResolvedDataType());
     }
 
     /**
-     * Test qualified name data type resolution, fully qualified name in global symbol table.
+     * Test qualified name data type resolution, fully qualified name in trio.global() symbol table.
      */
     @Test
     public void testQualifiedDataTypeResolutionFullyQualified() {
@@ -342,22 +346,23 @@ public class ResolverClassesTest {
                 namespace other;
                 class Target extends test.Nesting.Nested {
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol test = ensureIsa(global.get("test"), ParentSymbol.class);
+        ParentSymbol test = ensureIsa(trio.global().get("test"), ParentSymbol.class);
         ParentSymbol nesting = ensureIsa(test.getTable().get("Nesting"), ParentSymbol.class);
         ParentSymbol nested = ensureIsa(nesting.getTable().get("Nested"), ParentSymbol.class);
 
-        ASTClassDeclaration targetDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration targetDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         assertTrue(targetDecl.getSuperclass().isPresent());
         ASTDataTypeNoArray superclass = targetDecl.getSuperclass().get();
-        assertEquals(nested, superclass.getResolvedSymbol());
+        assertEquals(nested, superclass.getResolvedDataType());
     }
 
     /**
@@ -377,13 +382,14 @@ public class ResolverClassesTest {
                 namespace other;
                 class Target extends dne.Nesting.Nested {
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, resolver);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**
@@ -403,13 +409,14 @@ public class ResolverClassesTest {
                 namespace other;
                 class Target extends test.Nesting.DoesNotExist {
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, resolver);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**
@@ -427,13 +434,14 @@ public class ResolverClassesTest {
                 namespace other;
                 class Target extends test.testing {
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, resolver);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     // DataTypeNoArray resolution should be fully tested with all cases above.
@@ -448,6 +456,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 """,
                 """
@@ -457,20 +466,17 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
 
-        ASTClassDeclaration testDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTFieldDeclaration integerField = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
                 ASTFieldDeclaration.class);
-        assertEquals(integer, integerField.getVarDeclList().get(0).getResolvedSymbol());
+        assertEquals(integer, integerField.getVarDeclList().get(0).getDeclSymbol().getDataType());
     }
 
     /**
@@ -481,6 +487,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 """,
                 """
@@ -490,11 +497,8 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, resolver);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**
@@ -505,6 +509,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 """,
                 """
@@ -516,20 +521,17 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
 
-        ASTClassDeclaration testDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
                 ASTMethodDeclaration.class);
-        assertEquals(integer, testMethod.getHeader().getResult().getResolvedSymbol());
+        assertEquals(integer, testMethod.getHeader().getResult().getResolvedDataType());
     }
 
     /**
@@ -540,6 +542,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 """,
                 """
@@ -549,16 +552,13 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ASTClassDeclaration testDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
                 ASTMethodDeclaration.class);
-        assertEquals(ParentSymbol.VOID, testMethod.getHeader().getResult().getResolvedSymbol());
+        assertEquals(TypeSymbol.VOID, testMethod.getHeader().getResult().getResolvedDataType());
     }
 
     /**
@@ -569,6 +569,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 """,
                 """
@@ -580,11 +581,8 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, resolver);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 2);
     }
 
     /**
@@ -595,6 +593,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 class String {}
                 """,
@@ -607,23 +606,20 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
         ParentSymbol string = ensureIsa(lang.getTable().get("String"), ParentSymbol.class);
 
-        ASTClassDeclaration testDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
                 ASTMethodDeclaration.class);
         ASTFormalParameterList params = testMethod.getHeader().getMethodDecl().getFormalParamList();
-        assertEquals(integer, params.get(0).getDataType().getResolvedSymbol());
-        assertEquals(string, params.get(1).getDataType().getResolvedSymbol());
+        assertEquals(integer, params.get(0).getDataType().getResolvedDataType());
+        assertEquals(string, params.get(1).getDataType().getResolvedDataType());
     }
 
     /**
@@ -634,6 +630,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 class String {}
                 """,
@@ -647,11 +644,8 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, resolver, 2);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 2);
     }
 
     /**
@@ -662,6 +656,7 @@ public class ResolverClassesTest {
         List<String> codes = List.of(
                 """
                 namespace spruce.lang;
+                class Any {}
                 class Integer {}
                 class String {}
                 """,
@@ -673,23 +668,55 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver resolver = getTopLevelResolver(global);
-        resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
         ParentSymbol string = ensureIsa(lang.getTable().get("String"), ParentSymbol.class);
 
-        ASTClassDeclaration testDecl = ensureIsa(ocus.get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTConstructorDeclaration constr = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
                 ASTConstructorDeclaration.class);
         ASTFormalParameterList params = constr.getConstructorDecl().getFormalParamList();
-        assertEquals(integer, params.get(0).getDataType().getResolvedSymbol());
-        assertEquals(string, params.get(1).getDataType().getResolvedSymbol());
+        assertEquals(integer, params.get(0).getDataType().getResolvedDataType());
+        assertEquals(string, params.get(1).getDataType().getResolvedDataType());
+    }
+
+    /**
+     * Tests implicit use-all for spruce.lang.
+     */
+    @Test
+    public void testImplicitUseAllSpruceLang() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                class Test {
+                    void test(Integer x, String y) {
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
+        ParentSymbol string = ensureIsa(lang.getTable().get("String"), ParentSymbol.class);
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        ASTFormalParameterList params = testMethod.getHeader().getMethodDecl().getFormalParamList();
+        assertEquals(integer, params.get(0).getDataType().getResolvedDataType());
+        assertEquals(string, params.get(1).getDataType().getResolvedDataType());
     }
 
     // TODO: Semantic analysis testing: superclass cycles,

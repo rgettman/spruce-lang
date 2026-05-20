@@ -28,12 +28,12 @@ public class SymbolCreatorTopLevelTest {
     public void testOcuNamespaceOnly() {
         TopLevelParser parser = ParserTopLevelTest.getTopLevelParser("namespace one.two.three;");
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
-        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
         creator.createSymbolTableForOcu(ocu);
 
-        TypeLookup lookup = creator.getTypeLookup();
+        GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
-        checkSymbolTable(lookup, GLOBAL, 2, Arrays.asList("one", TypeLookup.UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(lookup, GLOBAL, 2, Arrays.asList("one", GlobalLookup.UNNAMED_NAMESPACE_NAME));
 
         Optional<ParentSymbol> optNamespaceOne = lookup.getNamespace("one");
         assertTrue(optNamespaceOne.isPresent(), "Namespace one is not present!");
@@ -50,12 +50,12 @@ public class SymbolCreatorTopLevelTest {
                 namespace spruce.collections.concurrent;
                 """);
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
-        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
         creator.createSymbolTableForOcu(ocu);
 
-        TypeLookup lookup = creator.getTypeLookup();
+        GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
-        checkSymbolTable(lookup, GLOBAL, 2, Arrays.asList("spruce", TypeLookup.UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(lookup, GLOBAL, 2, Arrays.asList("spruce", GlobalLookup.UNNAMED_NAMESPACE_NAME));
 
         Optional<ParentSymbol> optFirstNamespace = lookup.getNamespace("spruce");
         assertTrue(optFirstNamespace.isPresent(), "Namespace spruce is not found!");
@@ -90,17 +90,17 @@ public class SymbolCreatorTopLevelTest {
                 class TestClass6 {}
                 """);
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
-        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
         creator.createSymbolTableForOcu(ocu);
 
-        TypeLookup lookup = creator.getTypeLookup();
+        GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
-        checkSymbolTable(lookup, GLOBAL, 1, Arrays.asList(TypeLookup.UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(lookup, GLOBAL, 1, Arrays.asList(GlobalLookup.UNNAMED_NAMESPACE_NAME));
 
-        Optional<ParentSymbol> optUnnamedNamespace = lookup.getNamespace(TypeLookup.UNNAMED_NAMESPACE_NAME);
+        Optional<ParentSymbol> optUnnamedNamespace = lookup.getNamespace(GlobalLookup.UNNAMED_NAMESPACE_NAME);
         assertTrue(optUnnamedNamespace.isPresent(), "Unnamed namespace is not found!");
         ParentSymbol unnamedNamespace = optUnnamedNamespace.get();
-        checkSymbol(unnamedNamespace, TypeLookup.UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE,
+        checkSymbol(unnamedNamespace, GlobalLookup.UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE,
                 FLAG_NONE, 6);
         assertSame(unnamedNamespace, ocu.getDeclSymbol());
 
@@ -123,13 +123,13 @@ public class SymbolCreatorTopLevelTest {
                 """);
         ASTOrdinaryCompilationUnit ocu1 = parser1.parseOrdinaryCompilationUnit();
         ASTOrdinaryCompilationUnit ocu2 = parser2.parseOrdinaryCompilationUnit();
-        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
         creator.createSymbolTableForOcu(ocu1);
         creator.createSymbolTableForOcu(ocu2);
 
-        TypeLookup lookup = creator.getTypeLookup();
+        GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
-        checkSymbolTable(lookup, GLOBAL, 2, Arrays.asList("spruce", TypeLookup.UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(lookup, GLOBAL, 2, Arrays.asList("spruce", GlobalLookup.UNNAMED_NAMESPACE_NAME));
 
         Optional<ParentSymbol> optSpruceNamespace = lookup.getNamespace("spruce");
         assertTrue(optSpruceNamespace.isPresent(), "Namespace spruce is not found!");
@@ -164,9 +164,9 @@ public class SymbolCreatorTopLevelTest {
                 class SameName {}
                 """);
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
-        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
         creator.createSymbolTableForOcu(ocu);
-        expectError(creator.getTypeLookup(), creator.getTopLevelSymbolCreator(), 2);
+        expectError(creator.getGlobalLookup(), creator.getTopLevelSymbolCreator(), 2);
     }
 
     /**
@@ -183,17 +183,9 @@ public class SymbolCreatorTopLevelTest {
                 class conflict() {}
                 """);
         ASTOrdinaryCompilationUnit ocu2 = parser2.parseOrdinaryCompilationUnit();
-        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new TypeLookup());
+        SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
         creator.createSymbolTableForOcu(ocu1);
         creator.createSymbolTableForOcu(ocu2);
-        expectError(creator.getTypeLookup(), creator.getTopLevelSymbolCreator(), 2);
-    }
-
-    /**
-     * Helper method to get a <code>TopLevelSymbolCreator</code>.
-     * @return A <code>TopLevelSymbolCreator</code>.
-     */
-    public static TopLevelSymbolCreator getTopLevelSymbolCreator() {
-        return new SymbolCreator(new BaseMessageProducer(), new TypeLookup()).getTopLevelSymbolCreator();
+        expectError(creator.getGlobalLookup(), creator.getTopLevelSymbolCreator(), 2);
     }
 }

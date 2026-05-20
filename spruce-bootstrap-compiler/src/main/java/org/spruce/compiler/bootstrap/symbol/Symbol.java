@@ -46,6 +46,14 @@ public class Symbol {
         public boolean isLocal() {
             return this == LOCAL || this == PARAMETER;
         }
+
+        /**
+         * Returns whether this <code>Kind</code> is a variable.
+         * @return Whether this <code>Kind</code> is a variable.
+         */
+        public boolean isVariable() {
+            return isLocal() || this == FIELD;
+        }
     }
 
     private final Location myLocation;
@@ -56,8 +64,7 @@ public class Symbol {
 
     /**
      * Constructs a <code>Symbol</code> at the given <code>Location</code>,
-     * with the given name, what <code>SymbolTable</code> this belongs to, and
-     * a child <code>SymbolTable</code>.
+     * with the given name, and what <code>SymbolTable</code> this belongs to.
      * @param loc The <code>Location</code> of this <code>Symbol</code>.
      * @param name The name of this symbol.
      * @param kind the <code>Kind</code> of this <code>Symbol</code>.

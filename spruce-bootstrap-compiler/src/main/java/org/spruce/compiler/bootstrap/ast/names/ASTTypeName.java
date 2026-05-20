@@ -3,7 +3,9 @@ package org.spruce.compiler.bootstrap.ast.names;
 import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTListNode;
+import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTTypeName</code> is a node representing a simple type name or
@@ -15,7 +17,9 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;NamespaceOrTypeName . Identifier
  * </em>
  */
-public class ASTTypeName extends ASTListNode<ASTIdentifier> {
+public class ASTTypeName extends ASTListNode<ASTIdentifier> implements DataTypeResolution {
+    private TypeSymbol myResolvedSymbol;
+
     /**
      * Constructs an <code>ASTTypeName</code> at the given <code>Location</code>
      * and with at least one node as its children.
@@ -32,5 +36,15 @@ public class ASTTypeName extends ASTListNode<ASTIdentifier> {
      */
     public ASTNamespaceOrTypeName convertToNamespaceOrTypeName() {
         return new ASTNamespaceOrTypeName(getLocation(), getTypedChildren());
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedSymbol = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedSymbol;
     }
 }

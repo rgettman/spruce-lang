@@ -5,10 +5,8 @@ import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
-import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**
  * <p>An <code>ASTMethodDeclarator</code> is an identifier followed by an
@@ -20,10 +18,9 @@ import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
  * &nbsp;&nbsp;&nbsp;&nbsp;Identifier ( [FormalParameterList] ) [MutModifier]
  * </em>
  */
-public class ASTMethodDeclarator extends ASTParentNode implements SymbolDeclaration<ParentSymbol> {
+public class ASTMethodDeclarator extends ASTParentNode {
     private final ASTIdentifier myName;
     private final ASTFormalParameterList myFormalParamList;
-    private ParentSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTMethodDeclarator</code> at the given <code>Location</code>
@@ -53,16 +50,6 @@ public class ASTMethodDeclarator extends ASTParentNode implements SymbolDeclarat
      */
     public ASTFormalParameterList getFormalParamList() {
         return myFormalParamList;
-    }
-
-    @Override
-    public void setDeclSymbol(ParentSymbol symbol) {
-        myDeclSymbol = symbol;
-    }
-
-    @Override
-    public ParentSymbol getDeclSymbol(){
-        return myDeclSymbol;
     }
 
     @Override

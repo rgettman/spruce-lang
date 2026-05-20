@@ -1,6 +1,4 @@
-package org.spruce.compiler.bootstrap.ast;
-
-import org.spruce.compiler.bootstrap.symbol.Symbol;
+package org.spruce.compiler.bootstrap.symbol;
 
 /**
  * A <code>SymbolDeclaration</code> is anything that declares a symbol.  It is

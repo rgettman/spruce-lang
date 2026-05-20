@@ -5,7 +5,7 @@ import java.util.List;
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 
 /**
  * A <code>BasicResolver</code> provides basic symbol resolution functionality.
@@ -16,7 +16,7 @@ import org.spruce.compiler.bootstrap.symbol.TypeLookup;
 public class BasicResolver {
     private final Resolver myResolver;
     private final MessageProducer myMsgProducer;
-    private final TypeLookup myGlobalLookup;
+    private final GlobalLookup myGlobalLookup;
 
     /**
      * Constructs a <code>BasicResolver</code> using a
@@ -24,9 +24,9 @@ public class BasicResolver {
      *
      * @param resolver An <code>Resolver</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param global The global <code>TypeLookup</code>.
+     * @param global The <code>GlobalLookup</code>.
      */
-    public BasicResolver(Resolver resolver, MessageProducer msgProducer, TypeLookup global) {
+    public BasicResolver(Resolver resolver, MessageProducer msgProducer, GlobalLookup global) {
         myResolver = resolver;
         myMsgProducer = msgProducer;
         myGlobalLookup = global;
@@ -46,6 +46,22 @@ public class BasicResolver {
      */
     public ClassesResolver getClassesResolver() {
         return myResolver.getClassesResolver();
+    }
+
+    /**
+     * Returns the <code>LiteralsResolver</code>.
+     * @return The <code>LiteralsResolver</code>.
+     */
+    public LiteralsResolver getLiteralsResolver() {
+        return myResolver.getLiteralsResolver();
+    }
+
+    /**
+     * Returns the <code>NamesResolver</code>.
+     * @return The <code>NamesResolver</code>.
+     */
+    public NamesResolver getNamesResolver() {
+        return myResolver.getNamesResolver();
     }
 
     /**
@@ -72,10 +88,10 @@ public class BasicResolver {
     }
 
     /**
-     * Returns the global <code>TypeLookup</code>.
-     * @return The global <code>TypeLookup</code>.
+     * Returns the <code>GlobalLookup</code>.
+     * @return The <code>GlobalLookup</code>.
      */
-    public TypeLookup getGlobalLookup() {
+    public GlobalLookup getGlobalLookup() {
         return myGlobalLookup;
     }
 
@@ -110,6 +126,15 @@ public class BasicResolver {
      */
     public void note(Location loc, String msg) {
         myMsgProducer.note(loc, msg);
+    }
+
+    /**
+     * Helper method to produce an error message of symbol not found.
+     * @param loc The <code>Location</code>.
+     * @param symbolName The symbol name that wasn't found.
+     */
+    public void errorSymbolNotFound(Location loc, String symbolName) {
+        error(loc, "Symbol '" + symbolName + "' not found.");
     }
 
     /**

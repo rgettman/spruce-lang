@@ -255,7 +255,7 @@ public class ExpressionsParser extends BasicParser {
         else {
             badChild = new ASTKeywordNode(loc, UNKNOWN);
         }
-        return new ASTPrimary(loc, badChild, BAD);
+        return new ASTPrimary(loc, new ASTPrimary.ASTBadPrimary(loc, badChild), BAD);
     }
 
     /**
@@ -314,7 +314,8 @@ public class ExpressionsParser extends BasicParser {
         else if (isCurr(TokenType.SELF)) {
             // self
             ASTKeywordNode keywordSelf = parseSelf();
-            primary = new ASTPrimary(loc, keywordSelf, ASTPrimary.Type.SELF);
+            ASTSelf self = new ASTSelf(loc, keywordSelf);
+            primary = new ASTPrimary(loc, self, ASTPrimary.Type.SELF);
         }
         else if (isCurr(SUPER)) {
             ASTKeywordNode sooper = parseSuper();

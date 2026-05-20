@@ -1,5 +1,6 @@
 package org.spruce.compiler.bootstrap.ast.expressions;
 
+import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.ParentNode;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 
@@ -11,5 +12,6 @@ import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
  * &nbsp;&nbsp;&nbsp;&nbsp;Pattern
  * </em>
  */
-public sealed interface ASTIsaTarget extends ParentNode permits ASTDataType/*, ASTPattern*/ {
+public sealed interface ASTIsaTarget extends ParentNode, DataTypeResolution
+        permits ASTDataType/*, ASTPattern*/ {
 }

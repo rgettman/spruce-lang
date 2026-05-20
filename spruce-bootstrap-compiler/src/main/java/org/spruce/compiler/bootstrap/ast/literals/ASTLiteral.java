@@ -1,6 +1,7 @@
 package org.spruce.compiler.bootstrap.ast.literals;
 
 import org.spruce.compiler.bootstrap.ast.ValueNode;
+import org.spruce.compiler.bootstrap.ast.expressions.ASTPrimaryChild;
 
 /**
  * <p>An <code>ASTLiteral</code> is a node representing a literal value.</p>
@@ -14,6 +15,7 @@ import org.spruce.compiler.bootstrap.ast.ValueNode;
  * &nbsp;&nbsp;&nbsp;&nbsp;StringLiteral
  * </em>
  */
-public sealed interface ASTLiteral extends ValueNode permits ASTBooleanLiteral, ASTCharacterLiteral,
-        ASTFloatingPointLiteral, ASTIntegerLiteral, ASTStringLiteral {
+public sealed interface ASTLiteral extends ValueNode, ASTPrimaryChild
+        permits ASTBooleanLiteral, ASTCharacterLiteral, ASTFloatingPointLiteral,
+                ASTIntegerLiteral, ASTStringLiteral {
 }

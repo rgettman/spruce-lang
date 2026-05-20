@@ -1,7 +1,7 @@
 package org.spruce.compiler.bootstrap.ast.statements;
 
 import org.spruce.compiler.bootstrap.ast.ParentNode;
-import org.spruce.compiler.bootstrap.ast.SymbolDeclaration;
+import org.spruce.compiler.bootstrap.symbol.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 
 /**

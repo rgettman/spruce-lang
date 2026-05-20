@@ -4,8 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.symbol.NamespaceResolution;
 import org.spruce.compiler.bootstrap.ast.Node;
-import org.spruce.compiler.bootstrap.ast.SymbolReference;
 import org.spruce.compiler.bootstrap.ast.names.ASTNamespaceOrTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
@@ -20,9 +20,9 @@ import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
  * </em>
  */
 public final class ASTUseAllDeclaration extends ASTParentNode
-        implements ASTUseDeclaration, SymbolReference<ParentSymbol> {
+        implements ASTUseDeclaration, NamespaceResolution {
     private final ASTNamespaceOrTypeName myNamespaceOrTypeName;
-    private ParentSymbol myResolvedSymbol;
+    private ParentSymbol myResolvedNamespace;
 
     /**
      * Constructs an <code>ASTUseAllDeclaration</code> at the given <code>Location</code>
@@ -44,13 +44,13 @@ public final class ASTUseAllDeclaration extends ASTParentNode
     }
 
     @Override
-    public void setResolvedSymbol(ParentSymbol symbol) {
-        myResolvedSymbol = symbol;
+    public void setResolvedNamespace(ParentSymbol symbol) {
+        myResolvedNamespace = symbol;
     }
 
     @Override
-    public ParentSymbol getResolvedSymbol() {
-        return myResolvedSymbol;
+    public ParentSymbol getResolvedNamespace() {
+        return myResolvedNamespace;
     }
 
     @Override

@@ -7,11 +7,11 @@ import java.util.Optional;
 import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
-import org.spruce.compiler.bootstrap.ast.SymbolReference;
+import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTIsaTarget;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTDataType</code> is a base data type optionally followed by a
@@ -24,10 +24,10 @@ import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
  * &nbsp;&nbsp;&nbsp;&nbsp;BaseDataType ?
  * </em>
  */
-public final class ASTDataType extends ASTParentNode implements ASTIsaTarget, SymbolReference<ParentSymbol> {
+public final class ASTDataType extends ASTParentNode implements ASTIsaTarget, DataTypeResolution {
     private final ASTBaseDataType myBaseDataType;
     private final ASTKeywordNode mySuffixOperator;
-    private ParentSymbol myResolvedSymbol;
+    private TypeSymbol myResolvedDataType;
 
     /**
      * Constructs an <code>ASTDataType</code> at the given <code>Location</code>
@@ -87,13 +87,13 @@ public final class ASTDataType extends ASTParentNode implements ASTIsaTarget, Sy
     }
 
     @Override
-    public void setResolvedSymbol(ParentSymbol symbol) {
-        myResolvedSymbol = symbol;
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
     }
 
     @Override
-    public ParentSymbol getResolvedSymbol() {
-        return myResolvedSymbol;
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 
     @Override

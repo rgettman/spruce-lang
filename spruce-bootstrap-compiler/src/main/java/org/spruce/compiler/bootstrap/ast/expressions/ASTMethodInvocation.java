@@ -12,6 +12,7 @@ import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 import org.spruce.compiler.bootstrap.ast.statements.ASTStatementExpression;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTMethodInvocation</code> is a primary with an argument list
@@ -26,7 +27,8 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . super . [TypeArguments] Identifier ( ArgumentList )
  * </em>
  */
-public final class ASTMethodInvocation extends ASTParentNode implements ASTStatementExpression {
+public final class ASTMethodInvocation extends ASTParentNode
+        implements ASTStatementExpression, ASTPrimaryChild {
     private final ASTTypeName myTypeName;
     private final ASTKeywordNode mySooper;
     private final ASTExpressionName myExprName;
@@ -34,6 +36,7 @@ public final class ASTMethodInvocation extends ASTParentNode implements ASTState
     //private final ASTTypeArgumentList myTypeArgs;
     private final ASTIdentifier myIdentifier;
     private final ASTArgumentList myArgsList;
+    private TypeSymbol myResolvedDataType;
 
     /**
      * Constructs an <code>ASTMethodInvocation</code> at the given <code>Location</code>
@@ -228,6 +231,16 @@ public final class ASTMethodInvocation extends ASTParentNode implements ASTState
      */
     public Optional<ASTArgumentList> getArgumentList() {
         return Optional.ofNullable(myArgsList);
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 
     @Override

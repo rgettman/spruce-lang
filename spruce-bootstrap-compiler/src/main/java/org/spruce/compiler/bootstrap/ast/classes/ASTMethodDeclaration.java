@@ -7,9 +7,11 @@ import java.util.List;
 import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
+import org.spruce.compiler.bootstrap.symbol.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
+import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 
 /**
  * <p>An <code>ASTMethodDeclaration</code> is an optional MethodModifierList,
@@ -20,10 +22,12 @@ import org.spruce.compiler.bootstrap.scanner.TokenType;
  * &nbsp;&nbsp;&nbsp;&nbsp;[MethodModifierList] MethodHeader MethodBody
  * </em>
  */
-public final class ASTMethodDeclaration extends ASTParentNode implements ASTClassPart {
+public final class ASTMethodDeclaration extends ASTParentNode implements ASTClassPart,
+        SymbolDeclaration<ParameterizedSymbol> {
     private final ASTMethodModifierList myMethodModList;
     private final ASTMethodHeader myHeader;
     private final ASTMethodBody myBody;
+    private ParameterizedSymbol myDeclSymbol;
 
     /**
      * Constructs an <code>ASTMethodDeclaration</code> at the given <code>Location</code>
@@ -83,6 +87,16 @@ public final class ASTMethodDeclaration extends ASTParentNode implements ASTClas
     @Override
     public List<ASTIdentifier> getNames() {
         return Arrays.asList(myHeader.getMethodDecl().getName());
+    }
+
+    @Override
+    public void setDeclSymbol(ParameterizedSymbol symbol) {
+        myDeclSymbol = symbol;
+    }
+
+    @Override
+    public ParameterizedSymbol getDeclSymbol(){
+        return myDeclSymbol;
     }
 
     @Override

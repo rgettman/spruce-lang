@@ -6,11 +6,14 @@ import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.symbol.EntityResolution;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 //import org.spruce.compiler.bootstrap.ast.statements.ASTResource;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTFieldAccess</code> is primary, "super", or TypeName "." "super"
@@ -23,11 +26,13 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . super . Identifier
  * </em>
  */
-public final class ASTFieldAccess extends ASTParentNode implements /*ASTResource,*/ ASTLeftHandSide {
+public final class ASTFieldAccess extends ASTParentNode
+        implements /*ASTResource,*/ ASTLeftHandSide, ASTPrimaryChild, EntityResolution {
     private final ASTTypeName myTypeName;
     private final ASTKeywordNode mySooper;
     private final ASTPrimary myPrimary;
     private final ASTIdentifier myIdentifier;
+    private EntitySymbol myResolvedEntity;
 
     /**
      * Constructs an <code>ASTFieldAccess</code> given a Primary and an Identifier.
@@ -102,6 +107,26 @@ public final class ASTFieldAccess extends ASTParentNode implements /*ASTResource
      */
     public ASTIdentifier getIdentifier() {
         return myIdentifier;
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedEntity.setDataType(symbol);
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedEntity != null ? myResolvedEntity.getDataType() : null;
+    }
+
+    @Override
+    public void setResolvedEntity(EntitySymbol symbol) {
+        myResolvedEntity = symbol;
+    }
+
+    @Override
+    public EntitySymbol getResolvedEntity() {
+        return myResolvedEntity;
     }
 
     @Override

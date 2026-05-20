@@ -397,9 +397,10 @@ public class ParserExpressionsTest {
         ExpressionsParser parser = getExpressionsParser("self");
         ASTPrimary node = parser.parsePrimary();
         ensureNoErrors(node, parser);
-        checkPrimary(node, ASTPrimary.Type.SELF, ASTKeywordNode.class);
-        ASTKeywordNode self = TestUtility.ensureIsa(node.getChild(), ASTKeywordNode.class);
-        assertEquals(TokenType.SELF, self.getKeyword());
+        checkPrimary(node, ASTPrimary.Type.SELF, ASTSelf.class);
+        ASTSelf self = TestUtility.ensureIsa(node.getChild(), ASTSelf.class);
+        ASTKeywordNode selfKeyword = TestUtility.ensureIsa(self.getSelfKeyword(), ASTKeywordNode.class);
+        assertEquals(TokenType.SELF, selfKeyword.getKeyword());
     }
 
     /**
@@ -632,7 +633,7 @@ public class ParserExpressionsTest {
         ASTIdentifier fieldName2 = fieldAccess2.getIdentifier();
         assertEquals("field2", fieldName2.getValue());
 
-        ASTPrimary pMethod1 = fieldAccess2.getPrimary().get();
+        ASTPrimary pMethod1 = fieldAccess2.getPrimary().orElseThrow();
         checkPrimary(pMethod1, METHOD_INVOCATION, ASTMethodInvocation.class);
         ASTMethodInvocation method1 = TestUtility.ensureIsa(pMethod1.getChild(), ASTMethodInvocation.class);
         checkMethodInvocation(method1, false, false, false,
@@ -647,7 +648,7 @@ public class ParserExpressionsTest {
         ASTIdentifier fieldName1 = fieldAccess1.getIdentifier();
         assertEquals("field1", fieldName1.getValue());
 
-        ASTPrimary pInnerCice = TestUtility.ensureIsa(fieldAccess1.getPrimary().get(), ASTPrimary.class);
+        ASTPrimary pInnerCice = TestUtility.ensureIsa(fieldAccess1.getPrimary().orElseThrow(), ASTPrimary.class);
         checkPrimary(pInnerCice, ASTPrimary.Type.CLASS_INSTANCE_CREATION_EXPR, ASTClassInstanceCreationExpression.class);
     }
 

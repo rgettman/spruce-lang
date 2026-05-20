@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTUnqualifiedClassInstanceCreationExpression</code> is "new"
@@ -17,9 +19,11 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;new [TypeArguments] TypeToInstantiate ( [ArgumentList] ) ClassBody
  * </em>
  */
-public class ASTUnqualifiedClassInstanceCreationExpression extends ASTParentNode {
+public class ASTUnqualifiedClassInstanceCreationExpression extends ASTParentNode
+        implements DataTypeResolution {
     private final ASTTypeToInstantiate myTti;
     private final ASTArgumentList myArgumentList;
+    private TypeSymbol myResolvedSymbol;
 
     /**
      * Constructs an <code>ASTUnqualifiedClassInstanceCreationExpression</code>
@@ -49,6 +53,16 @@ public class ASTUnqualifiedClassInstanceCreationExpression extends ASTParentNode
      */
     public ASTArgumentList getArgumentList() {
         return myArgumentList;
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedSymbol = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedSymbol;
     }
 
     @Override

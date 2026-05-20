@@ -8,6 +8,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTUnaryExpression</code> is an expression with a unary
@@ -23,6 +24,7 @@ import org.spruce.compiler.bootstrap.scanner.TokenType;
 public final class ASTUnaryExpression extends ASTParentNode implements ASTValueExpression {
     private final ASTValueExpression myFirst;
     private final TokenType myOperation;
+    private TypeSymbol myResolvedDataType;
 
     /**
      * Constructs an <code>ASTUnaryExpression</code> at the given <code>Location</code>
@@ -53,6 +55,16 @@ public final class ASTUnaryExpression extends ASTParentNode implements ASTValueE
      */
     public TokenType getOperation() {
         return myOperation;
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 
     @Override

@@ -14,14 +14,14 @@ import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.test.parser.ParserTopLevelTest;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.spruce.compiler.bootstrap.symbol.Symbol.*;
 import static org.spruce.compiler.bootstrap.symbol.Symbol.Kind.PARAMETER;
 import static org.spruce.compiler.bootstrap.symbol.SymbolTable.Scope.*;
-import static org.spruce.compiler.bootstrap.symbol.TypeLookup.UNNAMED_NAMESPACE_NAME;
+import static org.spruce.compiler.bootstrap.symbol.GlobalLookup.UNNAMED_NAMESPACE_NAME;
 import static org.spruce.compiler.bootstrap.test.symbol.SymbolCreatorTestUtility.*;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
@@ -35,7 +35,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberInnerClass() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                 class Outer {
                     class Inner {}
                 }
@@ -69,7 +69,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberConstructor() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                 class HasMember {
                     constructor() {}
                 }
@@ -96,7 +96,7 @@ public class SymbolCreatorClassesTest {
         checkSymbol(ensureIsa(constructorDecl, ParentSymbol.class), symbolName, Kind.CONSTRUCTOR, FLAG_NONE,0);
 
         ASTConstructorDeclaration constructor = ensureIsa(typeDecl.getMembers().get(0), ASTConstructorDeclaration.class);
-        assertSame(constructorDecl, constructor.getConstructorDecl().getDeclSymbol());
+        assertSame(constructorDecl, constructor.getDeclSymbol());
     }
 
     /**
@@ -104,7 +104,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberConstructorOverload() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                 class HasMember {
                     constructor() {}
                     constructor(Integer foo) {}
@@ -133,13 +133,13 @@ public class SymbolCreatorClassesTest {
         checkSymbol(ensureIsa(constructorDecl, ParameterizedSymbol.class), symbolName, Kind.CONSTRUCTOR,
                 FLAG_NONE,0, 0);
         ASTConstructorDeclaration constructor = ensureIsa(typeDecl.getMembers().get(0), ASTConstructorDeclaration.class);
-        assertSame(constructorDecl, constructor.getConstructorDecl().getDeclSymbol());
+        assertSame(constructorDecl, constructor.getDeclSymbol());
 
         Symbol constructorDecl2 = innerTable.get(symbolName2);
         checkSymbol(ensureIsa(constructorDecl2, ParameterizedSymbol.class), symbolName2, Kind.CONSTRUCTOR,
                 FLAG_NONE,1, 1);
         ASTConstructorDeclaration constructor2 = ensureIsa(typeDecl.getMembers().get(1), ASTConstructorDeclaration.class);
-        assertSame(constructorDecl2, constructor2.getConstructorDecl().getDeclSymbol());
+        assertSame(constructorDecl2, constructor2.getDeclSymbol());
     }
 
     /**
@@ -147,7 +147,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberFieldDeclarationVarMods() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                 class HasMember {
                     String immutable;
                 }
@@ -180,7 +180,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberFieldDeclaration() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                 class HasMember {
                     String foo;
                     Int bar, jazz;
@@ -222,7 +222,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberFieldsSameName() {
-        createTypeLookupWithErrors("""
+        createGlobalLookupWithErrors("""
                 class DupeFieldSymbols {
                     String foo;
                     Int foo;
@@ -235,7 +235,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberConstant() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                 class HasMember {
                     constant String BAR = "bar";
                 }
@@ -266,7 +266,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberMethodDeclaration() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                class HasMember {
                     void foo(String bar) {
                         Widget baz;
@@ -294,7 +294,7 @@ public class SymbolCreatorClassesTest {
         checkSymbol(ensureIsa(fooSymbol, ParameterizedSymbol.class), symbolName, Kind.METHOD,
                 FLAG_NONE,2, 1);
         ASTMethodDeclaration fooMethod = ensureIsa(typeDecl.getMembers().get(0), ASTMethodDeclaration.class);
-        assertSame(fooSymbol, fooMethod.getHeader().getMethodDecl().getDeclSymbol());
+        assertSame(fooSymbol, fooMethod.getDeclSymbol());
     }
 
     /**
@@ -302,7 +302,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testMemberMethodOverloads() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                 class HasMember {
                     String foo;
                     void foo() {}
@@ -337,14 +337,14 @@ public class SymbolCreatorClassesTest {
         checkSymbol(ensureIsa(fooSymbol2, ParameterizedSymbol.class), symbolName, Kind.METHOD,
                 FLAG_NONE,0, 0);
         ASTMethodDeclaration fooMethod = ensureIsa(typeDecl.getMembers().get(1), ASTMethodDeclaration.class);
-        assertSame(fooSymbol2, fooMethod.getHeader().getMethodDecl().getDeclSymbol());
+        assertSame(fooSymbol2, fooMethod.getDeclSymbol());
 
         symbolName = "foo(String)";
         Symbol fooSymbol3 = innerTable.get(symbolName);
         checkSymbol(ensureIsa(fooSymbol3, ParameterizedSymbol.class), symbolName, Kind.METHOD,
                 FLAG_NONE,1, 1);
         ASTMethodDeclaration fooStringMethod = ensureIsa(typeDecl.getMembers().get(2), ASTMethodDeclaration.class);
-        assertSame(fooSymbol3, fooStringMethod.getHeader().getMethodDecl().getDeclSymbol());
+        assertSame(fooSymbol3, fooStringMethod.getDeclSymbol());
     }
 
     /**
@@ -352,7 +352,7 @@ public class SymbolCreatorClassesTest {
      */
     @Test
     public void testFormalParameterList() {
-        Pair pair = createTypeLookupNoErrors("""
+        Pair pair = createGlobalLookupNoErrors("""
                 class HasMember {
                     String foo(String first, String last, Integer age, String ssn) {}
                 }
@@ -397,20 +397,20 @@ public class SymbolCreatorClassesTest {
      * @return A <code>ClassesSymbolCreator</code>.
      */
     public static ClassesSymbolCreator getClassesSymbolCreator() {
-        return new SymbolCreator(new BaseMessageProducer(), new TypeLookup()).getClassesSymbolCreator();
+        return new SymbolCreator(new BaseMessageProducer(), new GlobalLookup()).getClassesSymbolCreator();
     }
 
     /**
      * Helper method to get a <code>Pair</code> consisting of a
-     * <code>TypeLookup</code> and <code>SymbolCreator </code>for a top level
+     * <code>GlobalLookup</code> and <code>SymbolCreator </code>for a top level
      * type declaration directly from code.  Ensures no errors.
      * @param code The code for the top level type declaration.
-     * @return A <code>Pair</code> consisting of a <code>TypeLookup</code> and
+     * @return A <code>Pair</code> consisting of a <code>GlobalLookup</code> and
      *     a <code>SymbolCreator</code>.
      */
-    public static Pair createTypeLookupNoErrors(String code) {
+    public static Pair createGlobalLookupNoErrors(String code) {
         ClassesSymbolCreator creator = getClassesSymbolCreator();
-        Pair pair = createTypeLookup(code, creator);
+        Pair pair = createGlobalLookup(code, creator);
         ensureNoErrors(pair.lookup(), creator);
         return pair;
     }
@@ -421,22 +421,22 @@ public class SymbolCreatorClassesTest {
      * @param code The code for the top level type declaration.
      * @param expNumErrors The number of errors expected.
      */
-    public static void createTypeLookupWithErrors(String code, int expNumErrors) {
+    public static void createGlobalLookupWithErrors(String code, int expNumErrors) {
         ClassesSymbolCreator creator = getClassesSymbolCreator();
-        Pair pair = createTypeLookup(code, creator);
+        Pair pair = createGlobalLookup(code, creator);
         expectError(pair.lookup(), creator, expNumErrors);
     }
 
-    private static Pair createTypeLookup(String code, ClassesSymbolCreator creator) {
+    private static Pair createGlobalLookup(String code, ClassesSymbolCreator creator) {
         TopLevelParser topLevelParser = ParserTopLevelTest.getTopLevelParser(code);
         ASTTypeDeclaration typeDecl = topLevelParser.parseTypeDeclaration();
-        Optional<ParentSymbol> optUnnamedNamespace = creator.getTypeLookup()
+        Optional<ParentSymbol> optUnnamedNamespace = creator.getGlobalLookup()
                 .getNamespace(UNNAMED_NAMESPACE_NAME);
         assertTrue(optUnnamedNamespace.isPresent());
         creator.createSymbolsForTopLevelTypeDeclaration(typeDecl, optUnnamedNamespace.get());
-        return new Pair(typeDecl, creator.getTypeLookup());
+        return new Pair(typeDecl, creator.getGlobalLookup());
     }
 
-    public record Pair(ASTTypeDeclaration typeDecl, TypeLookup lookup) {
+    public record Pair(ASTTypeDeclaration typeDecl, GlobalLookup lookup) {
     }
 }

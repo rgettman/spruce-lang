@@ -18,7 +18,8 @@ import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * A <code>TopLevelResolver</code> is a <code>BasicResolver</code> that resolves
@@ -31,15 +32,15 @@ public class TopLevelResolver extends BasicResolver {
      * Constructs a <code>TopLevelResolver</code>.
      * @param resolver An <code>Resolver</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param global The global <code>TypeLookup</code>.
+     * @param global The <code>GlobalLookup</code>.
      */
-    public TopLevelResolver(Resolver resolver, MessageProducer msgProducer, TypeLookup global) {
+    public TopLevelResolver(Resolver resolver, MessageProducer msgProducer, GlobalLookup global) {
         super(resolver, msgProducer, global);
     }
 
     /**
      * Resolve all symbols in all <code>OrdinaryCompilationUnit</code>s along
-     * with the global <code>TypeLookup</code>.
+     * with the <code>GlobalLookup</code>.
      * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
      */
     public void resolveOrdinaryCompilationUnits(List<ASTOrdinaryCompilationUnit> units) {
@@ -50,11 +51,11 @@ public class TopLevelResolver extends BasicResolver {
 
     /**
      * Resolve all symbols in an <code>OrdinaryCompilationUnit</code> using the
-     * given <code>TypeLookup</code>.
+     * given <code>GlobalLookup</code>.
      * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
      */
     public void resolveOrdinaryCompilationUnit(ASTOrdinaryCompilationUnit ocu) {
-        // Keeps track of used namespaces being brought into scope.
+        // Keeps track of used simple names being brought into scope.
         Map<String, ParentSymbol> using = new HashMap<>();
         // Keep track of parent symbol tables of simple names to detect a
         // potential conflict.
@@ -72,9 +73,11 @@ public class TopLevelResolver extends BasicResolver {
             resolveUseDeclaration(useDecl, namesUsed, using);
         }
 
+        ensureImplicitUseAll(using);
+
         // Next: Loop through the Type Declarations.
         ParentSymbol namespace = ocu.getDeclSymbol();
-        ResolutionContext ctx = new ResolutionContext(getGlobalLookup(), namespace, using);
+        ResolutionContext ctx = new ResolutionContext(using, namespace);
         ClassesResolver classesResolver = getClassesResolver();
         for (ASTTypeDeclaration typeDecl : ocu.getTypeDeclList().getTypedChildren()) {
             classesResolver.resolveTypeDeclaration(typeDecl, ctx);
@@ -104,27 +107,24 @@ public class TopLevelResolver extends BasicResolver {
     /**
      * Resolve all symbols in a <code>UseTypeDeclaration</code>.
      * @param utd An <code>ASTUseTypeDeclaration</code>.
-     * @param namesUsed A <code>Map</code> of simple names to parent
+     * @param simpleNames A <code>Map</code> of simple names to parent
      *                    <code>SymbolTable</code>s used to detect a conflict with
      *                    the same simple name in a different namespace.
      * @param using A <code>Map</code> of simple names to <code>ParentSymbols</code>
      *              brought into scope by a Use Declaration.  This will be
      *              referenced later during data type symbol resolution.
      */
-    public void resolveUseTypeDeclaration(ASTUseTypeDeclaration utd, Map<String, SymbolTable> namesUsed,
+    public void resolveUseTypeDeclaration(ASTUseTypeDeclaration utd, Map<String, SymbolTable> simpleNames,
                                           Map<String, ParentSymbol> using) {
-        List<ASTIdentifier> typeIds = utd.getTypename().getTypedChildren();
-        ASTIdentifier typeId = typeIds.getLast();
-        SymbolTable currTable = getGlobalLookup();
-        Optional<ParentSymbol> optResolved = resolveNamespaceOrTypeNameIds(typeIds, currTable);
-        if (optResolved.isEmpty()) {
-            return;
-        }
-
-        ParentSymbol resolved = optResolved.get();
-        if (ensureIsTypeAndInsert(typeId.getLocation(), resolved, namesUsed)) {
-            utd.setResolvedSymbol(resolved);
-            using.put(resolved.getName(), resolved);
+        Optional<TypeSymbol> optResolved = getNamesResolver().resolveUseTypeName(utd.getTypename());
+        if (optResolved.isPresent()) {
+            TypeSymbol resolved = optResolved.get();
+            List<ASTIdentifier> typeIds = utd.getTypename().getTypedChildren();
+            ASTIdentifier typeId = typeIds.getLast();
+            if (ensureIsTypeAndInsert(typeId.getLocation(), resolved, simpleNames)) {
+                utd.setResolvedDataType(resolved);
+                using.put(resolved.getName(), resolved);
+            }
         }
     }
 
@@ -140,9 +140,8 @@ public class TopLevelResolver extends BasicResolver {
      */
     public void resolveUseMultDeclaration(ASTUseMultDeclaration umd, Map<String, SymbolTable> simpleNames,
                                           Map<String, ParentSymbol> using) {
-        List<ASTIdentifier> namespaceOrTypeIds = umd.getNamespaceOrTypeName().getTypedChildren();
-        SymbolTable currTable = getGlobalLookup();
-        Optional<ParentSymbol> optResolved = resolveNamespaceOrTypeNameIds(namespaceOrTypeIds, currTable);
+        Optional<ParentSymbol> optResolved = getNamesResolver().resolveNamespaceOrTypeName(
+                umd.getNamespaceOrTypeName());
         if (optResolved.isEmpty()) {
             return;
         }
@@ -156,12 +155,12 @@ public class TopLevelResolver extends BasicResolver {
             if (table.containsSymbolName(name)) {
                 ParentSymbol resolved = (ParentSymbol) table.get(name);
                 if (ensureIsTypeAndInsert(typeId.getLocation(), resolved, simpleNames)) {
-                    umd.addResolvedSymbol(resolved);
+                    umd.addResolvedDataType((TypeSymbol) resolved);
                     using.put(resolved.getName(), resolved);
                 }
             }
             else {
-                error(typeId.getLocation(), "Symbol '" + name + "' not found.");
+                errorSymbolNotFound(typeId.getLocation(), name);
             }
         }
     }
@@ -174,12 +173,11 @@ public class TopLevelResolver extends BasicResolver {
      *              referenced later during data type symbol resolution.
      */
     public void resolveUseAllDeclaration(ASTUseAllDeclaration uad, Map<String, ParentSymbol> using) {
-        List<ASTIdentifier> namespaceOrTypeIds = uad.getNamespaceOrTypeName().getTypedChildren();
-        SymbolTable currTable = getGlobalLookup();
-        Optional<ParentSymbol> optResolved = resolveNamespaceOrTypeNameIds(namespaceOrTypeIds, currTable);
+        Optional<ParentSymbol> optResolved = getNamesResolver().resolveNamespaceOrTypeName(
+                uad.getNamespaceOrTypeName());
         // Legal to resolve a namespace or a type here.
         optResolved.ifPresent(resolved -> {
-            uad.setResolvedSymbol(resolved);
+            uad.setResolvedNamespace(resolved);
             using.put(resolved.getName(), resolved);
         });
     }
@@ -209,45 +207,38 @@ public class TopLevelResolver extends BasicResolver {
         }
     }
 
-    private Optional<ParentSymbol> resolveNamespaceOrTypeNameIds(List<ASTIdentifier> ids, SymbolTable currTable) {
-        // Parser guarantees at least one identifier, which must be a namespace.
-        String first = ids.get(0).getValue();
-        ParentSymbol resolved;
-        if (currTable.containsNamespace(first)) {
-            resolved = (ParentSymbol) currTable.get(first);
-            currTable = resolved.getTable();
+    /**
+     * Ensures that the "spruce.lang" namespace is being used.  If it's not
+     * already being used explicitly, then add it implicitly.
+     * @param using A <code>Map</code> of simple names to <code>ParentSymbol</code>s
+     *              representing all explicit use declarations on an OCU.
+     */
+    public void ensureImplicitUseAll(Map<String, ParentSymbol> using) {
+        final String spruceName = "spruce";
+        final String langName = "lang";
+        // Find spruce.lang in the Type Lookup.
+        Optional<ParentSymbol> optSpruce = getGlobalLookup().getNamespace(spruceName);
+        if (optSpruce.isEmpty()) {
+            // No spruce namespace declared; can't use what doesn't exist.
+            return;
         }
-        else {
-            error(ids.get(0).getLocation(), "Symbol '" + first + "' not found.");
-            return Optional.empty();
+        ParentSymbol spruce = optSpruce.get();
+        if (!spruce.getTable().containsNamespace(langName)) {
+            // No spruce.lang namespace declared; can't use what doesn't exist.
+            return;
         }
+        ParentSymbol lang = (ParentSymbol) spruce.getTable().get(langName);
 
-        // The remaining identifiers can be namespaces or types, but once a
-        // type is found, then all subsequent identifiers must be types until
-        // fully resolved.
-        boolean typeFound = false;
-        for (int i = 1; i < ids.size(); i++) {
-            ASTIdentifier id = ids.get(i);
-            String name = id.getValue();
-
-            boolean nameFound;
-            if (typeFound) {
-                nameFound = currTable.containsType(name);
-            }
-            else {
-                nameFound = currTable.containsNamespaceOrType(name);
-            }
-            if (nameFound) {
-                resolved = (ParentSymbol) currTable.get(name);
-                currTable = resolved.getTable();
-                typeFound = resolved.getKind() != Symbol.Kind.NAMESPACE;
-            }
-            else {
-                error(id.getLocation(), "Symbol '" + name + "' not found.");
-                return Optional.empty();
+        // If it exists, determine if it's already (explicitly) being used.
+        if (using.containsKey(langName)) {
+            ParentSymbol namespace = using.get(langName);
+            if (namespace == lang) {
+                return;
             }
         }
 
-        return Optional.of(resolved);
+        // If it isn't already being used, create an implicit use-all
+        // declaration on spruce.lang.
+        using.put(langName, lang);
     }
 }

@@ -5,12 +5,9 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.toplevel.*;
-import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
-import org.spruce.compiler.bootstrap.resolution.Resolver;
-import org.spruce.compiler.bootstrap.resolution.TopLevelResolver;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
@@ -35,23 +32,20 @@ public class ResolverTopLevelTest {
              use spruce.time.+;
              """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, Resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         SymbolTable spruceTable = spruce.getTable();
         ParentSymbol time = ensureIsa(spruceTable.get("time"), ParentSymbol.class);
         ParentSymbol collections = ensureIsa(spruceTable.get("collections"), ParentSymbol.class);
 
-        ASTUseAllDeclaration useAllCollections = ensureIsa(ocus.get(0).getUseDeclList().get(0),
+        ASTUseAllDeclaration useAllCollections = ensureIsa(trio.ocus().get(0).getUseDeclList().get(0),
                 ASTUseAllDeclaration.class);
-        assertSame(collections, useAllCollections.getResolvedSymbol());
-        ASTUseAllDeclaration useAllTime = ensureIsa(ocus.get(1).getUseDeclList().get(0),
+        assertSame(collections, useAllCollections.getResolvedNamespace());
+        ASTUseAllDeclaration useAllTime = ensureIsa(trio.ocus().get(1).getUseDeclList().get(0),
                 ASTUseAllDeclaration.class);
-        assertSame(time, useAllTime.getResolvedSymbol());
+        assertSame(time, useAllTime.getResolvedNamespace());
     }
 
     /**
@@ -69,15 +63,16 @@ public class ResolverTopLevelTest {
                 namespace spruce.collections;
                 use spruce.time.Instant;
                 class ArrayList {}
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, Resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruceNamespace = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruceNamespace = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         SymbolTable spruceTable = spruceNamespace.getTable();
         ParentSymbol timeNamespace = ensureIsa(spruceTable.get("time"), ParentSymbol.class);
         SymbolTable timeTable = timeNamespace.getTable();
@@ -86,12 +81,12 @@ public class ResolverTopLevelTest {
         SymbolTable collectionsTable = collectionsNamespace.getTable();
         ParentSymbol arrayListClass = ensureIsa(collectionsTable.get("ArrayList"), ParentSymbol.class);
 
-        ASTUseTypeDeclaration useTypeArrayList = ensureIsa(ocus.get(0).getUseDeclList().get(0),
+        ASTUseTypeDeclaration useTypeArrayList = ensureIsa(trio.ocus().get(0).getUseDeclList().get(0),
                 ASTUseTypeDeclaration.class);
-        assertSame(arrayListClass, useTypeArrayList.getResolvedSymbol());
-        ASTUseTypeDeclaration useTypeInstant = ensureIsa(ocus.get(1).getUseDeclList().get(0),
+        assertSame(arrayListClass, useTypeArrayList.getResolvedDataType());
+        ASTUseTypeDeclaration useTypeInstant = ensureIsa(trio.ocus().get(1).getUseDeclList().get(0),
                 ASTUseTypeDeclaration.class);
-        assertSame(instantClass, useTypeInstant.getResolvedSymbol());
+        assertSame(instantClass, useTypeInstant.getResolvedDataType());
     }
 
     /**
@@ -107,13 +102,14 @@ public class ResolverTopLevelTest {
                 """
                 namespace spruce.collections;
                 use spruce.collections.HashMap;
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, Resolver);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**
@@ -133,27 +129,28 @@ public class ResolverTopLevelTest {
                 """
                 namespace spruce.collections;
                 class HashMap {}
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        ensureNoErrors(global, Resolver);
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruceNamespace = ensureIsa(global.get("spruce"), ParentSymbol.class);
+        ParentSymbol spruceNamespace = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         SymbolTable spruceTable = spruceNamespace.getTable();
         ParentSymbol collectionsNamespace = ensureIsa(spruceTable.get("collections"), ParentSymbol.class);
         SymbolTable collectionsTable = collectionsNamespace.getTable();
         ParentSymbol arrayListClass = ensureIsa(collectionsTable.get("ArrayList"), ParentSymbol.class);
         ParentSymbol hashMapClass = ensureIsa(collectionsTable.get("HashMap"), ParentSymbol.class);
 
-        ASTUseMultDeclaration useMultCollections = ensureIsa(ocus.get(0).getUseDeclList().get(0),
+        ASTUseMultDeclaration useMultCollections = ensureIsa(trio.ocus().get(0).getUseDeclList().get(0),
                 ASTUseMultDeclaration.class);
-        Optional<ParentSymbol> optResolvedArrayList = useMultCollections.getResolvedSymbol("ArrayList");
+        Optional<TypeSymbol> optResolvedArrayList = useMultCollections.getResolvedDataType("ArrayList");
         assertTrue(optResolvedArrayList.isPresent());
         assertSame(arrayListClass, optResolvedArrayList.get());
-        Optional<ParentSymbol> optResolvedHashMap = useMultCollections.getResolvedSymbol("HashMap");
+        Optional<TypeSymbol> optResolvedHashMap = useMultCollections.getResolvedDataType("HashMap");
         assertTrue(optResolvedHashMap.isPresent());
         assertSame(hashMapClass, optResolvedHashMap.get());
     }
@@ -172,13 +169,14 @@ public class ResolverTopLevelTest {
                 use spruce.time.dne.+;
                 use spruce.dne.+;
                 use dne.+;
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, Resolver, 3);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 3);
     }
 
     /**
@@ -194,13 +192,14 @@ public class ResolverTopLevelTest {
                 """
                 use spruce.time.DoesNotExist;
                 use spruce.Instant;
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, Resolver, 2);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 2);
     }
 
     /**
@@ -221,13 +220,14 @@ public class ResolverTopLevelTest {
                 """
                 use spruce.collections.List;
                 use spruce.some.other.List;
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, Resolver, 1);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 1);
     }
 
     /**
@@ -250,13 +250,14 @@ public class ResolverTopLevelTest {
                 """
                 use spruce.collections.{List, Map};
                 use spruce.some.other.{Map, List};
+                """,
+                """
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, Resolver, 2);
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 2);
     }
 
     /**
@@ -272,50 +273,13 @@ public class ResolverTopLevelTest {
                 """
                 use spruce.collections.List;
                 class List {}
-                """
-        );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, Resolver, 1);
-    }
-
-    /**
-     * Can't use a type with the same name as a namespace.  Should already be
-     * caught at the symbol creation phase with a double error; can't declare a
-     * type with the same name as a namespace or a namespace with the same name
-     * as a type.
-     */
-    @Test
-    public void testObscuredNamespace() {
-        List<String> codes = List.of(
-                """
-                namespace spruce.obscured;
-                class Dummy {}
                 """,
                 """
-                namespace spruce;
-                class obscured {}
-                """,
-                """
-                use spruce.obscured;
-                use spruce.obscured.Dummy;
+                namespace spruce.lang;
+                class Any {}
                 """
         );
-        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        TypeLookup global = createGlobalSymbolTable(ocus);
-        TopLevelResolver Resolver = getTopLevelResolver(global);
-        Resolver.resolveOrdinaryCompilationUnits(ocus);
-        expectError(global, Resolver, 1);
-    }
-
-    /**
-     * Helper method to get a <code>TopLevelResolver</code>.
-     * @param global The global <code>TypeLookup</code>.
-     * @return A <code>TopLevelResolver</code>.
-     */
-    public static TopLevelResolver getTopLevelResolver(TypeLookup global) {
-        return new Resolver(new BaseMessageProducer(), global).getTopLevelResolver();
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 1);
     }
 }

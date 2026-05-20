@@ -2,6 +2,7 @@ package org.spruce.compiler.bootstrap.ast.literals;
 
 import org.spruce.compiler.bootstrap.ast.ASTValueNode;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTBooleanLiteral</code> is <code>true</code> or <code>false</code>.</p>
@@ -13,6 +14,8 @@ import org.spruce.compiler.bootstrap.common.Location;
  * </em>
  */
 public final class ASTBooleanLiteral extends ASTValueNode implements ASTLiteral {
+    private TypeSymbol myResolvedDataType;
+
     /**
      * Constructs an <code>ASTBooleanLiteral</code> given the <code>Location</code>
      * and the string value of the token.
@@ -29,5 +32,15 @@ public final class ASTBooleanLiteral extends ASTValueNode implements ASTLiteral 
      */
     public boolean getBooleanValue() {
         return Boolean.parseBoolean(getValue());
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 }

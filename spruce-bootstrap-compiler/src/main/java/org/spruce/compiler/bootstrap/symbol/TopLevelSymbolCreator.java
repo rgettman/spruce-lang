@@ -22,10 +22,10 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
      * Constructs a <code>TopLevelSymbolCreator</code>.
      * @param symbolCreator A <code>SymbolCreator</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param typeLookup A <code>TypeLookup</code>.
+     * @param globalLookup A <code>GlobalLookup</code>.
      */
-    public TopLevelSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, TypeLookup typeLookup) {
-        super(symbolCreator, msgProducer, typeLookup);
+    public TopLevelSymbolCreator(SymbolCreator symbolCreator, MessageProducer msgProducer, GlobalLookup globalLookup) {
+        super(symbolCreator, msgProducer, globalLookup);
     }
 
     /**
@@ -42,7 +42,7 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
             namespace = createSymbolsForNamespaceDeclaration(namespaceDecl);
         }
         else {
-            namespace = getTypeLookup().getNamespace(TypeLookup.UNNAMED_NAMESPACE_NAME)
+            namespace = getGlobalLookup().getNamespace(GlobalLookup.UNNAMED_NAMESPACE_NAME)
                     .orElseThrow(() -> internalError("Unnamed namespace not found!"));
         }
 
@@ -76,7 +76,7 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
      */
     public ParentSymbol createSymbolsForNamespaceName(ASTNamespaceName namespaceName) {
         List<ASTIdentifier> identifiers = namespaceName.getTypedChildren();
-        SymbolTable global = getTypeLookup();
+        SymbolTable global = getGlobalLookup();
         // First
         if (identifiers.isEmpty()) {
             throw internalError("identifier in namespace");

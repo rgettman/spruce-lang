@@ -10,7 +10,7 @@ import org.spruce.compiler.bootstrap.ast.expressions.ASTValueExpression;
 import org.spruce.compiler.bootstrap.ast.statements.*;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 
 /**
  * A <code>StatementsResolver</code> is a <code>BasicResolver</code> that
@@ -23,9 +23,9 @@ public class StatementsResolver extends BasicResolver {
      * Constructs a <code>StatementsResolver</code>.
      * @param resolver An <code>Resolver</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param global The global <code>TypeLookup</code>.
+     * @param global The <code>GlobalLookup</code>.
      */
-    public StatementsResolver(Resolver resolver, MessageProducer msgProducer, TypeLookup global) {
+    public StatementsResolver(Resolver resolver, MessageProducer msgProducer, GlobalLookup global) {
         super(resolver, msgProducer, global);
     }
 
@@ -74,13 +74,15 @@ public class StatementsResolver extends BasicResolver {
      */
     public void resolveLocalVariableDeclaration(ASTLocalVariableDeclaration localVarDecl, ResolutionContext ctx) {
         TypesResolver typesResolver = getTypesResolver();
+        ExpressionsResolver exprResolver = getExpressionsResolver();
         Optional<ASTDataType> optDt = localVarDecl.getLocalVarType().getDataType();
         if (optDt.isPresent()) {
             ASTDataType dt = optDt.get();
             typesResolver.resolveDataType(dt, ctx);
 
             for (ASTVariableDeclarator varDecl : localVarDecl.getVarDeclList().getTypedChildren()) {
-                varDecl.setResolvedSymbol(dt.getResolvedSymbol());
+                varDecl.getDeclSymbol().setDataType(dt.getResolvedDataType());
+                varDecl.getVarInitializer().ifPresent(expr -> exprResolver.resolveExpression(expr, ctx));
             }
         }
         else {
@@ -94,7 +96,7 @@ public class StatementsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code> representing the enclosing scope.
      */
     public void resolveSubBlock(ASTBlock subBlock, ResolutionContext ctx) {
-        resolveBlock(subBlock, new ResolutionContext(ctx.global(), subBlock.getDeclSymbol(), ctx.using()));
+        resolveBlock(subBlock, ctx.withEnclosingSymbol(subBlock.getDeclSymbol()));
     }
 
     /**
@@ -103,14 +105,14 @@ public class StatementsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code> representing the enclosing scope.
      */
     public void resolveBasicForStatement(ASTBasicForStatement basicForStmt, ResolutionContext ctx) {
-        ResolutionContext forCtx = new ResolutionContext(ctx.global(), basicForStmt.getDeclSymbol(), ctx.using());
+        ResolutionContext forCtx = ctx.withEnclosingSymbol(basicForStmt.getDeclSymbol());
         if (basicForStmt.getInit().isPresent()) {
             ASTInit init = basicForStmt.getInit().get();
             resolveInit(init, forCtx);
         }
         if (basicForStmt.getValueExpr().isPresent()) {
             ASTValueExpression condition = basicForStmt.getValueExpr().get();
-            getExpressionsResolver().resolveValueExpression(condition, ctx);
+            getExpressionsResolver().resolveValueExpression(condition, forCtx);
         }
         resolveStatementExpressionList(basicForStmt.getStmtExprList(), forCtx);
         resolveBlock(basicForStmt.getBlock(), forCtx);
@@ -122,7 +124,7 @@ public class StatementsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code> representing the enclosing scope.
      */
     public void resolveEnhancedForStatement(ASTEnhancedForStatement enhancedForStmt, ResolutionContext ctx) {
-        ResolutionContext forCtx = new ResolutionContext(ctx.global(), enhancedForStmt.getDeclSymbol(), ctx.using());
+        ResolutionContext forCtx = ctx.withEnclosingSymbol(enhancedForStmt.getDeclSymbol());
         resolveLocalVariableDeclaration(enhancedForStmt.getLocalVarDecl(), forCtx);
         ASTValueExpression iterable = enhancedForStmt.getValueExpr();
         getExpressionsResolver().resolveValueExpression(iterable, ctx);
@@ -144,19 +146,19 @@ public class StatementsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code> representing the enclosing scope.
      */
     public void resolveIfStatement(ASTIfStatement ifStmt, ResolutionContext ctx) {
-        ResolutionContext ifCtx = new ResolutionContext(ctx.global(), ifStmt.getDeclSymbol(), ctx.using());
+        ResolutionContext ifCtx = ctx.withEnclosingSymbol(ifStmt.getDeclSymbol());
         if (ifStmt.getInit().isPresent()) {
             resolveInit(ifStmt.getInit().get(), ifCtx);
         }
         ASTValueExpression condition = ifStmt.getCondExpr();
-        getExpressionsResolver().resolveValueExpression(condition, ctx);
+        getExpressionsResolver().resolveValueExpression(condition, ifCtx);
 
         ASTBlock ifBlock = ifStmt.getIfBlock();
-        resolveBlock(ifBlock, new ResolutionContext(ctx.global(), ifBlock.getDeclSymbol(), ctx.using()));
+        resolveBlock(ifBlock, ctx.withEnclosingSymbol(ifBlock.getDeclSymbol()));
 
         if (ifStmt.getElseBlock().isPresent()) {
             ASTBlock elseBlock = ifStmt.getElseBlock().get();
-            resolveBlock(elseBlock, new ResolutionContext(ctx.global(), elseBlock.getDeclSymbol(), ctx.using()));
+            resolveBlock(elseBlock, ctx.withEnclosingSymbol(elseBlock.getDeclSymbol()));
         }
         else if (ifStmt.getElseIf().isPresent()){
             ASTIfStatement elseIfStmt = ifStmt.getElseIf().get();
@@ -182,12 +184,12 @@ public class StatementsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code> representing the enclosing scope.
      */
     public void resolveWhileStatement(ASTWhileStatement whileStmt, ResolutionContext ctx) {
-        ResolutionContext whileCtx = new ResolutionContext(ctx.global(), whileStmt.getDeclSymbol(), ctx.using());
+        ResolutionContext whileCtx = ctx.withEnclosingSymbol(whileStmt.getDeclSymbol());
         if (whileStmt.getInit().isPresent()) {
             resolveInit(whileStmt.getInit().get(), whileCtx);
         }
         ASTValueExpression condition = whileStmt.getValueExpr();
-        getExpressionsResolver().resolveValueExpression(condition, ctx);
+        getExpressionsResolver().resolveValueExpression(condition, whileCtx);
 
         resolveBlock(whileStmt.getBlock(), whileCtx);
     }
@@ -228,9 +230,8 @@ public class StatementsResolver extends BasicResolver {
             // Consider a special Method Invocation Resolver class dedicated to
             // the complicated workings of method resolution!
         }
-        case ASTClassInstanceCreationExpression classInstCreationExpr -> {
-            // TODO: Resolve the class instance creation expression in Expressions Resolver!
-        }
+        case ASTClassInstanceCreationExpression cice ->
+                getExpressionsResolver().resolveClassInstanceCreationExpression(cice, ctx);
         }
     }
 

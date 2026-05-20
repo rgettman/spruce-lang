@@ -7,8 +7,9 @@ import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
-import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
+import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * A <code>ClassesResolver</code> is a <code>BasicResolver</code> that resolves
@@ -20,9 +21,9 @@ public class ClassesResolver extends BasicResolver {
      * Constructs a <code>ClassesResolver</code>.
      * @param resolver An <code>Resolver</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param global The global <code>TypeLookup</code>.
+     * @param global The <code>GlobalLookup</code>.
      */
-    public ClassesResolver(Resolver resolver, MessageProducer msgProducer, TypeLookup global) {
+    public ClassesResolver(Resolver resolver, MessageProducer msgProducer, GlobalLookup global) {
         super(resolver, msgProducer, global);
     }
 
@@ -50,10 +51,12 @@ public class ClassesResolver extends BasicResolver {
      */
     public void resolveClassDeclaration(ASTClassDeclaration classDecl, ResolutionContext ctx) {
         TypesResolver typesResolver = getTypesResolver();
-        Optional<ASTDataTypeNoArray> optSuperclass = classDecl.getSuperclass();
-        if (optSuperclass.isPresent()) {
-            ASTDataTypeNoArray superclass = optSuperclass.get();
-            typesResolver.resolveDataTypeNoArray(superclass, ctx);
+        Optional<ASTDataTypeNoArray> optDtnaSuperclass = classDecl.getSuperclass();
+        Optional<TypeSymbol> superclass = Optional.empty();
+        if (optDtnaSuperclass.isPresent()) {
+            ASTDataTypeNoArray dtnaSuperclass = optDtnaSuperclass.get();
+            typesResolver.resolveDataTypeNoArray(dtnaSuperclass, ctx);
+            superclass = Optional.ofNullable(dtnaSuperclass.getResolvedDataType());
 
             // Ensure no superclass loop, e.g. A -> B -> A.
             // Can't do that until all types in all OCUs have had all symbols
@@ -62,13 +65,23 @@ public class ClassesResolver extends BasicResolver {
             // TODO: Will place in a second pass over all types in all OCUs.
             // This will be in the semantic analysis phase.
         }
-        // Will need to assume a java.lang.Object superclass or Spruce
-        // equivalent if an explicit superclass is not specified.
-        // TODO: Figure that out!
+        if (superclass.isEmpty()) {
+            // If an explicit superclass is not specified, then assume that the
+            // superclass is the root of the type hierarchy.
+            superclass = Optional.ofNullable(typesResolver.resolveRootType(ctx));
 
-        ResolutionContext childCtx = new ResolutionContext(ctx.global(), classDecl.getDeclSymbol(), ctx.using());
+            // If the class being resolved _is_ the root class, then that root
+            // class has no superclass!
+            if (superclass.isPresent() && superclass.get() == classDecl.getDeclSymbol()) {
+                superclass = Optional.empty();
+            }
+        }
+
+        superclass.ifPresent(st -> classDecl.getDeclSymbol().setSupertype(st));
+
+        ResolutionContext classCtx = ctx.withEnclosingSymbol(classDecl.getDeclSymbol());
         for (ASTMember member : classDecl.getMembers()) {
-            resolveMember(member, childCtx);
+            resolveMember(member, classCtx);
         }
     }
 
@@ -99,7 +112,7 @@ public class ClassesResolver extends BasicResolver {
         typesResolver.resolveDataType(dt, ctx);
 
         for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
-            varDecl.setResolvedSymbol(dt.getResolvedSymbol());
+            varDecl.getDeclSymbol().setDataType(dt.getResolvedDataType());
         }
     }
 
@@ -109,9 +122,10 @@ public class ClassesResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code> representing the enclosing type.
      */
     public void resolveMethodDeclaration(ASTMethodDeclaration methodDecl, ResolutionContext ctx) {
-        ResolutionContext ctxMethod = new ResolutionContext(
-                ctx.global(), methodDecl.getHeader().getMethodDecl().getDeclSymbol(), ctx.using());
+        ParameterizedSymbol method = methodDecl.getDeclSymbol();
+        ResolutionContext ctxMethod = ctx.withEnclosingSymbol(method);
         resolveMethodHeader(methodDecl.getHeader(), ctxMethod);
+
         methodDecl.getBody().getBlock().ifPresent(
                 block -> getStatementsResolver().resolveBlock(block, ctxMethod));
         // TODO: Second analysis pass: Detect method overrides.
@@ -134,12 +148,12 @@ public class ClassesResolver extends BasicResolver {
      */
     public void resolveMethodResult(ASTResult result, ResolutionContext ctx) {
         if (result.getVoidKeyword().isPresent()) {
-            result.setResolvedSymbol(ParentSymbol.VOID);
+            result.setResolvedDataType(TypeSymbol.VOID);
         }
         else if (result.getDataType().isPresent()){
             ASTDataType dt = result.getDataType().get();
             getTypesResolver().resolveDataType(dt, ctx);
-            result.setResolvedSymbol(dt.getResolvedSymbol());
+            result.setResolvedDataType(dt.getResolvedDataType());
         }
         else {
             throw internalError("Neither void nor data type present on method result!");
@@ -155,7 +169,9 @@ public class ClassesResolver extends BasicResolver {
     public void resolveFormalParameterList(ASTFormalParameterList formalParams, ResolutionContext ctx) {
         TypesResolver typesResolver = getTypesResolver();
         for (ASTFormalParameter formalParam : formalParams.getTypedChildren()) {
-            typesResolver.resolveDataType(formalParam.getDataType(), ctx);
+            ASTDataType dt = formalParam.getDataType();
+            typesResolver.resolveDataType(dt, ctx);
+            formalParam.getDeclSymbol().setDataType(dt.getResolvedDataType());
         }
     }
 
@@ -165,8 +181,8 @@ public class ClassesResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code> representing the enclosing type.
      */
     public void resolveConstructorDeclaration(ASTConstructorDeclaration constrDecl, ResolutionContext ctx) {
-        ResolutionContext ctxConstructor = new ResolutionContext(
-                ctx.global(), constrDecl.getConstructorDecl().getDeclSymbol(), ctx.using());
+        ResolutionContext ctxConstructor = ctx.withEnclosingSymbol(
+                constrDecl.getDeclSymbol());
         resolveFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList(), ctxConstructor);
         getStatementsResolver().resolveBlock(constrDecl.getBlock(), ctxConstructor);
     }

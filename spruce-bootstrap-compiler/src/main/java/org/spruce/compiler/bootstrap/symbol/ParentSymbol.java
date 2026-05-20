@@ -7,13 +7,6 @@ import org.spruce.compiler.bootstrap.common.Location;
  * <code>ChildSymbolTable</code>.
  */
 public class ParentSymbol extends Symbol {
-    /**
-     * The "symbol" for a void method return type.
-     */
-    public static final ParentSymbol VOID = new ParentSymbol(
-            new Location("<void>", 0, 0, "void"),
-            "void", Kind.VOID, new SymbolTable(SymbolTable.Scope.GLOBAL), FLAG_NONE
-    );
 
     private ChildSymbolTable myTable;
 

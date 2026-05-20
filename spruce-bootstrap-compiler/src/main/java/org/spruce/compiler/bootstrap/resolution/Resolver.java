@@ -5,7 +5,7 @@ import java.util.List;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 
 /**
  * A <code>Resolver</code> resolves all symbols for data types and expression
@@ -21,6 +21,8 @@ import org.spruce.compiler.bootstrap.symbol.TypeLookup;
 public class Resolver {
     private final TopLevelResolver myTopLevelResolver;
     private final ClassesResolver myClassesResolver;
+    private final LiteralsResolver myLiteralsResolver;
+    private final NamesResolver myNamesResolver;
     private final StatementsResolver myStatementsResolver;
     private final ExpressionsResolver myExpressionsResolver;
     private final TypesResolver myTypesResolver;
@@ -30,11 +32,13 @@ public class Resolver {
      * Constructs an <code>Resolver</code> with the given
      * <code>MessageProducer</code>.
      * @param msgProducer A <code>MessageProducer</code>.
-     * @param global The global <code>TypeLookup</code>.
+     * @param global The <code>GlobalLookup</code>.
      */
-    public Resolver(MessageProducer msgProducer, TypeLookup global) {
+    public Resolver(MessageProducer msgProducer, GlobalLookup global) {
         myTopLevelResolver = new TopLevelResolver(this, msgProducer, global);
         myClassesResolver = new ClassesResolver(this, msgProducer, global);
+        myLiteralsResolver = new LiteralsResolver(this, msgProducer, global);
+        myNamesResolver = new NamesResolver(this, msgProducer, global);
         myStatementsResolver = new StatementsResolver(this, msgProducer, global);
         myExpressionsResolver = new ExpressionsResolver(this, msgProducer, global);
         myTypesResolver = new TypesResolver(this, msgProducer, global);
@@ -56,6 +60,21 @@ public class Resolver {
      */
     public ClassesResolver getClassesResolver() {
         return myClassesResolver;
+    }
+    /**
+     * Returns the <code>LiteralsResolver</code>.
+     * @return The <code>LiteralsResolver</code>.
+     */
+    public LiteralsResolver getLiteralsResolver() {
+        return myLiteralsResolver;
+    }
+
+    /**
+     * Returns the <code>NamesResolver</code>.
+     * @return The <code>NamesResolver</code>.
+     */
+    public NamesResolver getNamesResolver() {
+        return myNamesResolver;
     }
 
     /**
@@ -83,8 +102,8 @@ public class Resolver {
     }
 
     /**
-     * Resolve all data types and expression types first.  Then analyze all <code>OrdinaryCompilationUnit</code>s along with the global
-     * <code>TypeLookup</code>.
+     * Resolve all data types and expression types first.  Then analyze all
+     * <code>OrdinaryCompilationUnit</code>s along with the <code>GlobalLookup</code>.
      * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
      */
     public void analyze(List<ASTOrdinaryCompilationUnit> units) {

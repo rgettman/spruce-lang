@@ -8,6 +8,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.statements.ASTStatementExpression;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTClassInstanceCreationExpression</code> is an unqualified
@@ -19,9 +20,11 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;Primary . UnqualifiedClassInstanceCreationExpression
  * </em>
  */
-public final class ASTClassInstanceCreationExpression extends ASTParentNode implements ASTStatementExpression {
+public final class ASTClassInstanceCreationExpression extends ASTParentNode
+        implements ASTStatementExpression, ASTPrimaryChild {
     private final ASTPrimary myPrimary;
     private final ASTUnqualifiedClassInstanceCreationExpression myUcice;
+    private TypeSymbol myResolvedDataType;
 
     /**
      * Constructs an <code>ASTClassInstanceCreationExpression</code> at the given <code>Location</code>
@@ -65,6 +68,16 @@ public final class ASTClassInstanceCreationExpression extends ASTParentNode impl
      */
     public ASTUnqualifiedClassInstanceCreationExpression getUcice() {
         return myUcice;
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 
     @Override

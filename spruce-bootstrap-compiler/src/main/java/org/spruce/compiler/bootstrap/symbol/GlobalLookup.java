@@ -8,12 +8,12 @@ import org.spruce.compiler.bootstrap.common.Location;
 import static org.spruce.compiler.bootstrap.symbol.Symbol.FLAG_NONE;
 
 /**
- * A <code>TypeLookup</code> is the master lookup for all declared
+ * A <code>GlobalLookup</code> is the master lookup for all declared
  * namespaces and types within those namespaces.  It is a <code>SymbolTable</code>
  * of scope <code>GLOBAL</code>.  Only top-level namespaces are
  * directly inserted here, e.g. "org" or "spruce", not "spruce.collections".
  */
-public class TypeLookup extends SymbolTable {
+public class GlobalLookup extends SymbolTable {
     /**
      * The "name" of the unnamed namespace.  This is used when no namespace
      * declaration is found on a compilation unit.
@@ -21,15 +21,18 @@ public class TypeLookup extends SymbolTable {
     public static final String UNNAMED_NAMESPACE_NAME = "";
 
     /**
-     * Constructs a <code>TypeLookup</code> with one built-in namespace,
+     * Constructs a <code>GlobalLookup</code> with one built-in namespace,
      * the unnamed namespace.
      */
-    public TypeLookup() {
+    public GlobalLookup() {
         super(Scope.GLOBAL);
         ParentSymbol unnamedNamespace = new ParentSymbol(new Location("<unnamed>", 0, 0, "unavailable"),
                 UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE, this, FLAG_NONE);
         unnamedNamespace.setTable(new ChildSymbolTable(Scope.NAMESPACE, unnamedNamespace));
         getTable().put(UNNAMED_NAMESPACE_NAME, unnamedNamespace);
+
+        // TODO: Ensure the "spruce.lang" namespace exists so it can be
+        // auto-use-all-ed later.
     }
 
     /**

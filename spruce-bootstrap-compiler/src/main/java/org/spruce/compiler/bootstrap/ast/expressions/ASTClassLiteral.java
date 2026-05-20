@@ -7,6 +7,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTClassLiteral</code> is a data type followed by "." and "class".</p>
@@ -21,8 +22,9 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;DataType . class
  * </em>
  */
-public class ASTClassLiteral extends ASTParentNode {
+public final class ASTClassLiteral extends ASTParentNode implements ASTPrimaryChild {
     private final ASTDataType myDataType;
+    private TypeSymbol myResolvedSymbol;
 
     /**
      * Constructs an <code>ASTClassLiteral</code> at the given <code>Location</code>
@@ -41,6 +43,16 @@ public class ASTClassLiteral extends ASTParentNode {
      */
     public ASTDataType getDataType() {
         return myDataType;
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedSymbol = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedSymbol;
     }
 
     @Override

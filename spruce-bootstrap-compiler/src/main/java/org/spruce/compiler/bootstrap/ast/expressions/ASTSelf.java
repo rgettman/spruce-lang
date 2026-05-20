@@ -6,44 +6,30 @@ import java.util.List;
 import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
-import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
- * <p>An <code>ASTTypenameSelf</code> is a type name followed by a "." followed
- * by "self".  This is only used inside an <code>ASTPrimary</code>.</p>
+ * An <code>ASTSelf</code> represents "self" by itself, not as part of a larger
+ * primary such as a <code>TypenameSelf</code>.
  * <em>
- * TypenameSelf:
- * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . self
+ * Self:
+ * &nbsp;&nbsp;&nbsp;&nbsp;self
  * </em>
- * @see ASTPrimary
  */
-public final class ASTTypenameSelf extends ASTParentNode implements ASTPrimaryChild {
-    private final ASTTypeName myTypename;
+public final class ASTSelf extends ASTParentNode implements ASTPrimaryChild {
     private final ASTKeywordNode mySelfKeyword;
     private TypeSymbol myResolvedDataType;
 
     /**
-     * Constructs an <code>ASTTypenameSelf</code> at the given <code>Location</code>
-     * with the given <code>ASTTypeName</code> and the given <code>ASTKeywordNode</code>
-     * with keyword <code>SELF</code>.
+     * Constructs an <code>ASTSelf</code> at the given <code>Location</code>
+     * with the given <code>ASTKeywordNode</code> with keyword <code>SELF</code>.
      * @param location The <code>Location</code>.
-     * @param typename An <code>ASTTypeName</code>.
      * @param selfKeyword An <code>ASTKeywordNode</code> with keyword <code>SELF</code>.
      */
-    public ASTTypenameSelf(Location location, ASTTypeName typename, ASTKeywordNode selfKeyword) {
+    public ASTSelf(Location location, ASTKeywordNode selfKeyword) {
         super(location);
-        myTypename = typename;
         mySelfKeyword = selfKeyword;
-    }
-
-    /**
-     * Returns an <code>ASTTypeName</code>.
-     * @return An <code>ASTTypeName</code>.
-     */
-    public ASTTypeName getTypename() {
-        return myTypename;
     }
 
     /**
@@ -66,6 +52,6 @@ public final class ASTTypenameSelf extends ASTParentNode implements ASTPrimaryCh
 
     @Override
     public List<Node> getChildren() {
-        return Arrays.asList(myTypename, mySelfKeyword);
+        return Arrays.asList(mySelfKeyword);
     }
 }

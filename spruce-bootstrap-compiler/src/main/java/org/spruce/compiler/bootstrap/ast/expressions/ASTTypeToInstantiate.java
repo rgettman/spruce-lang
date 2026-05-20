@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTTypeToInstantiate</code> is a TypeName.
@@ -15,8 +17,9 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;TypeName
  * </em>
  */
-public class ASTTypeToInstantiate extends ASTParentNode {
+public class ASTTypeToInstantiate extends ASTParentNode implements DataTypeResolution {
     private final ASTTypeName myTypeName;
+    private TypeSymbol myResolvedSymbol;
 
     /**
      * Constructs an <code>ASTTypeToInstantiate</code> given a type name.
@@ -34,6 +37,16 @@ public class ASTTypeToInstantiate extends ASTParentNode {
      */
     public ASTTypeName getTypeName() {
         return myTypeName;
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedSymbol = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedSymbol;
     }
 
     @Override

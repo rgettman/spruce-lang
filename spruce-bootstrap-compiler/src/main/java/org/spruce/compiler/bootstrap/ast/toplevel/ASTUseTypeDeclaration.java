@@ -5,10 +5,10 @@ import java.util.List;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
-import org.spruce.compiler.bootstrap.ast.SymbolReference;
+import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTUseTypeDeclaration</code> is "use" followed
@@ -20,9 +20,9 @@ import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
  * </em>
  */
 public final class ASTUseTypeDeclaration extends ASTParentNode
-        implements ASTUseDeclaration, SymbolReference<ParentSymbol> {
+        implements ASTUseDeclaration, DataTypeResolution {
     private final ASTTypeName myTypename;
-    private ParentSymbol myResolvedSymbol;
+    private TypeSymbol myResolvedDataType;
 
     /**
      * Constructs an <code>ASTUseTypeDeclaration</code> at the given <code>Location</code>
@@ -44,13 +44,13 @@ public final class ASTUseTypeDeclaration extends ASTParentNode
     }
 
     @Override
-    public void setResolvedSymbol(ParentSymbol symbol) {
-        myResolvedSymbol = symbol;
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
     }
 
     @Override
-    public ParentSymbol getResolvedSymbol() {
-        return myResolvedSymbol;
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 
     @Override

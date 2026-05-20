@@ -3,10 +3,12 @@ package org.spruce.compiler.bootstrap.ast.expressions;
 import java.util.Arrays;
 import java.util.List;
 
+import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTPrimary</code> is a simple expression.</p>
@@ -36,28 +38,53 @@ public final class ASTPrimary extends ASTParentNode implements ASTValueExpressio
         TYPENAME_SELF,
         BAD
     }
-    private final Node myChild;
+    private final ASTPrimaryChild myChild;
     private final Type myType;
+    private TypeSymbol myResolvedDataType;
 
     /**
      * Constructs an <code>ASTPrimary</code> at the given <code>Location</code>
-     * with the given <code>Node</code> as its child, and with the given
+     * with the given <code>ASTPrimaryChild</code>, and with the given
      * <code>Type</code>.
      * @param location The <code>Location</code>.
-     * @param child The child <code>Node</code>.
+     * @param child The <code>ASTPrimaryChild</code>.
      * @param type The <code>Type</code> of primary.
      */
-    public ASTPrimary(Location location, Node child, Type type) {
+    public ASTPrimary(Location location, ASTPrimaryChild child, Type type) {
         super(location);
         myChild = child;
         myType = type;
     }
 
+    public static final class ASTBadPrimary extends ASTParentNode implements ASTPrimaryChild {
+        private final ASTKeywordNode myKeywordNode;
+
+        public ASTBadPrimary(Location location, ASTKeywordNode badKeyword) {
+            super(location);
+            myKeywordNode = badKeyword;
+        }
+
+        @Override
+        public void setResolvedDataType(TypeSymbol symbol) {
+            throw new IllegalStateException("Attempt to set a resolved datatype on a bad primary!");
+        }
+
+        @Override
+        public TypeSymbol getResolvedDataType() {
+            throw new IllegalStateException("Attempt to get a resolved datatype on a bad primary!");
+        }
+
+        @Override
+        public List<Node> getChildren() {
+            return Arrays.asList(myKeywordNode);
+        }
+    }
+
     /**
-     * Returns an <code>Node</code> as the child.
-     * @return An <code>Node</code>.
+     * Returns an <code>ASTPrimaryChild</code>.
+     * @return An <code>ASTPrimaryChild</code>.
      */
-    public Node getChild() {
+    public ASTPrimaryChild getChild() {
         return myChild;
     }
 
@@ -91,6 +118,16 @@ public final class ASTPrimary extends ASTParentNode implements ASTValueExpressio
             case ASTFieldAccess fieldAccess -> fieldAccess;
             default -> throw new IllegalStateException("Internal error: Expected a LeftHandSide!");
         };
+    }
+
+    @Override
+    public void setResolvedDataType(TypeSymbol symbol) {
+        myResolvedDataType = symbol;
+    }
+
+    @Override
+    public TypeSymbol getResolvedDataType() {
+        return myResolvedDataType;
     }
 
     @Override

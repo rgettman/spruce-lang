@@ -7,10 +7,12 @@ import org.spruce.compiler.bootstrap.common.Location;
 
 /**
  * A <code>ParameterizedSymbol</code> is a <code>ParentSymbol</code> that keeps
- * track of the order of any child symbols that are parameters.
+ * track of the order of any child symbols that are parameters.  It is an
+ * <code>EntitySymbol</code> with an associated datatype symbol.
  */
-public class ParameterizedSymbol extends ParentSymbol {
+public class ParameterizedSymbol extends ParentSymbol implements EntitySymbol {
     private final List<Symbol> myParameters;
+    private TypeSymbol myDataType;
 
     /**
      * Constructs a <code>ParameterizedSymbol</code> at the given <code>Location</code>,
@@ -51,6 +53,16 @@ public class ParameterizedSymbol extends ParentSymbol {
      */
     public int numParameters() {
         return  myParameters.size();
+    }
+
+    @Override
+    public TypeSymbol getDataType() {
+        return myDataType;
+    }
+
+    @Override
+    public void setDataType(TypeSymbol dataType) {
+        myDataType = dataType;
     }
 
     /**

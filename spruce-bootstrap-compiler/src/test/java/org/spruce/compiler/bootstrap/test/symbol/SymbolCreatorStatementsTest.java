@@ -6,29 +6,15 @@ import java.util.function.Function;
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMember;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
-import org.spruce.compiler.bootstrap.ast.statements.ASTBasicForStatement;
-import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
-import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatement;
-import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatements;
-import org.spruce.compiler.bootstrap.ast.statements.ASTEnhancedForStatement;
-import org.spruce.compiler.bootstrap.ast.statements.ASTIfStatement;
-import org.spruce.compiler.bootstrap.ast.statements.ASTInit;
-import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclaration;
-import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationStatement;
-import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclaratorList;
-import org.spruce.compiler.bootstrap.ast.statements.ASTWhileStatement;
-import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
+import org.spruce.compiler.bootstrap.ast.statements.*;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.parser.ClassesParser;
 import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
 import org.spruce.compiler.bootstrap.symbol.ClassesSymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
-import org.spruce.compiler.bootstrap.symbol.StatementsSymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
-import org.spruce.compiler.bootstrap.symbol.SymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
-import org.spruce.compiler.bootstrap.symbol.TypeLookup;
 import org.spruce.compiler.bootstrap.test.parser.ParserClassesTest;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -591,14 +577,6 @@ public class SymbolCreatorStatementsTest {
         ASTLocalVariableDeclarationStatement lineNbrDeclStmt = ensureIsa(whileBlockStmts.get(0),
                 ASTLocalVariableDeclarationStatement.class);
         assertSame(lineNbrSymbol, lineNbrDeclStmt.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
-    }
-
-    /**
-     * Helper method to get a <code>StatementsSymbolCreator</code>.
-     * @return A <code>StatementsSymbolCreator</code>.
-     */
-    public static StatementsSymbolCreator getStatementsSymbolCreator() {
-        return new SymbolCreator(new BaseMessageProducer(), new TypeLookup()).getStatementsSymbolCreator();
     }
 
     /**
