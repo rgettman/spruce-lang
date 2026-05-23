@@ -26,6 +26,7 @@ public class Resolver {
     private final StatementsResolver myStatementsResolver;
     private final ExpressionsResolver myExpressionsResolver;
     private final TypesResolver myTypesResolver;
+    private final OperationsResolver myOperationsResolver;
     private final MessageProducer myMsgProducer;
 
     /**
@@ -42,6 +43,7 @@ public class Resolver {
         myStatementsResolver = new StatementsResolver(this, msgProducer, global);
         myExpressionsResolver = new ExpressionsResolver(this, msgProducer, global);
         myTypesResolver = new TypesResolver(this, msgProducer, global);
+        myOperationsResolver = new OperationsResolver(this, msgProducer, global);
 
         myMsgProducer = msgProducer;
     }
@@ -99,6 +101,14 @@ public class Resolver {
      */
     public TypesResolver getTypesResolver() {
         return myTypesResolver;
+    }
+
+    /**
+     * Returns the <code>OperationsResolver</code>.
+     * @return The <code>OperationsResolver</code>.
+     */
+    public OperationsResolver getOperationsResolver() {
+        return myOperationsResolver;
     }
 
     /**

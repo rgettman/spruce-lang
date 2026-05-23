@@ -5,6 +5,8 @@ import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
+import static org.spruce.compiler.bootstrap.resolution.TypesResolver.*;
+
 /**
  * A <code>LiteralsResolver</code> is a <code>BasicResolver</code> that resolves
  * all literals: integer, floating-point, character, string, boolean, and class,
@@ -42,7 +44,7 @@ public class LiteralsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code>.
      */
     public void resolveBooleanLiteral(ASTBooleanLiteral literal, ResolutionContext ctx) {
-        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName("Boolean", ctx);
+        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName(BOOLEAN_TYPE, ctx);
         literal.setResolvedDataType(symbol);
     }
 
@@ -52,7 +54,7 @@ public class LiteralsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code>.
      */
     public void resolveCharacterLiteral(ASTCharacterLiteral literal, ResolutionContext ctx) {
-        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName("Character", ctx);
+        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName(CHARACTER_TYPE, ctx);
         literal.setResolvedDataType(symbol);
     }
 
@@ -62,7 +64,7 @@ public class LiteralsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code>.
      */
     public void resolveFloatingPointLiteral(ASTFloatingPointLiteral literal, ResolutionContext ctx) {
-        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName("Double", ctx);
+        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName(DOUBLE_TYPE, ctx);
         literal.setResolvedDataType(symbol);
     }
 
@@ -72,7 +74,7 @@ public class LiteralsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code>.
      */
     public void resolveIntegerLiteral(ASTIntegerLiteral literal, ResolutionContext ctx) {
-        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName("Integer", ctx);
+        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName(INTEGER_TYPE, ctx);
         literal.setResolvedDataType(symbol);
     }
 
@@ -82,7 +84,7 @@ public class LiteralsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code>.
      */
     public void resolveStringLiteral(ASTStringLiteral literal, ResolutionContext ctx) {
-        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName("String", ctx);
+        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName(STRING_TYPE, ctx);
         literal.setResolvedDataType(symbol);
     }
 }

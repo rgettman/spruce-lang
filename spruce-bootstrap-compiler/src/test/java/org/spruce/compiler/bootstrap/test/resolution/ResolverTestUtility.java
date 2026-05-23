@@ -2,7 +2,13 @@ package org.spruce.compiler.bootstrap.test.resolution;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
+import org.spruce.compiler.bootstrap.ast.classes.ASTFormalParameter;
+import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
+import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
+import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatement;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
@@ -13,15 +19,33 @@ import org.spruce.compiler.bootstrap.resolution.TopLevelResolver;
 import org.spruce.compiler.bootstrap.symbol.SymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
 import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
+import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 import org.spruce.compiler.bootstrap.test.parser.ParserTopLevelTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
 /**
- * Utility methods for semantic Resolver tests.  No test entry points.
+ * Utility methods for resolver tests.  No test entry points.
  */
 public class ResolverTestUtility {
+
+    /**
+     * Standard classes in spruce.lang for resolution.
+     */
+    static final String CODE_SPRUCE_LANG =
+            """
+            namespace spruce.lang;
+            class Any {}
+            class Boolean {}
+            class Character {}
+            class Integer {}
+            class Double {}
+            class String {}
+            class Class {}
+            """;
 
     /**
      * Helper method to parse a bunch of code units at once.
@@ -126,6 +150,44 @@ public class ResolverTestUtility {
     }
 
     public record Trio(List<ASTOrdinaryCompilationUnit> ocus, GlobalLookup global, TopLevelResolver resolver) {
+    }
 
+    /**
+     * Retrieve a <code>MethodDeclaration</code>.
+     * @param trio A <code>Trio</code>.
+     * @param ocuIdx The 0-based index into the list of
+     *               <code>OrdinaryCompilationUnit</code>s.
+     * @param memberIdx The 0-based index into the members of the first
+     *                  <code>ClassDeclaration</code>.
+     * @return An <code>ASTMethodDeclaration</code>, or fails if not found.
+     */
+    static ASTMethodDeclaration getMethod(Trio trio, int ocuIdx, int memberIdx) {
+        ASTOrdinaryCompilationUnit ocu = trio.ocus().get(ocuIdx);
+        ASTClassDeclaration classDecl = ensureIsa(ocu.getTypeDeclList().get(0), ASTClassDeclaration.class);
+        return ensureIsa(classDecl.getClassParts().get(memberIdx), ASTMethodDeclaration.class);
+    }
+
+    /**
+     * Retrieve the <code>VariableSymbol</code> for a <code>FormalParameter</code>
+     * in a <code>MethodDeclaration</code>.
+     * @param methodDecl An <code>ASTMethodDeclaration</code>.
+     * @param idx The 0-based index into the list of <code>FormalParameter</code>s.
+     * @return A <code>VariableSymbol</code>, or fails if not found.
+     */
+    static VariableSymbol getFormalParameterSymbol(ASTMethodDeclaration methodDecl, int idx) {
+        ASTFormalParameter param = methodDecl.getHeader().getMethodDecl().getFormalParamList().get(idx);
+        return param.getDeclSymbol();
+    }
+
+    /**
+     * Retrieve the <code>BlockStatement</code> in a <code>MethodDeclaration</code>.
+     * @param methodDecl An <code>ASTMethodDeclaration</code>.
+     * @param idx The 0-based index into the list of <code>BlockStatement</code>s.
+     * @return An <code>ASTBlockStatement</code>, or fails if not found.
+     */
+    static ASTBlockStatement getBlockStatement(ASTMethodDeclaration methodDecl, int idx) {
+        Optional<ASTBlock> optBlock = methodDecl.getBody().getBlock();
+        assertTrue(optBlock.isPresent());
+        return optBlock.get().getBlockStmts().get(idx);
     }
 }

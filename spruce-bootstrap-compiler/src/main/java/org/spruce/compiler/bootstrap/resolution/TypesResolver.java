@@ -28,6 +28,27 @@ public class TypesResolver extends BasicResolver {
      */
     public static final String ROOT_TYPE = "Any";
 
+    /**
+     * The name of the boolean type.
+     */
+    public static final String BOOLEAN_TYPE = "Boolean";
+    /**
+     * The name of the character type.
+     */
+    public static final String CHARACTER_TYPE = "Character";
+    /**
+     * The name of the double floating-point type.
+     */
+    public static final String DOUBLE_TYPE = "Double";
+    /**
+     * The name of the integer type.
+     */
+    public static final String INTEGER_TYPE = "Integer";
+    /**
+     * The name of the string type.
+     */
+    public static final String STRING_TYPE = "String";
+
     private final Map<String, TypeSymbol> builtInTypes;
 
     /**
@@ -318,6 +339,45 @@ public class TypesResolver extends BasicResolver {
                 throw internalError("Can't find built-in type " + simpleName + "!");
             }
         }
+    }
+
+    /**
+     * Returns whether the given <code>TypeSymbol</code> is the symbol for the
+     * built-in <code>Boolean</code> type.
+     * @param symbol A <code>TypeSymbol</code>.
+     * @param ctx A <code>ResolutionContext</code>.
+     * @return Whether it is the <code>Boolean</code> type.
+     */
+    public boolean isBoolean(TypeSymbol symbol, ResolutionContext ctx) {
+        TypeSymbol bool = resolveBuiltInDataTypeByName(BOOLEAN_TYPE, ctx);
+        return symbol == bool;
+    }
+
+    /**
+     * Returns whether the given <code>TypeSymbol</code> is any of the symbols
+     * for a built-in numeric type: <code>Integer</code>, <code>Double</code>,
+     * or <code>Character</code>.
+     * @param symbol A <code>TypeSymbol</code>.
+     * @param ctx A <code>ResolutionContext</code>.
+     * @return Whether it is a numeric type.
+     */
+    public boolean isNumeric(TypeSymbol symbol, ResolutionContext ctx) {
+        TypeSymbol integer = resolveBuiltInDataTypeByName(INTEGER_TYPE, ctx);
+        TypeSymbol duble = resolveBuiltInDataTypeByName(DOUBLE_TYPE, ctx);
+        TypeSymbol character = resolveBuiltInDataTypeByName(CHARACTER_TYPE, ctx);
+        return symbol == integer || symbol == duble || symbol == character;
+    }
+
+    /**
+     * Returns whether the given <code>TypeSymbol</code> is the symbol for the
+     * built-in <code>String</code> type.
+     * @param symbol A <code>TypeSymbol</code>.
+     * @param ctx A <code>ResolutionContext</code>.
+     * @return Whether it is the <code>String</code> type.
+     */
+    public boolean isString(TypeSymbol symbol, ResolutionContext ctx) {
+        TypeSymbol string = resolveBuiltInDataTypeByName(STRING_TYPE, ctx);
+        return symbol == string;
     }
 
     /**

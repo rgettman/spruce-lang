@@ -5,16 +5,12 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
-import org.spruce.compiler.bootstrap.ast.classes.ASTFormalParameter;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.expressions.*;
 import org.spruce.compiler.bootstrap.ast.literals.*;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
-import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
-import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatement;
 import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationStatement;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
-import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
@@ -27,7 +23,7 @@ import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
 /**
- * All tests for the expressions Resolver.
+ * All tests for the expressions resolver.
  */
 public class ResolverExpressionsTest {
 
@@ -38,12 +34,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testCastExpressionResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                class Double {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod(Integer i) {
@@ -92,12 +83,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testCastExpressionIntersectionTypeResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                class Double {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -150,12 +136,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testCastExpressionBadDataTypeResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                class Double {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -175,17 +156,77 @@ public class ResolverExpressionsTest {
     @Test
     public void testCastExpressionRepeatedDataTypeResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                class Double {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
                         Integer i = 2;
                         Double d = i as Double && Double;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Test IsaExpression resolution.
+     */
+    @Test
+    public void testIsaExpressionResolution() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Integer i = 2;
+                        Boolean b = i isa Integer;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+        TypeSymbol bool = ensureIsa(lang.getTable().get("Boolean"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclI = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        VariableSymbol i = varDeclI.getDeclSymbol();
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt1 = ensureIsa(
+                getBlockStatement(methodDecl, 1), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclB = localVarDeclStmt1.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitB = varDeclB.getVarInitializer();
+        assertTrue(optInitB.isPresent());
+        ASTIsaExpression isaExpr = ensureIsa(optInitB.get(), ASTIsaExpression.class);
+        ASTPrimary primary = ensureIsa(isaExpr.getExpr(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol resolved = exprName.getResolvedEntity();
+        assertSame(i, resolved);
+        assertSame(integer, isaExpr.getIsaTarget().getResolvedDataType());
+        assertSame(bool, isaExpr.getResolvedDataType());
+    }
+
+    /**
+     * Test bad IsaExpression resolution.
+     */
+    @Test
+    public void testBadIsaExpressionResolution() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Integer i = 2;
+                        Boolean b = i isa DoesNotExist;
                     }
                 }
                 """
@@ -219,11 +260,7 @@ public class ResolverExpressionsTest {
                   }
                 }
                 """,
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """
+                CODE_SPRUCE_LANG
         );
         Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
@@ -281,11 +318,102 @@ public class ResolverExpressionsTest {
                   }
                 }
                 """,
+                CODE_SPRUCE_LANG
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Test bad field access of bad typename super.
+     */
+    @Test
+    public void testPrimaryOfBadFieldAccessBadTypenameSuper() {
+        List<String> codes = List.of(
                 """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
+                namespace test;
+                class Superclass {
+                  Integer one = 1;
+                }
+                class Nesting {
+                  class Nested {
+                    class DeepNested extends Superclass {
+                      class DeepDeepNested {
+                        class DeepDeepDeepNested {
+                          void testMethod() {
+                            Integer i = DoesNotExist.super.one;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """,
+                CODE_SPRUCE_LANG
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Test bad field access of no superclass in typename super.
+     */
+    @Test
+    public void testPrimaryOfBadFieldAccessTypenameBadSuper() {
+        List<String> codes = List.of(
                 """
+                namespace test;
+                class Superclass {
+                  Integer one = 1;
+                }
+                class Nesting {
+                  class Nested {
+                    class DeepNested extends Superclass {
+                      class DeepDeepNested {
+                        class DeepDeepDeepNested {
+                          void testMethod() {
+                            Integer i = Any.super.one;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """,
+                CODE_SPRUCE_LANG
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+
+
+    /**
+     * Test bad field access of not an enclosing class in typename super.
+     */
+    @Test
+    public void testPrimaryOfBadFieldAccessTypenameSuperNotEnclosing() {
+        List<String> codes = List.of(
+                """
+                namespace test;
+                class Superclass {
+                  Integer one = 1;
+                }
+                class Nesting {
+                  class Nested {
+                    class DeepNested extends Superclass {
+                      class DeepDeepNested {
+                        class DeepDeepDeepNested {
+                          void testMethod() {
+                            Integer i = Superclass.super.one;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """,
+                CODE_SPRUCE_LANG
         );
         Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver());
@@ -297,11 +425,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfFieldAccessSuper() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Clock {
                     Integer hour;
@@ -348,11 +472,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfBadFieldAccessSuper() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Clock {
                     Integer hour;
@@ -378,11 +498,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfFieldAccessPrimary() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Clock {
                     Integer hour;
@@ -429,11 +545,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfBadFieldAccessPrimary() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Clock {
                     Integer hour;
@@ -459,11 +571,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfExpressionNameResolutionField() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Clock {
                     Integer hour;
@@ -510,11 +618,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfExpressionNameSimpleResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -558,11 +662,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfExpressionNameSimpleBadResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -736,11 +836,7 @@ public class ResolverExpressionsTest {
                   }
                 }
                 """,
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """
+                CODE_SPRUCE_LANG
         );
         Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
@@ -778,10 +874,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfSelfResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -833,11 +926,7 @@ public class ResolverExpressionsTest {
                   }
                 }
                 """,
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """
+                CODE_SPRUCE_LANG
         );
         Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
@@ -900,11 +989,36 @@ public class ResolverExpressionsTest {
                   }
                 }
                 """,
+                CODE_SPRUCE_LANG
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests resolution of not an enclosing class in typename self.
+     */
+    @Test
+    public void testPrimaryOfNotEnclosingClassTypenameSelfResolution() {
+        List<String> codes = List.of(
                 """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """
+                namespace test;
+                class Nesting {
+                  class Nested {
+                    class DeepNested {
+                      Integer one = 1;
+                      class DeepDeepNested {
+                        class DeepDeepDeepNested {
+                          void testMethod() {
+                            Integer i = Any.self;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+                """,
+                CODE_SPRUCE_LANG
         );
         Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver());
@@ -916,12 +1030,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfClassLiteralResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Class {}
-                class String {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -962,12 +1071,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfBadClassLiteralResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Class {}
-                class String {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -986,11 +1090,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfStringLiteralResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class String {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -1026,11 +1126,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfCharacterLiteralResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Character {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -1066,11 +1162,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfBooleanLiteralResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Boolean {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -1119,11 +1211,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfFloatingPointLiteralResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Double {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -1159,11 +1247,7 @@ public class ResolverExpressionsTest {
     @Test
     public void testPrimaryOfIntegerLiteralResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 class Test {
                     void testMethod() {
@@ -1191,22 +1275,5 @@ public class ResolverExpressionsTest {
         TypeSymbol resolved = intLiteral.getResolvedDataType();
         assertSame(integer, resolved);
         assertSame(integer, primary.getResolvedDataType());
-    }
-
-    private static ASTMethodDeclaration getMethod(Trio trio, int ocuIdx, int memberIdx) {
-        ASTOrdinaryCompilationUnit ocu = trio.ocus().get(ocuIdx);
-        ASTClassDeclaration classDecl = ensureIsa(ocu.getTypeDeclList().get(0), ASTClassDeclaration.class);
-        return ensureIsa(classDecl.getClassParts().get(memberIdx), ASTMethodDeclaration.class);
-    }
-
-    private static VariableSymbol getFormalParameterSymbol(ASTMethodDeclaration methodDecl, int idx) {
-        ASTFormalParameter param = methodDecl.getHeader().getMethodDecl().getFormalParamList().get(idx);
-        return param.getDeclSymbol();
-    }
-
-    private static ASTBlockStatement getBlockStatement(ASTMethodDeclaration methodDecl, int idx) {
-        Optional<ASTBlock> optBlock = methodDecl.getBody().getBlock();
-        assertTrue(optBlock.isPresent());
-        return optBlock.get().getBlockStmts().get(idx);
     }
 }

@@ -5,6 +5,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
+import org.spruce.compiler.bootstrap.ast.expressions.ASTExpression;
 import org.spruce.compiler.bootstrap.ast.statements.*;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
@@ -14,7 +15,7 @@ import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
 /**
- * All tests for the statements Resolver.
+ * All tests for the statements resolver.
  */
 public class ResolverStatementsTest {
     /**
@@ -127,12 +128,7 @@ public class ResolverStatementsTest {
     @Test
     public void testBasicForStatementInitLocalVarDeclTypeResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                class List {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 use spruce.lang.{Integer, List};
                 class Test {
@@ -141,6 +137,10 @@ public class ResolverStatementsTest {
                         }
                     }
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class List {}
                 """
         );
         Trio trio = compileSoFar(codes);
@@ -171,12 +171,7 @@ public class ResolverStatementsTest {
     @Test
     public void testIfStatementInitLocalVarDeclTypeResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                class List {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 use spruce.lang.{Integer, List};
                 class Test {
@@ -192,6 +187,10 @@ public class ResolverStatementsTest {
                         }
                     }
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class List {}
                 """
         );
         Trio trio = compileSoFar(codes);
@@ -231,12 +230,7 @@ public class ResolverStatementsTest {
     @Test
     public void testWhileStatementInitLocalVarDeclTypeResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                class List {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 use spruce.lang.{Integer, List};
                 class Test {
@@ -246,6 +240,10 @@ public class ResolverStatementsTest {
                         }
                     }
                 }
+                """,
+                """
+                namespace spruce.lang;
+                class List {}
                 """
         );
         Trio trio = compileSoFar(codes);
@@ -267,5 +265,74 @@ public class ResolverStatementsTest {
         assertTrue(localVarDecl.getLocalVarType().getDataType().isPresent());
         ASTDataType dtInteger = localVarDecl.getLocalVarType().getDataType().get();
         assertSame(integer, dtInteger.getResolvedDataType());
+    }
+
+    /**
+     * Tests return statement resolution with an expression.
+     */
+    @Test
+    public void testReturnStatementExpressionResolution() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class List {}
+                """,
+                """
+                use spruce.lang.{Integer, List};
+                class Test {
+                    Integer testMethod(List list) {
+                        return 4;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration test = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(test.getClassParts().get(0), ASTMethodDeclaration.class);
+        assertTrue(testMethod.getBody().getBlock().isPresent());
+        ASTBlock block = testMethod.getBody().getBlock().get();
+
+        ASTReturnStatement returnStmt = ensureIsa(block.getBlockStmts().get(0), ASTReturnStatement.class);
+        assertTrue(returnStmt.getExpr().isPresent());
+
+        ASTExpression expr = returnStmt.getExpr().get();
+        assertNotNull(expr.getResolvedDataType());
+    }
+
+    /**
+     * Tests return statement resolution with no expression.
+     */
+    @Test
+    public void testReturnStatementResolution() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class List {}
+                """,
+                """
+                use spruce.lang.{Integer, List};
+                class Test {
+                    void testMethod(List list) {
+                        return;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration test = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(test.getClassParts().get(0), ASTMethodDeclaration.class);
+        assertTrue(testMethod.getBody().getBlock().isPresent());
+        ASTBlock block = testMethod.getBody().getBlock().get();
+
+        ASTReturnStatement returnStmt = ensureIsa(block.getBlockStmts().get(0), ASTReturnStatement.class);
+        assertFalse(returnStmt.getExpr().isPresent());
     }
 }

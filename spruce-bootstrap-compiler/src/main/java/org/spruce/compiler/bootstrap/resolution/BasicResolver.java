@@ -88,6 +88,14 @@ public class BasicResolver {
     }
 
     /**
+     * Returns the <code>OperationsResolver</code>.
+     * @return The <code>OperationsResolver</code>.
+     */
+    public OperationsResolver getOperationsResolver() {
+        return myResolver.getOperationsResolver();
+    }
+
+    /**
      * Returns the <code>GlobalLookup</code>.
      * @return The <code>GlobalLookup</code>.
      */

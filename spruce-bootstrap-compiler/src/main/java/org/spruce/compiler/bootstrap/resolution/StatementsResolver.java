@@ -226,9 +226,7 @@ public class StatementsResolver extends BasicResolver {
         switch(stmtExpr) {
         case ASTAssignment assignment -> resolveAssignment(assignment, ctx);
         case ASTMethodInvocation methodInvocation -> {
-            // TODO: Resolve the method invocation!
-            // Consider a special Method Invocation Resolver class dedicated to
-            // the complicated workings of method resolution!
+            // TODO: Resolve the method invocation in operations resolver!
         }
         case ASTClassInstanceCreationExpression cice ->
                 getExpressionsResolver().resolveClassInstanceCreationExpression(cice, ctx);
@@ -247,7 +245,7 @@ public class StatementsResolver extends BasicResolver {
 
         ASTExpression rightHandSide = assignment.getExpr();
         exprResolver.resolveExpression(rightHandSide, ctx);
+
+        // TODO: In the analyzer, determine if this assignment is legal.
     }
-
-
 }

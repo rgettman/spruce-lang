@@ -14,7 +14,7 @@ import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.*;
 
 /**
- * All tests for the top level semantic Resolver.
+ * All tests for the top level resolver.
  */
 public class ResolverTopLevelTest {
     /**

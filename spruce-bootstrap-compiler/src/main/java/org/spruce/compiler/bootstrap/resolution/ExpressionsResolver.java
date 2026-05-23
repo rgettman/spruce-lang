@@ -16,12 +16,14 @@ import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 
+import static org.spruce.compiler.bootstrap.resolution.TypesResolver.BOOLEAN_TYPE;
+
 /**
  * An <code>ExpressionsResolver</code> is a <code>BasicResolver</code> that
  * resolves data types, expressions, value expressions, and primaries in the
  * expressions portion of an AST and Symbol Table.  All expressions <em>except
- * for Method Invocations</em> are resolved here.  Method invocations have
- * their own Resolver.
+ * for Method Invocations, Constructors, and Operators</em> are resolved here.
+ * Those operations are resolved in the <code>OperationsResolver</code>.
  */
 public class ExpressionsResolver extends BasicResolver {
     /**
@@ -52,22 +54,12 @@ public class ExpressionsResolver extends BasicResolver {
      */
     public void resolveValueExpression(ASTValueExpression valueExpr, ResolutionContext ctx) {
         switch (valueExpr) {
-        case ASTBinaryExpression binaryExpr -> resolveBinaryExpression(binaryExpr, ctx);
+        case ASTBinaryExpression binaryExpr -> getOperationsResolver().resolveBinaryExpression(binaryExpr, ctx);
         case ASTCastExpression castExpr -> resolveCastExpression(castExpr, ctx);
         case ASTIsaExpression isaExpr -> resolveIsaExpression(isaExpr, ctx);
-        case ASTUnaryExpression unaryExpr -> resolveUnaryExpression(unaryExpr, ctx);
+        case ASTUnaryExpression unaryExpr -> getOperationsResolver().resolveUnaryExpression(unaryExpr, ctx);
         case ASTPrimary primary -> resolvePrimary(primary, ctx);
         }
-    }
-
-    /**
-     * Resolves symbols in a <code>BinaryExpression</code>.
-     * @param binaryExpr An <code>ASTBinaryExpression</code>.
-     * @param ctx A <code>ResolutionContext</code>.
-     */
-    public void resolveBinaryExpression(ASTBinaryExpression binaryExpr, ResolutionContext ctx) {
-        resolveValueExpression(binaryExpr.getFirst(), ctx);
-        resolveValueExpression(binaryExpr.getSecond(), ctx);
     }
 
     /**
@@ -98,8 +90,15 @@ public class ExpressionsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code>.
      */
     public void resolveIsaExpression(ASTIsaExpression isaExpr, ResolutionContext ctx) {
+        // any, type -> boolean
         resolveExpression(isaExpr.getExpr(), ctx);
         resolveIsaTarget(isaExpr.getIsaTarget(), ctx);
+        // TODO: Is it feasible to determine if the condition CAN succeed?
+        // If it can't succeed, produce an error?
+        // Check if the expression type is a subtype of the target type
+        // or if the target type is a subtype of the expression type.
+        TypeSymbol symbol = getTypesResolver().resolveBuiltInDataTypeByName(BOOLEAN_TYPE, ctx);
+        isaExpr.setResolvedDataType(symbol);
     }
 
     /**
@@ -111,15 +110,6 @@ public class ExpressionsResolver extends BasicResolver {
         switch(isaTarget) {
         case ASTDataType dt -> getTypesResolver().resolveDataType(dt, ctx);
         }
-    }
-
-    /**
-     * Resolves symbols in a <code>UnaryExpression</code>.
-     * @param unaryExpr An <code>ASTUnaryExpression</code>.
-     * @param ctx A <code>ResolutionContext</code>.
-     */
-    public void resolveUnaryExpression(ASTUnaryExpression unaryExpr, ResolutionContext ctx) {
-        resolveValueExpression(unaryExpr.getFirst(), ctx);
     }
 
     /**

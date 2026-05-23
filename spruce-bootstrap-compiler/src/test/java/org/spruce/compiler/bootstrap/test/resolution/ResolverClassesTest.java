@@ -15,7 +15,7 @@ import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
 /**
- * All tests for the classes Resolver.
+ * All tests for the classes resolver.
  */
 public class ResolverClassesTest {
     /**
@@ -591,12 +591,7 @@ public class ResolverClassesTest {
     @Test
     public void testFormalParameterDataTypeResolution() {
         List<String> codes = List.of(
-                """
-                namespace spruce.lang;
-                class Any {}
-                class Integer {}
-                class String {}
-                """,
+                CODE_SPRUCE_LANG,
                 """
                 use spruce.lang.{Integer, String};
                 class Test {
