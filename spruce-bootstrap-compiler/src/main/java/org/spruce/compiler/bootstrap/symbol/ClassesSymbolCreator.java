@@ -64,6 +64,13 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         switch (typeDecl) {
         case ASTClassDeclaration ignored ->
             kind = Kind.CLASS;
+        case ASTInterfaceDeclaration ignored -> {
+            kind = Kind.INTERFACE;
+            flags |= FLAG_MOD_ABSTRACT;
+            if (isNested) {
+                flags |= FLAG_MOD_SHARED;
+            }
+        }
         }
 
         ChildSymbolTable parentTable = parent.getTable();
@@ -98,14 +105,35 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     public void createSymbolsForMember(ParentSymbol parent, ASTMember member) {
         switch (member) {
         case ASTTypeDeclaration typeDecl -> createSymbolsForNestedTypeDeclaration(typeDecl, parent);
+        case ASTConstantDeclaration constDecl -> createSymbolsForConstantDeclaration(constDecl, parent);
         case ASTConstructorDeclaration constrDecl -> createSymbolsForConstructorDeclaration(constrDecl, parent);
         case ASTFieldDeclaration fieldDecl -> createSymbolsForFieldDeclaration(fieldDecl, parent);
+        case ASTInterfaceMethodDeclaration iMethodDecl ->
+                createSymbolsForInterfaceMethodDeclaration(iMethodDecl, parent);
         case ASTMethodDeclaration methodDecl -> createSymbolsForMethodDeclaration(methodDecl, parent);
         }
     }
 
     /**
-     * Creates a <code>Symbol</code> for a <code>SharedConstructor</code>.
+     * Creates a <code>Symbol</code> for a <code>ConstantDeclaration</code>.
+     * Populates it in the given <code>SymbolTable</code>.
+     * @param constDecl An <code>ASTConstantDeclaration</code>.
+     * @param parent A <code>ParentSymbol</code> to be the parent for the <code>Symbol</code>.
+     */
+    public void createSymbolsForConstantDeclaration(ASTConstantDeclaration constDecl, ParentSymbol parent) {
+        long flags = getFlags(constDecl);
+        ChildSymbolTable parentTable = parent.getTable();
+        flags |= FLAG_MOD_SHARED;
+        for (ASTVariableDeclarator varDecl : constDecl.getVarDeclList().getTypedChildren()) {
+            String name = varDecl.getVarName().getValue();
+            VariableSymbol symbol = new VariableSymbol(constDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
+            insertSymbol(parentTable, symbol);
+            varDecl.setDeclSymbol(symbol);
+        }
+    }
+
+    /**
+     * Creates a <code>Symbol</code> for a <code>Constructor</code>.
      * Populates it in the given <code>SymbolTable</code>.
      * @param constrDecl An <code>ASTConstructorDeclaration</code>.
      * @param parent A <code>ParentSymbol</code> to be the parent for the <code>Symbol</code>.
@@ -133,12 +161,37 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      */
     public void createSymbolsForFieldDeclaration(ASTFieldDeclaration fieldDecl, ParentSymbol parent) {
         long flags = getFlags(fieldDecl);
+        ChildSymbolTable parentTable = parent.getTable();
         for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
-            ChildSymbolTable parentTable = parent.getTable();
             VariableSymbol symbol = new VariableSymbol(fieldDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
             insertSymbol(parentTable, symbol);
             varDecl.setDeclSymbol(symbol);
+        }
+    }
+
+    /**
+     * Creates a <code>Symbol</code>s for an <code>InterfaceMethodDeclaration</code>.
+     * Populates it in the given <code>SymbolTable</code>.
+     * @param methodDecl An <code>ASTInterfaceMethodDeclaration</code>.
+     * @param parent A <code>ParentSymbol</code> to be the parent for the <code>Symbol</code>.
+     */
+    public void createSymbolsForInterfaceMethodDeclaration(ASTInterfaceMethodDeclaration methodDecl,
+                                                           ParentSymbol parent) {
+        long flags = getFlags(methodDecl);
+        ChildSymbolTable parentTable = parent.getTable();
+        flags |= FLAG_MOD_ABSTRACT;
+        ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getInterfaceMethodSymbolName(methodDecl),
+                Kind.METHOD, parentTable, flags);
+        insertSymbol(parentTable, symbol);
+        methodDecl.setDeclSymbol(symbol);
+
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, symbol);
+        symbol.setTable(table);
+        createSymbolsForFormalParameterList(methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol);
+
+        if (methodDecl.getBody().getBlock().isPresent()) {
+            getStatementsSymbolCreator().createSymbolsForBlock(methodDecl.getBody().getBlock().get(), symbol);
         }
     }
 
@@ -202,8 +255,22 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      *     list appended.
      */
     public String getMethodSymbolName(ASTMethodDeclaration methodDecl) {
-        return methodDecl.getHeader().getMethodDecl().getName().getValue() +
-                getFormalParameterListSymbolName(methodDecl.getHeader().getMethodDecl().getFormalParamList());
+        return getMethodHeaderSymbolName(methodDecl.getHeader());
+    }
+
+    /**
+     * Returns the symbol name for an interface method declaration.
+     * @param methodDecl An <code>ASTInterfaceMethodDeclaration</code>.
+     * @return The method name with the symbol name for the formal parameter
+     *     list appended.
+     */
+    public String getInterfaceMethodSymbolName(ASTInterfaceMethodDeclaration methodDecl) {
+        return getMethodHeaderSymbolName(methodDecl.getHeader());
+    }
+
+    private String getMethodHeaderSymbolName(ASTMethodHeader header) {
+        return header.getMethodDecl().getName().getValue() +
+                getFormalParameterListSymbolName(header.getMethodDecl().getFormalParamList());
     }
 
     /**
@@ -221,7 +288,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     }
 
     /**
-     * Gets flags for an <code>ASTMember</code>.
+     * Gets flags for a <code>Member</code>.
      * @param decl An <code>ASTMember</code>.
      * @return Flags in the form of a <code>long</code>.
      */
@@ -231,6 +298,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         for (TokenType modifier : modifiers) {
             switch (modifier) {
             // General modifiers
+            case ABSTRACT -> flags |= FLAG_MOD_ABSTRACT;
             case CONSTANT -> flags |= FLAG_MOD_SHARED;
             case OVERRIDE -> flags |= FLAG_MOD_OVERRIDE;
             }

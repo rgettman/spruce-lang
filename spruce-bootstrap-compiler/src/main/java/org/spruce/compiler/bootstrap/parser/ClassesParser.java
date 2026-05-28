@@ -1,6 +1,7 @@
 package org.spruce.compiler.bootstrap.parser;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -12,6 +13,7 @@ import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclaratorList;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
+import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.scanner.Scanner;
@@ -42,7 +44,8 @@ public class ClassesParser extends BasicParser {
      * the same list of nested types.
      * <em>
      * TypeDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration
+     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration
      * </em>
      * @param loc The <code>Location</code>.
      * @param genModList An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
@@ -51,8 +54,210 @@ public class ClassesParser extends BasicParser {
     private ASTTypeDeclaration parseNestedType(Location loc, ASTGeneralModifierList genModList) {
         return switch (curr().getType()) {
             case CLASS -> parseClassDeclaration(loc, genModList);
+            case INTERFACE -> parseInterfaceDeclaration(loc, genModList);
             default -> throw internalError("type declaration");
         };
+    }
+
+    /**
+     * Parses an <code>InterfaceDeclaration</code>, given an already parsed
+     * general modifier list.
+     * <em>
+     * InterfaceDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;interface Identifier [TypeParameters] [ExtendsInterfaces] [Permits] InterfaceBody
+     * </em>
+     * @param loc The <code>Location</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
+     * @return An <code>ASTInterfaceDeclaration</code>.
+     */
+    public ASTInterfaceDeclaration parseInterfaceDeclaration(Location loc, ASTGeneralModifierList gms) {
+        ASTInterfaceDeclaration.Builder builder = new ASTInterfaceDeclaration.Builder()
+                .setLocation(loc);
+        if (accept(INTERFACE) == null) {
+            throw internalError(INTERFACE);
+        }
+        // No expected modifiers for interfaces (yet).
+        convertToSpecificList(gms,
+                        "Unexpected interface modifier.",
+                        Arrays.asList(),
+                        ASTClassModifierList::new);
+        builder.setName(getNamesParser().parseIdentifier());
+        if (isCurr(EXTENDS)) {
+            builder.setExtendsInterfaces(parseExtendsInterfaces());
+        }
+        return builder.setInterfaceParts(parseInterfaceBody()).build();
+    }
+
+    /**
+     * Parses an <code>ExtendsInterfaces</code>.
+     * <em>
+     * ExtendsInterfaces:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;extends DataTypeNoArrayList
+     * </em>
+     * @return An <code>ASTDataTypeNoArrayList</code>.
+     */
+    public ASTDataTypeNoArrayList parseExtendsInterfaces() {
+        if (accept(EXTENDS) == null) {
+            throw internalError(EXTENDS);
+        }
+        return getTypesParser().parseDataTypeNoArrayList();
+    }
+
+    /**
+     * Parses an <code>InterfaceBody</code>.
+     * <em>
+     * InterfaceBody:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;{ }<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;{ InterfacePartList }
+     * </em>
+     * @return An <code>ASTInterfacePartList</code>.
+     */
+    public ASTInterfacePartList parseInterfaceBody() {
+        if (accept(OPEN_BRACE) == null) {
+            error(curr().getLocation(), "Expected '{'.");
+        }
+        ASTInterfacePartList node = parseInterfacePartList();
+        if (accept(CLOSE_BRACE) == null) {
+            error(curr().getLocation(), "Expected '}'.");
+        }
+        return node;
+    }
+
+    /**
+     * Parses an <code>InterfacePartList</code>.
+     * <em>
+     * InterfacePartList:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;InterfacePart {InterfacePart}
+     * </em>
+     * @return An <code>ASTInterfacePartList</code>.
+     */
+    public ASTInterfacePartList parseInterfacePartList() {
+        return parseMultiple(
+                t -> Arrays.asList(ABSTRACT, OVERRIDE, CLASS, INTERFACE,
+                                 CONSTANT, VOID, IDENTIFIER)
+                        .contains(t.getType()),
+                "Expected constant or method declaration.",
+                this::parseInterfacePart,
+                ASTInterfacePartList::new,
+                false
+        );
+    }
+
+    /**
+     * Parses an <code>InterfacePart</code>.
+     * <em>
+     * InterfacePart:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ConstantDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceMethodDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;TypeDeclaration
+     * </em>
+     * @return An <code>ASTInterfacePart</code> representing one of the above productions.
+     */
+    public ASTInterfacePart parseInterfacePart() {
+        skipUnrecognizedTokens();
+        Location loc = curr().getLocation();
+        ASTGeneralModifierList genModList = parseGeneralModifierList();
+
+        switch(curr().getType()) {
+        case CLASS, INTERFACE -> { return parseNestedType(loc, genModList); }
+        }
+
+        if (isCurr(VOID)) {
+            // Result(void) ...
+            return parseInterfaceMethodDeclaration(loc, genModList);
+        }
+        else {
+            ASTDataType dt = getTypesParser().parseDataType();
+            if (isCurr(IDENTIFIER) && isNext(OPEN_PARENTHESIS)) {
+                // [mut] DataType identifier (
+                return parseInterfaceMethodDeclaration(loc, genModList, dt);
+            }
+            else {
+                // DataType ...
+                return parseConstantDeclaration(loc, genModList, dt);
+            }
+        }
+    }
+
+    /**
+     * Parses an <code>InterfaceMethodDeclaration</code>, given optionally already
+     * parsed productions: AnnotationList, AccessModifier, a GeneralModifierList,
+     * and a TypeParameterList.
+     * <em>
+     * InterfaceMethodDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;[InterfaceMethodModifierList] MethodHeader MethodBody
+     * </em>
+     * @param loc The starting <code>Location</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
+     * @return An <code>ASTInterfaceMethodDeclaration</code>.
+     */
+    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTGeneralModifierList gms) {
+        ASTInterfaceMethodModifierList interfaceMethodModifiers = convertToSpecificList(gms,
+                "Unexpected interface method modifier.",
+                Arrays.asList(OVERRIDE),
+                ASTInterfaceMethodModifierList::new
+        );
+        ASTMethodHeader header = parseMethodHeader();
+        ASTMethodBody body = parseMethodBody();
+        return new ASTInterfaceMethodDeclaration(loc, interfaceMethodModifiers, header, body);
+    }
+
+    /**
+     * Parses an <code>InterfaceMethodDeclaration</code>, given optionally already
+     * parsed productions: AnnotationList, AccessModifier, and a GeneralModifierList.
+     * <em>
+     * InterfaceMethodDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;[AnnotationList] [AccessModifier] [InterfaceMethodModifierList] MethodHeader MethodBody
+     * </em>
+     * @param loc The starting <code>Location</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
+     * @param dt An already parsed <code>ASTDataType</code>.
+     * @return An <code>ASTInterfaceMethodDeclaration</code>.
+     */
+    public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTGeneralModifierList gms,
+                                                                         ASTDataType dt) {
+        ASTInterfaceMethodModifierList interfaceMethodModifiers = convertToSpecificList(gms,
+                "Unexpected interface method modifier.",
+                Arrays.asList(OVERRIDE),
+                ASTInterfaceMethodModifierList::new
+        );
+        ASTMethodHeader header = parseMethodHeader(dt);
+        ASTMethodBody body = parseMethodBody();
+        return new ASTInterfaceMethodDeclaration(loc, interfaceMethodModifiers, header, body);
+    }
+
+    /**
+     * Parses a <code>ConstantDeclaration</code>, given an already parsed
+     * AnnotationList, AccessModifier, GeneralModifierList, and DataType.
+     * <em>
+     * ConstantDeclaration:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ConstantModifier DataType VariableDeclaratorList
+     * </em>
+     * @param loc The given <code>Location</code>.
+     * @param gms An already parsed <code>ASTGeneralModifierList</code>, possibly empty.
+     *            It should contain only <code>constant</code>.
+     * @param dt An already parsed <code>ASTKeywordNode</code>, present.
+     * @return An <code>ASTConstantDeclaration</code>.
+     */
+    public ASTConstantDeclaration parseConstantDeclaration(Location loc, ASTGeneralModifierList gms, ASTDataType dt) {
+        ASTConstantModifierList constantModifiers = convertToSpecificList(gms,
+                "Unexpected modifier for a constant.",
+                Collections.singletonList(CONSTANT),
+                ASTConstantModifierList::new
+        );
+        ASTKeywordNode constantMod;
+        if (constantModifiers.getChildren().isEmpty()) {
+            error(dt.getLocation(), "Expected 'constant'.");
+            constantMod = new ASTKeywordNode(curr().getLocation(), UNKNOWN);
+        }
+        else {
+            constantMod = constantModifiers.get(0);
+        }
+        ASTVariableDeclaratorList varDeclList = getStatementsParser().parseVariableDeclaratorList();
+        if (accept(SEMICOLON) == null) {
+            error(curr().getLocation(), "Expected ';'.");
+        }
+        return new ASTConstantDeclaration(loc, constantMod, dt, varDeclList);
     }
 
     /**
@@ -60,7 +265,7 @@ public class ClassesParser extends BasicParser {
      * GeneralModifierList.
      * <em>
      * ClassDeclaration:<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;class Identifier [Superclass] ClassBody
+     * &nbsp;&nbsp;&nbsp;&nbsp;class Identifier [Superclass] [Superinterfaces] ClassBody
      * </em>
      * @param loc The <code>Location</code>.
      * @return An <code>ASTClassDeclaration</code>.
@@ -71,9 +276,16 @@ public class ClassesParser extends BasicParser {
         if (accept(CLASS) == null) {
             throw internalError(CLASS);
         }
-        builder.setName(getNamesParser().parseIdentifier());
+        builder.setClassModifierList(convertToSpecificList(gms,
+                        "Unexpected class modifier.",
+                        Arrays.asList(ABSTRACT),
+                        ASTClassModifierList::new))
+                .setName(getNamesParser().parseIdentifier());
         if (isCurr(EXTENDS)) {
             builder.setSuperclass(parseSuperclass());
+        }
+        if (isCurr(IMPLEMENTS)) {
+            builder.setSuperinterfaces(parseSuperinterfaces());
         }
         return builder.setClassParts(parseClassBody())
                 .build();
@@ -92,6 +304,21 @@ public class ClassesParser extends BasicParser {
             throw internalError(EXTENDS);
         }
         return getTypesParser().parseDataTypeNoArray();
+    }
+
+    /**
+     * Parses a <code>Superinterfaces</code>.
+     * <em>
+     * Superinterfaces:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;implements DataTypeNoArrayList
+     * </em>
+     * @return An <code>ASTDataTypeNoArrayList</code>.
+     */
+    public ASTDataTypeNoArrayList parseSuperinterfaces() {
+        if (accept(IMPLEMENTS) == null) {
+            throw internalError(IMPLEMENTS);
+        }
+        return getTypesParser().parseDataTypeNoArrayList();
     }
 
     /**
@@ -124,7 +351,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTClassPartList parseClassPartList() {
         return parseMultiple(
-                t -> Arrays.asList(CLASS, OVERRIDE,
+                t -> Arrays.asList(ABSTRACT, CLASS, INTERFACE, OVERRIDE,
                                 CONSTRUCTOR, CONSTANT, VOID, IDENTIFIER)
                         .contains(t.getType()),
                 "Expected constructor, field, or method declaration.",
@@ -151,8 +378,8 @@ public class ClassesParser extends BasicParser {
 
         ASTGeneralModifierList genModList = parseGeneralModifierList();
 
-        if (curr().getType() == CLASS) {
-            return parseNestedType(loc, genModList);
+        switch (curr().getType()) {
+        case CLASS, INTERFACE -> { return parseNestedType(loc, genModList); }
         }
 
         // No type parameters:
@@ -260,7 +487,7 @@ public class ClassesParser extends BasicParser {
     public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTGeneralModifierList gms) {
         ASTMethodModifierList methodModifiers = convertToSpecificList(gms,
                 "Unexpected method modifier.",
-                Arrays.asList(OVERRIDE),
+                Arrays.asList(ABSTRACT, OVERRIDE),
                 ASTMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader();
@@ -285,7 +512,7 @@ public class ClassesParser extends BasicParser {
                                                        ASTDataType dt) {
         ASTMethodModifierList methodModifiers = convertToSpecificList(gms,
                 "Unexpected method modifier.",
-                Arrays.asList(OVERRIDE),
+                Arrays.asList(ABSTRACT, OVERRIDE),
                 ASTMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader(dt);
@@ -321,7 +548,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTGeneralModifierList parseGeneralModifierList() {
         return parseMultiple(
-                t -> test(t, Arrays.asList(CONSTANT, OVERRIDE)),
+                t -> test(t, Arrays.asList(ABSTRACT, CONSTANT, OVERRIDE)),
                 this::parseGeneralModifier,
                 ASTGeneralModifierList::new
         );
@@ -338,7 +565,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTKeywordNode parseGeneralModifier() {
         return parseModifier(
-                Arrays.asList(CONSTANT, OVERRIDE),
+                Arrays.asList(ABSTRACT, CONSTANT, OVERRIDE),
                 "general modifier."
         );
     }
@@ -504,8 +731,8 @@ public class ClassesParser extends BasicParser {
         List<TokenType> firstTokens = Arrays.asList(
                 CONSTRUCTOR,
                 VOID,  // Result
-                CONSTANT, OVERRIDE,  // General modifiers
-                CLASS,  // Type declarations
+                ABSTRACT, CONSTANT, OVERRIDE,  // General modifiers
+                CLASS, INTERFACE, // Type declarations
                 LESS_THAN, IDENTIFIER,  // Type parameters, name
                 CLOSE_BRACE, EOF
         );

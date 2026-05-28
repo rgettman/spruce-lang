@@ -140,7 +140,8 @@ public class SymbolTable {
      *      the given name and of one of "type" kinds.
      */
     public boolean containsType(String name) {
-        return containsName(name, List.of(NAMESPACE, CLASS));
+        // Keep consistent with Symbol.Kind.isType()!
+        return containsName(name, List.of(NAMESPACE, CLASS, INTERFACE));
     }
 
     /**

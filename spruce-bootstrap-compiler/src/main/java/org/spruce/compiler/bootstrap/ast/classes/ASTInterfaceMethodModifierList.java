@@ -7,29 +7,26 @@ import org.spruce.compiler.bootstrap.ast.ASTListNode;
 import org.spruce.compiler.bootstrap.common.Location;
 
 /**
- * <p>An <code>ASTMethodModifierList</code> is a list of general modifiers,
+ * <p>An <code>ASTInterfaceMethodModifierList</code> is a list of general modifiers,
  * restricted to the following modifiers:</p>
  *
  * <ul>
- *     <li>abstract</li>
  *     <li>override</li>
  * </ul>
  *
  * <em>
- * MethodModifierList:<br>
+ * InterfaceMethodModifierList:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;GeneralModifier {GeneralModifier}
  * </em>
  */
-public class ASTMethodModifierList extends ASTListNode<ASTKeywordNode>
-{
+public class ASTInterfaceMethodModifierList extends ASTListNode<ASTKeywordNode> {
     /**
-     * Constructs an <code>ASTMethodModifierList</code> at the given <code>Location</code>
+     * Constructs an <code>ASTInterfaceMethodModifierList</code> at the given <code>Location</code>
      * and with possibly a node as its child.
      * @param location The <code>Location</code>.
-     * @param children A <code>List</code> of <code>ASTKeywordNode</code>s.
+     * @param children The child nodes.
      */
-    public ASTMethodModifierList(Location location, List<ASTKeywordNode> children)
-    {
-        super(location, children, Type.METHOD_MODIFIERS);
+    public ASTInterfaceMethodModifierList(Location location, List<ASTKeywordNode> children) {
+        super(location, children, Type.INTERFACE_METHOD_MODIFIERS);
     }
 }

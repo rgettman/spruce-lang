@@ -209,7 +209,7 @@ public class TopLevelParser extends BasicParser {
         List<ASTTypeDeclaration> children = new ArrayList<>();
         Predicate<Token> isOnInitialToken = t ->
                 Arrays.asList(CONSTANT, OVERRIDE,  // General Modifiers
-                                CLASS  // Types
+                                CLASS, INTERFACE  // Types
                         )
                         .contains(t.getType());
         while (!isCurr(EOF)) {
@@ -226,11 +226,11 @@ public class TopLevelParser extends BasicParser {
     }
 
     /**
-     * Parses a <code>TypeDeclaration</code>, given an already parsed
-     * AnnotationList.
+     * Parses a <code>TypeDeclaration</code>.
      * <em>
      * TypeDeclaration:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration
+     * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration
      * </em>
      * @return An <code>ASTTypeDeclaration</code>.
      */
@@ -241,6 +241,7 @@ public class TopLevelParser extends BasicParser {
         ASTGeneralModifierList genModList = cp.parseGeneralModifierList();
         return switch (curr().getType()) {
             case CLASS -> cp.parseClassDeclaration(loc, genModList);
+            case INTERFACE -> cp.parseInterfaceDeclaration(loc, genModList);
             default -> throw internalError("class expected");
         };
     }

@@ -98,15 +98,33 @@ public class ScannerTest {
     }
 
     /**
-     * Tests recognizing <code>class</code>.
+     * Tests recognizing <code>class</code>, <code>extends</code>, and <code>implements</code>.
      */
     @Test
     public void testClassAccessModifiersBraces() {
-        String line = "class Test {}";
+        String line = "class Test extends Base implements SomeInterface {}";
         Scanner scanner = new Scanner(line);
 
         List<Token> expectedTokens = Arrays.asList(
                 new Token(CLASS, "class"), new Token(IDENTIFIER, "Test"),
+                new Token(EXTENDS, "extends"), new Token(IDENTIFIER, "Base"),
+                new Token(IMPLEMENTS, "implements"), new Token(IDENTIFIER, "SomeInterface"),
+                new Token(OPEN_BRACE, "{"), new Token(CLOSE_BRACE, "}")
+        );
+        compareToExpected(expectedTokens, scanner);
+    }
+
+    /**
+     * Tests recognizing <code>interface</code>.
+     */
+    @Test
+    public void testInterface() {
+        String line = "interface Test extends Example {}";
+        Scanner scanner = new Scanner(line);
+
+        List<Token> expectedTokens = Arrays.asList(
+                new Token(INTERFACE, "interface"), new Token(IDENTIFIER, "Test"),
+                new Token(EXTENDS, "extends"), new Token(IDENTIFIER, "Example"),
                 new Token(OPEN_BRACE, "{"), new Token(CLOSE_BRACE, "}")
         );
         compareToExpected(expectedTokens, scanner);
@@ -143,7 +161,7 @@ public class ScannerTest {
     @Test
     public void testMethodAndPrimitiveTypes() {
         String line = """
-            override void testMethod() {
+            abstract override void testMethod() {
                 boolean t = true;
                 boolean f = false;
                 byte b = 1;
@@ -158,7 +176,7 @@ public class ScannerTest {
             """;
 
         List<Token> expectedTokens = Arrays.asList(
-                new Token(OVERRIDE, "override"),
+                new Token(ABSTRACT, "abstract"), new Token(OVERRIDE, "override"),
                 new Token(VOID, "void"), new Token(IDENTIFIER, "testMethod"),
                 new Token(OPEN_PARENTHESIS, "("), new Token(CLOSE_PARENTHESIS, ")"),
                 new Token(OPEN_BRACE, "{"),

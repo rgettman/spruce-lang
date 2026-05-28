@@ -150,6 +150,10 @@ public enum TokenType {
 
     // KEYWORDS
     /**
+     * Not implemented/instantiable.
+     */
+    ABSTRACT,
+    /**
      * Cast operator
      */
     AS,
@@ -194,9 +198,17 @@ public enum TokenType {
      */
     IF,
     /**
+     * Class implements interface.
+     */
+    IMPLEMENTS,
+    /**
      * For use in enhanced for loop to indicate what to loop over.
      */
     IN,
+    /**
+     * All functionality abstract except for default methods; constants.
+     */
+    INTERFACE,
     /**
      * Determines if an object referred to by a reference is an instance of a
      * class, interface, or enum.

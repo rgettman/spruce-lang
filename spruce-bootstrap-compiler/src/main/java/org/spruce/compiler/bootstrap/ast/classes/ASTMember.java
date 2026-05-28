@@ -11,7 +11,7 @@ import org.spruce.compiler.bootstrap.scanner.TokenType;
  * declared inside the body of a type declaration, and can have general
  * modifiers, an access modifier, and one or more names.
  */
-public sealed interface ASTMember extends Node permits ASTClassPart {
+public sealed interface ASTMember extends Node permits ASTClassPart, ASTInterfacePart {
     /**
      * Returns a <code>List</code> of all <code>TokenType</code>s found as
      * modifiers on a declaration, such as a type declaration or a part of a

@@ -9,15 +9,17 @@ import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
  * <p>An <code>ASTTypeDeclaration</code> is an <code>ASTMember</code>
- * that is a class.</p>
+ * that is a class or an interface.</p>
  *
  * <em>
  * TypeDeclaration:<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration
+ * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;InterfaceDeclaration
  * </em>
  */
-public sealed interface ASTTypeDeclaration extends ParentNode, ASTClassPart, SymbolDeclaration<TypeSymbol>
-        permits ASTClassDeclaration {
+public sealed interface ASTTypeDeclaration extends ParentNode, ASTClassPart, ASTInterfacePart,
+                SymbolDeclaration<TypeSymbol>
+        permits ASTClassDeclaration, ASTInterfaceDeclaration {
     /**
      * Returns the <code>ASTIdentifier</code> representing the name of the type
      * declaration.

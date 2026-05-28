@@ -12,6 +12,7 @@ public class Symbol {
 
     public static final long FLAG_NONE = 0L;
 
+    public static final long FLAG_MOD_ABSTRACT = 0x10L;
     public static final long FLAG_MOD_OVERRIDE = 0x80L;
     public static final long FLAG_MOD_SHARED = 0x200L;
 
@@ -22,7 +23,7 @@ public class Symbol {
         BLOCK,
         CLASS, CONSTRUCTOR,
         FIELD, FOR_STMT,
-        IF_STMT,
+        IF_STMT, INTERFACE,
         LOCAL,
         METHOD,
         NAMESPACE,
@@ -36,7 +37,7 @@ public class Symbol {
          */
         public boolean isType() {
             // There will be more types!
-            return this == CLASS;
+            return this == CLASS || this == INTERFACE;
         }
 
         /**

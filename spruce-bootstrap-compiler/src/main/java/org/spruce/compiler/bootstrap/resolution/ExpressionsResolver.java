@@ -278,7 +278,7 @@ public class ExpressionsResolver extends BasicResolver {
                 if (optTypeName.isPresent()) {
                     TypeSymbol resolved = optTypeName.get();
                     if (getTypesResolver().isEnclosingType(resolved, direct)) {
-                        Optional<TypeSymbol> optSupertype = resolved.getSupertype();
+                        Optional<TypeSymbol> optSupertype = resolved.getSuperclass();
                         if (optSupertype.isPresent()) {
                             resolveFieldGivenType(optSupertype.get(), fieldAccess);
                         }
@@ -301,7 +301,7 @@ public class ExpressionsResolver extends BasicResolver {
             }
             else {
                 // super.Identifier
-                Optional<TypeSymbol> optSupertype = direct.getSupertype();
+                Optional<TypeSymbol> optSupertype = direct.getSuperclass();
                 if (optSupertype.isPresent()) {
                     resolveFieldGivenType(optSupertype.get(), fieldAccess);
                 }

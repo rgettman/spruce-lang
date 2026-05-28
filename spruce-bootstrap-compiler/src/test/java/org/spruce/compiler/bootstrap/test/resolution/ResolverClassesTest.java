@@ -1,16 +1,17 @@
 package org.spruce.compiler.bootstrap.test.resolution;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.*;
 
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
+import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
@@ -444,9 +445,98 @@ public class ResolverClassesTest {
         expectError(trio.global(), trio.resolver());
     }
 
-    // DataTypeNoArray resolution should be fully tested with all cases above.
-    // DataType resolution, tested below, uses DTNA resolution, so just make
-    // sure things get resolved or give an error as expected.
+    /**
+     * Test class superinterface resolution.
+     */
+    @Test
+    public void testClassSuperinterfaceResolution() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                interface Copyable {}
+                """,
+                """
+                namespace spruce.lang;
+                class String implements Copyable {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        ParentSymbol copyable = ensureIsa(lang.getTable().get("Copyable"), ParentSymbol.class);
+
+        ASTClassDeclaration string = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        assertFalse(string.getSuperclass().isPresent());
+        Optional<ASTDataTypeNoArrayList> optDtnaSuperinterfaces = string.getSuperinterfaces();
+        assertTrue(optDtnaSuperinterfaces.isPresent());
+        ASTDataTypeNoArrayList dtnaSuperinterfaces = optDtnaSuperinterfaces.get();
+        assertEquals(1, dtnaSuperinterfaces.getTypedChildren().size());
+        ASTDataTypeNoArray dtnaSuperinterface = dtnaSuperinterfaces.get(0);
+        assertEquals(copyable, dtnaSuperinterface.getResolvedDataType());
+    }
+
+    /**
+     * Test bad duplicate superinterfaces.
+     */
+    @Test
+    public void testBadInterfaceSuperinterfaceDuplicate() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                interface Copyable {}
+                """,
+                """
+                namespace spruce.lang;
+                class String implements Copyable, Copyable {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Test interface superinterface resolution.
+     */
+    @Test
+    public void testInterfaceSuperinterfaceResolution() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                interface Fooable {}
+                interface Barable {}
+                """,
+                """
+                namespace spruce.lang;
+                interface Bazable extends Fooable, Barable {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        ParentSymbol fooable = ensureIsa(lang.getTable().get("Fooable"), ParentSymbol.class);
+        ParentSymbol barable = ensureIsa(lang.getTable().get("Barable"), ParentSymbol.class);
+
+        ASTInterfaceDeclaration bazable = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTInterfaceDeclaration.class);
+        Optional<ASTDataTypeNoArrayList> optDtnaSuperinterfaces = bazable.getExtendsInterfaces();
+        assertTrue(optDtnaSuperinterfaces.isPresent());
+        ASTDataTypeNoArrayList dtnaSuperinterfaces = optDtnaSuperinterfaces.get();
+        assertEquals(2, dtnaSuperinterfaces.getTypedChildren().size());
+        ASTDataTypeNoArray dtnaSi0 = dtnaSuperinterfaces.get(0);
+        assertEquals(fooable, dtnaSi0.getResolvedDataType());
+        ASTDataTypeNoArray dtnaSi1 = dtnaSuperinterfaces.get(1);
+        assertEquals(barable, dtnaSi1.getResolvedDataType());
+    }
+
+    //
+    // Types above, members below.
+    //
 
     /**
      * Tests field data type resolution.

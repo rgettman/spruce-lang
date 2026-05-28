@@ -25,12 +25,317 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ParserClassesTest {
 
     /**
+     * Tests simple interface declaration.
+     */
+    @Test
+    public void testInterfaceDeclarationSimple() {
+        ClassesParser parser = getClassesParser("interface Dummy {}");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration(loc, genModList);
+        ensureNoErrors(node, parser);
+
+        assertEquals("Dummy", node.getName().getValue());
+        assertFalse(node.getExtendsInterfaces().isPresent());
+        checkList(node.getInterfaceParts(), INTERFACE_PARTS, ASTInterfacePart.class, 0);
+    }
+
+    /**
+     * Tests full interface declaration.
+     */
+    @Test
+    public void testInterfaceDeclarationFull() {
+        ClassesParser parser = getClassesParser("""
+            interface FullTest extends Test, Serializable, List
+            {}
+            """);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTInterfaceDeclaration node = parser.parseInterfaceDeclaration(loc, genModList);
+        ensureNoErrors(node, parser);
+
+        assertEquals("FullTest", node.getName().getValue());
+        assertTrue(node.getExtendsInterfaces().isPresent());
+        checkList(node.getInterfaceParts(), INTERFACE_PARTS, ASTInterfacePart.class, 0);
+    }
+
+    /**
+     * Tests extends interfaces (extends clause on interface).
+     */
+    @Test
+    public void testExtendsInterfaces() {
+        ClassesParser parser = getClassesParser("extends Copyable, Serializable");
+        ASTDataTypeNoArrayList node = parser.parseExtendsInterfaces();
+        ensureNoErrors(node, parser);
+        checkList(node, DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 2);
+    }
+
+    /**
+     * Tests empty interface body.
+     */
+    @Test
+    public void testInterfaceBodyEmpty() {
+        ClassesParser parser = getClassesParser("{}");
+        ASTInterfacePartList node = parser.parseInterfaceBody();
+        ensureNoErrors(node, parser);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 0);
+    }
+
+    /**
+     * Tests interface body.
+     */
+    @Test
+    public void testInterfaceBody() {
+        ClassesParser parser = getClassesParser("""
+                {
+                    constant Integer i = 1;
+                    class Inner{}
+                    Integer getI();
+                }
+                """);
+        ASTInterfacePartList node = parser.parseInterfaceBody();
+        ensureNoErrors(node, parser);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 3);
+    }
+
+    /**
+     * Tests bad interface body with no open brace.
+     */
+    @Test
+    public void testInterfaceBodyNoOpenBrace() {
+        ClassesParser parser = getClassesParser("""
+                    constant Integer i = 1;
+                    class Inner{}
+                    Integer getI();
+                }
+                """);
+        ASTInterfacePartList node = parser.parseInterfaceBody();
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests bad interface body with no close brace.
+     */
+    @Test
+    public void testInterfaceBodyNoCloseBrace() {
+        ClassesParser parser = getClassesParser("""
+                {
+                    constant Integer i = 1;
+                    class Inner{}
+                    Integer getI();
+                """);
+        ASTInterfacePartList node = parser.parseInterfaceBody();
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests interface part list of all possible interface parts.
+     */
+    @Test
+    public void testInterfacePartListComprehensive() {
+        ClassesParser parser = getClassesParser("""
+                constant String foo = "Foo!";
+                String getToo();
+                TrafficLight getStatus();
+                class Nested {}
+                interface Helper {}
+                """);
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        ensureNoErrors(node, parser);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 5);
+    }
+
+    /**
+     * Tests interface part list of interface part.
+     */
+    @Test
+    public void testInterfacePartListOfInterfacePart() {
+        ClassesParser parser = getClassesParser("constant Integer i = 1;");
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        ensureNoErrors(node, parser);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 1);
+    }
+
+    /**
+     * Tests interface part list.
+     */
+    @Test
+    public void testInterfacePartList() {
+        ClassesParser parser = getClassesParser("""
+            constant Integer i = 1;
+            class Inner {}
+            """);
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        ensureNoErrors(node, parser);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 2);
+    }
+
+    /**
+     * Tests interface part lists of multiple interface parts.
+     */
+    @Test
+    public void testInterfacePartListMultiple() {
+        ClassesParser parser = getClassesParser("""
+                constant Integer i = 1;
+                class Inner {}
+                Integer getI();
+                """);
+        ASTInterfacePartList node = parser.parseInterfacePartList();
+        ensureNoErrors(node, parser);
+        checkList(node, INTERFACE_PARTS, ASTInterfacePart.class, 3);
+    }
+
+    /**
+     * Tests interface part of method declaration with void result.
+     */
+    @Test
+    public void testInterfacePartOfMethodDeclarationVoidResult() {
+        ClassesParser parser = getClassesParser("void method();");
+        ASTInterfacePart node = parser.parseInterfacePart();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTInterfaceMethodDeclaration.class, node);
+    }
+
+    /**
+     * Tests interface part of method declaration data type void result.
+     */
+    @Test
+    public void testInterfacePartOfMethodDeclarationDataTypeResult() {
+        ClassesParser parser = getClassesParser("String method();");
+        ASTInterfacePart node = parser.parseInterfacePart();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTInterfaceMethodDeclaration.class, node);
+    }
+
+    /**
+     * Tests interface part of method declaration with mut result.
+     */
+    @Test
+    public void testInterfacePartOfMethodDeclarationConstResult() {
+        ClassesParser parser = getClassesParser("String method(String param);");
+        ASTInterfacePart node = parser.parseInterfacePart();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTInterfaceMethodDeclaration.class, node);
+    }
+
+    /**
+     * Tests interface part of constant declaration.
+     */
+    @Test
+    public void testInterfacePartOfConstantDeclaration() {
+        ClassesParser parser = getClassesParser("constant String LANGUAGE = \"Spruce\";");
+        ASTInterfacePart node = parser.parseInterfacePart();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTConstantDeclaration.class, node);
+    }
+
+    /**
+     * Tests interface part of class declaration.
+     */
+    @Test
+    public void testInterfacePartOfClassDeclaration() {
+        ClassesParser parser = getClassesParser("class Nested {}");
+        ASTInterfacePart node = parser.parseInterfacePart();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTClassDeclaration.class, node);
+    }
+
+    /**
+     * Tests interface part of interface declaration.
+     */
+    @Test
+    public void testInterfacePartOfInterfaceDeclaration() {
+        ClassesParser parser = getClassesParser("interface TrafficLight { Light getStatus(); }");
+        ASTInterfacePart node = parser.parseInterfacePart();
+        ensureNoErrors(node, parser);
+        assertInstanceOf(ASTInterfaceDeclaration.class, node);
+    }
+
+    /**
+     * Tests simple interface method declaration.
+     */
+    @Test
+    public void testInterfaceMethodDeclarationSimple() {
+        ClassesParser parser = getClassesParser("Boolean add(T element);");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration(loc, genModList, dt);
+        ensureNoErrors(node, parser);
+
+        checkList(node.getModifierList(), INTERFACE_METHOD_MODIFIERS, ASTKeywordNode.class, 0);
+        assertNotNull(node.getHeader());
+        assertNotNull(node.getBody());
+    }
+
+    /**
+     * Tests bad interface method declaration of bad modifier.
+     */
+    @Test
+    public void testInterfaceMethodDeclarationBadMod() {
+        ClassesParser parser = getClassesParser("""
+            abstract void addAll(Collection other) {
+                for (Any element in other) {
+                    add(other);
+                }
+            }
+            """);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration(loc, genModList);
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests bad constant declaration, no "constant".
+     */
+    @Test
+    public void testConstantDeclaration() {
+        ClassesParser parser = getClassesParser("String test = \"Test\";");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTConstantDeclaration node = parser.parseConstantDeclaration(loc, genModList, dt);
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests constant declaration with "constant".
+     */
+    @Test
+    public void testConstantDeclarationOfConstant() {
+        ClassesParser parser = getClassesParser("constant String test = \"Test\";");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTConstantDeclaration node = parser.parseConstantDeclaration(loc, genModList, dt);
+        ensureNoErrors(node, parser);
+
+        assertNotNull(node.getConstantMod());
+        assertNotNull(node.getDataType());
+        assertNotNull(node.getVarDeclList());
+    }
+
+    /**
+     * Tests bad constant declaration of no semicolon.
+     */
+    @Test
+    public void testConstantDeclarationNoSemicolon() {
+        ClassesParser parser = getClassesParser("constant String noSemicolon = \"Test\"}");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTDataType dt = parser.getTypesParser().parseDataType();
+        ASTConstantDeclaration node = parser.parseConstantDeclaration(loc, genModList, dt);
+        expectError(node, parser);
+    }
+
+    /**
      * Tests full class declaration.
      */
     @Test
     public void testClassDeclarationFull() {
         ClassesParser parser = getClassesParser("""
-            class FullTest extends Test
+            class FullTest extends Test implements Serializable, List
             {}
             """);
         ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
@@ -41,6 +346,26 @@ public class ParserClassesTest {
         assertEquals("FullTest", node.getName().getValue());
         assertTrue(node.getSuperclass().isPresent());
         checkList(node.getSuperclass().get(), SIMPLE_TYPES, ASTSimpleType.class, 1);
+        assertTrue(node.getSuperinterfaces().isPresent());
+        checkList(node.getSuperinterfaces().get(), DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 2);
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
+    }
+
+    /**
+     * Test abstract class.
+     */
+    @Test
+    public void testClassAbstract() {
+        ClassesParser parser = getClassesParser("abstract class AbstractClass {}");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTClassDeclaration node = parser.parseClassDeclaration(loc, genModList);
+        ensureNoErrors(node, parser);
+
+        checkList(node.getClassModifierList(), CLASS_MODIFIERS, ASTKeywordNode.class, 1);
+        assertEquals("AbstractClass", node.getName().getValue());
+        assertFalse(node.getSuperclass().isPresent());
+        assertFalse(node.getSuperinterfaces().isPresent());
         checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
@@ -53,6 +378,34 @@ public class ParserClassesTest {
         ASTDataTypeNoArray node = parser.parseSuperclass();
         ensureNoErrors(node, parser);
         checkList(node, SIMPLE_TYPES, ASTSimpleType.class, 1);
+    }
+
+    /**
+     * Tests superinterfaces (implements clause).
+     */
+    @Test
+    public void testSuperinterfaces() {
+        ClassesParser parser = getClassesParser("implements Copyable");
+        ASTDataTypeNoArrayList node = parser.parseSuperinterfaces();
+        ensureNoErrors(node, parser);
+        checkList(node, DATA_TYPES_NO_ARRAY, ASTDataTypeNoArray.class, 1);
+    }
+
+    /**
+     * Test bare class.
+     */
+    @Test
+    public void testClassBare() {
+        ClassesParser parser = getClassesParser("class SomeClass {}");
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTClassDeclaration node = parser.parseClassDeclaration(loc, genModList);
+        ensureNoErrors(node, parser);
+
+        assertEquals("SomeClass", node.getName().getValue());
+        assertFalse(node.getSuperclass().isPresent());
+        assertFalse(node.getSuperinterfaces().isPresent());
+        checkList(node.getClassParts(), CLASS_PARTS, ASTClassPart.class, 0);
     }
 
     /**
@@ -150,7 +503,7 @@ public class ParserClassesTest {
      */
     @Test
     public void testClassPartOfMethodDeclarationVoidResult() {
-        ClassesParser parser = getClassesParser("void method();");
+        ClassesParser parser = getClassesParser("abstract void method();");
         ASTClassPart node = parser.parseClassPart();
         ensureNoErrors(node, parser);
         assertInstanceOf(ASTMethodDeclaration.class, node);
@@ -431,14 +784,36 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests general modifier list of class modifiers.
+     */
+    @Test
+    public void testGeneralModifierListOfClassModifiers() {
+        ClassesParser parser = getClassesParser("abstract");
+        ASTGeneralModifierList node = parser.parseGeneralModifierList();
+        ensureNoErrors(node, parser);
+        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 1);
+    }
+
+    /**
      * Tests general modifier list of method modifiers.
      */
     @Test
     public void testGeneralModifierListOfMethodModifiers() {
-        ClassesParser parser = getClassesParser("override");
+        ClassesParser parser = getClassesParser("abstract override");
         ASTGeneralModifierList node = parser.parseGeneralModifierList();
         ensureNoErrors(node, parser);
-        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 1);
+        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 2);
+    }
+
+    /**
+     * Tests general modifier of abstract.
+     */
+    @Test
+    public void testGeneralModifierOfAbstract() {
+        ClassesParser parser = getClassesParser("abstract");
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        ensureNoErrors(node, parser);
+        assertEquals(ABSTRACT, node.getKeyword());
     }
 
     /**

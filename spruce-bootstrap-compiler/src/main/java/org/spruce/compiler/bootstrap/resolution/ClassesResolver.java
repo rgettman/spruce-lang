@@ -1,11 +1,13 @@
 package org.spruce.compiler.bootstrap.resolution;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.classes.*;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
+import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
@@ -38,6 +40,8 @@ public class ClassesResolver extends BasicResolver {
         switch (typeDecl) {
         case ASTClassDeclaration classDecl ->
             resolveClassDeclaration(classDecl, ctx);
+        case ASTInterfaceDeclaration interfaceDecl ->
+            resolveInterfaceDeclaration(interfaceDecl, ctx);
         }
     }
 
@@ -51,6 +55,9 @@ public class ClassesResolver extends BasicResolver {
      */
     public void resolveClassDeclaration(ASTClassDeclaration classDecl, ResolutionContext ctx) {
         TypesResolver typesResolver = getTypesResolver();
+        TypeSymbol declSymbol = classDecl.getDeclSymbol();
+
+        // Superclass
         Optional<ASTDataTypeNoArray> optDtnaSuperclass = classDecl.getSuperclass();
         Optional<TypeSymbol> superclass = Optional.empty();
         if (optDtnaSuperclass.isPresent()) {
@@ -72,15 +79,92 @@ public class ClassesResolver extends BasicResolver {
 
             // If the class being resolved _is_ the root class, then that root
             // class has no superclass!
-            if (superclass.isPresent() && superclass.get() == classDecl.getDeclSymbol()) {
+            if (superclass.isPresent() && superclass.get() == declSymbol) {
                 superclass = Optional.empty();
             }
         }
+        superclass.ifPresent(declSymbol::setSuperclass);
 
-        superclass.ifPresent(st -> classDecl.getDeclSymbol().setSupertype(st));
+        // Superinterfaces
+        Optional<ASTDataTypeNoArrayList> optSuperinterfaces = classDecl.getSuperinterfaces();
+        List<TypeSymbol> resolvedInterfaces = declSymbol.getSuperinterfaces();
+        if (optSuperinterfaces.isPresent()) {
+            ASTDataTypeNoArrayList superinterfaces = optSuperinterfaces.get();
+            for (ASTDataTypeNoArray dtnaSuperinterface : superinterfaces.getTypedChildren()) {
+                typesResolver.resolveDataTypeNoArray(dtnaSuperinterface, ctx);
 
+                Optional<TypeSymbol> optSuperinterface = Optional.ofNullable(dtnaSuperinterface.getResolvedDataType());
+                if (optSuperinterface.isPresent()) {
+                    TypeSymbol superinterface = optSuperinterface.get();
+
+                    // No duplicates.
+                    if (resolvedInterfaces.contains(superinterface)) {
+                        error(superinterface.getLocation(), "Duplicate superinterface");
+                    }
+                    else {
+                        declSymbol.addSuperinterface(superinterface);
+                    }
+                }
+
+                // Ensure no superinterface loop, e.g. A -> B -> C -> B.
+                // Can't do that until all types in all OCUs have had all symbols
+                // resolved.
+                // Loop over all types in all OCUs after this initial resolution.
+                // TODO: Will place in a second pass over all types in all OCUs.
+                // This will be in the semantic analysis phase.
+            }
+        }
+
+        // Members
         ResolutionContext classCtx = ctx.withEnclosingSymbol(classDecl.getDeclSymbol());
         for (ASTMember member : classDecl.getMembers()) {
+            resolveMember(member, classCtx);
+        }
+    }
+
+    /**
+     * Resolve all symbols in an <code>InterfaceDeclaration</code>, including any
+     * <code>extends</code> clause, and all interface parts.
+     * @param interfaceDecl An <code>ASTInterfaceDeclaration</code>.
+     * @param ctx A <code>ResolutionContext</code>.
+     */
+    public void resolveInterfaceDeclaration(ASTInterfaceDeclaration interfaceDecl, ResolutionContext ctx) {
+        TypesResolver typesResolver = getTypesResolver();
+        TypeSymbol declSymbol = interfaceDecl.getDeclSymbol();
+
+        // Superinterfaces
+        Optional<ASTDataTypeNoArrayList> optSuperinterfaces = interfaceDecl.getExtendsInterfaces();
+        List<TypeSymbol> resolvedInterfaces = declSymbol.getSuperinterfaces();
+        if (optSuperinterfaces.isPresent()) {
+            ASTDataTypeNoArrayList superinterfaces = optSuperinterfaces.get();
+            for (ASTDataTypeNoArray dtnaSuperinterface : superinterfaces.getTypedChildren()) {
+                typesResolver.resolveDataTypeNoArray(dtnaSuperinterface, ctx);
+
+                Optional<TypeSymbol> optSuperinterface = Optional.ofNullable(dtnaSuperinterface.getResolvedDataType());
+                if (optSuperinterface.isPresent()) {
+                    TypeSymbol superinterface = optSuperinterface.get();
+
+                    // No duplicates.
+                    if (resolvedInterfaces.contains(superinterface)) {
+                        error(superinterface.getLocation(), "Duplicate superinterface");
+                    }
+                    else {
+                        declSymbol.addSuperinterface(superinterface);
+                    }
+                }
+
+                // Ensure no superinterface loop, e.g. A -> B -> C -> B.
+                // Can't do that until all types in all OCUs have had all symbols
+                // resolved.
+                // Loop over all types in all OCUs after this initial resolution.
+                // TODO: Will place in a second pass over all types in all OCUs.
+                // This will be in the semantic analysis phase.
+            }
+        }
+
+        // Members
+        ResolutionContext classCtx = ctx.withEnclosingSymbol(interfaceDecl.getDeclSymbol());
+        for (ASTMember member : interfaceDecl.getMembers()) {
             resolveMember(member, classCtx);
         }
     }
@@ -93,9 +177,28 @@ public class ClassesResolver extends BasicResolver {
     public void resolveMember(ASTMember member, ResolutionContext ctx) {
         switch(member) {
         case ASTTypeDeclaration typeDecl -> resolveTypeDeclaration(typeDecl, ctx);
-        case ASTFieldDeclaration fieldDecl -> resolveFieldDeclaration(fieldDecl, ctx);
-        case ASTMethodDeclaration methodDecl -> resolveMethodDeclaration(methodDecl, ctx);
+        case ASTConstantDeclaration constDecl -> resolveConstantDeclaration(constDecl, ctx);
         case ASTConstructorDeclaration constrDecl -> resolveConstructorDeclaration(constrDecl, ctx);
+        case ASTFieldDeclaration fieldDecl -> resolveFieldDeclaration(fieldDecl, ctx);
+        case ASTInterfaceMethodDeclaration iMethodDecl -> resolveInterfaceMethodDeclaration(iMethodDecl, ctx);
+        case ASTMethodDeclaration methodDecl -> resolveMethodDeclaration(methodDecl, ctx);
+        }
+    }
+
+    /**
+     * Resolve all symbols in a <code>ConstantDeclaration</code>.  All
+     * <code>VariableDeclarator</code>s will be resolved to whatever the
+     * <code>DataType</code> resolves to.
+     * @param constDecl An <code>ASTConstantDeclaration</code>.
+     * @param ctx A <code>ResolutionContext</code> representing the enclosing type.
+     */
+    public void resolveConstantDeclaration(ASTConstantDeclaration constDecl, ResolutionContext ctx) {
+        TypesResolver typesResolver = getTypesResolver();
+        ASTDataType dt = constDecl.getDataType();
+        typesResolver.resolveDataType(dt, ctx);
+
+        for (ASTVariableDeclarator varDecl : constDecl.getVarDeclList().getTypedChildren()) {
+            varDecl.getDeclSymbol().setDataType(dt.getResolvedDataType());
         }
     }
 
@@ -114,6 +217,21 @@ public class ClassesResolver extends BasicResolver {
         for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
             varDecl.getDeclSymbol().setDataType(dt.getResolvedDataType());
         }
+    }
+
+    /**
+     * Resolve all symbols in an <code>InterfaceMethodDeclaration</code>.
+     * @param methodDecl An <code>ASTInterfaceMethodDeclaration</code>.
+     * @param ctx A <code>ResolutionContext</code> representing the enclosing type.
+     */
+    public void resolveInterfaceMethodDeclaration(ASTInterfaceMethodDeclaration methodDecl, ResolutionContext ctx) {
+        ParameterizedSymbol method = methodDecl.getDeclSymbol();
+        ResolutionContext ctxMethod = ctx.withEnclosingSymbol(method);
+        resolveMethodHeader(methodDecl.getHeader(), ctxMethod);
+
+        methodDecl.getBody().getBlock().ifPresent(
+                block -> getStatementsResolver().resolveBlock(block, ctxMethod));
+        // TODO: Second analysis pass: Detect method overrides.
     }
 
     /**
