@@ -82,9 +82,10 @@ public class StatementsParser extends BasicParser {
      * <em>
      * BlockStatement:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;LocalVariableDeclarationStatement<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ConstructorInvocation<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;Statement<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;<strong>The following will also be a production:</strong><br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;ClassDeclaration
      * </em>
      * @return An <code>ASTBlockStatement</code> representing a Local Variable
      *     Declaration Statement or a Statement.
@@ -111,9 +112,41 @@ public class StatementsParser extends BasicParser {
                 return parseStatement(primary);
             }
         }
+        else if (isAcceptedOperator(Arrays.asList(SELF, SUPER)) != null &&
+                 isNext(OPEN_PARENTHESIS)) {
+            return parseConstructorInvocation();
+        }
         else {
             return parseStatement();
         }
+    }
+
+    /**
+     * Parses a <code>ConstructorInvocation</code>.
+     * <em>
+     * ConstructorInvocation:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;self ( ArgumentList ) ;<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;super ( ArgumentList ) ;
+     * </em>
+     * @return An <code>ASTConstructorInvocation</code>.
+     */
+    public ASTConstructorInvocation parseConstructorInvocation() {
+        Location loc = curr().getLocation();
+        ASTConstructorInvocation.Builder builder = new ASTConstructorInvocation.Builder()
+                .setLocation(loc)
+                .setConstructorKeyword(parseModifier(Arrays.asList(SELF, SUPER),
+                "'self' or 'super'"));
+        if (accept(OPEN_PARENTHESIS) == null) {
+            error(curr().getLocation(), "Expected '('.");
+        }
+        builder.setArgsList(getExpressionsParser().parseArgumentList());
+        if (accept(CLOSE_PARENTHESIS) == null) {
+            error(curr().getLocation(), "Expected ')'.");
+        }
+        if (accept(SEMICOLON) == null) {
+            error(curr().getLocation(), "Expected ';'.");
+        }
+        return builder.build();
     }
 
     /**

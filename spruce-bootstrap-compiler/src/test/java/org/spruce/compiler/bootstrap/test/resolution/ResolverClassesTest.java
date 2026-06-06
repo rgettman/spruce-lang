@@ -499,6 +499,46 @@ public class ResolverClassesTest {
     }
 
     /**
+     * Tests bad class extending an interface.
+     */
+    @Test
+    public void testBadClassExtendsInterface() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                interface Fooable {}
+                """,
+                """
+                namespace spruce.lang;
+                class Test extends Fooable {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad class implementing another class.
+     */
+    @Test
+    public void testBadClassImplementsClass() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class SomethingElse {}
+                """,
+                """
+                namespace spruce.lang;
+                class Test implements SomethingElse {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
      * Test interface superinterface resolution.
      */
     @Test
@@ -532,6 +572,123 @@ public class ResolverClassesTest {
         assertEquals(fooable, dtnaSi0.getResolvedDataType());
         ASTDataTypeNoArray dtnaSi1 = dtnaSuperinterfaces.get(1);
         assertEquals(barable, dtnaSi1.getResolvedDataType());
+    }
+
+    /**
+     * Tests bad interface extending a class.
+     */
+    @Test
+    public void testBadInterfaceImplementsClass() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class SomeClass {}
+                """,
+                """
+                interface Test extends SomeClass {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad class extends itself.
+     */
+    @Test
+    public void testBadClassExtendsItself() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                """,
+                """
+                class Test extends Test {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad class extends itself indirectly.
+     */
+    @Test
+    public void testBadClassExtendsItselfIndirectly() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                """,
+                """
+                class A extends B {}
+                class B extends A {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 2);
+    }
+
+    /**
+     * Tests bad interface extends itself.
+     */
+    @Test
+    public void testBadInterfaceExtendsItself() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                """,
+                """
+                interface Test extends Test {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad interface extends itself indirectly.
+     */
+    @Test
+    public void testBadInterfaceExtendsItselfIndirectly() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                """,
+                """
+                interface Other {}
+                interface A extends Other, B {}
+                interface B extends A, Other {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 2);
+    }
+
+    /**
+     * Tests bad type dependent on itself through an enclosing type.
+     */
+    @Test
+    public void testBadTypeDependencyThroughEnclosingType() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                """,
+                """
+                class A implements B.InnerB {
+                    class InnerA {}
+                }
+                class B extends A.InnerA {
+                    interface InnerB {}
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 2);
     }
 
     //

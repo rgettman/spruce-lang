@@ -194,7 +194,7 @@ public class TypesResolver extends BasicResolver {
     public Optional<TypeSymbol> resolveUsedType(String name, Map<String, ParentSymbol> using) {
         if (using.containsKey(name)) {
             ParentSymbol resolved = using.get(name);
-            if (resolved.getKind().isType()) {
+            if (resolved.isType()) {
                 return Optional.of((TypeSymbol) resolved);
             }
         }
@@ -230,7 +230,20 @@ public class TypesResolver extends BasicResolver {
      */
     public Optional<ParentSymbol> resolveNamespaceOrType(ASTIdentifier id, ResolutionContext ctx) {
         String name = id.getValue();
+        Optional<ParentSymbol> optResolved = resolveNamespaceOrTypeByName(name, ctx);
+        if (optResolved.isEmpty()) {
+            errorSymbolNotFound(id.getLocation(), name);
+        }
+        return optResolved;
+    }
 
+    /**
+     * Resolves a namespace or a type name based on the given name.
+     * @param name A name to resolve.
+     * @param ctx A <code>ResolutionContext</code>.
+     * @return An <code>Optional&lt;ParentSymbol&gt;</code>.
+     */
+    public Optional<ParentSymbol> resolveNamespaceOrTypeByName(String name, ResolutionContext ctx) {
         // 1. Find an ancestor, starting with the parent, to find the name as a
         //    direct child of the ancestor.  Include the first namespace found,
         //    but not any namespace further up.  Must be a type if found this way.
@@ -261,7 +274,6 @@ public class TypesResolver extends BasicResolver {
         }
 
         // 5. If not found, create an unresolved error.
-        errorSymbolNotFound(id.getLocation(), name);
         return Optional.empty();
     }
 
@@ -285,7 +297,7 @@ public class TypesResolver extends BasicResolver {
         }
 
         // Ensure it's a type here at the end.
-        if (resolved.getKind().isType()) {
+        if (resolved.isType()) {
             return Optional.of((TypeSymbol) resolved);
         }
         else {
@@ -388,19 +400,24 @@ public class TypesResolver extends BasicResolver {
      *         the given <code>Symbol</code>.
      */
     public TypeSymbol findEnclosingType(Symbol symbol) {
+        // Check symbol itself.
+        if (symbol.isType()) {
+            return (TypeSymbol) symbol;
+        }
+        // Check enclosing types.
         SymbolTable table = symbol.getParent();
         if (!(table instanceof ChildSymbolTable)) {
             throw internalError("Enclosing SymbolTable was not a ChildSymbolTable! " + symbol);
         }
-        ParentSymbol ancestor = ((ChildSymbolTable) symbol.getParent()).getParent();
-        while (!ancestor.getKind().isType()) {
-            table = ancestor.getParent();
+        ParentSymbol enclosing = ((ChildSymbolTable) symbol.getParent()).getParent();
+        while (!enclosing.isType()) {
+            table = enclosing.getParent();
             if (!(table instanceof ChildSymbolTable)) {
                 throw internalError("Enclosing SymbolTable was not a ChildSymbolTable! " + symbol);
             }
-            ancestor = ((ChildSymbolTable) symbol.getParent()).getParent();
+            enclosing = ((ChildSymbolTable) symbol.getParent()).getParent();
         }
-        return (TypeSymbol) ancestor;
+        return (TypeSymbol) enclosing;
     }
 
     /**

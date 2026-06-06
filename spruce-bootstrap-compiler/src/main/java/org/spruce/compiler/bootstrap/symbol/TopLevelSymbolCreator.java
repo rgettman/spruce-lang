@@ -107,8 +107,7 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
     }
 
     private void checkNameConflict(Symbol symbol, Symbol canonical) {
-        Kind existingType = canonical.getKind();
-        if (existingType.isType()) {
+        if (canonical.isType()) {
             handleNameConflictError(symbol, canonical);
         }
     }

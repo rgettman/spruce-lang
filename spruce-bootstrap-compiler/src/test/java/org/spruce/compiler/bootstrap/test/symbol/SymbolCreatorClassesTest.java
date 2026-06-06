@@ -130,6 +130,37 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
+     * Tests member of nested class.
+     */
+    @Test
+    public void testMemberNestedClass() {
+        Pair pair = createGlobalLookupNoErrors("""
+                class Outer {
+                    shared class Inner {}
+                }
+                """);
+
+        SymbolTable global = pair.lookup();
+        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+
+        ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
+        SymbolTable namespaceTable = unnamedNamespace.getTable();
+
+        String expSymbolName = "Outer";
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Kind.CLASS, FLAG_NONE, 1);
+
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("Inner"));
+
+        Symbol inner = innerTable.get("Inner");
+        checkSymbol(ensureIsa(inner, ParentSymbol.class), "Inner", Kind.CLASS,
+                FLAG_MOD_SHARED, 0);
+    }
+
+    /**
      * Tests member of nested interface.
      */
     @Test
@@ -318,6 +349,38 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
+     * Tests members of shared field declaration.
+     */
+    @Test
+    public void testMemberSharedFieldDeclaration() {
+        Pair pair = createGlobalLookupNoErrors("""
+                class HasMember {
+                    shared String foo;
+                }
+                """);
+        SymbolTable global = pair.lookup();
+        ASTTypeDeclaration typeDecl = pair.typeDecl();
+        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+
+        ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
+
+        SymbolTable namespaceTable = unnamedNamespace.getTable();
+
+        String expSymbolName = "HasMember";
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 1);
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("foo"));
+
+        Symbol fooSymbol = innerTable.get("foo");
+        checkSymbol(fooSymbol, "foo", Kind.FIELD, FLAG_MOD_SHARED);
+        ASTFieldDeclaration fooField = ensureIsa(typeDecl.getMembers().get(0), ASTFieldDeclaration.class);
+        assertSame(fooSymbol, fooField.getVarDeclList().get(0).getDeclSymbol());
+    }
+
+    /**
      * Tests duplicate field names.
      */
     @Test
@@ -356,7 +419,7 @@ public class SymbolCreatorClassesTest {
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("BAR"));
 
         Symbol constantSymbol = innerTable.get("BAR");
-        checkSymbol(constantSymbol, "BAR", Kind.FIELD, FLAG_MOD_SHARED);
+        checkSymbol(constantSymbol, "BAR", Kind.FIELD, FLAG_MOD_SHARED | FLAG_MOD_FINAL);
         ASTFieldDeclaration barField = ensureIsa(typeDecl.getMembers().get(0), ASTFieldDeclaration.class);
         assertSame(constantSymbol, barField.getVarDeclList().get(0).getDeclSymbol());
     }
@@ -516,6 +579,43 @@ public class SymbolCreatorClassesTest {
                 ASTInterfaceMethodDeclaration.class);
         assertSame(fooSymbol, fooMethod.getDeclSymbol());
 
+    }
+
+    /**
+     * Tests member of shared interface method declaration.
+     */
+    @Test
+    public void testMemberSharedInterfaceMethod() {
+        Pair pair = createGlobalLookupNoErrors("""
+                interface HasMember {
+                    shared void foo(String bar) {}
+                }
+                """);
+        SymbolTable global = pair.lookup();
+        ASTTypeDeclaration typeDecl = pair.typeDecl();
+        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+
+        ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
+        SymbolTable namespaceTable = unnamedNamespace.getTable();
+
+        String expSymbolName = "HasMember";
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.INTERFACE,
+                FLAG_MOD_ABSTRACT, 1);
+        assertSame(symbol, typeDecl.getDeclSymbol());
+
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        String symbolName = "foo(String)";
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+
+        Symbol fooSymbol = innerTable.get(symbolName);
+        checkSymbol(ensureIsa(fooSymbol, ParameterizedSymbol.class), symbolName, Kind.METHOD, FLAG_MOD_SHARED,
+                1, 1);
+        ASTInterfaceMethodDeclaration fooMethod = ensureIsa(typeDecl.getMembers().get(0),
+                ASTInterfaceMethodDeclaration.class);
+        assertSame(fooSymbol, fooMethod.getDeclSymbol());
     }
 
     /**

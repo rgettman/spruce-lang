@@ -2,7 +2,10 @@ package org.spruce.compiler.bootstrap.resolution;
 
 import java.util.Optional;
 
+import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.expressions.*;
+import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
+import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
@@ -27,6 +30,81 @@ public class OperationsResolver extends BasicResolver {
     public OperationsResolver(Resolver resolver, MessageProducer msgProducer, GlobalLookup global) {
         super(resolver, msgProducer, global);
     }
+
+    //
+    // Constructor Resolution
+    //
+
+    //
+    // Method Resolution
+    //
+
+    /**
+     * Resolves symbols in a <code>MethodInvocation</code>.
+     * @param methodInvocation An <code>ASTMethodInvocation</code>.
+     * @param ctx A <code>ResolutionContext</code>.
+     */
+    public void resolveMethodInvocation(ASTMethodInvocation methodInvocation, ResolutionContext ctx) {
+        // 1. Determine the type to search.
+        Optional<TypeSymbol> typeToSearch = getTypeToSearch(methodInvocation, ctx);
+
+        // 2. Identify potentially applicable methods.
+        // If no methods match, error not found.
+
+        // 3. Choose most specific method, if one such method exists.
+        // If no one method is maximally specific, ambiguous error.
+
+        // 4. Type of the method invocation is the type of the Result.
+        // (Or the enclosing class type for a Constructor.)
+
+    }
+
+    private Optional<TypeSymbol> getTypeToSearch(ASTMethodInvocation methodInvocation, ResolutionContext ctx) {
+        String methodName = methodInvocation.getIdentifier().getValue();
+        Optional<ASTKeywordNode> optSuper = methodInvocation.getSooper();
+        Optional<ASTExpressionName> optExprName = methodInvocation.getExprName();
+        Optional<ASTTypeName> optTypeName = methodInvocation.getTypeName();
+        Optional<ASTPrimary> optPrimary = methodInvocation.getPrimary();
+
+        if (optSuper.isPresent()) {
+            if (optTypeName.isPresent()) {
+                // 1a. Typename.super.methodName
+            }
+            else {
+                // 1b. super.methodName
+            }
+        }
+        else {
+            if (optPrimary.isPresent()) {
+                // 1c. Primary.methodName
+            }
+            else if (optExprName.isPresent()) {
+                // 1d. ExpressionName.methodName
+            }
+            else {
+                // 1e. methodName
+                return getTypeToSearchBareMethodName(methodName, ctx);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Optional<TypeSymbol> getTypeToSearchBareMethodName(String methodName, ResolutionContext ctx) {
+        TypesResolver typesResolver = getTypesResolver();
+        TypeSymbol type = typesResolver.findEnclosingType(ctx.enclosingSymbol());
+
+        // Look in the current type and its superclass and superinterfaces hierarchy,
+        // before searching an enclosing type and its superclass and superinterface hierarchy.
+
+        // What about superclass/superinterface loops?  Checked for that yet?
+
+        return Optional.empty();
+    }
+
+    //
+    // Operator Resolution
+    //
 
     /**
      * Resolves symbols in a <code>UnaryExpression</code>.

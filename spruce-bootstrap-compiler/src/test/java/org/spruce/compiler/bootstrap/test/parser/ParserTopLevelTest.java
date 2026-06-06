@@ -179,7 +179,7 @@ public class ParserTopLevelTest {
     public void testUseDeclarationOfUMDNoCloseBrace() {
         TopLevelParser parser = getTopLevelParser("use shared spruce.collections.{List, ArrayList, LinkedList;");
         ASTUseDeclaration node = parser.parseUseDeclaration();
-        expectError(node, parser);
+        expectError(node, parser, 2);
     }
 
     /**

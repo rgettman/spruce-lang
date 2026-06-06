@@ -235,6 +235,10 @@ public enum TokenType {
      */
     SELF,
     /**
+     * Class, not, instance-specific.  This is "static" in Java.
+     */
+    SHARED,
+    /**
      * Refer to superclass method/instance; lower bound generics wildcard.
      */
     SUPER,

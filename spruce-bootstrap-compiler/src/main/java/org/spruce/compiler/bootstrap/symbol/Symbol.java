@@ -13,6 +13,7 @@ public class Symbol {
     public static final long FLAG_NONE = 0L;
 
     public static final long FLAG_MOD_ABSTRACT = 0x10L;
+    public static final long FLAG_MOD_FINAL = 0x40L;
     public static final long FLAG_MOD_OVERRIDE = 0x80L;
     public static final long FLAG_MOD_SHARED = 0x200L;
 
@@ -30,31 +31,6 @@ public class Symbol {
         PARAMETER,
         VOID,
         WHILE_STMT;
-
-        /**
-         * Returns whether this <code>Kind</code> is a type.
-         * @return Whether this <code>Kind</code> is a type.
-         */
-        public boolean isType() {
-            // There will be more types!
-            return this == CLASS || this == INTERFACE;
-        }
-
-        /**
-         * Returns whether this <code>Kind</code> is a local declaration.
-         * @return Whether this <code>Kind</code> is a local declaration.
-         */
-        public boolean isLocal() {
-            return this == LOCAL || this == PARAMETER;
-        }
-
-        /**
-         * Returns whether this <code>Kind</code> is a variable.
-         * @return Whether this <code>Kind</code> is a variable.
-         */
-        public boolean isVariable() {
-            return isLocal() || this == FIELD;
-        }
     }
 
     private final Location myLocation;
@@ -110,6 +86,39 @@ public class Symbol {
      */
     public Kind getKind() {
         return myKind;
+    }
+
+    /**
+     * Returns whether the <code>Kind</code> is a type.
+     * @return Whether the <code>Kind</code> is a type.
+     */
+    public boolean isType() {
+        // There will be more types!
+        return myKind == Kind.CLASS || myKind == Kind.INTERFACE;
+    }
+
+    /**
+     * Returns whether the <code>Kind</code> is a local declaration.
+     * @return Whether the <code>Kind</code> is a local declaration.
+     */
+    public boolean isLocal() {
+        return myKind == Kind.LOCAL || myKind == Kind.PARAMETER;
+    }
+
+    /**
+     * Returns whether the <code>Kind</code> is a variable.
+     * @return Whether the <code>Kind</code> is a variable.
+     */
+    public boolean isVariable() {
+        return isLocal() || myKind == Kind.FIELD;
+    }
+
+    /**
+     * Returns whether this symbol is shared.
+     * @return Whether this symbol is shared.
+     */
+    public boolean isShared() {
+        return (myFlags & FLAG_MOD_SHARED) != 0;
     }
 
     /**

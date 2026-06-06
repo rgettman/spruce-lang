@@ -1,16 +1,19 @@
 package org.spruce.compiler.bootstrap.resolution;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.classes.*;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
+import org.spruce.compiler.bootstrap.ast.toplevel.ASTTypeDeclarationList;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArrayList;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
+import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
@@ -30,142 +33,234 @@ public class ClassesResolver extends BasicResolver {
     }
 
     /**
-     * Resolve all symbols in a <code>TypeDeclaration</code>.
+     * 1. Resolve all superclass and superinterface symbols in a
+     * <code>TypeDeclarationList</code>.
+     * @param typeDeclList An <code>ASTTypeDeclarationList</code>.
+     * @param ctx A <code>ResolutionContext</code> representing a namespace if
+     *            this type declaration is top-level, or the enclosing type if
+     *            this type declaration is nested.
+     */
+    public void resolveTypeDeclarationListExtends(ASTTypeDeclarationList typeDeclList, ResolutionContext ctx) {
+        // Resolve all type declaration superclass/superinterfaces recursively.
+        for (ASTTypeDeclaration typeDecl : typeDeclList.getTypedChildren()) {
+            resolveTypeDeclarationExtends(typeDecl, ctx);
+        }
+    }
+
+    /**
+     * 2. Detect any dependency cycles in superclass and superinterface
+     * relationships in a <code>TypeDeclarationList</code>.  This must be done
+     * after resolving all superclass and superinterface symbols, but before
+     * resolving symbols in members.
+     * @param typeDeclList An <code>ASTTypeDeclarationList</code>.
+     * @return Whether a dependency cycle was detected for any of the type
+     *     declarations in the list.
+     */
+    public boolean detectDependencyCycles(ASTTypeDeclarationList typeDeclList) {
+        boolean cycleDetected = false;
+        for (ASTTypeDeclaration typeDecl : typeDeclList.getTypedChildren()) {
+            cycleDetected |= detectDependencyCyclesTypeDeclaration(typeDecl);
+        }
+        return cycleDetected;
+    }
+
+    /**
+     * 3. Resolve all remaining symbols in a <code>TypeDeclarationList</code>.
+     * Many of these resolutions depend on cycles being detected and eliminated
+     * first.
+     * @param typeDeclList An <code>ASTTypeDeclarationList</code>.
+     * @param ctx A <code>ResolutionContext</code> representing a namespace if
+     *            this type declaration is top-level, or the enclosing type if
+     *            this type declaration is nested.
+     */
+    public void resolveTypeDeclarationListMembers(ASTTypeDeclarationList typeDeclList, ResolutionContext ctx) {
+        // Resolve all non-type-declaration members, including those members
+        // within nested type declarations.
+        for (ASTTypeDeclaration typeDecl : typeDeclList.getTypedChildren()) {
+            resolveTypeDeclarationMembers(typeDecl, ctx);
+        }
+    }
+
+    /**
+     * Resolve only the superclass and superinterface symbols in a
+     * <code>TypeDeclaration</code>.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
      * @param ctx A <code>ResolutionContext</code> representing a namespace if
      *            this type declaration is top-level, or the enclosing type if
      *            this type declaration is nested.
      */
-    public void resolveTypeDeclaration(ASTTypeDeclaration typeDecl, ResolutionContext ctx) {
+    public void resolveTypeDeclarationExtends(ASTTypeDeclaration typeDecl, ResolutionContext ctx) {
         switch (typeDecl) {
         case ASTClassDeclaration classDecl ->
-            resolveClassDeclaration(classDecl, ctx);
+                resolveClassDeclarationExtends(classDecl, ctx);
         case ASTInterfaceDeclaration interfaceDecl ->
-            resolveInterfaceDeclaration(interfaceDecl, ctx);
+                resolveInterfaceDeclarationExtends(interfaceDecl, ctx);
+        }
+
+        // Nested types.
+        ResolutionContext classCtx = ctx.withEnclosingSymbol(typeDecl.getDeclSymbol());
+        for (ASTMember member : typeDecl.getMembers()) {
+            if (member instanceof ASTTypeDeclaration nested) {
+                resolveTypeDeclarationExtends(nested, classCtx);
+            }
         }
     }
 
     /**
-     * Resolve all symbols in a <code>ClassDeclaration</code>, including any
-     * <code>extends</code> clause, and all class parts.
+     * Resolve only the superclass and superinterface symbols in a
+     * <code>ClassDeclaration</code>.
      * @param classDecl An <code>ASTClassDeclaration</code>.
      * @param ctx A <code>ResolutionContext</code> representing a namespace if
      *            this type declaration is top-level, or the enclosing type if
      *            this type declaration is nested.
      */
-    public void resolveClassDeclaration(ASTClassDeclaration classDecl, ResolutionContext ctx) {
+    public void resolveClassDeclarationExtends(ASTClassDeclaration classDecl, ResolutionContext ctx) {
         TypesResolver typesResolver = getTypesResolver();
         TypeSymbol declSymbol = classDecl.getDeclSymbol();
 
         // Superclass
         Optional<ASTDataTypeNoArray> optDtnaSuperclass = classDecl.getSuperclass();
-        Optional<TypeSymbol> superclass = Optional.empty();
+        Optional<TypeSymbol> optSuperclass = Optional.empty();
         if (optDtnaSuperclass.isPresent()) {
             ASTDataTypeNoArray dtnaSuperclass = optDtnaSuperclass.get();
             typesResolver.resolveDataTypeNoArray(dtnaSuperclass, ctx);
-            superclass = Optional.ofNullable(dtnaSuperclass.getResolvedDataType());
+            optSuperclass = Optional.ofNullable(dtnaSuperclass.getResolvedDataType());
 
-            // Ensure no superclass loop, e.g. A -> B -> A.
-            // Can't do that until all types in all OCUs have had all symbols
-            // resolved.
-            // Loop over all types in all OCUs after this initial resolution.
-            // TODO: Will place in a second pass over all types in all OCUs.
-            // This will be in the semantic analysis phase.
+            if (optSuperclass.isPresent()) {
+                TypeSymbol superclass = optSuperclass.get();
+                Symbol.Kind kind = superclass.getKind();
+                if (kind != Symbol.Kind.CLASS) {
+                    error(dtnaSuperclass.getLocation(), "Class cannot extend " +
+                            kind.toString().toLowerCase());
+                }
+            }
         }
-        if (superclass.isEmpty()) {
+        if (optSuperclass.isEmpty()) {
             // If an explicit superclass is not specified, then assume that the
             // superclass is the root of the type hierarchy.
-            superclass = Optional.ofNullable(typesResolver.resolveRootType(ctx));
+            optSuperclass = Optional.ofNullable(typesResolver.resolveRootType(ctx));
 
             // If the class being resolved _is_ the root class, then that root
             // class has no superclass!
-            if (superclass.isPresent() && superclass.get() == declSymbol) {
-                superclass = Optional.empty();
+            if (optSuperclass.isPresent() && optSuperclass.get() == declSymbol) {
+                optSuperclass = Optional.empty();
             }
         }
-        superclass.ifPresent(declSymbol::setSuperclass);
+        optSuperclass.ifPresent(declSymbol::setSuperclass);
 
         // Superinterfaces
         Optional<ASTDataTypeNoArrayList> optSuperinterfaces = classDecl.getSuperinterfaces();
-        List<TypeSymbol> resolvedInterfaces = declSymbol.getSuperinterfaces();
         if (optSuperinterfaces.isPresent()) {
-            ASTDataTypeNoArrayList superinterfaces = optSuperinterfaces.get();
-            for (ASTDataTypeNoArray dtnaSuperinterface : superinterfaces.getTypedChildren()) {
-                typesResolver.resolveDataTypeNoArray(dtnaSuperinterface, ctx);
-
-                Optional<TypeSymbol> optSuperinterface = Optional.ofNullable(dtnaSuperinterface.getResolvedDataType());
-                if (optSuperinterface.isPresent()) {
-                    TypeSymbol superinterface = optSuperinterface.get();
-
-                    // No duplicates.
-                    if (resolvedInterfaces.contains(superinterface)) {
-                        error(superinterface.getLocation(), "Duplicate superinterface");
-                    }
-                    else {
-                        declSymbol.addSuperinterface(superinterface);
-                    }
-                }
-
-                // Ensure no superinterface loop, e.g. A -> B -> C -> B.
-                // Can't do that until all types in all OCUs have had all symbols
-                // resolved.
-                // Loop over all types in all OCUs after this initial resolution.
-                // TODO: Will place in a second pass over all types in all OCUs.
-                // This will be in the semantic analysis phase.
-            }
-        }
-
-        // Members
-        ResolutionContext classCtx = ctx.withEnclosingSymbol(classDecl.getDeclSymbol());
-        for (ASTMember member : classDecl.getMembers()) {
-            resolveMember(member, classCtx);
+            resolveSuperinterfaces(declSymbol, optSuperinterfaces.get(), ctx);
         }
     }
 
     /**
-     * Resolve all symbols in an <code>InterfaceDeclaration</code>, including any
-     * <code>extends</code> clause, and all interface parts.
+     * Resolve only the superinterface symbols in an <code>InterfaceDeclaration</code>.
      * @param interfaceDecl An <code>ASTInterfaceDeclaration</code>.
-     * @param ctx A <code>ResolutionContext</code>.
+     * @param ctx A <code>ResolutionContext</code> representing a namespace if
+     *            this type declaration is top-level, or the enclosing type if
+     *            this type declaration is nested.
      */
-    public void resolveInterfaceDeclaration(ASTInterfaceDeclaration interfaceDecl, ResolutionContext ctx) {
-        TypesResolver typesResolver = getTypesResolver();
+    public void resolveInterfaceDeclarationExtends(ASTInterfaceDeclaration interfaceDecl, ResolutionContext ctx) {
         TypeSymbol declSymbol = interfaceDecl.getDeclSymbol();
 
         // Superinterfaces
         Optional<ASTDataTypeNoArrayList> optSuperinterfaces = interfaceDecl.getExtendsInterfaces();
-        List<TypeSymbol> resolvedInterfaces = declSymbol.getSuperinterfaces();
         if (optSuperinterfaces.isPresent()) {
-            ASTDataTypeNoArrayList superinterfaces = optSuperinterfaces.get();
-            for (ASTDataTypeNoArray dtnaSuperinterface : superinterfaces.getTypedChildren()) {
-                typesResolver.resolveDataTypeNoArray(dtnaSuperinterface, ctx);
+            resolveSuperinterfaces(declSymbol, optSuperinterfaces.get(), ctx);
+        }
+    }
 
-                Optional<TypeSymbol> optSuperinterface = Optional.ofNullable(dtnaSuperinterface.getResolvedDataType());
-                if (optSuperinterface.isPresent()) {
-                    TypeSymbol superinterface = optSuperinterface.get();
+    private void resolveSuperinterfaces(TypeSymbol declSymbol, ASTDataTypeNoArrayList superinterfaces,
+                                        ResolutionContext ctx) {
+        TypesResolver typesResolver = getTypesResolver();
+        // Superinterfaces
+        List<TypeSymbol> resolvedInterfaces = declSymbol.getSuperinterfaces();
 
-                    // No duplicates.
-                    if (resolvedInterfaces.contains(superinterface)) {
-                        error(superinterface.getLocation(), "Duplicate superinterface");
-                    }
-                    else {
-                        declSymbol.addSuperinterface(superinterface);
+        for (ASTDataTypeNoArray dtnaSuperinterface : superinterfaces.getTypedChildren()) {
+            typesResolver.resolveDataTypeNoArray(dtnaSuperinterface, ctx);
+
+            Optional<TypeSymbol> optSuperinterface = Optional.ofNullable(dtnaSuperinterface.getResolvedDataType());
+            if (optSuperinterface.isPresent()) {
+                TypeSymbol superinterface = optSuperinterface.get();
+
+                Symbol.Kind kind = superinterface.getKind();
+                if (kind != Symbol.Kind.INTERFACE) {
+                    switch(declSymbol.getKind()) {
+                    case CLASS -> error(dtnaSuperinterface.getLocation(), "Class cannot implement " +
+                            kind.toString().toLowerCase());
+                    case INTERFACE -> error(dtnaSuperinterface.getLocation(), "Interface cannot extend " +
+                            kind.toString().toLowerCase());
                     }
                 }
 
-                // Ensure no superinterface loop, e.g. A -> B -> C -> B.
-                // Can't do that until all types in all OCUs have had all symbols
-                // resolved.
-                // Loop over all types in all OCUs after this initial resolution.
-                // TODO: Will place in a second pass over all types in all OCUs.
-                // This will be in the semantic analysis phase.
+                // No duplicates.
+                if (resolvedInterfaces.contains(superinterface)) {
+                    error(superinterface.getLocation(), "Duplicate superinterface");
+                }
+                else {
+                    declSymbol.addSuperinterface(superinterface);
+                }
             }
         }
+    }
 
+    /**
+     * Detect any dependency cycles in superclass, superinterfaces, and
+     * enclosing type relationships in a <code>TypeDeclaration</code>.
+     * @param typeDecl An <code>ASTTypeDeclaration</code>.
+     * @return Whether a dependency cycle was detected involving the given symbol.
+     */
+    public boolean detectDependencyCyclesTypeDeclaration(ASTTypeDeclaration typeDecl) {
+        TypeSymbol declSymbol = typeDecl.getDeclSymbol();
+        return detectDependencyCycle(declSymbol, declSymbol, new ArrayList<>());
+    }
+
+    private boolean detectDependencyCycle(TypeSymbol original, TypeSymbol curr, List<TypeSymbol> seen) {
+        boolean cycleDetected = false;
+        // Superclass
+        if (curr.getSuperclass().isPresent()) {
+            TypeSymbol superclass = curr.getSuperclass().get();
+            cycleDetected = checkForDependency(original, superclass, seen);
+        }
+        // Superinterfaces
+        for (TypeSymbol superinterface : curr.getSuperinterfaces()) {
+            cycleDetected |= checkForDependency(original, superinterface, seen);
+        }
+        // Enclosing type.
+        Optional<TypeSymbol> optEnclosingType = curr.getEnclosingType();
+        if (optEnclosingType.isPresent()) {
+            TypeSymbol enclosingType = optEnclosingType.get();
+            cycleDetected |= checkForDependency(original, enclosingType, seen);
+        }
+
+        return cycleDetected;
+    }
+
+    private boolean checkForDependency(TypeSymbol original, TypeSymbol curr, List<TypeSymbol> seen) {
+        boolean cycleDetected = false;
+        if (original == curr) {
+            error(original.getLocation(), "Dependency cycle detected on " + original.getName());
+            cycleDetected = true;
+        }
+        else if (!seen.contains(curr)) {
+            seen.add(curr);
+            cycleDetected = detectDependencyCycle(original, curr, seen);
+        }
+        return cycleDetected;
+    }
+
+    /**
+     * Resolve all non-type-declaration symbols in a <code>TypeDeclaration</code>.
+     * @param typeDecl An <code>ASTClassDeclaration</code>.
+     * @param ctx A <code>ResolutionContext</code> representing the enclosing type.
+     */
+    public void resolveTypeDeclarationMembers(ASTTypeDeclaration typeDecl, ResolutionContext ctx) {
         // Members
-        ResolutionContext classCtx = ctx.withEnclosingSymbol(interfaceDecl.getDeclSymbol());
-        for (ASTMember member : interfaceDecl.getMembers()) {
-            resolveMember(member, classCtx);
+        ResolutionContext typeCtx = ctx.withEnclosingSymbol(typeDecl.getDeclSymbol());
+        for (ASTMember member : typeDecl.getMembers()) {
+            resolveMember(member, typeCtx);
         }
     }
 
@@ -176,7 +271,7 @@ public class ClassesResolver extends BasicResolver {
      */
     public void resolveMember(ASTMember member, ResolutionContext ctx) {
         switch(member) {
-        case ASTTypeDeclaration typeDecl -> resolveTypeDeclaration(typeDecl, ctx);
+        case ASTTypeDeclaration typeDecl -> resolveTypeDeclarationMembers(typeDecl, ctx);
         case ASTConstantDeclaration constDecl -> resolveConstantDeclaration(constDecl, ctx);
         case ASTConstructorDeclaration constrDecl -> resolveConstructorDeclaration(constrDecl, ctx);
         case ASTFieldDeclaration fieldDecl -> resolveFieldDeclaration(fieldDecl, ctx);
@@ -241,7 +336,8 @@ public class ClassesResolver extends BasicResolver {
      */
     public void resolveMethodDeclaration(ASTMethodDeclaration methodDecl, ResolutionContext ctx) {
         ParameterizedSymbol method = methodDecl.getDeclSymbol();
-        ResolutionContext ctxMethod = ctx.withEnclosingSymbol(method);
+        boolean isShared = methodDecl.getDeclSymbol().isShared();
+        ResolutionContext ctxMethod = ctx.withEnclosingSymbol(method, isShared);
         resolveMethodHeader(methodDecl.getHeader(), ctxMethod);
 
         methodDecl.getBody().getBlock().ifPresent(
@@ -299,8 +395,9 @@ public class ClassesResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code> representing the enclosing type.
      */
     public void resolveConstructorDeclaration(ASTConstructorDeclaration constrDecl, ResolutionContext ctx) {
+        // Constructors are always in a non-shared context.
         ResolutionContext ctxConstructor = ctx.withEnclosingSymbol(
-                constrDecl.getDeclSymbol());
+                constrDecl.getDeclSymbol(), false);
         resolveFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList(), ctxConstructor);
         getStatementsResolver().resolveBlock(constrDecl.getBlock(), ctxConstructor);
     }

@@ -42,6 +42,9 @@ public class StatementsResolver extends BasicResolver {
             switch (blockStmt) {
             case ASTLocalVariableDeclarationStatement localVarDeclStmt ->
                     resolveLocalVariableDeclarationStatement(localVarDeclStmt, ctx);
+            case ASTConstructorInvocation constrInvocation -> {
+                // TODO: Resolve the constructor invocation in operations resolver!
+            }
             case ASTBlock subBlock -> resolveSubBlock(subBlock, ctx);
             case ASTBasicForStatement basicForStmt -> resolveBasicForStatement(basicForStmt, ctx);
             case ASTEnhancedForStatement enhancedForStmt -> resolveEnhancedForStatement(enhancedForStmt, ctx);

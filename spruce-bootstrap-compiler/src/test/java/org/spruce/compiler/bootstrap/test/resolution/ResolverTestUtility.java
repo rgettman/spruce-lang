@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
+import org.spruce.compiler.bootstrap.ast.classes.ASTFieldDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTFormalParameter;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
@@ -177,6 +178,23 @@ public class ResolverTestUtility {
     static VariableSymbol getFormalParameterSymbol(ASTMethodDeclaration methodDecl, int idx) {
         ASTFormalParameter param = methodDecl.getHeader().getMethodDecl().getFormalParamList().get(idx);
         return param.getDeclSymbol();
+    }
+
+    /**
+     * Retrieve a <code>FieldDeclaration</code>.
+     * @param trio A <code>Trio</code>.
+     * @param ocuIdx The 0-based index into the list of
+     *               <code>OrdinaryCompilationUnit</code>s.
+     * @param typeIdx The 0-based index into the list of
+     *                <code>TypeDeclaration</code>s.
+     * @param memberIdx The 0-based index into the members of the first
+     *                  <code>ClassDeclaration</code>.
+     * @return An <code>ASTFieldDeclaration</code>, or fails if not found.
+     */
+    static ASTFieldDeclaration getField(Trio trio, int ocuIdx, int typeIdx, int memberIdx) {
+        ASTOrdinaryCompilationUnit ocu = trio.ocus().get(ocuIdx);
+        ASTClassDeclaration classDecl = ensureIsa(ocu.getTypeDeclList().get(typeIdx), ASTClassDeclaration.class);
+        return ensureIsa(classDecl.getClassParts().get(memberIdx), ASTFieldDeclaration.class);
     }
 
     /**

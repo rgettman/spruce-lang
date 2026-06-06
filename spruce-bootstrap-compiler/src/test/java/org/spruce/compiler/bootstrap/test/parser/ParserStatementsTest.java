@@ -126,6 +126,60 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests block statement of constructor invocation with self.
+     */
+    @Test
+    public void testBlockStatementOfConstructorInvocationSelf() {
+        StatementsParser parser = getStatementsParser("self(2);");
+        ASTBlockStatement node = parser.parseBlockStatement();
+        ensureNoErrors(node, parser);
+        ASTConstructorInvocation constrInvocation = TestUtility.ensureIsa(node, ASTConstructorInvocation.class);
+        assertEquals(SELF, constrInvocation.getConstructorKeyword().getKeyword());
+    }
+
+    /**
+     * Tests block statement of constructor invocation with super.
+     */
+    @Test
+    public void testBlockStatementOfConstructorInvocationSuper() {
+        StatementsParser parser = getStatementsParser("super(3);");
+        ASTBlockStatement node = parser.parseBlockStatement();
+        ensureNoErrors(node, parser);
+        ASTConstructorInvocation constrInvocation = TestUtility.ensureIsa(node, ASTConstructorInvocation.class);
+        assertEquals(SUPER, constrInvocation.getConstructorKeyword().getKeyword());
+    }
+
+    /**
+     * Tests bad block statement of constructor invocation, no open parenthesis.
+     */
+    @Test
+    public void testBlockStatementOfBadConstructorInvocationNoOpenParen() {
+        StatementsParser parser = getStatementsParser("self 2);");
+        ASTBlockStatement node = parser.parseBlockStatement();
+        expectError(node, parser, 4);
+    }
+
+    /**
+     * Tests bad block statement of constructor invocation, no close parenthesis.
+     */
+    @Test
+    public void testBlockStatementOfBadConstructorInvocationNoCloseParen() {
+        StatementsParser parser = getStatementsParser("self(2 ;");
+        ASTBlockStatement node = parser.parseBlockStatement();
+        expectError(node, parser);
+    }
+
+    /**
+     * Tests bad block statement of constructor invocation, no semicolon.
+     */
+    @Test
+    public void testBlockStatementOfBadConstructorInvocationNoSemicolon() {
+        StatementsParser parser = getStatementsParser("self(2) return");
+        ASTBlockStatement node = parser.parseBlockStatement();
+        expectError(node, parser);
+    }
+
+    /**
      * Tests block statement of assignment.
      */
     @Test

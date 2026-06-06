@@ -12,6 +12,7 @@ import org.spruce.compiler.bootstrap.common.Location;
  *
  * <ul>
  *     <li>constant</li>
+ *     <li>shared</li>
  * </ul>
  *
  * <em>

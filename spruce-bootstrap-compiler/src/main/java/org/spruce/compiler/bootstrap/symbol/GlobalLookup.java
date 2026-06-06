@@ -30,9 +30,6 @@ public class GlobalLookup extends SymbolTable {
                 UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE, this, FLAG_NONE);
         unnamedNamespace.setTable(new ChildSymbolTable(Scope.NAMESPACE, unnamedNamespace));
         getTable().put(UNNAMED_NAMESPACE_NAME, unnamedNamespace);
-
-        // TODO: Ensure the "spruce.lang" namespace exists so it can be
-        // auto-use-all-ed later.
     }
 
     /**

@@ -8,13 +8,13 @@ import org.spruce.compiler.bootstrap.ast.ParentNode;
  * <em>
  * Statement:<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;Block<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;BreakStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;ContinueStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ReturnStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ExpressionStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;ForStatement<br>
  * &nbsp;&nbsp;&nbsp;&nbsp;IfStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;WhileStatement<br>
- * &nbsp;&nbsp;&nbsp;&nbsp;ForStatement
+ * &nbsp;&nbsp;&nbsp;&nbsp;ReturnStatement<br>
+ * &nbsp;&nbsp;&nbsp;&nbsp;WhileStatement
  * </em>
  */
 public sealed interface ASTStatement extends ParentNode, ASTBlockStatement permits ASTBlock, ASTExpressionStatement,

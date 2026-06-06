@@ -73,7 +73,7 @@ public class StatementsSymbolCreator extends BasicSymbolCreator {
      * @param blockNbr The block number at the current scope level.
      */
     public void createSymbolsForBlockStatement(ASTBlockStatement blockStmt, ParentSymbol parent,
-                                                       String scopePrefix, int blockNbr) {
+                                               String scopePrefix, int blockNbr) {
         switch (blockStmt) {
         case ASTLocalVariableDeclarationStatement localVarDeclStmt ->
             createSymbolsForLocalVarDeclStatement(localVarDeclStmt, parent);

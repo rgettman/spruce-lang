@@ -134,15 +134,15 @@ public class BasicSymbolCreator {
             throw internalError("Creating namespace symbol " + symbol.getName() +
                     " unexpected here!");
         }
-        else if (symbol.getKind().isType()) {
-            if (original.getKind() == Kind.NAMESPACE || original.getKind().isType() ||
+        else if (symbol.isType()) {
+            if (original.getKind() == Kind.NAMESPACE || original.isType() ||
                     original.getKind() == Kind.FIELD) {
                 handleNameConflictError(symbol, original);
                 return;
             }
         }
         else if (symbol.getKind() == Kind.FIELD) {
-            if (original.getKind().isType() || original.getKind() == Kind.FIELD) {
+            if (original.isType() || original.getKind() == Kind.FIELD) {
                 handleNameConflictError(symbol, original);
                 return;
             }
@@ -154,7 +154,7 @@ public class BasicSymbolCreator {
             note(original.getLocation(), "Originally declared here.");
             return;
         }
-        else if (symbol.getKind().isLocal() && original.getKind().isLocal()) {
+        else if (symbol.isLocal() && original.isLocal()) {
             // Parameters and local variables only conflict with themselves.
             error(symbol.getLocation(), "Duplicate identifier found: " + symbol.getName());
             note(original.getLocation(), "Originally declared here.");

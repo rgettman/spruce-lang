@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.spruce.compiler.bootstrap.ast.classes.ASTTypeDeclaration;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
+import org.spruce.compiler.bootstrap.ast.toplevel.ASTTypeDeclarationList;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTUseAllDeclaration;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTUseDeclaration;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTUseDeclarationList;
@@ -79,8 +80,15 @@ public class TopLevelResolver extends BasicResolver {
         ParentSymbol namespace = ocu.getDeclSymbol();
         ResolutionContext ctx = new ResolutionContext(using, namespace);
         ClassesResolver classesResolver = getClassesResolver();
-        for (ASTTypeDeclaration typeDecl : ocu.getTypeDeclList().getTypedChildren()) {
-            classesResolver.resolveTypeDeclaration(typeDecl, ctx);
+        ASTTypeDeclarationList typeDeclList = ocu.getTypeDeclList();
+        // 1. Resolve all superclass and superinterface symbols first.
+        classesResolver.resolveTypeDeclarationListExtends(typeDeclList, ctx);
+        // 2. Detect dependency cycles.
+        boolean cycleDetected = classesResolver.detectDependencyCycles(typeDeclList);
+        // 3. Resolve all member symbols, some of which rely on there being no
+        // dependency cycles.
+        if (!cycleDetected) {
+            classesResolver.resolveTypeDeclarationListMembers(typeDeclList, ctx);
         }
     }
 

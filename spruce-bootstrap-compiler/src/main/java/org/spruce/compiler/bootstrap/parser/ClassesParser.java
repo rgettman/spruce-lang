@@ -133,7 +133,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTInterfacePartList parseInterfacePartList() {
         return parseMultiple(
-                t -> Arrays.asList(ABSTRACT, OVERRIDE, CLASS, INTERFACE,
+                t -> Arrays.asList(ABSTRACT, OVERRIDE, SHARED, CLASS, INTERFACE,
                                  CONSTANT, VOID, IDENTIFIER)
                         .contains(t.getType()),
                 "Expected constant or method declaration.",
@@ -194,7 +194,7 @@ public class ClassesParser extends BasicParser {
     public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTGeneralModifierList gms) {
         ASTInterfaceMethodModifierList interfaceMethodModifiers = convertToSpecificList(gms,
                 "Unexpected interface method modifier.",
-                Arrays.asList(OVERRIDE),
+                Arrays.asList(OVERRIDE, SHARED),
                 ASTInterfaceMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader();
@@ -267,7 +267,7 @@ public class ClassesParser extends BasicParser {
      * ClassDeclaration:<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;class Identifier [Superclass] [Superinterfaces] ClassBody
      * </em>
-     * @param loc The <code>Location</code>.
+p     * @param loc The <code>Location</code>.
      * @return An <code>ASTClassDeclaration</code>.
      */
     public ASTClassDeclaration parseClassDeclaration(Location loc, ASTGeneralModifierList gms) {
@@ -278,7 +278,7 @@ public class ClassesParser extends BasicParser {
         }
         builder.setClassModifierList(convertToSpecificList(gms,
                         "Unexpected class modifier.",
-                        Arrays.asList(ABSTRACT),
+                        Arrays.asList(ABSTRACT, SHARED),
                         ASTClassModifierList::new))
                 .setName(getNamesParser().parseIdentifier());
         if (isCurr(EXTENDS)) {
@@ -351,7 +351,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTClassPartList parseClassPartList() {
         return parseMultiple(
-                t -> Arrays.asList(ABSTRACT, CLASS, INTERFACE, OVERRIDE,
+                t -> Arrays.asList(ABSTRACT, OVERRIDE, SHARED, CLASS, INTERFACE,
                                 CONSTRUCTOR, CONSTANT, VOID, IDENTIFIER)
                         .contains(t.getType()),
                 "Expected constructor, field, or method declaration.",
@@ -463,7 +463,7 @@ public class ClassesParser extends BasicParser {
     public ASTFieldDeclaration parseFieldDeclaration(Location loc, ASTGeneralModifierList gms, ASTDataType dt) {
         ASTFieldModifierList fieldModifiers = convertToSpecificList(gms,
                 "Unexpected field modifier.",
-                Arrays.asList(CONSTANT),
+                Arrays.asList(CONSTANT, SHARED),
                 ASTFieldModifierList::new
         );
         ASTVariableDeclaratorList varDeclList = getStatementsParser().parseVariableDeclaratorList();
@@ -487,7 +487,7 @@ public class ClassesParser extends BasicParser {
     public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTGeneralModifierList gms) {
         ASTMethodModifierList methodModifiers = convertToSpecificList(gms,
                 "Unexpected method modifier.",
-                Arrays.asList(ABSTRACT, OVERRIDE),
+                Arrays.asList(ABSTRACT, OVERRIDE, SHARED),
                 ASTMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader();
@@ -548,7 +548,7 @@ public class ClassesParser extends BasicParser {
      */
     public ASTGeneralModifierList parseGeneralModifierList() {
         return parseMultiple(
-                t -> test(t, Arrays.asList(ABSTRACT, CONSTANT, OVERRIDE)),
+                t -> test(t, Arrays.asList(ABSTRACT, CONSTANT, OVERRIDE, SHARED)),
                 this::parseGeneralModifier,
                 ASTGeneralModifierList::new
         );
@@ -558,14 +558,16 @@ public class ClassesParser extends BasicParser {
      * Parses a <code>GeneralModifier</code>.
      * <em>
      * GeneralModifier:<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;abstract<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;constant<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;override
+     * &nbsp;&nbsp;&nbsp;&nbsp;override<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;shared
      * </em>
      * @return An <code>ASTKeywordNode</code> of the appropriate keyword.
      */
     public ASTKeywordNode parseGeneralModifier() {
         return parseModifier(
-                Arrays.asList(ABSTRACT, CONSTANT, OVERRIDE),
+                Arrays.asList(ABSTRACT, CONSTANT, OVERRIDE, SHARED),
                 "general modifier."
         );
     }
@@ -731,7 +733,7 @@ public class ClassesParser extends BasicParser {
         List<TokenType> firstTokens = Arrays.asList(
                 CONSTRUCTOR,
                 VOID,  // Result
-                ABSTRACT, CONSTANT, OVERRIDE,  // General modifiers
+                ABSTRACT, CONSTANT, OVERRIDE, SHARED,  // General modifiers
                 CLASS, INTERFACE, // Type declarations
                 LESS_THAN, IDENTIFIER,  // Type parameters, name
                 CLOSE_BRACE, EOF

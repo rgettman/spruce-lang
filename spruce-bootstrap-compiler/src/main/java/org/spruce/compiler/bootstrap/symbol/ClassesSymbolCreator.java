@@ -123,10 +123,10 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     public void createSymbolsForConstantDeclaration(ASTConstantDeclaration constDecl, ParentSymbol parent) {
         long flags = getFlags(constDecl);
         ChildSymbolTable parentTable = parent.getTable();
-        flags |= FLAG_MOD_SHARED;
+        flags |= FLAG_MOD_FINAL | FLAG_MOD_SHARED;
         for (ASTVariableDeclarator varDecl : constDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
-            VariableSymbol symbol = new VariableSymbol(constDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
+            VariableSymbol symbol = new VariableSymbol(varDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
             insertSymbol(parentTable, symbol);
             varDecl.setDeclSymbol(symbol);
         }
@@ -164,7 +164,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         ChildSymbolTable parentTable = parent.getTable();
         for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
-            VariableSymbol symbol = new VariableSymbol(fieldDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
+            VariableSymbol symbol = new VariableSymbol(varDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
             insertSymbol(parentTable, symbol);
             varDecl.setDeclSymbol(symbol);
         }
@@ -180,7 +180,9 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
                                                            ParentSymbol parent) {
         long flags = getFlags(methodDecl);
         ChildSymbolTable parentTable = parent.getTable();
-        flags |= FLAG_MOD_ABSTRACT;
+        if ((flags & FLAG_MOD_SHARED) == 0) {
+            flags |= FLAG_MOD_ABSTRACT;
+        }
         ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(), getInterfaceMethodSymbolName(methodDecl),
                 Kind.METHOD, parentTable, flags);
         insertSymbol(parentTable, symbol);
@@ -299,7 +301,8 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
             switch (modifier) {
             // General modifiers
             case ABSTRACT -> flags |= FLAG_MOD_ABSTRACT;
-            case CONSTANT -> flags |= FLAG_MOD_SHARED;
+            case CONSTANT -> flags |= FLAG_MOD_SHARED | FLAG_MOD_FINAL;
+            case SHARED -> flags |= FLAG_MOD_SHARED;
             case OVERRIDE -> flags |= FLAG_MOD_OVERRIDE;
             }
         }

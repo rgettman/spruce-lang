@@ -72,4 +72,20 @@ public class TypeSymbol extends ParentSymbol {
     public void addSuperinterface(TypeSymbol superinterface) {
         mySuperinterfaces.add(superinterface);
     }
+
+    /**
+     * Returns the <code>TypeSymbol</code> representing the immediately
+     * enclosing type, if this type symbol is nested in another type.
+     * @return An <code>Optional&lt;TypeSymbol&gt;</code>.
+     */
+    public Optional<TypeSymbol> getEnclosingType() {
+        SymbolTable table = getParent();
+        if (table instanceof ChildSymbolTable child) {
+            ParentSymbol parent = child.getParent();
+            if (parent.isType()) {
+                return Optional.of((TypeSymbol) parent);
+            }
+        }
+        return Optional.empty();
+    }
 }

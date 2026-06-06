@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
+import org.spruce.compiler.bootstrap.ast.classes.ASTFieldDeclaration;
+import org.spruce.compiler.bootstrap.ast.classes.ASTInterfaceDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.expressions.*;
 import org.spruce.compiler.bootstrap.ast.literals.*;
@@ -566,57 +568,10 @@ public class ResolverExpressionsTest {
     }
 
     /**
-     * Tests expression name resolution to a field.
+     * Tests simple expression name resolution to local variable.
      */
     @Test
-    public void testPrimaryOfExpressionNameResolutionField() {
-        List<String> codes = List.of(
-                CODE_SPRUCE_LANG,
-                """
-                class Clock {
-                    Integer hour;
-                    Integer minute;
-                    Integer second;
-                }
-                """,
-                """
-                class Test {
-                    void testMethod(Clock c) {
-                        Integer h = c.hour;
-                    }
-                }
-                """
-        );
-        Trio trio = compileSoFar(codes);
-        ensureNoErrors(trio.global(), trio.resolver());
-
-        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
-        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
-        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
-        ParentSymbol unnamed = ensureIsa(trio.global().get(SymbolTable.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        TypeSymbol clock = ensureIsa(unnamed.getTable().get("Clock"), TypeSymbol.class);
-        VariableSymbol intHour = ensureIsa(clock.getTable().get("hour"), VariableSymbol.class);
-
-        ASTMethodDeclaration methodDecl = getMethod(trio, 2, 0);
-        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
-                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
-        ASTVariableDeclarator varDeclH = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
-        Optional<ASTExpression> optInitH = varDeclH.getVarInitializer();
-        assertTrue(optInitH.isPresent());
-
-        ASTPrimary primary = ensureIsa(optInitH.get(), ASTPrimary.class);
-        ASTExpressionName hourField = ensureIsa(primary.getChild(), ASTExpressionName.class);
-        EntitySymbol hour = hourField.getResolvedEntity();
-        assertSame(intHour, hour);
-        assertSame(integer, hour.getDataType());
-        assertSame(integer, primary.getResolvedDataType());
-    }
-
-    /**
-     * Tests simple expression name resolution.
-     */
-    @Test
-    public void testPrimaryOfExpressionNameSimpleResolution() {
+    public void testPrimaryOfExpressionNameSimpleResolutionLocal() {
         List<String> codes = List.of(
                 CODE_SPRUCE_LANG,
                 """
@@ -657,6 +612,88 @@ public class ResolverExpressionsTest {
     }
 
     /**
+     * Tests simple expression name resolution to parameter.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleResolutionParameter() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Integer i) {
+                        Integer j = i;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        VariableSymbol i = getFormalParameterSymbol(methodDecl, 0);
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt1 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator j = localVarDeclStmt1.getLocalVarDecl().getVarDeclList().get(0);
+
+        Optional<ASTExpression> optInitJ = j.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(i, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests simple expression name resolution to field.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleResolutionField() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer i = 2;
+                    void testMethod() {
+                        Integer j = i;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTFieldDeclaration fieldDeclI = getField(trio, 1, 0, 0);
+        VariableSymbol i = fieldDeclI.getVarDeclList().get(0).getDeclSymbol();
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator j = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+
+        Optional<ASTExpression> optInitJ = j.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(i, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
      * Tests bad simple expression name resolution.
      */
     @Test
@@ -673,6 +710,419 @@ public class ResolverExpressionsTest {
         );
         Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests simple expression name of inherited field.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleInherited() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Super {
+                    Integer inherited;
+                }
+                class Sub extends Super {
+                    void testMethod() {
+                        Integer local = inherited;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTClassDeclaration superDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration subDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1), ASTClassDeclaration.class);
+        VariableSymbol inherited = ensureIsa(superDecl.getDeclSymbol().getTable().get("inherited"), VariableSymbol.class);
+
+        ASTMethodDeclaration methodDecl = ensureIsa(subDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclLocal = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitLocal = varDeclLocal.getVarInitializer();
+        assertTrue(optInitLocal.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitLocal.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(inherited, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests simple expression name of inherited field from interface.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleInheritedInterface() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                interface Super {
+                    constant Integer inherited;
+                }
+                class Sub implements Super {
+                    void testMethod() {
+                        Integer local = inherited;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTInterfaceDeclaration superDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTInterfaceDeclaration.class);
+        ASTClassDeclaration subDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1), ASTClassDeclaration.class);
+        VariableSymbol inherited = ensureIsa(superDecl.getDeclSymbol().getTable().get("inherited"), VariableSymbol.class);
+
+        ASTMethodDeclaration methodDecl = ensureIsa(subDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclLocal = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitLocal = varDeclLocal.getVarInitializer();
+        assertTrue(optInitLocal.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitLocal.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(inherited, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests simple expression name of field from enclosing type.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleEnclosingType() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Enclosing {
+                    Integer outer = 2;
+                    class Inner {
+                        void testMethod() {
+                            Integer local = outer;
+                        }
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTClassDeclaration enclosingDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration nestedDecl = ensureIsa(enclosingDecl.getClassParts().get(1), ASTClassDeclaration.class);
+        VariableSymbol outer = ensureIsa(enclosingDecl.getDeclSymbol().getTable().get("outer"), VariableSymbol.class);
+
+        ASTMethodDeclaration methodDecl = ensureIsa(nestedDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclLocal = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitLocal = varDeclLocal.getVarInitializer();
+        assertTrue(optInitLocal.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitLocal.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(outer, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests simple expression name of inherited constant of superclass of
+     * enclosing class.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleResolutionNested() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                interface Superinterface {
+                    constant Integer CONSTANT = 4;
+                }
+                class Superclass implements Superinterface {}
+                class Enclosing extends Superclass {
+                    class Inner {
+                        void testMethod() {
+                            Integer local = CONSTANT;
+                        }
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTInterfaceDeclaration superintDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTInterfaceDeclaration.class);
+        ASTClassDeclaration enclosingDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(2), ASTClassDeclaration.class);
+        ASTClassDeclaration innerDecl = ensureIsa(enclosingDecl.getClassParts().get(0), ASTClassDeclaration.class);
+        VariableSymbol constant = ensureIsa(superintDecl.getDeclSymbol().getTable().get("CONSTANT"), VariableSymbol.class);
+
+        ASTMethodDeclaration methodDecl = ensureIsa(innerDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclLocal = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitLocal = varDeclLocal.getVarInitializer();
+        assertTrue(optInitLocal.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitLocal.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(constant, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests simple expression name of inherited constant of superclass of
+     * enclosing class.
+     */
+    @Test
+    public void testPrimaryOfBadExpressionNameSimpleAmbiguous() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                interface Superinterface {
+                    constant Integer CONSTANT = 4;
+                }
+                class Superclass {
+                    constant Integer CONSTANT = 5;
+                }
+                class Enclosing extends Superclass implements Superinterface {
+                    class Inner {
+                        void testMethod() {
+                            Integer local = CONSTANT;
+                        }
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad simple expression name of static context.
+     */
+    @Test
+    public void testPrimaryOfBadExpressionNameSimpleSharedContext() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer nonShared = 9;
+                    shared void testMethod() {
+                        Integer local = nonShared;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests simple expression name with shadowed field.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleShadowedField() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer foo;
+                    void setFoo(Integer foo) {
+                        Integer local = foo;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration methodDecl = ensureIsa(testDecl.getClassParts().get(1), ASTMethodDeclaration.class);
+        VariableSymbol foo = getFormalParameterSymbol(methodDecl,0);
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclLocal = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitLocal = varDeclLocal.getVarInitializer();
+        assertTrue(optInitLocal.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitLocal.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(foo, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests simple expression name with shadowed field of enclosing type.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleShadowedFieldEnclosing() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer foo = 9;
+                    class Inner {
+                        Integer foo = 8;
+                        void testMethod() {
+                            Integer local = foo;
+                        }
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration innerDecl = ensureIsa(testDecl.getClassParts().get(1), ASTClassDeclaration.class);
+        ASTFieldDeclaration fooDecl = ensureIsa(innerDecl.getClassParts().get(0), ASTFieldDeclaration.class);
+        VariableSymbol foo = fooDecl.getVarDeclList().get(0).getDeclSymbol();
+        ASTMethodDeclaration methodDecl = ensureIsa(innerDecl.getClassParts().get(1), ASTMethodDeclaration.class);
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclLocal = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitLocal = varDeclLocal.getVarInitializer();
+        assertTrue(optInitLocal.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitLocal.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(foo, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests simple expression name with hidden fields from supertypes.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameSimpleHiddenSupertypes() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Superclass {
+                    Integer foo = 5;
+                }
+                interface Superinterface {
+                    constant Integer foo = 4;
+                }
+                class Test extends Superclass implements Superinterface {
+                    Integer foo = 6;
+                    void testMethod() {
+                        Integer local = foo;
+                    }
+                }
+                """
+            );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(2), ASTClassDeclaration.class);
+        ASTFieldDeclaration fooDecl = getField(trio, 1, 2, 0);
+        VariableSymbol foo = fooDecl.getVarDeclList().get(0).getDeclSymbol();
+
+        ASTMethodDeclaration methodDecl = ensureIsa(testDecl.getClassParts().get(1), ASTMethodDeclaration.class);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclLocal = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitLocal = varDeclLocal.getVarInitializer();
+        assertTrue(optInitLocal.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitLocal.get(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(foo, expr);
+        assertSame(integer, expr.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
+    }
+
+    // TODO: Test shared/non-shared violations of resolution!
+
+    /**
+     * Tests expression name resolution to a field.
+     */
+    @Test
+    public void testPrimaryOfQualifiedExpressionNameResolutionField() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Clock {
+                    Integer hour;
+                    Integer minute;
+                    Integer second;
+                }
+                """,
+                """
+                class Test {
+                    void testMethod(Clock c) {
+                        Integer h = c.hour;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+        ParentSymbol unnamed = ensureIsa(trio.global().get(SymbolTable.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol clock = ensureIsa(unnamed.getTable().get("Clock"), TypeSymbol.class);
+        VariableSymbol intHour = ensureIsa(clock.getTable().get("hour"), VariableSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 2, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclH = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitH = varDeclH.getVarInitializer();
+        assertTrue(optInitH.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitH.get(), ASTPrimary.class);
+        ASTExpressionName hourField = ensureIsa(primary.getChild(), ASTExpressionName.class);
+        EntitySymbol hour = hourField.getResolvedEntity();
+        assertSame(intHour, hour);
+        assertSame(integer, hour.getDataType());
+        assertSame(integer, primary.getResolvedDataType());
     }
 
     /**
@@ -805,6 +1255,50 @@ public class ResolverExpressionsTest {
                 class Test {
                     void testMethod() {
                         Integer i = spruce.lang.Integer.TWO;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad qualified expression name of type name then name not shared.
+     */
+    @Test
+    public void testPrimaryOfBadQualifiedExpressionNameNotShared() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Holder {
+                    Integer foo = 10;
+                }
+                class Test {
+                    void testMethod() {
+                        Integer i = Holder.foo;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad qualified expression name of variable then name shared.
+     */
+    @Test
+    public void testPrimaryOfBadQualifiedExpressionNameShared() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Holder {
+                    constant Integer foo = 10;
+                }
+                class Test {
+                    void testMethod(Holder h) {
+                        Integer i = h.foo;
                     }
                 }
                 """

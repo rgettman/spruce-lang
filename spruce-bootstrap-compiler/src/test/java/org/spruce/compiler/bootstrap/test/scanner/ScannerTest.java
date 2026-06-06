@@ -161,7 +161,7 @@ public class ScannerTest {
     @Test
     public void testMethodAndPrimitiveTypes() {
         String line = """
-            abstract override void testMethod() {
+            abstract shared override void testMethod() {
                 boolean t = true;
                 boolean f = false;
                 byte b = 1;
@@ -176,10 +176,10 @@ public class ScannerTest {
             """;
 
         List<Token> expectedTokens = Arrays.asList(
-                new Token(ABSTRACT, "abstract"), new Token(OVERRIDE, "override"),
-                new Token(VOID, "void"), new Token(IDENTIFIER, "testMethod"),
-                new Token(OPEN_PARENTHESIS, "("), new Token(CLOSE_PARENTHESIS, ")"),
-                new Token(OPEN_BRACE, "{"),
+                new Token(ABSTRACT, "abstract"), new Token(SHARED, "shared"),
+                new Token(OVERRIDE, "override"), new Token(VOID, "void"),
+                new Token(IDENTIFIER, "testMethod"), new Token(OPEN_PARENTHESIS, "("),
+                new Token(CLOSE_PARENTHESIS, ")"), new Token(OPEN_BRACE, "{"),
 
                 new Token(IDENTIFIER, "boolean"),
                 new Token(IDENTIFIER, "t"), new Token(EQUAL, "="),

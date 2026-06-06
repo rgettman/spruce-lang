@@ -234,7 +234,7 @@ public class ParserClassesTest {
      */
     @Test
     public void testInterfacePartOfClassDeclaration() {
-        ClassesParser parser = getClassesParser("class Nested {}");
+        ClassesParser parser = getClassesParser("shared class Nested {}");
         ASTInterfacePart node = parser.parseInterfacePart();
         ensureNoErrors(node, parser);
         assertInstanceOf(ASTClassDeclaration.class, node);
@@ -335,7 +335,7 @@ public class ParserClassesTest {
     @Test
     public void testClassDeclarationFull() {
         ClassesParser parser = getClassesParser("""
-            class FullTest extends Test implements Serializable, List
+            shared abstract class FullTest extends Test implements Serializable, List
             {}
             """);
         ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
@@ -343,6 +343,7 @@ public class ParserClassesTest {
         ASTClassDeclaration node = parser.parseClassDeclaration(loc, genModList);
         ensureNoErrors(node, parser);
 
+        checkList(node.getClassModifierList(), CLASS_MODIFIERS, ASTKeywordNode.class, 2);
         assertEquals("FullTest", node.getName().getValue());
         assertTrue(node.getSuperclass().isPresent());
         checkList(node.getSuperclass().get(), SIMPLE_TYPES, ASTSimpleType.class, 1);
@@ -450,10 +451,11 @@ public class ParserClassesTest {
                     return foo;
                 }
                 class Nested {}
+                interface Nestable {}
                 """);
         ASTClassPartList node = parser.parseClassPartList();
         ensureNoErrors(node, parser);
-        checkList(node, CLASS_PARTS, ASTClassPart.class, 4);
+        checkList(node, CLASS_PARTS, ASTClassPart.class, 5);
     }
 
     /**
@@ -558,7 +560,7 @@ public class ParserClassesTest {
      */
     @Test
     public void testClassPartOfClassDeclaration() {
-        ClassesParser parser = getClassesParser("class Nested {}");
+        ClassesParser parser = getClassesParser("shared class Nested {}");
         ASTClassPart node = parser.parseClassPart();
         ensureNoErrors(node, parser);
         assertInstanceOf(ASTClassDeclaration.class, node);
@@ -705,7 +707,7 @@ public class ParserClassesTest {
      */
     @Test
     public void testFieldDeclarationNoSemicolon() {
-        ClassesParser parser = getClassesParser("constant String name = \"bad\"}");
+        ClassesParser parser = getClassesParser("shared String name = \"bad\"}");
         ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
         ASTDataType dt = parser.getTypesParser().parseDataType();
         Location loc = genModList.getLocation();
@@ -788,10 +790,10 @@ public class ParserClassesTest {
      */
     @Test
     public void testGeneralModifierListOfClassModifiers() {
-        ClassesParser parser = getClassesParser("abstract");
+        ClassesParser parser = getClassesParser("abstract shared");
         ASTGeneralModifierList node = parser.parseGeneralModifierList();
         ensureNoErrors(node, parser);
-        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 1);
+        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 2);
     }
 
     /**
@@ -799,7 +801,18 @@ public class ParserClassesTest {
      */
     @Test
     public void testGeneralModifierListOfMethodModifiers() {
-        ClassesParser parser = getClassesParser("abstract override");
+        ClassesParser parser = getClassesParser("abstract override shared");
+        ASTGeneralModifierList node = parser.parseGeneralModifierList();
+        ensureNoErrors(node, parser);
+        checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 3);
+    }
+
+    /**
+     * Tests general modifier list of interface method modifiers.
+     */
+    @Test
+    public void testGeneralModifierListOfInterfaceMethodModifiers() {
+        ClassesParser parser = getClassesParser("override shared");
         ASTGeneralModifierList node = parser.parseGeneralModifierList();
         ensureNoErrors(node, parser);
         checkList(node, GENERAL_MODIFIERS, ASTKeywordNode.class, 2);
@@ -836,6 +849,17 @@ public class ParserClassesTest {
         ASTKeywordNode node = parser.parseGeneralModifier();
         ensureNoErrors(node, parser);
         assertEquals(OVERRIDE, node.getKeyword());
+    }
+
+    /**
+     * Tests general modifier of shared.
+     */
+    @Test
+    public void testGeneralModifierOfShared() {
+        ClassesParser parser = getClassesParser("shared");
+        ASTKeywordNode node = parser.parseGeneralModifier();
+        ensureNoErrors(node, parser);
+        assertEquals(SHARED, node.getKeyword());
     }
 
     /**

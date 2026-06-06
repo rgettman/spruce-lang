@@ -789,7 +789,7 @@ public class ExpressionsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;super . Identifier<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;TypeName . super . Identifier
      * </em>
-     * @param primary An already parsed <code>ASTExpressionName</code>.
+     * @param primary An already parsed <code>ASTPrimary</code>.
      * @return An <code>ASTFieldAccess</code>.
      */
     public ASTFieldAccess parseFieldAccess(ASTPrimary primary) {
