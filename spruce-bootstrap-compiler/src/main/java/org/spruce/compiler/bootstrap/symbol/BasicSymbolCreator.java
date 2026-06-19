@@ -6,6 +6,7 @@ import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 
+import org.spruce.compiler.bootstrap.resolution.Resolver;
 import org.spruce.compiler.bootstrap.symbol.Symbol.Kind;
 
 /**
@@ -118,6 +119,16 @@ public class BasicSymbolCreator {
         }
     }
 
+    /**
+     * Inserts the method symbol into a map of method name to list of symbols.
+     * @param table The <code>SymbolTable</code>.
+     * @param methodName The method name.
+     * @param symbol The <code>ParameterizedSymbol</code> for the method.
+     */
+    public void insertMethod(SymbolTable table, String methodName, ParameterizedSymbol symbol) {
+        table.insertMethod(symbol, methodName);
+    }
+
     // These symbol kind combinations can exist at the same scope level, so
     // symbols of the same name with one of these combinations is a conflict
     // error:
@@ -187,6 +198,14 @@ public class BasicSymbolCreator {
     }
 
     /**
+     * Returns the <code>MessageProducer</code>.
+     * @return The <code>MessageProducer</code>.
+     */
+    protected MessageProducer getMessageProducer() {
+        return myMsgProducer;
+    }
+
+    /**
      * Returns the <code>List</code> of <code>CompilerMessage</code>s.
      * @return The <code>List</code> of <code>CompilerMessage</code>s.
      */
@@ -200,6 +219,16 @@ public class BasicSymbolCreator {
      */
     public GlobalLookup getGlobalLookup() {
         return myGlobalLookup;
+    }
+
+    /**
+     * Returns an early <code>Resolver</code> so use statements and formal
+     * parameter types can be resolved early, here, in the symbol creation
+     * phase.
+     * @return A <code>Resolver</code>.
+     */
+    public Resolver getEarlyResolver() {
+        return mySymbolCreator.getEarlyResolver();
     }
 
     /**

@@ -886,8 +886,7 @@ public class ResolverClassesTest {
                 }
                 """
         );
-        Trio trio = compileSoFar(codes);
-        expectError(trio.global(), trio.resolver(), 2);
+        compileSoFar(codes, 2);
     }
 
     /**

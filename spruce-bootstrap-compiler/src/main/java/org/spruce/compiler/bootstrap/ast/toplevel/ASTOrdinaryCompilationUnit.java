@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
+import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.symbol.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
@@ -26,6 +27,7 @@ public class ASTOrdinaryCompilationUnit extends ASTParentNode implements SymbolD
     private final ASTUseDeclarationList myUseDeclList;
     private final ASTTypeDeclarationList myTypeDeclList;
     private ParentSymbol myDeclSymbol;
+    private ResolutionContext myCtx;
 
     /**
      * Constructs an <code>ASTOrdinaryCompilationUnit</code> at the given <code>Location</code>
@@ -91,6 +93,22 @@ public class ASTOrdinaryCompilationUnit extends ASTParentNode implements SymbolD
     @Override
     public ParentSymbol getDeclSymbol(){
         return myDeclSymbol;
+    }
+
+    /**
+     * Returns the <code>ResolutionContext</code> for the entire OCU.
+     * @return The <code>ResolutionContext</code> for the entire OCU.
+     */
+    public ResolutionContext getCtx() {
+        return myCtx;
+    }
+
+    /**
+     * Stores the <code>ResolutionContext</code> for the entire OCU.
+     * @param ctx A <code>ResolutionContext</code> for the entire OCU.
+     */
+    public void setCtx(ResolutionContext ctx) {
+        myCtx = ctx;
     }
 
     @Override

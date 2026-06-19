@@ -34,7 +34,7 @@ public class ClassesResolver extends BasicResolver {
 
     /**
      * 1. Resolve all superclass and superinterface symbols in a
-     * <code>TypeDeclarationList</code>.
+     *    <code>TypeDeclarationList</code>.
      * @param typeDeclList An <code>ASTTypeDeclarationList</code>.
      * @param ctx A <code>ResolutionContext</code> representing a namespace if
      *            this type declaration is top-level, or the enclosing type if
@@ -49,9 +49,9 @@ public class ClassesResolver extends BasicResolver {
 
     /**
      * 2. Detect any dependency cycles in superclass and superinterface
-     * relationships in a <code>TypeDeclarationList</code>.  This must be done
-     * after resolving all superclass and superinterface symbols, but before
-     * resolving symbols in members.
+     *    relationships in a <code>TypeDeclarationList</code>.  This must be
+     *    done after resolving all superclass and superinterface symbols, but
+     *    before resolving symbols in members.
      * @param typeDeclList An <code>ASTTypeDeclarationList</code>.
      * @return Whether a dependency cycle was detected for any of the type
      *     declarations in the list.
@@ -66,8 +66,8 @@ public class ClassesResolver extends BasicResolver {
 
     /**
      * 3. Resolve all remaining symbols in a <code>TypeDeclarationList</code>.
-     * Many of these resolutions depend on cycles being detected and eliminated
-     * first.
+     *    Many of these resolutions depend on cycles being detected and
+     *    eliminated first.
      * @param typeDeclList An <code>ASTTypeDeclarationList</code>.
      * @param ctx A <code>ResolutionContext</code> representing a namespace if
      *            this type declaration is top-level, or the enclosing type if
@@ -82,8 +82,8 @@ public class ClassesResolver extends BasicResolver {
     }
 
     /**
-     * Resolve only the superclass and superinterface symbols in a
-     * <code>TypeDeclaration</code>.
+     * 1. Resolve only the superclass and superinterface symbols in a
+     *    <code>TypeDeclaration</code>.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
      * @param ctx A <code>ResolutionContext</code> representing a namespace if
      *            this type declaration is top-level, or the enclosing type if
@@ -207,8 +207,8 @@ public class ClassesResolver extends BasicResolver {
     }
 
     /**
-     * Detect any dependency cycles in superclass, superinterfaces, and
-     * enclosing type relationships in a <code>TypeDeclaration</code>.
+     * 2. Detect any dependency cycles in superclass, superinterfaces, and
+     *    enclosing type relationships in a <code>TypeDeclaration</code>.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
      * @return Whether a dependency cycle was detected involving the given symbol.
      */
@@ -252,7 +252,7 @@ public class ClassesResolver extends BasicResolver {
     }
 
     /**
-     * Resolve all non-type-declaration symbols in a <code>TypeDeclaration</code>.
+     * 3. Resolve all non-type-declaration symbols in a <code>TypeDeclaration</code>.
      * @param typeDecl An <code>ASTClassDeclaration</code>.
      * @param ctx A <code>ResolutionContext</code> representing the enclosing type.
      */
@@ -381,10 +381,11 @@ public class ClassesResolver extends BasicResolver {
      *            method or constructor.
      */
     public void resolveFormalParameterList(ASTFormalParameterList formalParams, ResolutionContext ctx) {
-        TypesResolver typesResolver = getTypesResolver();
         for (ASTFormalParameter formalParam : formalParams.getTypedChildren()) {
             ASTDataType dt = formalParam.getDataType();
-            typesResolver.resolveDataType(dt, ctx);
+            // The data type was already resolved early; don't resolve again.
+            // If there was a symbol not found error, resolving again would
+            // duplicate the error!
             formalParam.getDeclSymbol().setDataType(dt.getResolvedDataType());
         }
     }

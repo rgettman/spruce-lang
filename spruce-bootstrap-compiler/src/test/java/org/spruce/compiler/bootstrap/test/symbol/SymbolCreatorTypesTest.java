@@ -10,6 +10,7 @@ import org.spruce.compiler.bootstrap.symbol.TypesSymbolCreator;
 import org.spruce.compiler.bootstrap.test.parser.ParserTypesTest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.spruce.compiler.bootstrap.test.symbol.SymbolCreatorTestUtility.createFakeResolutionContext;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
 /**
@@ -26,7 +27,7 @@ public class SymbolCreatorTypesTest {
         ASTDataType dt = parser.parseDataType();
 
         TypesSymbolCreator creator = getClassesSymbolCreator();
-        String name = creator.getNameForDataType(dt);
+        String name = creator.getNameForDataType(dt, createFakeResolutionContext());
         assertEquals("WidgetProcessor", name);
     }
 
@@ -39,7 +40,8 @@ public class SymbolCreatorTypesTest {
         ASTBaseDataType bdt = parser.parseBaseDataType();
 
         TypesSymbolCreator creator = getClassesSymbolCreator();
-        String name = creator.getNameForDataTypeNoArray(ensureIsa(bdt, ASTDataTypeNoArray.class));
+        String name = creator.getNameForDataTypeNoArray(ensureIsa(bdt, ASTDataTypeNoArray.class),
+                createFakeResolutionContext());
         assertEquals("fully.qualified.SimpleType", name);
     }
 

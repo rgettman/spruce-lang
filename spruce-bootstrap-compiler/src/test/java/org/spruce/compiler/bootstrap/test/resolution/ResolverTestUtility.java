@@ -71,17 +71,17 @@ public class ResolverTestUtility {
      * Helper method to create the global symbol table using the given
      * <code>OrdinaryCompilationUnit</code>s.
      * @param ocus A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
+     * @param numSymbolErrorsExpected The number of symbol generation error expected.
      * @return A <code>GlobalLookup</code> representing the global symbol table.
      */
-    static GlobalLookup createGlobalSymbolTable(List<ASTOrdinaryCompilationUnit> ocus) {
+    static GlobalLookup createGlobalSymbolTable(List<ASTOrdinaryCompilationUnit> ocus,
+                                                int numSymbolErrorsExpected) {
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
-        for (ASTOrdinaryCompilationUnit ocu : ocus) {
-            creator.createSymbolTableForOcu(ocu);
-        }
+        creator.createSymbolTable(ocus);
         for (CompilerMessage msg : creator.getCompilerMessages()) {
             System.out.println(msg);
         }
-        assertEquals(0, creator.getCompilerMessages().size());
+        assertEquals(numSymbolErrorsExpected, creator.getCompilerMessages().size());
         return creator.getGlobalLookup();
     }
 
@@ -135,15 +135,29 @@ public class ResolverTestUtility {
 
     /**
      * Helper method to parse all codes, create the symbols, and resolve all
-     * symbols.
+     * symbols.  Expect no errors in the symbol generation phase.
      * @param codes A <code>List</code> of string codes, one per compilation unit.
      * @return A <code>Trio</code> consisting of a <code>List</code> of
      *     <code>ASTOrdinaryCompilationUnit</code>s, a <code>GlobalLookup</code>,
      *     and a <code>TopLevelResolver</code>.
      */
     static Trio compileSoFar(List<String> codes) {
+        return compileSoFar(codes, 0);
+    }
+
+    /**
+     * Helper method to parse all codes, create the symbols, and resolve all
+     * symbols.  Expect the given number of errors in the symbol generation
+     * phase.
+     * @param codes A <code>List</code> of string codes, one per compilation unit.
+     * @param numSymbolErrorsExpected The number of symbol generation error expected.
+     * @return A <code>Trio</code> consisting of a <code>List</code> of
+     *     <code>ASTOrdinaryCompilationUnit</code>s, a <code>GlobalLookup</code>,
+     *     and a <code>TopLevelResolver</code>.
+     */
+    static Trio compileSoFar(List<String> codes, int numSymbolErrorsExpected) {
         List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
-        GlobalLookup global = createGlobalSymbolTable(ocus);
+        GlobalLookup global = createGlobalSymbolTable(ocus, numSymbolErrorsExpected);
         TopLevelResolver resolver = new Resolver(new BaseMessageProducer(), global).getTopLevelResolver();
         resolver.resolveOrdinaryCompilationUnits(ocus);
 
@@ -163,8 +177,21 @@ public class ResolverTestUtility {
      * @return An <code>ASTMethodDeclaration</code>, or fails if not found.
      */
     static ASTMethodDeclaration getMethod(Trio trio, int ocuIdx, int memberIdx) {
+        return getMethod(trio, ocuIdx, 0, memberIdx);
+    }
+
+    /**
+     * Retrieve a <code>MethodDeclaration</code>.
+     * @param trio A <code>Trio</code>.
+     * @param ocuIdx The 0-based index into the list of
+     *               <code>OrdinaryCompilationUnit</code>s.
+     * @param memberIdx The 0-based index into the members of the first
+     *                  <code>ClassDeclaration</code>.
+     * @return An <code>ASTMethodDeclaration</code>, or fails if not found.
+     */
+    static ASTMethodDeclaration getMethod(Trio trio, int ocuIdx, int typeDeclIdx, int memberIdx) {
         ASTOrdinaryCompilationUnit ocu = trio.ocus().get(ocuIdx);
-        ASTClassDeclaration classDecl = ensureIsa(ocu.getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration classDecl = ensureIsa(ocu.getTypeDeclList().get(typeDeclIdx), ASTClassDeclaration.class);
         return ensureIsa(classDecl.getClassParts().get(memberIdx), ASTMethodDeclaration.class);
     }
 

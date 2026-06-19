@@ -30,7 +30,7 @@ public class Symbol {
         NAMESPACE,
         PARAMETER,
         VOID,
-        WHILE_STMT;
+        WHILE_STMT
     }
 
     private final Location myLocation;
@@ -98,6 +98,24 @@ public class Symbol {
     }
 
     /**
+     * Returns whether the <code>Kind</code> is a class.
+     * @return Whether the <code>Kind</code> is a class.
+     */
+    public boolean isClass() {
+        // There will be enums and records, eventually.
+        return myKind == Kind.CLASS;
+    }
+
+    /**
+     * Returns whether the <code>Kind</code> is an interface.
+     * @return Whether the <code>Kind</code> is an interface.
+     */
+    public boolean isInterface() {
+        // There will be annotations, eventually.
+        return myKind == Kind.INTERFACE;
+    }
+
+    /**
      * Returns whether the <code>Kind</code> is a local declaration.
      * @return Whether the <code>Kind</code> is a local declaration.
      */
@@ -111,6 +129,30 @@ public class Symbol {
      */
     public boolean isVariable() {
         return isLocal() || myKind == Kind.FIELD;
+    }
+
+    /**
+     * Returns whether the <code>Kind</code> is a method or constructor.
+     * @return Whether the <code>Kind</code> is a method or constructor.
+     */
+    public boolean isMethod() {
+        return myKind == Kind.METHOD || myKind == Kind.CONSTRUCTOR;
+    }
+
+    /**
+     * Returns whether this symbol is abstract.
+     * @return Whether this symbol is abstract.
+     */
+    public boolean isAbstract() {
+        return (myFlags & FLAG_MOD_ABSTRACT) != 0;
+    }
+
+    /**
+     * Returns whether this symbol is override.
+     * @return Whether this symbol is override.
+     */
+    public boolean isOverride() {
+        return (myFlags & FLAG_MOD_OVERRIDE) != 0;
     }
 
     /**
@@ -157,5 +199,21 @@ public class Symbol {
                 .append(String.format("0x%08X", getFlags())).append(") at ")
                 .append(getLocation()).append("\n");
         return buf.toString();
+    }
+
+    /**
+     * Returns the fully qualified name of this symbol, e.g., "spruce.lang.Integer",
+     * "ClassInUnnamedNamespace".
+     * @return The fully qualified name of this symbol.
+     */
+    public String getFullyQualifiedName() {
+        SymbolTable parentTable = getParent();
+        if (parentTable instanceof ChildSymbolTable cst) {
+            ParentSymbol parent = cst.getParent();
+            if (!parent.getName().equals(GlobalLookup.UNNAMED_NAMESPACE_NAME)) {
+                return parent.getFullyQualifiedName() + "." + myName;
+            }
+        }
+        return myName;
     }
 }

@@ -4,16 +4,20 @@ import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.expressions.*;
+import org.spruce.compiler.bootstrap.ast.statements.ASTExpressionStatement;
 import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationStatement;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
+import org.spruce.compiler.bootstrap.resolution.OperationsResolver;
+import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
-import org.spruce.compiler.bootstrap.symbol.SymbolTable;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.spruce.compiler.bootstrap.symbol.GlobalLookup.UNNAMED_NAMESPACE_NAME;
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
@@ -21,6 +25,669 @@ import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
  * All tests for the operations resolver.
  */
 public class ResolverOperationsTest {
+
+    //
+    // Methods
+    //
+
+    /**
+     * Tests method invocation step 1 - type to search.  Typename super case
+     * (1a), find superclass of enclosing type.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchTypenameSuper() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Super {
+                    void foo() {}
+                }
+                class Enclosing extends Super {
+                    class Test {
+                        void testMethod() {
+                            Enclosing.super.foo();
+                        }
+                    }
+                }
+                """
+        );
+        
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol sooper = ensureIsa(unnamed.getTable().get("Super"), TypeSymbol.class);
+
+        ASTClassDeclaration enclosingDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1),
+                ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(enclosingDecl.getClassParts().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration methodDecl = ensureIsa(testDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(sooper, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests bad method invocation step 1 - type to search.  Typename super case
+     * (1a), find superclass of enclosing type.  Not resolved.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchTypenameSuperDne() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Super {
+                    void foo() {}
+                }
+                class Enclosing extends Super {
+                    class Test {
+                        void testMethod() {
+                            DoesNotExist.super.foo();
+                        }
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+
+        ASTClassDeclaration enclosingDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1),
+                ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(enclosingDecl.getClassParts().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration methodDecl = ensureIsa(testDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        expectError(trio.global(), opResolver);
+        assertFalse(optTypeToSearch.isPresent());
+    }
+
+    /**
+     * Tests bad method invocation step 1 - type to search.  Typename super case
+     * (1a), find superclass of enclosing type.  Not an enclosing type.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchTypenameSuperNotEnclosing() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Super {
+                    void foo() {}
+                }
+                class Enclosing extends Super {
+                    class Test {
+                        void testMethod() {
+                            Dummy.super.foo();
+                        }
+                    }
+                }
+                class Dummy {}
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+
+        ASTClassDeclaration enclosingDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1),
+                ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(enclosingDecl.getClassParts().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration methodDecl = ensureIsa(testDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        expectError(trio.global(), opResolver);
+        assertFalse(optTypeToSearch.isPresent());
+    }
+
+    /**
+     * Tests bad method invocation step 1 - type to search.  Typename super case
+     * (1a), find superclass of enclosing type.  Enclosing type has no superclass.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchTypenameSuperEnclosingNoSuperclass() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {
+                    class Test {
+                        void testMethod() {
+                            Any.super.foo();
+                        }
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+
+        ASTClassDeclaration enclosingDecl = ensureIsa(trio.ocus().get(0).getTypeDeclList().get(0),
+                ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(enclosingDecl.getClassParts().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration methodDecl = ensureIsa(testDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(0).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        expectError(trio.global(), opResolver);
+        assertFalse(optTypeToSearch.isPresent());
+    }
+
+    /**
+     * Tests method invocation step 1 - type to search.  Super case (1b),
+     * find superclass.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchSuper() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Super {
+                    void foo() {}
+                }
+                class Test extends Super {
+                    void testMethod() {
+                        super.foo();
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol sooper = ensureIsa(unnamed.getTable().get("Super"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1, 0);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(sooper, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests bad method invocation step 1 - type to search.  Super case (1b),
+     * find superclass.  No superclass.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchSuperNoSuperclass() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {
+                    void testMethod() {
+                        super.foo();
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 0, 0, 0);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(0).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        expectError(trio.global(), opResolver);
+        assertFalse(optTypeToSearch.isPresent());
+    }
+
+    /**
+     * Tests method invocation step 1 - type to search.  Primary case (1c),
+     * type of primary.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchPrimary() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Clock {
+                    String getTime() {
+                        return "17:18";
+                    }
+                }
+                """,
+                """
+                class Test {
+                    void testMethod(Clock c) {
+                        String time = (c).getTime();
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol clock = ensureIsa(unnamed.getTable().get("Clock"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 2, 0, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDecl = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInit = varDecl.getVarInitializer();
+        assertTrue(optInit.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInit.get(), ASTPrimary.class);
+        assertEquals(ASTPrimary.Type.METHOD_INVOCATION, primary.getType());
+        ASTMethodInvocation methodInvocation = ensureIsa(primary.getChild(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(2).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(clock, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests bad method invocation step 1 - type to search.  Primary case (1c),
+     * bad type of primary.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchPrimaryBad() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Clock {
+                    String getTime() {
+                        return "17:18";
+                    }
+                }
+                """,
+                """
+                class Test {
+                    void testMethod(Clock c) {
+                        String time = (dne).getTime();
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 2, 0, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDecl = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInit = varDecl.getVarInitializer();
+        assertTrue(optInit.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInit.get(), ASTPrimary.class);
+        assertEquals(ASTPrimary.Type.METHOD_INVOCATION, primary.getType());
+        ASTMethodInvocation methodInvocation = ensureIsa(primary.getChild(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(2).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        expectError(trio.global(), opResolver);
+        assertFalse(optTypeToSearch.isPresent());
+    }
+
+    /**
+     * Tests method invocation step 1 - type to search.  Expression name case
+     * (1d), expression name.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchExprName() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Clock {
+                    String getTime() {
+                        return "17:18";
+                    }
+                }
+                """,
+                """
+                class Test {
+                    void testMethod(Clock c) {
+                        String time = c.getTime();
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol clock = ensureIsa(unnamed.getTable().get("Clock"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 2, 0, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDecl = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInit = varDecl.getVarInitializer();
+        assertTrue(optInit.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInit.get(), ASTPrimary.class);
+        assertEquals(ASTPrimary.Type.METHOD_INVOCATION, primary.getType());
+        ASTMethodInvocation methodInvocation = ensureIsa(primary.getChild(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(2).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(clock, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests method invocation step 1 - type to search.  Expression name case
+     * (1d), type name.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchExprNameAsTypeName() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Clock {
+                    shared String getType() {
+                        return "Clock";
+                    }
+                }
+                """,
+                """
+                class Test {
+                    void testMethod() {
+                        String time = Clock.getType();
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol clock = ensureIsa(unnamed.getTable().get("Clock"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 2, 0, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDecl = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInit = varDecl.getVarInitializer();
+        assertTrue(optInit.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInit.get(), ASTPrimary.class);
+        assertEquals(ASTPrimary.Type.METHOD_INVOCATION, primary.getType());
+        ASTMethodInvocation methodInvocation = ensureIsa(primary.getChild(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(2).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(clock, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests bad method invocation step 1 - type to search.  Expression name case
+     * (1d), bad expression name.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchExprNameBad() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Clock {
+                    String getTime() {
+                        return "17:18";
+                    }
+                }
+                """,
+                """
+                class Test {
+                    void testMethod(Clock c) {
+                        String time = dne.getTime();
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 2, 0, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDecl = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInit = varDecl.getVarInitializer();
+        assertTrue(optInit.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInit.get(), ASTPrimary.class);
+        assertEquals(ASTPrimary.Type.METHOD_INVOCATION, primary.getType());
+        ASTMethodInvocation methodInvocation = ensureIsa(primary.getChild(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(2).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        expectError(trio.global(), opResolver);
+        assertFalse(optTypeToSearch.isPresent());
+    }
+
+    /**
+     * Tests method invocation step 1 - type to search.  Bare method name case,
+     * (1e), find method in enclosing type.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchBareNameEnclosingType() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Enclosing {
+                    void foo() {}
+                    class Test {
+                        void testMethod() {
+                            foo();
+                        }
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol enclosing = ensureIsa(unnamed.getTable().get("Enclosing"), TypeSymbol.class);
+
+        ASTClassDeclaration enclosingDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0),
+                ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(enclosingDecl.getClassParts().get(1), ASTClassDeclaration.class);
+        ASTMethodDeclaration methodDecl = ensureIsa(testDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(enclosing, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests method invocation step 1 - type to search.  Bare method name case,
+     * (1e), find method in superinterface.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchBareNameInterface() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                interface Super {
+                    void foo();
+                }
+                class Test implements Super {
+                    void testMethod() {
+                        foo();
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol test = ensureIsa(unnamed.getTable().get("Test"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1, 0);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(test, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests method invocation step 1 - type to search.  Bare method name case,
+     * (1e), find method in superclass.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchBareNameSuperclass() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Super {
+                    void foo() {}
+                }
+                class Test extends Super {
+                    void testMethod() {
+                        foo();
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol test = ensureIsa(unnamed.getTable().get("Test"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1, 0);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(test, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests method invocation step 1 - type to search.  Bare method name case,
+     * (1e), find method in same class.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchBareNameSameClass() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void foo() {}
+                    void testMethod() {
+                        foo();
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol test = ensureIsa(unnamed.getTable().get("Test"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        assertTrue(optTypeToSearch.isPresent());
+        assertSame(test, optTypeToSearch.get());
+    }
+
+    /**
+     * Tests bad method invocation step 1 - type to search.  Bare method name case,
+     * (1e), method not found.
+     */
+    @Test
+    public void testMethodInvocationTypeToSearchBareNameDoesNotExist() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        doesNotExist();
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTExpressionStatement exprStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTExpressionStatement.class);
+        ASTMethodInvocation methodInvocation = ensureIsa(exprStmt.getStmtExpr(), ASTMethodInvocation.class);
+
+        ResolutionContext ocuCtx = trio.ocus().get(1).getCtx();
+        ResolutionContext testMethodCtx = ocuCtx.withEnclosingSymbol(methodDecl.getDeclSymbol());
+        OperationsResolver opResolver = trio.resolver().getOperationsResolver();
+        Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(methodInvocation, testMethodCtx);
+        expectError(trio.global(), opResolver);
+        assertFalse(optTypeToSearch.isPresent());
+    }
+
+
+    //
+    // Operators
+    //
 
     /**
      * Test binary expression of the plus operator.
@@ -126,7 +793,7 @@ public class ResolverOperationsTest {
 
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
-        ParentSymbol unnamed = ensureIsa(trio.global().get(SymbolTable.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        ParentSymbol unnamed = ensureIsa(trio.global().get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
         TypeSymbol character = ensureIsa(lang.getTable().get("Character"), TypeSymbol.class);
         TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
         TypeSymbol string = ensureIsa(lang.getTable().get("String"), TypeSymbol.class);

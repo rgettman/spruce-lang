@@ -2,12 +2,14 @@ package org.spruce.compiler.bootstrap.test.symbol;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.*;
 import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
 import org.spruce.compiler.bootstrap.parser.TopLevelParser;
+import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.symbol.ClassesSymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
@@ -236,7 +238,7 @@ public class SymbolCreatorClassesTest {
     @Test
     public void testMemberConstructorOverload() {
         Pair pair = createGlobalLookupNoErrors("""
-                class HasMember {
+                class Integer {
                     constructor() {}
                     constructor(Integer foo) {}
                 }
@@ -250,10 +252,10 @@ public class SymbolCreatorClassesTest {
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
-        String expSymbolName = "HasMember";
+        String expSymbolName = "Integer";
         checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 2);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 2);
 
         String symbolName = NAME_CONSTRUCTOR + "()";
         String symbolName2 = NAME_CONSTRUCTOR + "(Integer)";
@@ -430,7 +432,7 @@ public class SymbolCreatorClassesTest {
     @Test
     public void testMemberMethodDeclaration() {
         Pair pair = createGlobalLookupNoErrors("""
-               class HasMember {
+               class String {
                     void foo(String bar) {
                         Widget baz;
                     }
@@ -445,10 +447,10 @@ public class SymbolCreatorClassesTest {
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
-        String expSymbolName = "HasMember";
+        String expSymbolName = "String";
         checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         String symbolName = "foo(String)";
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
@@ -461,13 +463,37 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
+     * Tests bad abstract method with body.
+     */
+    @Test
+    public void testMemberBadAbstractMethodBody() {
+        createGlobalLookupWithErrors("""
+                class Test {
+                    abstract void testMethod() {}
+                }
+                """, 2);
+    }
+
+    /**
+     * Tests bad abstract method with class not being abstract.
+     */
+    @Test
+    public void testMemberBadAbstractMethodClassNotAbstract() {
+        createGlobalLookupWithErrors("""
+                class Test {
+                    abstract void testMethod();
+                }
+                """, 1);
+    }
+
+    /**
      * Tests member of abstract method declaration.
      */
     @Test
     public void testMemberAbstractMethodDeclaration() {
         Pair pair = createGlobalLookupNoErrors("""
                abstract class HasMember {
-                    abstract void foo(String bar);
+                    abstract void foo(HasMember bar);
                }
                """);
         SymbolTable global = pair.lookup();
@@ -485,7 +511,7 @@ public class SymbolCreatorClassesTest {
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS,
                 FLAG_MOD_ABSTRACT, 1);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        String symbolName = "foo(String)";
+        String symbolName = "foo(HasMember)";
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
 
         Symbol fooSymbol = innerTable.get(symbolName);
@@ -496,12 +522,24 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
+     * Tests bad shared method without body.
+     */
+    @Test
+    public void testMemberBadSharedMethodNoBody() {
+        createGlobalLookupWithErrors("""
+                class Test {
+                    shared void testMethod();
+                }
+                """, 1);
+    }
+
+    /**
      * Tests member of overloaded methods.
      */
     @Test
     public void testMemberMethodOverloads() {
         Pair pair = createGlobalLookupNoErrors("""
-                class HasMember {
+                class String {
                     String foo;
                     void foo() {}
                     void foo(String bar) {}
@@ -514,11 +552,11 @@ public class SymbolCreatorClassesTest {
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
         checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
-        String expSymbolName = "HasMember";
+        String expSymbolName = "String";
 
         checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 3);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 3);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         checkSymbolTable(innerTable, TYPE, 3, Arrays.asList("foo", "foo()", "foo(String)"));
 
@@ -550,7 +588,7 @@ public class SymbolCreatorClassesTest {
     public void testMemberInterfaceMethod() {
         Pair pair = createGlobalLookupNoErrors("""
                 interface HasMember {
-                    void foo(String bar);
+                    void foo(HasMember bar);
                 }
                 """);
         SymbolTable global = pair.lookup();
@@ -569,7 +607,7 @@ public class SymbolCreatorClassesTest {
         assertSame(symbol, typeDecl.getDeclSymbol());
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        String symbolName = "foo(String)";
+        String symbolName = "foo(HasMember)";
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
 
         Symbol fooSymbol = innerTable.get(symbolName);
@@ -582,13 +620,25 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
+     * Tests bad interface method with body.
+     */
+    @Test
+    public void testMemberBadInterfaceMethodBody() {
+        createGlobalLookupWithErrors("""
+                interface Test {
+                    void testMethod() {}
+                }
+                """, 1);
+    }
+
+    /**
      * Tests member of shared interface method declaration.
      */
     @Test
     public void testMemberSharedInterfaceMethod() {
         Pair pair = createGlobalLookupNoErrors("""
                 interface HasMember {
-                    shared void foo(String bar) {}
+                    shared void foo(HasMember bar) {}
                 }
                 """);
         SymbolTable global = pair.lookup();
@@ -607,7 +657,7 @@ public class SymbolCreatorClassesTest {
         assertSame(symbol, typeDecl.getDeclSymbol());
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        String symbolName = "foo(String)";
+        String symbolName = "foo(HasMember)";
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
 
         Symbol fooSymbol = innerTable.get(symbolName);
@@ -619,13 +669,25 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
+     * Tests bad shared interface method without body.
+     */
+    @Test
+    public void testMemberBadSharedInterfaceMethodNoBody() {
+        createGlobalLookupWithErrors("""
+                interface Test {
+                    shared void testMethod();
+                }
+                """, 1);
+    }
+
+    /**
      * Tests formal parameter list in a method.
      */
     @Test
     public void testFormalParameterList() {
         Pair pair = createGlobalLookupNoErrors("""
-                class HasMember {
-                    String foo(String first, String last, Integer age, String ssn) {}
+                class String {
+                    String foo(String first, String last, String age, String ssn) {}
                 }
                 """);
         SymbolTable global = pair.lookup();
@@ -637,12 +699,12 @@ public class SymbolCreatorClassesTest {
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
-        String expSymbolName = "HasMember";
+        String expSymbolName = "String";
         checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        String symbolName = "foo(String,String,Integer,String)";
+        String symbolName = "foo(String, String, String, String)";
         checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
 
         List<String> expNames = Arrays.asList("first", "last", "age", "ssn");
@@ -704,7 +766,9 @@ public class SymbolCreatorClassesTest {
         Optional<ParentSymbol> optUnnamedNamespace = creator.getGlobalLookup()
                 .getNamespace(UNNAMED_NAMESPACE_NAME);
         assertTrue(optUnnamedNamespace.isPresent());
-        creator.createSymbolsForTopLevelTypeDeclaration(typeDecl, optUnnamedNamespace.get());
+        creator.createSymbolsForTopLevelTypeDeclarationTypeOnly(typeDecl, optUnnamedNamespace.get());
+        ResolutionContext fake = new ResolutionContext(Map.of(), typeDecl.getDeclSymbol());
+        creator.createSymbolsForTopLevelTypeDeclarationTypeMembers(typeDecl, fake);
         return new Pair(typeDecl, creator.getGlobalLookup());
     }
 

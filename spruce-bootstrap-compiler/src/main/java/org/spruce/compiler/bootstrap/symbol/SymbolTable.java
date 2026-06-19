@@ -1,5 +1,6 @@
 package org.spruce.compiler.bootstrap.symbol;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,12 +17,6 @@ import static org.spruce.compiler.bootstrap.symbol.Symbol.Kind.*;
  */
 public class SymbolTable {
     /**
-     * The "name" of the unnamed namespace.  This is used when no namespace
-     * declaration is found on a compilation unit.
-     */
-    public static final String UNNAMED_NAMESPACE_NAME = "";
-
-    /**
      * The scope of a symbol table.
      */
     public enum Scope {
@@ -34,6 +29,7 @@ public class SymbolTable {
 
     private final Scope myScope;
     private final Map<String, Symbol> myTable;
+    private final Map<String, List<Symbol>> myMethods;
 
     /**
      * Constructs a <code>SymbolTable</code> with the given <code>Scope</code>
@@ -43,6 +39,7 @@ public class SymbolTable {
     public SymbolTable(Scope scope) {
         myScope = scope;
         myTable = new HashMap<>();
+        myMethods = new HashMap<>();
     }
 
     /**
@@ -52,9 +49,9 @@ public class SymbolTable {
     public SymbolTable() {
         this(Scope.TOP);
         ParentSymbol unnamedNamespace = new ParentSymbol(new Location("<unnamed>", 0, 0, "unavailable"),
-                UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE, this, FLAG_NONE);
+                GlobalLookup.UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE, this, FLAG_NONE);
         unnamedNamespace.setTable(new ChildSymbolTable(Scope.NAMESPACE, unnamedNamespace));
-        getTable().put(UNNAMED_NAMESPACE_NAME, unnamedNamespace);
+        getTable().put(GlobalLookup.UNNAMED_NAMESPACE_NAME, unnamedNamespace);
     }
 
     /**
@@ -82,6 +79,34 @@ public class SymbolTable {
      */
     public void insertSymbol(Symbol symbol) {
         myTable.put(symbol.getName(), symbol);
+    }
+
+    /**
+     * Inserts the given <code>ParameterizedSymbol</code> into a mapping of
+     * method name to a list of symbols.  The caller must call
+     * {@link #insertSymbol(Symbol)} first.
+     * @param symbol A <code>Symbol</code>.
+     * @see #containsSymbolName(String)
+     */
+    public void insertMethod(ParameterizedSymbol symbol, String methodName) {
+        List<Symbol> overloads;
+        if (myMethods.containsKey(methodName)) {
+            overloads = myMethods.get(methodName);
+        }
+        else {
+            overloads = new ArrayList<>();
+            myMethods.put(methodName, overloads);
+        }
+        overloads.add(symbol);
+    }
+
+    /**
+     * Returns whether this symbol contains a method with the given name.
+     * @param methodName The method name.
+     * @return Whether this symbol contains a method with the given name.
+     */
+    public boolean containsMethodName(String methodName) {
+        return myMethods.containsKey(methodName);
     }
 
     /**

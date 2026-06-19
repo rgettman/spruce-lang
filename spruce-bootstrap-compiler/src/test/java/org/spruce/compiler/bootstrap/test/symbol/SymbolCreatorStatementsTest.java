@@ -7,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMember;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.statements.*;
-import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.parser.ClassesParser;
+import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
 import org.spruce.compiler.bootstrap.symbol.ClassesSymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
@@ -34,7 +34,9 @@ public class SymbolCreatorStatementsTest {
     @Test
     public void testMethodBlockLocalVarDecls() {
         String code = """
-                String testing(String one, String two) {
+                void testing() {
+                    String one = "one";
+                    String two = "two";
                     String three = one + two;
                     Int four = 4;
                     Int five = 5;
@@ -52,39 +54,49 @@ public class SymbolCreatorStatementsTest {
                         .map(ASTLocalVariableDeclarationStatement.class::cast)
                         .toList();
 
-        checkSymbolTable(table, TYPE, 1, List.of("testing(String,String)"));
-        Symbol symbol = table.get("testing(String,String)");
+        checkSymbolTable(table, TYPE, 1, List.of("testing()"));
+        Symbol symbol = table.get("testing()");
 
         ParameterizedSymbol paraSymbol = ensureIsa(symbol, ParameterizedSymbol.class);
-        checkSymbol(paraSymbol, "testing(String,String)", Kind.METHOD, FLAG_NONE,
-                7, 2);
+        checkSymbol(paraSymbol, "testing()", Kind.METHOD, FLAG_NONE,
+                7, 0);
 
         SymbolTable innerTable = paraSymbol.getTable();
         checkSymbolTable(innerTable, MEMBER, 7, List.of("one", "two", "three", "four", "five", "six", "seven"));
 
+        Symbol one = innerTable.get("one");
+        checkSymbol(one, "one", Kind.LOCAL, FLAG_NONE);
+        ASTLocalVariableDeclarationStatement stmt1 = varDeclStmts.get(0);
+        assertSame(one, stmt1.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
+
+        Symbol two = innerTable.get("two");
+        checkSymbol(two, "two", Kind.LOCAL, FLAG_NONE);
+        ASTLocalVariableDeclarationStatement stmt2 = varDeclStmts.get(1);
+        assertSame(two, stmt2.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
+
         Symbol three = innerTable.get("three");
         checkSymbol(three, "three", Kind.LOCAL, FLAG_NONE);
-        ASTLocalVariableDeclarationStatement stmt3 = varDeclStmts.get(0);
+        ASTLocalVariableDeclarationStatement stmt3 = varDeclStmts.get(2);
         assertSame(three, stmt3.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol four = innerTable.get("four");
         checkSymbol(four, "four", Kind.LOCAL, FLAG_NONE);
-        ASTLocalVariableDeclarationStatement stmt4 = varDeclStmts.get(1);
+        ASTLocalVariableDeclarationStatement stmt4 = varDeclStmts.get(3);
         assertSame(four, stmt4.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol five = innerTable.get("five");
         checkSymbol(five, "five", Kind.LOCAL, FLAG_NONE);
-        ASTLocalVariableDeclarationStatement stmt5 = varDeclStmts.get(2);
+        ASTLocalVariableDeclarationStatement stmt5 = varDeclStmts.get(4);
         assertSame(five, stmt5.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol six = innerTable.get("six");
         checkSymbol(six, "six", Kind.LOCAL, FLAG_NONE);
-        ASTLocalVariableDeclarationStatement stmt6 = varDeclStmts.get(3);
+        ASTLocalVariableDeclarationStatement stmt6 = varDeclStmts.get(5);
         assertSame(six, stmt6.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
 
         Symbol seven = innerTable.get("seven");
         checkSymbol(seven, "seven", Kind.LOCAL, FLAG_NONE);
-        ASTLocalVariableDeclarationStatement stmt7 = varDeclStmts.get(4);
+        ASTLocalVariableDeclarationStatement stmt7 = varDeclStmts.get(6);
         assertSame(seven, stmt7.getLocalVarDecl().getVarDeclList().get(0).getDeclSymbol());
     }
 
@@ -152,7 +164,8 @@ public class SymbolCreatorStatementsTest {
     @Test
     public void testNestedBlockRedeclarationError() {
         String code = """
-                void nestedBlock(Int bar) {
+                void nestedBlock() {
+                    Int bar = new Bar();
                     String foo = "foo";
                     {
                         String foo = "error";
@@ -588,7 +601,7 @@ public class SymbolCreatorStatementsTest {
      * @return A <code>SymbolTable</code> for the member declaration.
      */
     public static Pair createMemberSymbolTableNoErrors(String code,
-                                                              Function<ClassesParser, ? extends ASTMember> memberParser) {
+                                                       Function<ClassesParser, ? extends ASTMember> memberParser) {
         ClassesSymbolCreator creator = SymbolCreatorClassesTest.getClassesSymbolCreator();
         Pair pair = createMemberSymbolTable(code, creator, memberParser);
         SymbolTable table = pair.table();
@@ -614,16 +627,15 @@ public class SymbolCreatorStatementsTest {
     }
 
     private static Pair createMemberSymbolTable(String code, ClassesSymbolCreator creator,
-                                                       Function<ClassesParser, ? extends ASTMember> memberParser) {
+                                                Function<ClassesParser, ? extends ASTMember> memberParser) {
         ClassesParser classesParser = ParserClassesTest.getClassesParser(code);
         ASTMember member = memberParser.apply(classesParser);
-        ParentSymbol enclosingType = new ParentSymbol(
-                new Location("<dummy>", 0, 0, "unavailable"),
-                "TestType", Kind.CLASS, null, FLAG_NONE);
+        ResolutionContext fake = createFakeResolutionContext();
+        ParentSymbol enclosingType = fake.enclosingSymbol();
         ChildSymbolTable parent = new ChildSymbolTable(SymbolTable.Scope.TYPE, enclosingType);
         enclosingType.setTable(parent);
 
-        creator.createSymbolsForMember(enclosingType, member);
+        creator.createSymbolsForMember(enclosingType, member, fake);
         return new Pair(member, parent);
     }
 

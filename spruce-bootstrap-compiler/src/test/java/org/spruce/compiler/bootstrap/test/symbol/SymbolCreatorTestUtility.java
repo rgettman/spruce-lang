@@ -1,15 +1,22 @@
 package org.spruce.compiler.bootstrap.test.symbol;
 
 import java.util.List;
+import java.util.Map;
 
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
+import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.symbol.BasicSymbolCreator;
+import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.spruce.compiler.bootstrap.symbol.GlobalLookup.UNNAMED_NAMESPACE_NAME;
+import static org.spruce.compiler.bootstrap.symbol.Symbol.FLAG_NONE;
 
 /**
  * Utility methods for symbol creator tests.  No test entry points.
@@ -96,7 +103,7 @@ public class SymbolCreatorTestUtility {
      * @param expKind The expected <code>Kind</code>.
      * @param expFlags The expected flags, exactly.
      */
-    static void checkSymbol(Symbol symbol, String expName, Symbol.Kind expKind, long expFlags) {
+    public static void checkSymbol(Symbol symbol, String expName, Symbol.Kind expKind, long expFlags) {
         assertEquals(expName, symbol.getName());
         assertEquals(expKind, symbol.getKind());
         assertEquals(expFlags, symbol.getFlags());
@@ -112,7 +119,7 @@ public class SymbolCreatorTestUtility {
      * @param expFlags The expected flags, exactly.
      * @param numExpChildren The number of expected children.
      */
-    static void checkSymbol(ParentSymbol symbol, String expName, Symbol.Kind expKind, long expFlags, int numExpChildren) {
+    public static void checkSymbol(ParentSymbol symbol, String expName, Symbol.Kind expKind, long expFlags, int numExpChildren) {
         checkSymbol(symbol, expName, expKind, expFlags);
         assertEquals(numExpChildren, symbol.getTable().size());
     }
@@ -128,7 +135,7 @@ public class SymbolCreatorTestUtility {
      * @param numExpChildren The number of expected children.
      * @param numExpParameters The number of expected parameters.
      */
-    static void checkSymbol(ParameterizedSymbol symbol, String expName, Symbol.Kind expKind,
+    public static void checkSymbol(ParameterizedSymbol symbol, String expName, Symbol.Kind expKind,
                             long expFlags, int numExpChildren, int numExpParameters) {
         checkSymbol(symbol, expName, expKind, expFlags, numExpChildren);
         assertEquals(numExpParameters, symbol.numParameters());
@@ -144,7 +151,7 @@ public class SymbolCreatorTestUtility {
      * @param expSymbolNames A <code>List</code> of expected symbol names, all
      *                       of which must be present.
      */
-    static void checkSymbolTable(SymbolTable table, SymbolTable.Scope expScope, int numEntries,
+    public static void checkSymbolTable(SymbolTable table, SymbolTable.Scope expScope, int numEntries,
                                  List<String> expSymbolNames) {
         assertEquals(expScope, table.getScope());
         assertEquals(numEntries, table.size());
@@ -152,6 +159,22 @@ public class SymbolCreatorTestUtility {
             assertTrue(table.containsSymbolName(expSymbolName),
                     "Didn't find expected symbol name \"" + expSymbolName + "\".");
         }
+    }
+
+    /**
+     * Creates a fake <code>ResolutionContext</code> to pass in to
+     * TypesSymbolCreator tests.
+     * @return A fake <code>ResolutionContext</code>.
+     */
+    static ResolutionContext createFakeResolutionContext() {
+        GlobalLookup global = new GlobalLookup();
+        ParentSymbol unnamedNamespace = global.getNamespace(UNNAMED_NAMESPACE_NAME).get();
+        ParentSymbol enclosingType = new ParentSymbol(
+                new Location("<dummy>", 0, 0, "unavailable"),
+                "TestType", Symbol.Kind.CLASS, unnamedNamespace.getTable(), FLAG_NONE);
+        ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.TYPE, enclosingType);
+        enclosingType.setTable(table);
+        return new ResolutionContext(Map.of(), enclosingType);
     }
 }
 

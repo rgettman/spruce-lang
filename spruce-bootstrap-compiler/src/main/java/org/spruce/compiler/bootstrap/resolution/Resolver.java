@@ -116,7 +116,7 @@ public class Resolver {
      * <code>OrdinaryCompilationUnit</code>s along with the <code>GlobalLookup</code>.
      * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
      */
-    public void analyze(List<ASTOrdinaryCompilationUnit> units) {
+    public void resolve(List<ASTOrdinaryCompilationUnit> units) {
         getTopLevelResolver().resolveOrdinaryCompilationUnits(units);
     }
 

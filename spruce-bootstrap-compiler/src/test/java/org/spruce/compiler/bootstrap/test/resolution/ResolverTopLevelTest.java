@@ -108,8 +108,7 @@ public class ResolverTopLevelTest {
                 class Any {}
                 """
         );
-        Trio trio = compileSoFar(codes);
-        expectError(trio.global(), trio.resolver());
+        compileSoFar(codes, 1);
     }
 
     /**
@@ -175,8 +174,7 @@ public class ResolverTopLevelTest {
                 class Any {}
                 """
         );
-        Trio trio = compileSoFar(codes);
-        expectError(trio.global(), trio.resolver(), 3);
+        compileSoFar(codes, 3);
     }
 
     /**
@@ -198,8 +196,7 @@ public class ResolverTopLevelTest {
                 class Any {}
                 """
         );
-        Trio trio = compileSoFar(codes);
-        expectError(trio.global(), trio.resolver(), 2);
+        compileSoFar(codes, 2);
     }
 
     /**
@@ -226,8 +223,7 @@ public class ResolverTopLevelTest {
                 class Any {}
                 """
         );
-        Trio trio = compileSoFar(codes);
-        expectError(trio.global(), trio.resolver(), 1);
+        compileSoFar(codes, 1);
     }
 
     /**
@@ -256,8 +252,7 @@ public class ResolverTopLevelTest {
                 class Any {}
                 """
         );
-        Trio trio = compileSoFar(codes);
-        expectError(trio.global(), trio.resolver(), 2);
+        compileSoFar(codes, 2);
     }
 
     /**
@@ -279,7 +274,6 @@ public class ResolverTopLevelTest {
                 class Any {}
                 """
         );
-        Trio trio = compileSoFar(codes);
-        expectError(trio.global(), trio.resolver(), 1);
+        compileSoFar(codes, 1);
     }
 }

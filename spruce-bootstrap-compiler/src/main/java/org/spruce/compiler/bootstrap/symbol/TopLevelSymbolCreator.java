@@ -8,6 +8,9 @@ import org.spruce.compiler.bootstrap.ast.names.ASTNamespaceName;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
+import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
+import org.spruce.compiler.bootstrap.resolution.Resolver;
+import org.spruce.compiler.bootstrap.resolution.TopLevelResolver;
 import org.spruce.compiler.bootstrap.symbol.Symbol.Kind;
 
 import static org.spruce.compiler.bootstrap.symbol.Symbol.FLAG_NONE;
@@ -33,9 +36,37 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
      * an <code>OrdinaryCompilationUnit</code>.  Populates the namespace symbol
      * hierarchically with symbols representing what's found in the compilation
      * unit.
+     * @param ocus A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
+     */
+    public void createSymbolTable(List<ASTOrdinaryCompilationUnit> ocus) {
+        // 1. Create symbols for only the types first.
+        for (ASTOrdinaryCompilationUnit ocu : ocus) {
+            createSymbolTableOcuTypeOnly(ocu);
+        }
+
+        // 2. Next, resolve all use statement symbols.  Also create
+        //    ResolutionContexts to make type resolution possible.
+        Resolver resolver = getEarlyResolver();
+        TopLevelResolver tlResolver = resolver.getTopLevelResolver();
+        tlResolver.resolveUseStatements(ocus);
+
+        // 3. Create symbols for all non-type members.  When creating symbols
+        //    for methods and constructors, the formal parameters will be
+        //    resolvable to properly distinguish overloads and detect duplicate
+        //    signatures.
+        for (ASTOrdinaryCompilationUnit ocu : ocus) {
+            createSymbolTableOcuTypeMembers(ocu);
+        }
+    }
+
+    /**
+     * 1. Creates symbols in the global lookup for only the types in an
+     * <code>OrdinaryCompilationUnit</code>.  Populates the namespace symbol
+     * hierarchically with symbols representing what's found in the compilation
+     * unit.
      * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
      */
-    public void createSymbolTableForCompUnit(ASTOrdinaryCompilationUnit ocu) {
+    public void createSymbolTableOcuTypeOnly(ASTOrdinaryCompilationUnit ocu) {
         ParentSymbol namespace;
         if (ocu.getNamespaceDecl().isPresent()) {
             ASTNamespaceDeclaration namespaceDecl = ocu.getNamespaceDecl().get();
@@ -49,10 +80,26 @@ public class TopLevelSymbolCreator extends BasicSymbolCreator {
         List<ASTTypeDeclaration> typeDecls = ocu.getTypeDeclList().getTypedChildren();
         ClassesSymbolCreator classesCreator = getClassesSymbolCreator();
         for (ASTTypeDeclaration typeDecl : typeDecls) {
-            classesCreator.createSymbolsForTopLevelTypeDeclaration(typeDecl, namespace);
+            classesCreator.createSymbolsForTopLevelTypeDeclarationTypeOnly(typeDecl, namespace);
         }
 
         ocu.setDeclSymbol(namespace);
+    }
+
+    /**
+     * 3. Creates symbols in the global lookup for only the non-type members in
+     * an <code>OrdinaryCompilationUnit</code>.  Populates the namespace symbol
+     * hierarchically with symbols representing what's found in the compilation
+     * unit.
+     * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
+     */
+    public void createSymbolTableOcuTypeMembers(ASTOrdinaryCompilationUnit ocu) {
+        List<ASTTypeDeclaration> typeDecls = ocu.getTypeDeclList().getTypedChildren();
+        ClassesSymbolCreator classesCreator = getClassesSymbolCreator();
+        ResolutionContext ctx = ocu.getCtx();
+        for (ASTTypeDeclaration typeDecl : typeDecls) {
+            classesCreator.createSymbolsForTopLevelTypeDeclarationTypeMembers(typeDecl, ctx);
+        }
     }
 
     /**

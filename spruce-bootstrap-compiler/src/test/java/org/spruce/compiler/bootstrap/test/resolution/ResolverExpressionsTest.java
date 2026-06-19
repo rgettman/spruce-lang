@@ -15,6 +15,7 @@ import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationS
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
 import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
@@ -449,7 +450,7 @@ public class ResolverExpressionsTest {
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
-        ParentSymbol unnamed = ensureIsa(trio.global().get(SymbolTable.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        ParentSymbol unnamed = ensureIsa(trio.global().get(GlobalLookup.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
         TypeSymbol clock = ensureIsa(unnamed.getTable().get("Clock"), TypeSymbol.class);
         VariableSymbol intMinute = ensureIsa(clock.getTable().get("minute"), VariableSymbol.class);
 
@@ -522,7 +523,7 @@ public class ResolverExpressionsTest {
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
-        ParentSymbol unnamed = ensureIsa(trio.global().get(SymbolTable.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        ParentSymbol unnamed = ensureIsa(trio.global().get(GlobalLookup.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
         TypeSymbol clock = ensureIsa(unnamed.getTable().get("Clock"), TypeSymbol.class);
         VariableSymbol intHour = ensureIsa(clock.getTable().get("hour"), VariableSymbol.class);
 
@@ -1106,7 +1107,7 @@ public class ResolverExpressionsTest {
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
-        ParentSymbol unnamed = ensureIsa(trio.global().get(SymbolTable.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        ParentSymbol unnamed = ensureIsa(trio.global().get(GlobalLookup.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
         TypeSymbol clock = ensureIsa(unnamed.getTable().get("Clock"), TypeSymbol.class);
         VariableSymbol intHour = ensureIsa(clock.getTable().get("hour"), VariableSymbol.class);
 
@@ -1380,7 +1381,7 @@ public class ResolverExpressionsTest {
         Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol unnamed = ensureIsa(trio.global().get(SymbolTable.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        ParentSymbol unnamed = ensureIsa(trio.global().get(GlobalLookup.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
         TypeSymbol test = ensureIsa(unnamed.getTable().get("Test"), TypeSymbol.class);
 
         ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);

@@ -40,55 +40,68 @@ public class TopLevelResolver extends BasicResolver {
     }
 
     /**
-     * Resolve all symbols in all <code>OrdinaryCompilationUnit</code>s along
-     * with the <code>GlobalLookup</code>.
+     * Resolve all use statement symbols in all <code>OrdinaryCompilationUnit</code>s
+     * along with the <code>GlobalLookup</code>.  Creates <code>ResolutionContext</code>s
+     * for each <code>OrdinaryCompilationUnit</code> for use later.
      * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
      */
-    public void resolveOrdinaryCompilationUnits(List<ASTOrdinaryCompilationUnit> units) {
+    public void resolveUseStatements(List<ASTOrdinaryCompilationUnit> units) {
         for (ASTOrdinaryCompilationUnit ocu : units) {
-            resolveOrdinaryCompilationUnit(ocu);
+            // Keep track of used simple names being brought into scope.
+            Map<String, ParentSymbol> using = new HashMap<>();
+            // Keep track of parent symbol tables of simple names to detect a
+            // potential conflict.
+            Map<String, SymbolTable> namesUsed = new HashMap<>();
+
+            // Preload this OCU's type declarations, whose simple names cannot
+            // be reused.
+            SymbolTable table = ocu.getDeclSymbol().getTable();
+            for (ASTTypeDeclaration typeDecl : ocu.getTypeDeclList().getTypedChildren()) {
+                namesUsed.put(typeDecl.getName().getValue(), table);
+            }
+
+            ASTUseDeclarationList useDeclList = ocu.getUseDeclList();
+            for (ASTUseDeclaration useDecl : useDeclList.getTypedChildren()) {
+                resolveUseDeclaration(useDecl, namesUsed, using);
+            }
+
+            ensureImplicitUseAll(using);
+
+            // Create the ResolutionContexts.
+            ParentSymbol namespace = ocu.getDeclSymbol();
+            ResolutionContext ctx = new ResolutionContext(using, namespace);
+            ocu.setCtx(ctx);
         }
     }
 
     /**
-     * Resolve all symbols in an <code>OrdinaryCompilationUnit</code> using the
-     * given <code>GlobalLookup</code>.
-     * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
+     * Resolve all remaining symbols in all <code>OrdinaryCompilationUnit</code>s
+     * along with the <code>GlobalLookup</code>.
+     * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
      */
-    public void resolveOrdinaryCompilationUnit(ASTOrdinaryCompilationUnit ocu) {
-        // Keeps track of used simple names being brought into scope.
-        Map<String, ParentSymbol> using = new HashMap<>();
-        // Keep track of parent symbol tables of simple names to detect a
-        // potential conflict.
-        Map<String, SymbolTable> namesUsed = new HashMap<>();
-
-        // Preload this OCU's type declarations, whose simple names cannot be
-        // reused.
-        SymbolTable table = ocu.getDeclSymbol().getTable();
-        for (ASTTypeDeclaration typeDecl : ocu.getTypeDeclList().getTypedChildren()) {
-            namesUsed.put(typeDecl.getName().getValue(), table);
-        }
-
-        ASTUseDeclarationList useDeclList = ocu.getUseDeclList();
-        for (ASTUseDeclaration useDecl : useDeclList.getTypedChildren()) {
-            resolveUseDeclaration(useDecl, namesUsed, using);
-        }
-
-        ensureImplicitUseAll(using);
-
-        // Next: Loop through the Type Declarations.
-        ParentSymbol namespace = ocu.getDeclSymbol();
-        ResolutionContext ctx = new ResolutionContext(using, namespace);
+    public void resolveOrdinaryCompilationUnits(List<ASTOrdinaryCompilationUnit> units) {
         ClassesResolver classesResolver = getClassesResolver();
-        ASTTypeDeclarationList typeDeclList = ocu.getTypeDeclList();
+
         // 1. Resolve all superclass and superinterface symbols first.
-        classesResolver.resolveTypeDeclarationListExtends(typeDeclList, ctx);
+        for (ASTOrdinaryCompilationUnit ocu : units) {
+            ASTTypeDeclarationList typeDeclList = ocu.getTypeDeclList();
+            ResolutionContext ctx = ocu.getCtx();
+            classesResolver.resolveTypeDeclarationListExtends(typeDeclList, ctx);
+        }
+
         // 2. Detect dependency cycles.
-        boolean cycleDetected = classesResolver.detectDependencyCycles(typeDeclList);
+        boolean cycleDetected = false;
+        for (ASTOrdinaryCompilationUnit ocu : units) {
+            cycleDetected |= classesResolver.detectDependencyCycles(ocu.getTypeDeclList());
+        }
+
         // 3. Resolve all member symbols, some of which rely on there being no
-        // dependency cycles.
+        //    dependency cycles.
         if (!cycleDetected) {
-            classesResolver.resolveTypeDeclarationListMembers(typeDeclList, ctx);
+            for (ASTOrdinaryCompilationUnit ocu : units) {
+                ResolutionContext ctx = ocu.getCtx();
+                classesResolver.resolveTypeDeclarationListMembers(ocu.getTypeDeclList(), ctx);
+            }
         }
     }
 

@@ -29,7 +29,7 @@ public class SymbolCreatorTopLevelTest {
         TopLevelParser parser = ParserTopLevelTest.getTopLevelParser("namespace one.two.three;");
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
-        creator.createSymbolTableForOcu(ocu);
+        creator.createSymbolTable(List.of(ocu));
 
         GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
@@ -51,7 +51,7 @@ public class SymbolCreatorTopLevelTest {
                 """);
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
-        creator.createSymbolTableForOcu(ocu);
+        creator.createSymbolTable(List.of(ocu));
 
         GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
@@ -91,7 +91,7 @@ public class SymbolCreatorTopLevelTest {
                 """);
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
-        creator.createSymbolTableForOcu(ocu);
+        creator.createSymbolTable(List.of(ocu));
 
         GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
@@ -124,8 +124,7 @@ public class SymbolCreatorTopLevelTest {
         ASTOrdinaryCompilationUnit ocu1 = parser1.parseOrdinaryCompilationUnit();
         ASTOrdinaryCompilationUnit ocu2 = parser2.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
-        creator.createSymbolTableForOcu(ocu1);
-        creator.createSymbolTableForOcu(ocu2);
+        creator.createSymbolTable(List.of(ocu1, ocu2));
 
         GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
@@ -165,7 +164,7 @@ public class SymbolCreatorTopLevelTest {
                 """);
         ASTOrdinaryCompilationUnit ocu = parser.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
-        creator.createSymbolTableForOcu(ocu);
+        creator.createSymbolTable(List.of(ocu));
         expectError(creator.getGlobalLookup(), creator.getTopLevelSymbolCreator(), 2);
     }
 
@@ -184,8 +183,7 @@ public class SymbolCreatorTopLevelTest {
                 """);
         ASTOrdinaryCompilationUnit ocu2 = parser2.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
-        creator.createSymbolTableForOcu(ocu1);
-        creator.createSymbolTableForOcu(ocu2);
+        creator.createSymbolTable(List.of(ocu1, ocu2));
         expectError(creator.getGlobalLookup(), creator.getTopLevelSymbolCreator(), 2);
     }
 }

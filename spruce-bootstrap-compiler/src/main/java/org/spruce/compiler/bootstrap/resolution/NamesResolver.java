@@ -124,6 +124,31 @@ public class NamesResolver extends BasicResolver {
         // The parser ensures at least one identifier.
         List<ASTIdentifier> ids = exprName.getTypedChildren();
 
+        Optional<Symbol> optResolved = resolveExpressionOrTypeNameIds(ids, ctx);
+        if (optResolved.isEmpty()) {
+            // Error already generated.
+            return;
+        }
+
+        Symbol resolved = optResolved.get();
+
+        // Must be a variable at the end.
+        if (!resolved.isVariable()) {
+            error(resolved.getLocation(), "Variable expected.");
+            return;
+        }
+
+        exprName.setResolvedEntity((VariableSymbol) resolved);
+    }
+
+    /**
+     * Resolves a bunch of <code>Identifiers</code> that could represent an
+     * expression name or a type name.
+     * @param ids A <code>List</code> of <code>ASTIdentifier</code>s.
+     * @param ctx A <code>ResolutionContext</code>.
+     * @return An <code>Optional&lt;Symbol&gt;</code>.
+     */
+    public Optional<Symbol> resolveExpressionOrTypeNameIds(List<ASTIdentifier> ids, ResolutionContext ctx) {
         // 1. Resolve the first identifier, which could be a "variable" (local
         //    variable, a parameter, or a field), a type, or a namespace.
         ASTIdentifier first = ids.get(0);
@@ -131,7 +156,7 @@ public class NamesResolver extends BasicResolver {
         List<Symbol> matches = resolveFirstIdentifier(first, ctx);
         if (matches.isEmpty()) {
             errorSymbolNotFound(first.getLocation(), name);
-            return;
+            return Optional.empty();
         }
         else if (matches.size() > 1) {
             error(first.getLocation(), "Symbol " + name + " is ambiguous with " + matches.size() +
@@ -139,13 +164,13 @@ public class NamesResolver extends BasicResolver {
             for (Symbol match : matches) {
                 note(match.getLocation(), name + " matches here.");
             }
-            return;
+            return Optional.empty();
         }
         Symbol resolved = matches.get(0);
         if (ctx.isShared() && resolved.getKind() == FIELD && !resolved.isShared()) {
             error(first.getLocation(), "Symbol " + name +
                     " cannot be resolved from a shared context.");
-            return;
+            return Optional.empty();
         }
 
         // 2. Within the scope of the previous identifier, resolve the next
@@ -155,18 +180,11 @@ public class NamesResolver extends BasicResolver {
             Optional<Symbol> optResolved = resolveSubsequentIdentifier(next, resolved);
             if (optResolved.isEmpty()) {
                 errorSymbolNotFound(next.getLocation(), next.getValue());
-                return;
+                return Optional.empty();
             }
             resolved = optResolved.get();
         }
-
-        // 3. Must be a variable at the end.
-        if (!resolved.isVariable()) {
-            error(resolved.getLocation(), "Variable expected.");
-            return;
-        }
-
-        exprName.setResolvedEntity((VariableSymbol) resolved);
+        return Optional.of(resolved);
     }
 
     private List<Symbol> resolveFirstIdentifier(ASTIdentifier first, ResolutionContext ctx) {

@@ -5,6 +5,7 @@ import java.util.List;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTOrdinaryCompilationUnit;
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
+import org.spruce.compiler.bootstrap.resolution.Resolver;
 
 /**
  * A <code>SymbolCreator</code> creates <code>Symbol</code>s for all
@@ -21,6 +22,8 @@ public class SymbolCreator {
     private final MessageProducer myMsgProducer;
     private final GlobalLookup myGlobalLookup;
 
+    private final Resolver myEarlyResolver;
+
     /**
      * Constructs a <code>SymbolCreator</code> with the given
      * <code>MessageProducer</code>.
@@ -34,6 +37,8 @@ public class SymbolCreator {
 
         myMsgProducer = msgProducer;
         myGlobalLookup = globalLookup;
+
+        myEarlyResolver = new Resolver(msgProducer, globalLookup);
     }
 
     /**
@@ -69,13 +74,13 @@ public class SymbolCreator {
     }
 
     /**
-     * Creates symbols for the given <code>ASTOrdinaryCompilationUnit</code>.
+     * Creates symbols for the given <code>ASTOrdinaryCompilationUnit</code>s.
      * Populates symbols hierarchically with all declared symbols found within
      * the compilation unit.
-     * @param ocu An <code>ASTOrdinaryCompilationUnit</code>.
+     * @param ocus A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
      */
-    public void createSymbolTableForOcu(ASTOrdinaryCompilationUnit ocu) {
-        getTopLevelSymbolCreator().createSymbolTableForCompUnit(ocu);
+    public void createSymbolTable(List<ASTOrdinaryCompilationUnit> ocus) {
+        getTopLevelSymbolCreator().createSymbolTable(ocus);
     }
 
     /**
@@ -92,5 +97,15 @@ public class SymbolCreator {
      */
     public GlobalLookup getGlobalLookup() {
         return myGlobalLookup;
+    }
+
+    /**
+     * Returns an early <code>Resolver</code> so use statements and formal
+     * parameter types can be resolved early, here, in the symbol creation
+     * phase.
+     * @return A <code>Resolver</code>.
+     */
+    public Resolver getEarlyResolver() {
+        return myEarlyResolver;
     }
 }

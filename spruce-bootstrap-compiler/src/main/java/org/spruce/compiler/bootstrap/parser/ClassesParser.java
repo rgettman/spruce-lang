@@ -512,7 +512,7 @@ p     * @param loc The <code>Location</code>.
                                                        ASTDataType dt) {
         ASTMethodModifierList methodModifiers = convertToSpecificList(gms,
                 "Unexpected method modifier.",
-                Arrays.asList(ABSTRACT, OVERRIDE),
+                Arrays.asList(ABSTRACT, OVERRIDE, SHARED),
                 ASTMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader(dt);
