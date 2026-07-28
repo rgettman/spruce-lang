@@ -415,7 +415,7 @@ public class TypesResolver extends BasicResolver {
             if (!(table instanceof ChildSymbolTable)) {
                 throw internalError("Enclosing SymbolTable was not a ChildSymbolTable! " + symbol);
             }
-            enclosing = ((ChildSymbolTable) symbol.getParent()).getParent();
+            enclosing = ((ChildSymbolTable) table).getParent();
         }
         return (TypeSymbol) enclosing;
     }

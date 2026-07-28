@@ -29,7 +29,7 @@ public class SymbolTable {
 
     private final Scope myScope;
     private final Map<String, Symbol> myTable;
-    private final Map<String, List<Symbol>> myMethods;
+    private final Map<String, List<ParameterizedSymbol>> myMethods;
 
     /**
      * Constructs a <code>SymbolTable</code> with the given <code>Scope</code>
@@ -89,7 +89,7 @@ public class SymbolTable {
      * @see #containsSymbolName(String)
      */
     public void insertMethod(ParameterizedSymbol symbol, String methodName) {
-        List<Symbol> overloads;
+        List<ParameterizedSymbol> overloads;
         if (myMethods.containsKey(methodName)) {
             overloads = myMethods.get(methodName);
         }
@@ -107,6 +107,19 @@ public class SymbolTable {
      */
     public boolean containsMethodName(String methodName) {
         return myMethods.containsKey(methodName);
+    }
+
+    /**
+     * Returns a List of methods in this table that match the given method
+     * name.  If there are no methods, returns an empty list.
+     * @param methodName A method name.
+     * @return A possibly empty <code>List</code> of <code>ParameterizedSymbol</code>s.
+     */
+    public List<ParameterizedSymbol> getMethodsForName(String methodName) {
+        if (myMethods.containsKey(methodName)) {
+            return myMethods.get(methodName);
+        }
+        return List.of();
     }
 
     /**

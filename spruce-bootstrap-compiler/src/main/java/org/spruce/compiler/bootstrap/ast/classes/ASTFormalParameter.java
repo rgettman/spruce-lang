@@ -9,7 +9,6 @@ import org.spruce.compiler.bootstrap.symbol.SymbolDeclaration;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 
 /**

@@ -17,7 +17,6 @@ import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
 import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
-import org.spruce.compiler.bootstrap.symbol.SymbolTable;
 import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
@@ -661,10 +660,11 @@ public class ResolverExpressionsTest {
                 CODE_SPRUCE_LANG,
                 """
                 class Test {
-                    Integer i = 2;
+                    Integer k = 2;
                     void testMethod() {
                         Integer j = i;
                     }
+                    Integer i = 2;
                 }
                 """
         );
@@ -675,7 +675,7 @@ public class ResolverExpressionsTest {
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
 
-        ASTFieldDeclaration fieldDeclI = getField(trio, 1, 0, 0);
+        ASTFieldDeclaration fieldDeclI = getField(trio, 1, 0, 2);
         VariableSymbol i = fieldDeclI.getVarDeclList().get(0).getDeclSymbol();
 
         ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1);

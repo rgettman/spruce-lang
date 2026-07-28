@@ -1,7 +1,7 @@
 package org.spruce.compiler.bootstrap.test.symbol;
 
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.common.Location;
@@ -13,6 +13,7 @@ import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.spruce.compiler.bootstrap.symbol.GlobalLookup.UNNAMED_NAMESPACE_NAME;
@@ -169,12 +170,12 @@ public class SymbolCreatorTestUtility {
     static ResolutionContext createFakeResolutionContext() {
         GlobalLookup global = new GlobalLookup();
         ParentSymbol unnamedNamespace = global.getNamespace(UNNAMED_NAMESPACE_NAME).get();
-        ParentSymbol enclosingType = new ParentSymbol(
+        TypeSymbol enclosingType = new TypeSymbol(
                 new Location("<dummy>", 0, 0, "unavailable"),
                 "TestType", Symbol.Kind.CLASS, unnamedNamespace.getTable(), FLAG_NONE);
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.TYPE, enclosingType);
         enclosingType.setTable(table);
-        return new ResolutionContext(Map.of(), enclosingType);
+        return new ResolutionContext(new HashMap<>(), enclosingType);
     }
 }
 

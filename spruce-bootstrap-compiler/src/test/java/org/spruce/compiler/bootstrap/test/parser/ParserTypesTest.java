@@ -1,7 +1,5 @@
 package org.spruce.compiler.bootstrap.test.parser;
 
-//import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
-//import org.spruce.compiler.bootstrap.ast.classes.ASTAnnotation;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.types.*;
 import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
@@ -10,13 +8,12 @@ import org.spruce.compiler.bootstrap.parser.TypesParser;
 import org.spruce.compiler.bootstrap.scanner.Scanner;
 
 import static org.spruce.compiler.bootstrap.ast.ASTListNode.Type.*;
-//import static org.spruce.compiler.bootstrap.scanner.TokenType.*;
 import static org.spruce.compiler.bootstrap.test.parser.ParserTestUtility.*;
 
 import org.junit.jupiter.api.Test;
-//import org.spruce.compiler.bootstrap.test.util.TestUtility;
 
 import static org.junit.jupiter.api.Assertions.*;
+
 /**
  * All tests for the parser related to types.
  */

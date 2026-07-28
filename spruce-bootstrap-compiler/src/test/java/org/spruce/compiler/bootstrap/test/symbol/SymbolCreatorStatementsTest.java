@@ -1,23 +1,28 @@
 package org.spruce.compiler.bootstrap.test.symbol;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMember;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.statements.*;
+import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.parser.ClassesParser;
 import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
 import org.spruce.compiler.bootstrap.symbol.ClassesSymbolCreator;
+import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 import org.spruce.compiler.bootstrap.test.parser.ParserClassesTest;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.spruce.compiler.bootstrap.symbol.GlobalLookup.UNNAMED_NAMESPACE_NAME;
 import static org.spruce.compiler.bootstrap.symbol.Symbol.*;
 import static org.spruce.compiler.bootstrap.symbol.SymbolTable.Scope.*;
 import static org.spruce.compiler.bootstrap.test.symbol.SymbolCreatorTestUtility.*;
@@ -355,12 +360,12 @@ public class SymbolCreatorStatementsTest {
     public void testIfStatementElse() {
         String code = """
                 String ifElseStmt() {
-                    if { String line = nextLine() } line isa Value {
+                    if { String line = "nextLine()" } line isa String {
                         String output = "line: " + line;
-                        stdout.println(output);
+                        //stdout.println(output);
                     }
                     else {
-                        stdout.println("Line DNE!");
+                        //stdout.println("Line DNE!");
                     }
                 }
                 """;
@@ -428,17 +433,17 @@ public class SymbolCreatorStatementsTest {
     public void testIfStatementElseIf() {
         String code = """
                 String ifElseStmt() {
-                    if { String line = nextLine() } line isa Value {
+                    if { String line = "nextLine()" } line isa String {
                         String output = "line: " + line;
-                        stdout.println(output);
+                        //stdout.println(output);
                     }
-                    else if { Int someOtherCondition = get() } someOtherCondition == 1 {
+                    else if { Integer someOtherCondition = 1 } someOtherCondition == 1 {
                         String otherCondition = "otherCondition";
-                        stdout.println(otherCondition);
+                        //stdout.println(otherCondition);
                     }
                     else {
                         String dummy = "dummy";
-                        stdout.println("Line DNE!");
+                        //stdout.println("Line DNE!");
                     }
                 }
                 """;
@@ -546,9 +551,9 @@ public class SymbolCreatorStatementsTest {
     public void testWhileStatement() {
         String code = """
                 String whileStmt() {
-                    while {String line = br.readLine()} (!(line isa None)) {
-                        Int lineNbr = 0;
-                        stdout.println(line);
+                    while {String line = "br.readLine()"} (!(line isa String)) {
+                        Integer lineNbr = 0;
+                        //stdout.println(line);
                     }
                 }
                 """;
@@ -631,9 +636,32 @@ public class SymbolCreatorStatementsTest {
         ClassesParser classesParser = ParserClassesTest.getClassesParser(code);
         ASTMember member = memberParser.apply(classesParser);
         ResolutionContext fake = createFakeResolutionContext();
-        ParentSymbol enclosingType = fake.enclosingSymbol();
+        TypeSymbol enclosingType = (TypeSymbol) fake.enclosingSymbol();
+        Optional<ParentSymbol> optUnnamedNamespace = creator.getGlobalLookup()
+                .getNamespace(UNNAMED_NAMESPACE_NAME);
+        assertTrue(optUnnamedNamespace.isPresent());
+        GlobalLookup global = creator.getGlobalLookup();
+        ParentSymbol spruce = new ParentSymbol(new Location("<fake>", 0, 0, "namespace spruce.lang;"),
+            "spruce", Kind.NAMESPACE, global, FLAG_NONE);
+        global.insertSymbol(spruce);
+        ChildSymbolTable spruceTable = new ChildSymbolTable(NAMESPACE, spruce);
+        spruce.setTable(spruceTable);
+        ParentSymbol lang = new ParentSymbol(new Location("<fake>", 0, 0, "namespace spruce.lang;"),
+                "lang", Kind.NAMESPACE, spruceTable, FLAG_NONE);
+        spruceTable.insertSymbol(lang);
+        ChildSymbolTable langTable = new ChildSymbolTable(NAMESPACE, lang);
+        lang.setTable(langTable);
+        langTable.insertSymbol(
+                new TypeSymbol(new Location("<fake>", 1, 0, "class String {}"),
+                        "String", Kind.CLASS, langTable, FLAG_NONE));
+        langTable.insertSymbol(
+                new TypeSymbol(new Location("<fake>", 2, 0, "class Integer {}"),
+                        "Integer", Kind.CLASS, langTable, FLAG_NONE));
+
         ChildSymbolTable parent = new ChildSymbolTable(SymbolTable.Scope.TYPE, enclosingType);
         enclosingType.setTable(parent);
+        // Auto-use spruce.lang.
+        fake.using().put("lang", lang);
 
         creator.createSymbolsForMember(enclosingType, member, fake);
         return new Pair(member, parent);

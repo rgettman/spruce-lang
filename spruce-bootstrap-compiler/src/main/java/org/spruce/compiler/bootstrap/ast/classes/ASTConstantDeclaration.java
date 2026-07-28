@@ -2,7 +2,6 @@ package org.spruce.compiler.bootstrap.ast.classes;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.Node;
@@ -40,26 +39,6 @@ public final class ASTConstantDeclaration extends ASTParentNode implements ASTIn
      */
     public ASTConstantDeclaration(Location location, ASTKeywordNode constantMod,
                                   ASTDataType dataType, ASTVariableDeclaratorList varDeclList) {
-        super(location);
-        myConstantMod = constantMod;
-        myDataType = dataType;
-        myVarDeclList = varDeclList;
-    }
-
-    /**
-     * Constructs an <code>ASTConstantDeclaration</code> at the given <code>Location</code>
-     * with the given <code>ASTAnnotationList</code>, the given
-     * <code>ASTKeywordNode</code> representing an AccessModifier, the given
-     * <code>ASTKeywordNode</code> representing a ConstantModifier, the given
-     * <code>ASTDataType</code>, and the given <code>ASTVariableDeclaratorList</code>.
-     * @param location    The child nodes.
-     * @param accessMod   An <code>ASTKeywordNode</code> representing an AccessModifier.
-     * @param constantMod An <code>ASTKeywordNode</code> of keyword <code>constant</code>.
-     * @param dataType    An <code>ASTDataType</code>.
-     * @param varDeclList An <code>ASTVariableDeclaratorList</code>.
-     */
-    public ASTConstantDeclaration(Location location, ASTKeywordNode accessMod,
-                                  ASTKeywordNode constantMod, ASTDataType dataType, ASTVariableDeclaratorList varDeclList) {
         super(location);
         myConstantMod = constantMod;
         myDataType = dataType;

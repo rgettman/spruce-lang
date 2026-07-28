@@ -11,7 +11,7 @@ import org.spruce.compiler.bootstrap.common.Location;
  * <code>EntitySymbol</code> with an associated datatype symbol.
  */
 public class ParameterizedSymbol extends ParentSymbol implements EntitySymbol {
-    private final List<Symbol> myParameters;
+    private final List<VariableSymbol> myParameters;
     private TypeSymbol myDataType;
 
     /**
@@ -30,20 +30,20 @@ public class ParameterizedSymbol extends ParentSymbol implements EntitySymbol {
     }
 
     /**
-     * Adds the given <code>Symbol</code> representing a Parameter to the
+     * Adds the given <code>VariableSymbol</code> representing a Parameter to the
      * parameter list.
-     * @param paramSymbol A <code>Symbol</code> of type <code>PARAMETER</code>.
+     * @param paramSymbol A <code>VariableSymbol</code> of type <code>PARAMETER</code>.
      */
-    public void addParameter(Symbol paramSymbol) {
+    public void addParameter(VariableSymbol paramSymbol) {
         myParameters.add(paramSymbol);
     }
 
     /**
-     * Returns the <code>List</code> of <code>Symbol</code>s representing the
+     * Returns the <code>List</code> of <code>VariableSymbol</code>s representing the
      * parameters.
-     * @return A <code>List</code> of <code>Symbol</code>s.
+     * @return A <code>List</code> of <code>VariableSymbol</code>s.
      */
-    public List<Symbol> getParameters() {
+    public List<VariableSymbol> getParameters() {
         return myParameters;
     }
 

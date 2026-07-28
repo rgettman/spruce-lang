@@ -208,8 +208,8 @@ public class TopLevelParser extends BasicParser {
         Location loc = curr().getLocation();
         List<ASTTypeDeclaration> children = new ArrayList<>();
         Predicate<Token> isOnInitialToken = t ->
-                Arrays.asList(CONSTANT, OVERRIDE,  // General Modifiers
-                                CLASS, INTERFACE  // Types
+                Arrays.asList(ABSTRACT, CONSTANT, OVERRIDE,  // General Modifiers
+                              CLASS, INTERFACE  // Types
                         )
                         .contains(t.getType());
         while (!isCurr(EOF)) {

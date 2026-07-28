@@ -1,17 +1,22 @@
 package org.spruce.compiler.bootstrap.resolution;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.expressions.*;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
+import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
 import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
 import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
+import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.SymbolTable;
@@ -52,22 +57,81 @@ public class OperationsResolver extends BasicResolver {
      * @param ctx A <code>ResolutionContext</code>.
      */
     public void resolveMethodInvocation(ASTMethodInvocation methodInvocation, ResolutionContext ctx) {
+        // Resolve types of arguments first!
+        ExpressionsResolver exprResolver = getExpressionsResolver();
+        Optional<ASTArgumentList> optArgList = methodInvocation.getArgumentList();
+        if (optArgList.isPresent()) {
+            ASTArgumentList argList = optArgList.get();
+            List<ASTExpression> args = argList.getTypedChildren();
+            for (ASTExpression arg : args) {
+                exprResolver.resolveExpression(arg, ctx);
+            }
+        }
+        ASTIdentifier name = methodInvocation.getIdentifier();
+
         // 1. Determine the type to search.
-        Optional<TypeSymbol> typeToSearch = getTypeToSearch(methodInvocation, ctx);
-        if (typeToSearch.isEmpty()) {
+        Optional<TypeSymbol> optTypeToSearch = getTypeToSearch(methodInvocation, ctx);
+        if (optTypeToSearch.isEmpty()) {
             // Error generated already.
             return;
         }
 
         // 2. Identify potentially applicable methods.
-        //    If no methods match, error not found.
+        TypeSymbol typeToSearch = optTypeToSearch.get();
+        Set<ParameterizedSymbol> potentiallyApplicable = getPotentiallyApplicableMethods(
+                methodInvocation, typeToSearch);
+        if (potentiallyApplicable.isEmpty()) {
+            errorSymbolNotFound(name.getLocation(), name.getValue());
+            return;
+        }
 
         // 3. Choose most specific method, if one such method exists.
         //    If no one method is maximally specific, ambiguous error.
+        List<ParameterizedSymbol> maximallySpecific = getMaximallySpecificMethods(potentiallyApplicable);
+        if (maximallySpecific.isEmpty()) {
+            throw internalError("Maximally specific filter eliminated all methods!");
+        }
+        if (maximallySpecific.size() > 1) {
+            error(name.getLocation(), "Ambiguous method call - multiple maximally specific methods match.");
+            for (ParameterizedSymbol match : maximallySpecific) {
+                note(match.getLocation(), "This method matches.");
+            }
+        }
 
-        // 4. Type of the method invocation is the type of the Result.
+        // 4. Type of the method invocation is the resolved type of the Result.
         //    (Or the enclosing class type for a Constructor.)
+        ParameterizedSymbol resolved = maximallySpecific.get(0);
+        // The Result data type was already resolved in early resolution; just
+        // set the entity.
+        methodInvocation.setResolvedEntity(resolved);
 
+        // 5. Enforce whether the maximally specific method must be shared,
+        //    must NOT be shared, or neither.  If the maximally specific method
+        //    is shared, then it must be found directly in the type to search,
+        //    not in the superclass or superinterface hierarchy.
+        //    Shared methods are NOT inherited!
+        //    This implies that the only way to call a shared method with a
+        //    simple name is to declare the shared method in the same class.
+        boolean resolvedToShared = resolved.isShared();
+        if (resolvedToShared) {
+            if (methodInvocation.isNonsharedContextOnly()) {
+                error(name.getLocation(), "Shared method '" + name.getValue() +
+                        "' cannot be referenced from a qualified non-shared context.  " +
+                        "Use the name of the type that contains the shared method.");
+            }
+            ChildSymbolTable table = typeToSearch.getTable();
+            // Check if that symbol's name is in the type to search, and see if
+            // that it matches the resolved symbol (not just hiding it).
+            if (!table.containsSymbolName(resolved.getName()) || table.get(resolved.getName()) != resolved) {
+                errorSymbolNotFound(name.getLocation(), name.getValue());
+            }
+        }
+        else {
+            if (methodInvocation.isSharedContextOnly()) {
+                error(name.getLocation(), "Non-shared method '" + name.getValue() +
+                        "' cannot be referenced from a shared context.");
+            }
+        }
     }
 
     /**
@@ -78,7 +142,6 @@ public class OperationsResolver extends BasicResolver {
      * @return An <code>Optional&lt;TypeSymbol&gt;</code>.
      */
     public Optional<TypeSymbol> getTypeToSearch(ASTMethodInvocation methodInvocation, ResolutionContext ctx) {
-        String methodName = methodInvocation.getIdentifier().getValue();
         Optional<ASTKeywordNode> optSuper = methodInvocation.getSooper();
         Optional<ASTExpressionName> optExprName = methodInvocation.getExprName();
         Optional<ASTTypeName> optTypeName = methodInvocation.getTypeName();
@@ -105,7 +168,7 @@ public class OperationsResolver extends BasicResolver {
             }
             else {
                 // 1e. methodName
-                Optional<TypeSymbol> optTypeToSearch = getTypeToSearchBareMethodName(methodName, ctx);
+                Optional<TypeSymbol> optTypeToSearch = getTypeToSearchBareMethodName(methodInvocation, ctx);
                 if (optTypeToSearch.isEmpty()) {
                     errorSymbolNotFound(methodInvocation.getLocation(), methodInvocation.getIdentifier().getValue());
                 }
@@ -133,6 +196,7 @@ public class OperationsResolver extends BasicResolver {
                 if (optSuperclass.isEmpty()) {
                     error(methodInvocation.getLocation(),"Type " + resolved.getName() + " has no superclass");
                 }
+                methodInvocation.setNonsharedContextOnly(true);
                 return optSuperclass;
             }
             else {
@@ -151,6 +215,7 @@ public class OperationsResolver extends BasicResolver {
         if (optSuperclass.isEmpty()) {
             error(methodInvocation.getLocation(), "Type " + type.getName() + " has no superclass");
         }
+        methodInvocation.setNonsharedContextOnly(true);
         return optSuperclass;
     }
 
@@ -161,6 +226,7 @@ public class OperationsResolver extends BasicResolver {
         }
         ASTPrimary primary = methodInvocation.getPrimary().get();
         getExpressionsResolver().resolvePrimary(primary, ctx);
+        methodInvocation.setNonsharedContextOnly(true);
         return Optional.ofNullable(primary.getResolvedDataType());
     }
 
@@ -184,10 +250,12 @@ public class OperationsResolver extends BasicResolver {
             switch(resolved) {
             case TypeSymbol type -> {
                 // TypeName.methodName
+                methodInvocation.setSharedContextOnly(true);
                 return Optional.of(type);
             }
             case VariableSymbol variable -> {
                 // ExpressionName.methodName
+                methodInvocation.setNonsharedContextOnly(true);
                 return Optional.of(variable.getDataType());
             }
             default -> throw internalError("Unexpected symbol type resolving expression name in method invocation: " +
@@ -197,9 +265,11 @@ public class OperationsResolver extends BasicResolver {
     }
 
     // 1e. methodName
-    private Optional<TypeSymbol> getTypeToSearchBareMethodName(String methodName, ResolutionContext ctx) {
+    private Optional<TypeSymbol> getTypeToSearchBareMethodName(ASTMethodInvocation methodInvocation,
+                                                               ResolutionContext ctx) {
         TypesResolver typesResolver = getTypesResolver();
         ParentSymbol parent = typesResolver.findEnclosingType(ctx.enclosingSymbol());
+        String methodName = methodInvocation.getIdentifier().getValue();
 
         // Look in the current type and its superclass and superinterfaces hierarchy,
         // before searching an enclosing type and its superclass and superinterface hierarchy.
@@ -216,8 +286,13 @@ public class OperationsResolver extends BasicResolver {
             //    hierarchy and the superinterface hierarchy.  Finding a match
             //    means that the current type, NOT any superclass or
             //    superinterface, is the type to search.
-            boolean found = findMethodName(methodName, type);
-            if (found) {
+            Set<ParameterizedSymbol> found = findMethodsByName(methodName, type);
+            if (!found.isEmpty()) {
+                // Can resolve to either a shared method or a non-shared method.
+                // But it must be a shared method if the enclosing context is shared.
+                if (ctx.isShared()) {
+                    methodInvocation.setSharedContextOnly(true);
+                }
                 return Optional.of(type);
             }
             parent = ((ChildSymbolTable) type.getParent()).getParent();
@@ -229,41 +304,297 @@ public class OperationsResolver extends BasicResolver {
         return Optional.empty();
     }
 
-    private boolean findMethodName(String methodName, TypeSymbol type) {
+    private Set<ParameterizedSymbol> findMethodsByName(String methodName, TypeSymbol type) {
         SymbolTable table = type.getTable();
+        Set<ParameterizedSymbol> methods = new HashSet<>();
         if (table.containsMethodName(methodName)) {
-            return true;
+            methods.addAll(table.getMethodsForName(methodName));
         }
 
         // Walk up superclass hierarchy then superinterface hierarchy looking
-        // for the symbol name.
+        // for the method name.
         if (type.getSuperclass().isPresent()) {
             TypeSymbol superclass = type.getSuperclass().get();
-            boolean foundInSuperclass = findMethodName(methodName, superclass);
-            if (foundInSuperclass) {
-                return true;
-            }
+            Set<ParameterizedSymbol> foundInSuperclass = findMethodsByName(methodName, superclass);
+            methods.addAll(foundInSuperclass);
         }
 
-        return findMethodInSuperinterfaces(methodName, type.getSuperinterfaces());
+        methods.addAll(findMethodsInSuperinterfaces(methodName, type.getSuperinterfaces()));
+        return methods;
     }
 
-    private boolean findMethodInSuperinterfaces(String methodName, List<TypeSymbol> superinterfaces) {
+    private Set<ParameterizedSymbol> findMethodsInSuperinterfaces(String methodName, List<TypeSymbol> superinterfaces) {
+        Set<ParameterizedSymbol> methods = new HashSet<>();
         for (TypeSymbol superinterface : superinterfaces) {
             ChildSymbolTable child = superinterface.getTable();
             if (child.containsMethodName(methodName)) {
-                return true;
+                methods.addAll(child.getMethodsForName(methodName));
             }
             else {
                 // Recur on this superinterface's superinterfaces.
-                boolean foundInSuperinterfaces = findMethodInSuperinterfaces(
+                Set<ParameterizedSymbol> foundInSuperinterfaces = findMethodsInSuperinterfaces(
                         methodName, superinterface.getSuperinterfaces());
-                if (foundInSuperinterfaces) {
-                    return true;
+                methods.addAll(foundInSuperinterfaces);
+            }
+        }
+        return methods;
+    }
+
+    /**
+     * 2. Find all "potentially applicable methods" for the given
+     *    <code>MethodInvocation</code>, if any exist.  The name must match,
+     *    the number of parameters must match, and all arguments must be
+     *    convertible to the formal parameter type in this "invocation context":
+     *    can be the same type, can be widened to the same type, or convertible
+     *    such as Integer -> Long.  The method may be in the type to search or
+     *    up its superclass/superinterface hierarchy, but not in an enclosing class.
+     * @param methodInvocation An <code>ASTMethodInvocation</code>.
+     * @param typeToSearch A <code>TypeSymbol</code> representing the type to
+     *                     search, found in Step 1.
+     * @return An <code>Optional&lt;TypeSymbol&gt;</code>.
+     */
+    public Set<ParameterizedSymbol> getPotentiallyApplicableMethods(ASTMethodInvocation methodInvocation,
+                TypeSymbol typeToSearch) {
+        String methodName = methodInvocation.getIdentifier().getValue();
+        // 2.1. Find methods by name.
+        Set<ParameterizedSymbol> methods = findMethodsByName(methodName, typeToSearch);
+
+        // 2.2. Find potentially applicable methods.
+        return getPotentiallyApplicableMethods(methodInvocation, methods);
+    }
+
+    private Set<ParameterizedSymbol> getPotentiallyApplicableMethods(ASTMethodInvocation methodInvocation,
+                                                                      Set<ParameterizedSymbol> methods) {
+        Set<ParameterizedSymbol> applicableMethods = new HashSet<>(methods.size());
+        for (ParameterizedSymbol method : methods) {
+            List<TypeSymbol> args = methodInvocation.getArgumentList()
+                    .map(ASTArgumentList::getTypedChildren)
+                    .orElse(List.of()).stream()
+                    .map(ASTExpression::getResolvedDataType)
+                    .toList();
+            List<TypeSymbol> params = method.getParameters().stream()
+                    .map(VariableSymbol::getDataType)
+                    .toList();
+            int numParams = method.numParameters();
+            int numArgs = args.size();
+            // Methods must have the same arity (number of parameters) as the
+            // method invocation.
+            if (numParams != numArgs) {
+                continue;
+            }
+            // All argument types must be convertible by invocation conversion to
+            // the corresponding formal parameter type.
+            boolean applicable = true;
+            for (int i = 0; i < numParams; i++) {
+                TypeSymbol param = params.get(i);
+                TypeSymbol arg = args.get(i);
+                if (param == null || arg == null || !isInvocationConvertible(arg, param)) {
+                    applicable = false;
+                    break;
+                }
+            }
+
+            if (applicable) {
+                applicableMethods.add(method);
+            }
+        }
+        return applicableMethods;
+    }
+
+    // Invocation conversion is:
+    // 1. Identity conversion (match type exactly)
+    // 2. Reference widening conversion (argument type is a subtype of
+    //    parameter type).
+    // 3. Primitive widening conversion, e.g. Integer to Long.  (This does
+    //    not exist in Spruce yet, and it cannot exist until a mechanism is
+    //    decided upon to represent such an implicit conversion.)
+    private boolean isInvocationConvertible(TypeSymbol arg, TypeSymbol param) {
+        return arg == param || arg.isSubTypeOf(param);
+    }
+
+    /**
+     * 3. Get all maximally specific methods given a set of applicable methods.
+     *    A method "a" is "maximally specific" if there is no other applicable
+     *    method that is "strictly more specific" than "a".
+     *    A method "a" is strictly more specific than another method "b" if
+     *    all of a's formal parameter types are convertible to each of b's
+     *    formal parameter types in a method invocation context.
+     *    Methods with identical signatures in the same type are already a
+     *    compiler error in the symbol creation phase, leaving only the
+     *    possibility that one method overrides the other.  In this case, the
+     *    method of the overriding (or hiding) type is strictly more specific
+     *    than the overridden (or hidden) method.
+     *    If a method "a" is strictly more specific than method "b", then
+     *    method "a" eliminates "b" from being a maximally specific method.
+     * @param applicableMethods A <code>Set</code> of <code>ParameterizedSymbol</code>s.
+     * @return A <code>List</code> of <code>ParameterizedSymbol</code>s.
+     */
+    public List<ParameterizedSymbol> getMaximallySpecificMethods(Set<ParameterizedSymbol> applicableMethods) {
+        // 3.1. Get all methods that are strictly more specific than others.
+        List<ParameterizedSymbol> maxSpecificMethods = getStrictlyMoreSpecific(applicableMethods);
+        if (maxSpecificMethods.size() == 1) {
+            return maxSpecificMethods;
+        }
+
+        // 3.2. Multiple methods remain.  If they are not all override
+        //      equivalent, return them all for an ambiguous error.
+        if (!areAllOverrideEquivalent(maxSpecificMethods)) {
+            return maxSpecificMethods;
+        }
+
+        // 3.3. Multiple override-equivalent methods remain.  If more than 1 are
+        //      concrete, return them all for an ambiguous error.  If exactly
+        //      one is concrete, then it is the maximally specific method.
+        List<ParameterizedSymbol> concreteMethods = maxSpecificMethods.stream()
+                .filter(s -> !s.isAbstract())
+                .toList();
+        if (!concreteMethods.isEmpty()) {
+            return concreteMethods;
+        }
+
+        // 3.4. Multiple abstract override-equivalent methods remain.  Choose
+        //      "preferred" methods.  If there are any preferred
+        //      methods, pick one (it's abstract and will be resolved at
+        //      runtime anyway!)  Else return all for an ambiguous error.
+        List<ParameterizedSymbol> preferredMethods = getPreferredMethods(maxSpecificMethods);
+        if (!preferredMethods.isEmpty()) {
+            return List.of(preferredMethods.get(0));
+        }
+
+        return maxSpecificMethods;
+    }
+
+    // 3.1. Eliminate method "b" if method "a" is "strictly more specific" than
+    //      method "b".  Method "a" is "strictly more specific" than method
+    //      "b" if all formal parameter types of method "a" are convertible
+    //      to the formal parameter types of method "b" by invocation
+    //      conversion.  In case of override-equivalent signatures, if
+    //      method "a" overrides method "b", then method "a" is more
+    //      specific than method "b".
+    private List<ParameterizedSymbol> getStrictlyMoreSpecific(Set<ParameterizedSymbol> applicableMethods) {
+        TypesResolver typesResolver = getTypesResolver();
+        List<ParameterizedSymbol> maxSpecificMethods = new ArrayList<>(applicableMethods);
+        for (int i = 0; i < maxSpecificMethods.size(); i++) {
+            for (int j = i + 1; j < maxSpecificMethods.size(); j++) {
+                ParameterizedSymbol first = maxSpecificMethods.get(i);
+                ParameterizedSymbol second = maxSpecificMethods.get(j);
+                boolean isFirstMoreSpecific = isMoreSpecific(first, second);
+                boolean isSecondMoreSpecific = isMoreSpecific(second, first);
+                boolean removeFirst = false;
+                boolean removeSecond = false;
+                if (isFirstMoreSpecific && isSecondMoreSpecific) {
+                    // Same signature.  Determine which overrides the other.
+                    TypeSymbol firstType = typesResolver.findEnclosingType(first);
+                    TypeSymbol secondType = typesResolver.findEnclosingType(second);
+                    if (firstType.isSubTypeOf(secondType)) {
+                        removeSecond = true;
+                    }
+                    else if (secondType.isSubTypeOf(firstType)) {
+                        removeFirst = true;
+                    }
+                }
+                else if (isFirstMoreSpecific) {
+                    removeSecond = true;
+                }
+                else if (isSecondMoreSpecific) {
+                    removeFirst = true;
+                }
+
+                if (removeSecond) {
+                    // First is strictly more specific than second.
+                    maxSpecificMethods.remove(j);
+                    // Try index j again; either the end of the list or another method awaits.
+                    j--;
+                }
+                else if (removeFirst) {
+                    // Second is strictly more specific than first.
+                    maxSpecificMethods.remove(i);
+                    // Try index i again; either the end of the list or another method awaits.
+                    i--;
+                    break;  // out of the "j" for loop.
                 }
             }
         }
-        return false;
+        return maxSpecificMethods;
+    }
+
+    // Returns true if all parameter types in the first list are invocation
+    // convertible to their corresponding parameter type in the second list.
+    private boolean isMoreSpecific(ParameterizedSymbol first, ParameterizedSymbol second) {
+        // At this point the methods are both applicable, so this method
+        // assumes that they have the same name and the same arity (number of
+        // parameters).
+        List<TypeSymbol> firstParams = first.getParameters().stream()
+                .map(VariableSymbol::getDataType)
+                .toList();
+        List<TypeSymbol> secondParams = second.getParameters().stream()
+                .map(VariableSymbol::getDataType)
+                .toList();
+        for (int p = 0; p < firstParams.size(); p++) {
+            TypeSymbol firstParam = firstParams.get(p);
+            TypeSymbol secondParam = secondParams.get(p);
+            if (!isInvocationConvertible(firstParam, secondParam)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // 3.2. Determine if all maximally specific methods are override-equivalent.
+    private boolean areAllOverrideEquivalent(List<ParameterizedSymbol> maxSpecificMethods) {
+        ParameterizedSymbol first = maxSpecificMethods.get(0);
+        for (int i = 1; i < maxSpecificMethods.size(); i++) {
+            ParameterizedSymbol other = maxSpecificMethods.get(i);
+            if (!isOverrideEquivalent(first, other)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean isOverrideEquivalent(ParameterizedSymbol first, ParameterizedSymbol second) {
+        if (!first.getName().equals(second.getName())) {
+            return false;
+        }
+        List<VariableSymbol> firstParams = first.getParameters();
+        List<VariableSymbol> secondParams = second.getParameters();
+        if (firstParams.size() != secondParams.size()) {
+            return false;
+        }
+        for (int i = 0; i < firstParams.size(); i++) {
+            if (firstParams.get(i).getDataType() != secondParams.get(i).getDataType()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // 3.4. Get all "preferred" methods.  A "preferred" method is "return-type-
+    //      substitutable" for all other methods.  A method is "return-type-
+    //      substitutable" if both methods return "void" or its return type is
+    //      a subtype of all other return types of all other methods.
+    private List<ParameterizedSymbol> getPreferredMethods(List<ParameterizedSymbol> maxSpecificMethods) {
+        List<ParameterizedSymbol> preferredMethods = new ArrayList<>(maxSpecificMethods.size());
+
+        for (int i = 0; i < maxSpecificMethods.size(); i++) {
+            ParameterizedSymbol method = maxSpecificMethods.get(i);
+            boolean isReturnTypeSubstitutable = true;
+            for (int j = 0; j < maxSpecificMethods.size(); j++) {
+                if (i != j) {
+                    ParameterizedSymbol other = maxSpecificMethods.get(j);
+                    if (!method.getDataType().isSubTypeOf(other.getDataType())) {
+                        isReturnTypeSubstitutable = false;
+                        break;
+                    }
+                }
+            }
+            if (isReturnTypeSubstitutable) {
+                preferredMethods.add(method);
+            }
+        }
+
+        return preferredMethods;
     }
 
     //

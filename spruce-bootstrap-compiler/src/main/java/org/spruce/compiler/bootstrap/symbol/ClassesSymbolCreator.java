@@ -1,12 +1,15 @@
 package org.spruce.compiler.bootstrap.symbol;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.spruce.compiler.bootstrap.ast.classes.*;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
+import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
+import org.spruce.compiler.bootstrap.resolution.TypesResolver;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
 
 import static org.spruce.compiler.bootstrap.symbol.Symbol.*;
@@ -140,11 +143,11 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      *    Creates child symbols for only the type's non-type members and
      *    populates them in the existing symbol table.
      * @param typeDecl An <code>ASTTypeDeclaration</code>.
-     * @param parent A <code>ParentSymbol</code> to own the new <code>SymbolTable</code>.
+     * @param parent A <code>TypeSymbol</code> to own the new <code>SymbolTable</code>.
      * @param ctx A <code>ResolutionContext</code> for early resolution of
      *            formal parameters.
      */
-    public void createSymbolTableForTypeDeclarationTypeMembers(ASTTypeDeclaration typeDecl, ParentSymbol parent,
+    public void createSymbolTableForTypeDeclarationTypeMembers(ASTTypeDeclaration typeDecl, TypeSymbol parent,
                                                                ResolutionContext ctx) {
         for (ASTMember member : typeDecl.getMembers()) {
             createSymbolsForMember(parent, member, ctx);
@@ -154,18 +157,18 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     /**
      * Creates symbols for a <code>Member</code>, and populates them in the
      * <code>SymbolTable</code> for the given <code>ParentSymbol</code>.
-     * @param parent A <code>ParentSymbol</code>
+     * @param parent A <code>TypeSymbol</code>.
      * @param member An <code>ASTMember</code>.
      * @param ctx A <code>ResolutionContext</code> for early resolution of
-     *            formal parameters.
+     *            formal parameter and field datatypes.
      */
-    public void createSymbolsForMember(ParentSymbol parent, ASTMember member, ResolutionContext ctx) {
+    public void createSymbolsForMember(TypeSymbol parent, ASTMember member, ResolutionContext ctx) {
         switch (member) {
         case ASTTypeDeclaration typeDecl -> createSymbolsForNestedTypeDeclarationTypeMembers(
                 typeDecl, ctx.withEnclosingSymbol(typeDecl.getDeclSymbol()));
-        case ASTConstantDeclaration constDecl -> createSymbolsForConstantDeclaration(constDecl, parent);
+        case ASTConstantDeclaration constDecl -> createSymbolsForConstantDeclaration(constDecl, parent, ctx);
         case ASTConstructorDeclaration constrDecl -> createSymbolsForConstructorDeclaration(constrDecl, parent, ctx);
-        case ASTFieldDeclaration fieldDecl -> createSymbolsForFieldDeclaration(fieldDecl, parent);
+        case ASTFieldDeclaration fieldDecl -> createSymbolsForFieldDeclaration(fieldDecl, parent, ctx);
         case ASTInterfaceMethodDeclaration iMethodDecl ->
                 createSymbolsForInterfaceMethodDeclaration(iMethodDecl, parent, ctx);
         case ASTMethodDeclaration methodDecl -> createSymbolsForMethodDeclaration(methodDecl, parent, ctx);
@@ -176,17 +179,24 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      * Creates a <code>Symbol</code> for a <code>ConstantDeclaration</code>.
      * Populates it in the given <code>SymbolTable</code>.
      * @param constDecl An <code>ASTConstantDeclaration</code>.
-     * @param parent A <code>ParentSymbol</code> to be the parent for the <code>Symbol</code>.
+     * @param parent A <code>TypeSymbol</code> to be the parent for the <code>Symbol</code>.
+     * @param ctx A <code>ResolutionContext</code> for early resolution of
+     *            field datatypes.
      */
-    public void createSymbolsForConstantDeclaration(ASTConstantDeclaration constDecl, ParentSymbol parent) {
+    public void createSymbolsForConstantDeclaration(ASTConstantDeclaration constDecl, TypeSymbol parent,
+                                                    ResolutionContext ctx) {
         long flags = getFlags(constDecl);
         ChildSymbolTable parentTable = parent.getTable();
         flags |= FLAG_MOD_FINAL | FLAG_MOD_SHARED;
+        TypesResolver typesResolver = getEarlyResolver().getTypesResolver();
+        typesResolver.resolveDataType(constDecl.getDataType(), ctx);
+        Optional<TypeSymbol> optDataType = Optional.ofNullable(constDecl.getDataType().getResolvedDataType());
         for (ASTVariableDeclarator varDecl : constDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
             VariableSymbol symbol = new VariableSymbol(varDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
             insertSymbol(parentTable, symbol);
             varDecl.setDeclSymbol(symbol);
+            optDataType.ifPresent(symbol::setDataType);
         }
     }
 
@@ -194,11 +204,11 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      * Creates a <code>Symbol</code> for a <code>Constructor</code>.
      * Populates it in the given <code>SymbolTable</code>.
      * @param constrDecl An <code>ASTConstructorDeclaration</code>.
-     * @param parent A <code>ParentSymbol</code> to be the parent for the <code>Symbol</code>.
+     * @param parent A <code>TypeSymbol</code> to be the parent for the <code>Symbol</code>.
      * @param ctx A <code>ResolutionContext</code> for early resolution of
      *            formal parameters.
      */
-    public void createSymbolsForConstructorDeclaration(ASTConstructorDeclaration constrDecl, ParentSymbol parent,
+    public void createSymbolsForConstructorDeclaration(ASTConstructorDeclaration constrDecl, TypeSymbol parent,
                                                        ResolutionContext ctx) {
         long flags = getFlags(constrDecl);
         ChildSymbolTable parentTable = parent.getTable();
@@ -210,6 +220,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, parent);
         symbol.setTable(table);
         constrDecl.setDeclSymbol(symbol);
+        symbol.setDataType(parent);
 
         createSymbolsForFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList(), symbol);
         getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), symbol);
@@ -219,16 +230,23 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      * Creates <code>Symbol</code>s for a <code>FieldDeclaration</code>.
      * Populates them in the given <code>SymbolTable</code>.
      * @param fieldDecl An <code>ASTFieldDeclaration</code>.
-     * @param parent A <code>ParentSymbol</code> to be the parent for the <code>Symbol</code>.
+     * @param parent A <code>TypeSymbol</code> to be the parent for the <code>Symbol</code>.
+     * @param ctx A <code>ResolutionContext</code> for early resolution of
+     *            field datatypes.
      */
-    public void createSymbolsForFieldDeclaration(ASTFieldDeclaration fieldDecl, ParentSymbol parent) {
+    public void createSymbolsForFieldDeclaration(ASTFieldDeclaration fieldDecl, TypeSymbol parent,
+                                                 ResolutionContext ctx) {
         long flags = getFlags(fieldDecl);
         ChildSymbolTable parentTable = parent.getTable();
+        TypesResolver typesResolver = getEarlyResolver().getTypesResolver();
+        typesResolver.resolveDataType(fieldDecl.getDataType(), ctx);
+        Optional<TypeSymbol> optDataType = Optional.ofNullable(fieldDecl.getDataType().getResolvedDataType());
         for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
             String name = varDecl.getVarName().getValue();
             VariableSymbol symbol = new VariableSymbol(varDecl.getLocation(), name, Kind.FIELD, parentTable, flags);
             insertSymbol(parentTable, symbol);
             varDecl.setDeclSymbol(symbol);
+            optDataType.ifPresent(symbol::setDataType);
         }
     }
 
@@ -236,12 +254,12 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      * Creates a <code>Symbol</code>s for an <code>InterfaceMethodDeclaration</code>.
      * Populates it in the given <code>SymbolTable</code>.
      * @param methodDecl An <code>ASTInterfaceMethodDeclaration</code>.
-     * @param parent A <code>ParentSymbol</code> to be the parent for the <code>Symbol</code>.
+     * @param parent A <code>TypeSymbol</code> to be the parent for the <code>Symbol</code>.
      * @param ctx A <code>ResolutionContext</code> for early resolution of
-     *            formal parameters.
+     *            formal parameter datatypes.
      */
     public void createSymbolsForInterfaceMethodDeclaration(ASTInterfaceMethodDeclaration methodDecl,
-                                                           ParentSymbol parent, ResolutionContext ctx) {
+                                                           TypeSymbol parent, ResolutionContext ctx) {
         long flags = getFlags(methodDecl);
         ChildSymbolTable parentTable = parent.getTable();
         if ((flags & FLAG_MOD_SHARED) == 0) {
@@ -255,7 +273,8 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, symbol);
         symbol.setTable(table);
-        createSymbolsForFormalParameterList(methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol);
+        createSymbolsForMethodHeader(methodDecl.getHeader(), symbol, ctx);
+        symbol.setDataType(methodDecl.getHeader().getResult().getResolvedDataType());
 
         if (methodDecl.getBody().getBlock().isPresent()) {
             getStatementsSymbolCreator().createSymbolsForBlock(methodDecl.getBody().getBlock().get(), symbol);
@@ -265,27 +284,30 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     }
 
     /**
-     * Creates a <code>Symbol</code>s for a <code>MethodDeclaration</code>.
+     * Creates a <code>Symbol</code> for a <code>MethodDeclaration</code>.
      * Populates it in the given <code>SymbolTable</code>.
      * @param methodDecl An <code>ASTMethodDeclaration</code>.
-     * @param parent A <code>ParentSymbol</code> to be the parent for the
+     * @param parent A <code>TypeSymbol</code> to be the parent for the
      *               <code>Symbol</code>.
      * @param ctx A <code>ResolutionContext</code> for early resolution of
-     *            formal parameters.
+     *            formal parameter datatypes.
      */
-    public void createSymbolsForMethodDeclaration(ASTMethodDeclaration methodDecl, ParentSymbol parent,
+    public void createSymbolsForMethodDeclaration(ASTMethodDeclaration methodDecl, TypeSymbol parent,
                                                   ResolutionContext ctx) {
         long flags = getFlags(methodDecl);
         ChildSymbolTable parentTable = parent.getTable();
+        // Resolves formal parameters in the process of getting the method symbol name.
+        String symbolName = getMethodSymbolName(methodDecl, ctx);
         ParameterizedSymbol symbol = new ParameterizedSymbol(methodDecl.getLocation(),
-                getMethodSymbolName(methodDecl, ctx), Kind.METHOD, parentTable, flags);
+                symbolName, Kind.METHOD, parentTable, flags);
         insertSymbol(parentTable, symbol);
         insertMethod(parentTable, methodDecl.getHeader().getMethodDecl().getName().getValue(), symbol);
         methodDecl.setDeclSymbol(symbol);
 
         ChildSymbolTable table = new ChildSymbolTable(SymbolTable.Scope.MEMBER, symbol);
         symbol.setTable(table);
-        createSymbolsForFormalParameterList(methodDecl.getHeader().getMethodDecl().getFormalParamList(), symbol);
+        createSymbolsForMethodHeader(methodDecl.getHeader(), symbol, ctx);
+        symbol.setDataType(methodDecl.getHeader().getResult().getResolvedDataType());
 
         if (methodDecl.getBody().getBlock().isPresent()) {
             getStatementsSymbolCreator().createSymbolsForBlock(methodDecl.getBody().getBlock().get(), symbol);
@@ -312,20 +334,49 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
     }
 
     /**
+     * Creates symbols for a <code>Header</code>.
+     * @param header An <code>ASTHeader</code>.
+     * @param symbol A <code>ParameterizedSymbol</code> representing the parent
+     *               of the result and the parameter symbols.
+     * @param ctx A <code>ResolutionContext</code> for the early resolution of
+     *            the result and formal parameters datatypes.
+     */
+    public void createSymbolsForMethodHeader(ASTMethodHeader header, ParameterizedSymbol symbol,
+                                             ResolutionContext ctx) {
+        ASTResult result = header.getResult();
+        if (result.getVoidKeyword().isPresent()) {
+            result.setResolvedDataType(TypeSymbol.VOID);
+        }
+        else if (result.getDataType().isPresent()) {
+            ASTDataType dataType = result.getDataType().get();
+            TypesResolver typesResolver = getEarlyResolver().getTypesResolver();
+            typesResolver.resolveDataType(dataType, ctx);
+            result.setResolvedDataType(dataType.getResolvedDataType());
+        }
+        else {
+            throw internalError("Result: neither void nor datatype is present!");
+        }
+
+        createSymbolsForFormalParameterList(header.getMethodDecl().getFormalParamList(), symbol);
+    }
+
+    /**
      * Creates symbols for a <code>FormalParameterList</code> and inserts them
      * into the given <code>ParameterizedSymbol</code>.
      * @param formalParams An <code>ASTFormalParameterList</code>.
-     * @param param A <code>ParameterizedSymbol</code> to be the parent for
-     *              the <code>Symbol</code>s.
+     * @param parameterized A <code>ParameterizedSymbol</code> to be the parent
+     *                      for the <code>Symbol</code>s.
      */
-    public void createSymbolsForFormalParameterList(ASTFormalParameterList formalParams, ParameterizedSymbol param) {
-        SymbolTable parent = param.getParent();
+    public void createSymbolsForFormalParameterList(ASTFormalParameterList formalParams,
+                                                    ParameterizedSymbol parameterized) {
+        SymbolTable parent = parameterized.getParent();
         for (ASTFormalParameter formalParam : formalParams.getTypedChildren()) {
             String name = formalParam.getName().getValue();
             VariableSymbol symbol = new VariableSymbol(formalParam.getLocation(), name, Kind.PARAMETER, parent, FLAG_NONE);
-            ChildSymbolTable table = param.getTable();
+            symbol.setDataType(formalParam.getDataType().getResolvedDataType());
+            ChildSymbolTable table = parameterized.getTable();
             insertSymbol(table, symbol);
-            param.addParameter(symbol);
+            parameterized.addParameter(symbol);
             formalParam.setDeclSymbol(symbol);
         }
     }

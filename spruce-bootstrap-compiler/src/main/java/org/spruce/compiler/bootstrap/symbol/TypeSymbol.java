@@ -88,4 +88,35 @@ public class TypeSymbol extends ParentSymbol {
         }
         return Optional.empty();
     }
+
+    /**
+     * Returns whether this symbol is a subtype of another <code>TypeSymbol</code>.
+     * @param other Another <code>TypeSymbol</code>, non-null.
+     * @return Whether this symbol is a subtype of another <code>TypeSymbol</code>.
+     */
+    public boolean isSubTypeOf(TypeSymbol other) {
+        if (this == other) {
+            return true;
+        }
+        if (getSuperclass().isPresent()) {
+            TypeSymbol superclass = getSuperclass().get();
+            if (superclass == other || superclass.isSubTypeOf(other)) {
+                return true;
+            }
+        }
+
+        return isSubTypeOfInterface(other);
+    }
+
+    private boolean isSubTypeOfInterface(TypeSymbol other) {
+        for (TypeSymbol superinterface : getSuperinterfaces()) {
+            if (superinterface == other) {
+                return true;
+            }
+            else if (superinterface.isSubTypeOfInterface(other)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

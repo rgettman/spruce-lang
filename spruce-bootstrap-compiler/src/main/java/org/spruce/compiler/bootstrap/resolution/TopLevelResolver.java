@@ -80,28 +80,55 @@ public class TopLevelResolver extends BasicResolver {
      * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
      */
     public void resolveOrdinaryCompilationUnits(List<ASTOrdinaryCompilationUnit> units) {
-        ClassesResolver classesResolver = getClassesResolver();
-
         // 1. Resolve all superclass and superinterface symbols first.
-        for (ASTOrdinaryCompilationUnit ocu : units) {
-            ASTTypeDeclarationList typeDeclList = ocu.getTypeDeclList();
-            ResolutionContext ctx = ocu.getCtx();
-            classesResolver.resolveTypeDeclarationListExtends(typeDeclList, ctx);
-        }
+        resolveSupertypes(units);
 
         // 2. Detect dependency cycles.
-        boolean cycleDetected = false;
-        for (ASTOrdinaryCompilationUnit ocu : units) {
-            cycleDetected |= classesResolver.detectDependencyCycles(ocu.getTypeDeclList());
-        }
+        boolean cycleDetected = detectDependencyCycles(units);
 
         // 3. Resolve all member symbols, some of which rely on there being no
         //    dependency cycles.
         if (!cycleDetected) {
-            for (ASTOrdinaryCompilationUnit ocu : units) {
-                ResolutionContext ctx = ocu.getCtx();
-                classesResolver.resolveTypeDeclarationListMembers(ocu.getTypeDeclList(), ctx);
-            }
+            resolveMembers(units);
+        }
+    }
+
+    /**
+     * 1. Resolve all superclass and superinterface symbols in all
+     * <code>OrdinaryCompilationUnit</code>s.
+     * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
+     */
+    public void resolveSupertypes(List<ASTOrdinaryCompilationUnit> units) {
+        for (ASTOrdinaryCompilationUnit ocu : units) {
+            ASTTypeDeclarationList typeDeclList = ocu.getTypeDeclList();
+            ResolutionContext ctx = ocu.getCtx();
+            getClassesResolver().resolveTypeDeclarationListExtends(typeDeclList, ctx);
+        }
+    }
+
+    /**
+     * 2. Detect dependency cycles in all <code>OrdinaryCompilationUnit</code>s.
+     * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
+     * @return Whether any dependency cycle was detected.
+     */
+    public boolean detectDependencyCycles(List<ASTOrdinaryCompilationUnit> units) {
+        boolean cycleDetected = false;
+        ClassesResolver classesResolver = getClassesResolver();
+        for (ASTOrdinaryCompilationUnit ocu : units) {
+            cycleDetected |= classesResolver.detectDependencyCycles(ocu.getTypeDeclList());
+        }
+        return cycleDetected;
+    }
+
+    /**
+     * 3. Resolve all member symbols in all <code>OrdinaryCompilationUnit</code>s.
+     * @param units A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
+     */
+    public void resolveMembers(List<ASTOrdinaryCompilationUnit> units) {
+        ClassesResolver classesResolver = getClassesResolver();
+        for (ASTOrdinaryCompilationUnit ocu : units) {
+            ResolutionContext ctx = ocu.getCtx();
+            classesResolver.resolveTypeDeclarationListMembers(ocu.getTypeDeclList(), ctx);
         }
     }
 

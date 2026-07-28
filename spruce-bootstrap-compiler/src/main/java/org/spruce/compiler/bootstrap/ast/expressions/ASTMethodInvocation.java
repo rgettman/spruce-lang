@@ -12,6 +12,8 @@ import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 import org.spruce.compiler.bootstrap.ast.statements.ASTStatementExpression;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.EntityResolution;
+import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
@@ -28,7 +30,7 @@ import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
  * </em>
  */
 public final class ASTMethodInvocation extends ASTParentNode
-        implements ASTStatementExpression, ASTPrimaryChild {
+        implements ASTStatementExpression, ASTPrimaryChild, EntityResolution {
     private final ASTTypeName myTypeName;
     private final ASTKeywordNode mySooper;
     private final ASTExpressionName myExprName;
@@ -36,7 +38,9 @@ public final class ASTMethodInvocation extends ASTParentNode
     //private final ASTTypeArgumentList myTypeArgs;
     private final ASTIdentifier myIdentifier;
     private final ASTArgumentList myArgsList;
-    private TypeSymbol myResolvedDataType;
+    private EntitySymbol myResolvedEntity;
+    private boolean isSharedContextOnly;
+    private boolean isNonsharedContextOnly;
 
     /**
      * Constructs an <code>ASTMethodInvocation</code> at the given <code>Location</code>
@@ -58,6 +62,9 @@ public final class ASTMethodInvocation extends ASTParentNode
         myPrimary = primary;
         myIdentifier = identifier;
         myArgsList = argList;
+
+        isSharedContextOnly = false;
+        isNonsharedContextOnly = false;
     }
 
     /**
@@ -235,17 +242,69 @@ public final class ASTMethodInvocation extends ASTParentNode
 
     @Override
     public void setResolvedDataType(TypeSymbol symbol) {
-        myResolvedDataType = symbol;
+        myResolvedEntity.setDataType(symbol);
     }
 
     @Override
     public TypeSymbol getResolvedDataType() {
-        return myResolvedDataType;
+        return myResolvedEntity != null ? myResolvedEntity.getDataType() : null;
+    }
+
+    @Override
+    public void setResolvedEntity(EntitySymbol symbol) {
+        myResolvedEntity = symbol;
+    }
+
+    @Override
+    public EntitySymbol getResolvedEntity() {
+        return myResolvedEntity;
+    }
+
+    /**
+     * Sets whether this method invocation must match only shared methods
+     * during resolution.  Must not have sharedContextOnly and
+     * nonSharedContextOnly both be true at the same time!
+     * @param isSharedContextOnly Whether this must match only shared methods
+     *     during resolution.
+     */
+    public void setSharedContextOnly(boolean isSharedContextOnly) {
+        this.isSharedContextOnly = isSharedContextOnly;
+    }
+
+    /**
+     * Returns whether this method invocation must match only shared methods
+     * during resolution.
+     * @return Whether this method invocation must match only shared methods
+     *     during resolution.
+     */
+    public boolean isSharedContextOnly() {
+        return isSharedContextOnly;
+    }
+
+    /**
+     * Sets whether this method invocation must match only non-shared methods
+     * during resolution.  Must not have sharedContextOnly and
+     * nonSharedContextOnly both be true at the same time!
+     * @param isNonsharedContextOnly Whether this must match only non-shared methods
+     *     during resolution.
+     */
+    public void setNonsharedContextOnly(boolean isNonsharedContextOnly) {
+        this.isNonsharedContextOnly = isNonsharedContextOnly;
+    }
+
+    /**
+     * Returns whether this method invocation must match only non-shared methods
+     * during resolution.
+     * @return Whether this method invocation must match only non-shared methods
+     *     during resolution.
+     */
+    public boolean isNonsharedContextOnly() {
+        return isNonsharedContextOnly;
     }
 
     @Override
     public List<Node> getChildren() {
-        List<Node> children = new ArrayList<>();
+        List<Node> children = new ArrayList<>(4);
         if (myTypeName != null) {
             children.add(myTypeName);
         }

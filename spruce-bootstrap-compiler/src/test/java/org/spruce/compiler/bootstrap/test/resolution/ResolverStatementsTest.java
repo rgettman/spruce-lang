@@ -140,7 +140,9 @@ public class ResolverStatementsTest {
                 """,
                 """
                 namespace spruce.lang;
-                class List {}
+                interface List {
+                    Integer size();
+                }
                 """
         );
         Trio trio = compileSoFar(codes);
@@ -177,20 +179,23 @@ public class ResolverStatementsTest {
                 class Test {
                     void testMethod(List list) {
                         if {Integer size = list.size()} (size > 10) {
-                            stdout.println("Big");
+                            //stdout.println("Big");
                         }
                         else if {Integer first = list.get(0)} (first > 10) {
-                            stdout.println("First is big");
+                            //stdout.println("First is big");
                         }
                         else {
-                            stdout.println("Else");
+                            //stdout.println("Else");
                         }
                     }
                 }
                 """,
                 """
                 namespace spruce.lang;
-                class List {}
+                interface List {
+                    Integer size();
+                    Any get(Integer i);
+                }
                 """
         );
         Trio trio = compileSoFar(codes);
@@ -243,7 +248,9 @@ public class ResolverStatementsTest {
                 """,
                 """
                 namespace spruce.lang;
-                class List {}
+                interface List {
+                    Integer size();
+                }
                 """
         );
         Trio trio = compileSoFar(codes);

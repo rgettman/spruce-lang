@@ -228,9 +228,8 @@ public class StatementsResolver extends BasicResolver {
     public void resolveStatementExpression(ASTStatementExpression stmtExpr, ResolutionContext ctx) {
         switch(stmtExpr) {
         case ASTAssignment assignment -> resolveAssignment(assignment, ctx);
-        case ASTMethodInvocation methodInvocation -> {
-            // TODO: Resolve the method invocation in operations resolver!
-        }
+        case ASTMethodInvocation methodInvocation -> getOperationsResolver().resolveMethodInvocation(
+                methodInvocation, ctx);
         case ASTClassInstanceCreationExpression cice ->
                 getExpressionsResolver().resolveClassInstanceCreationExpression(cice, ctx);
         }

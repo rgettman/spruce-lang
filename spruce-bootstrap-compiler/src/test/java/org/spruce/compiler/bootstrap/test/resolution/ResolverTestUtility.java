@@ -164,6 +164,35 @@ public class ResolverTestUtility {
         return new Trio(ocus, global, resolver);
     }
 
+    /**
+     * Helper method to parse all codes and create the symbols, but don't
+     * resolve all symbols yet.
+     * @param codes A <code>List</code> of string codes, one per compilation unit.
+     * @return A <code>Trio</code> consisting of a <code>List</code> of
+     *     <code>ASTOrdinaryCompilationUnit</code>s, a <code>GlobalLookup</code>,
+     *     and a <code>TopLevelResolver</code>.
+     */
+    static Trio resolveAllButMembers(List<String> codes) {
+        return resolveAllButMembers(codes, 0);
+    }
+
+    /**
+     * Helper method to parse all codes and create the symbols, but don't
+     * resolve all symbols yet.
+     * @param codes A <code>List</code> of string codes, one per compilation unit.
+     * @param numSymbolErrorsExpected The number of symbol generation error expected.
+     * @return A <code>Trio</code> consisting of a <code>List</code> of
+     *     <code>ASTOrdinaryCompilationUnit</code>s, a <code>GlobalLookup</code>,
+     *     and a <code>TopLevelResolver</code>.
+     */
+    static Trio resolveAllButMembers(List<String> codes, int numSymbolErrorsExpected) {
+        List<ASTOrdinaryCompilationUnit> ocus = parseCodes(codes);
+        GlobalLookup global = createGlobalSymbolTable(ocus, numSymbolErrorsExpected);
+        TopLevelResolver resolver = new Resolver(new BaseMessageProducer(), global).getTopLevelResolver();
+        resolver.resolveSupertypes(ocus);
+        return new Trio(ocus, global, resolver);
+    }
+
     public record Trio(List<ASTOrdinaryCompilationUnit> ocus, GlobalLookup global, TopLevelResolver resolver) {
     }
 

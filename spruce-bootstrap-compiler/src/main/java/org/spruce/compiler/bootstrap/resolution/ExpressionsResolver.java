@@ -125,9 +125,8 @@ public class ExpressionsResolver extends BasicResolver {
         case ASTExpressionName exprName -> getNamesResolver().resolveExpressionName(exprName, ctx);
         case ASTFieldAccess fieldAccess -> resolveFieldAccess(fieldAccess, ctx);
         case ASTLiteral literal -> getLiteralsResolver().resolveLiteral(literal, ctx);
-        case ASTMethodInvocation methodInvocation -> {
-            // TODO: Resolve the method invocation in a Methods Resolver!
-        }
+        case ASTMethodInvocation methodInvocation -> getOperationsResolver().resolveMethodInvocation(
+                methodInvocation, ctx);
         // Parenthesized expression.
         case ASTExpression expr -> resolveExpression(expr, ctx);
         case ASTSelf self -> resolveSelf(self, ctx);
