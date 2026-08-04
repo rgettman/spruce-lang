@@ -35,6 +35,28 @@ public class ResolverOperationsTest {
     //
 
     /**
+     * Tests bad argument list in method invocation.
+     */
+    @Test
+    public void testMethodInvocationBadArguments() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Super {
+                    void foo(Integer i) {}
+                }
+                class Test extends Super {
+                    void testMethod() {
+                        foo(i);
+                    }
+                }
+                """
+        );
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 1);
+    }
+
+    /**
      * Tests method invocation step 1 - type to search.  Typename super case
      * (1a), find superclass of enclosing type.
      */

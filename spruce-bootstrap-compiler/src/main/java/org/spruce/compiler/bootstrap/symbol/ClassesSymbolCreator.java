@@ -1,12 +1,20 @@
 package org.spruce.compiler.bootstrap.symbol;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.classes.*;
+import org.spruce.compiler.bootstrap.ast.expressions.ASTArgumentList;
+import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
+import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatement;
+import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatements;
+import org.spruce.compiler.bootstrap.ast.statements.ASTConstructorInvocation;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
+import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.resolution.TypesResolver;
@@ -149,9 +157,48 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
      */
     public void createSymbolTableForTypeDeclarationTypeMembers(ASTTypeDeclaration typeDecl, TypeSymbol parent,
                                                                ResolutionContext ctx) {
+        boolean constructorPresent = false;
         for (ASTMember member : typeDecl.getMembers()) {
             createSymbolsForMember(parent, member, ctx);
+            if (member instanceof ASTConstructorDeclaration) {
+                constructorPresent = true;
+            }
         }
+
+        // Create a default constructor if no explicit constructors are declared.
+        if (!constructorPresent && typeDecl instanceof ASTClassDeclaration classDecl) {
+            insertDefaultConstructor(classDecl, ctx);
+        }
+    }
+
+    private void insertDefaultConstructor(ASTClassDeclaration typeDecl, ResolutionContext ctx) {
+        Location loc = typeDecl.getLocation();
+        TypeSymbol type = typeDecl.getDeclSymbol();
+
+        ASTConstructorDeclarator defaultDeclarator = new ASTConstructorDeclarator(loc,
+                new ASTFormalParameterList(loc, List.of()));
+
+        TypeSymbol root = getEarlyResolver().getTypesResolver().resolveRootType(ctx);
+        boolean amIRootType = (typeDecl.getDeclSymbol() == root);
+        List<ASTBlockStatement> blockStmts = new ArrayList<>(1);
+        if (!amIRootType) {
+            ASTConstructorInvocation sooper = new ASTConstructorInvocation.Builder()
+                    .setLocation(loc)
+                    .setConstructorKeyword(new ASTKeywordNode(loc, TokenType.SUPER))
+                    .setArgsList(new ASTArgumentList(loc, List.of()))
+                    .build();
+            blockStmts.add(sooper);
+        }
+        ASTBlock defaultBlock = new ASTBlock(loc, new ASTBlockStatements(loc, blockStmts));
+
+        ASTConstructorDeclaration defaultConstructor = new ASTConstructorDeclaration.Builder()
+                .setLocation(loc)
+                .setConstructorDecl(defaultDeclarator)
+                .setBlock(defaultBlock)
+                .build();
+        typeDecl.getClassParts().getTypedChildren().add(defaultConstructor);
+
+        createSymbolsForConstructorDeclaration(defaultConstructor, type, ctx);
     }
 
     /**

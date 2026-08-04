@@ -652,6 +652,9 @@ public class SymbolCreatorStatementsTest {
         ChildSymbolTable langTable = new ChildSymbolTable(NAMESPACE, lang);
         lang.setTable(langTable);
         langTable.insertSymbol(
+                new TypeSymbol(new Location("<fake>", 1, 0, "class Any {}"),
+                        "Any", Kind.CLASS, langTable, FLAG_NONE));
+        langTable.insertSymbol(
                 new TypeSymbol(new Location("<fake>", 1, 0, "class String {}"),
                         "String", Kind.CLASS, langTable, FLAG_NONE));
         langTable.insertSymbol(

@@ -1,16 +1,21 @@
 package org.spruce.compiler.bootstrap.test.symbol;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.*;
+import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
+import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatements;
+import org.spruce.compiler.bootstrap.ast.statements.ASTConstructorInvocation;
+import org.spruce.compiler.bootstrap.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.parser.TopLevelParser;
 import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
+import org.spruce.compiler.bootstrap.scanner.TokenType;
 import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
 import org.spruce.compiler.bootstrap.symbol.ClassesSymbolCreator;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
@@ -37,65 +42,68 @@ import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 public class SymbolCreatorClassesTest {
 
     /**
-     * Tests class.
+     * Tests class.  It has a default constructor.
      */
     @Test
     public void testClass() {
         Pair pair = createGlobalLookupNoErrors("class Class {}");
         SymbolTable global = pair.lookup();
         ASTClassDeclaration outer = ensureIsa(pair.typeDecl(), ASTClassDeclaration.class);
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "Class";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
-        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        ParentSymbol symbol = ensureIsa(namespaceTable.get(expSymbolName), ParentSymbol.class);
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS,
-                FLAG_NONE, 0);
+                FLAG_NONE, 1);
         assertSame(symbol, outer.getDeclSymbol());
+
+        SymbolTable classTable = symbol.getTable();
+        checkSymbolTable(classTable, TYPE, 1, List.of(NAME_CONSTRUCTOR + "()"));
     }
 
     /**
-     * Tests abstract class.
+     * Tests abstract class.  It has a default constructor.
      */
     @Test
     public void testAbstractClass() {
         Pair pair = createGlobalLookupNoErrors("abstract class AbstractClass {}");
         SymbolTable global = pair.lookup();
         ASTClassDeclaration outer = ensureIsa(pair.typeDecl(), ASTClassDeclaration.class);
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "AbstractClass";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS,
-                FLAG_MOD_ABSTRACT, 0);
+                FLAG_MOD_ABSTRACT, 1);
         assertSame(symbol, outer.getDeclSymbol());
     }
 
     /**
-     * Tests interface.
+     * Tests interface.  No default constructor.
      */
     @Test
     public void testPublicSealedInterface() {
         Pair pair = createGlobalLookupNoErrors("interface Interface {}");
         SymbolTable global = pair.lookup();
         ASTInterfaceDeclaration outer = ensureIsa(pair.typeDecl(), ASTInterfaceDeclaration.class);
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "Interface";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.INTERFACE,
                 FLAG_MOD_ABSTRACT, 0);
@@ -103,7 +111,7 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of inner class.
+     * Tests member of inner class.  They have default constructors.
      */
     @Test
     public void testMemberInnerClass() {
@@ -114,29 +122,29 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTClassDeclaration outer = ensureIsa(pair.typeDecl(), ASTClassDeclaration.class);
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "Outer";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Kind.CLASS, FLAG_NONE, 2);
         assertSame(symbol, outer.getDeclSymbol());
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         ASTClassDeclaration inner = ensureIsa(outer.getMembers().get(0), ASTClassDeclaration.class);
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("Inner"));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList("Inner"));
 
         Symbol innerSymbol = innerTable.get("Inner");
-        checkSymbol(ensureIsa(innerSymbol, ParentSymbol.class), "Inner", Kind.CLASS, FLAG_NONE, 0);
+        checkSymbol(ensureIsa(innerSymbol, ParentSymbol.class), "Inner", Kind.CLASS, FLAG_NONE, 1);
         assertSame(innerSymbol, inner.getDeclSymbol());
     }
 
     /**
-     * Tests member of nested class.
+     * Tests member of nested class.  They have default constructors.
      */
     @Test
     public void testMemberNestedClass() {
@@ -147,27 +155,28 @@ public class SymbolCreatorClassesTest {
                 """);
 
         SymbolTable global = pair.lookup();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "Outer";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Kind.CLASS, FLAG_NONE, 2);
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("Inner"));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList("Inner"));
 
         Symbol inner = innerTable.get("Inner");
         checkSymbol(ensureIsa(inner, ParentSymbol.class), "Inner", Kind.CLASS,
-                FLAG_MOD_SHARED, 0);
+                FLAG_MOD_SHARED, 1);
     }
 
     /**
-     * Tests member of nested interface.
+     * Tests member of nested interface.  The class has a default constructor,
+     * but the interface does not have one.
      */
     @Test
     public void testMemberNestedInterface() {
@@ -178,22 +187,22 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTClassDeclaration outer = ensureIsa(pair.typeDecl(), ASTClassDeclaration.class);
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "Outer";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "Outer", Kind.CLASS, FLAG_NONE, 2);
         assertSame(symbol, outer.getDeclSymbol());
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         ASTInterfaceDeclaration inner = ensureIsa(outer.getMembers().get(0), ASTInterfaceDeclaration.class);
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("Inner"));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList("Inner"));
 
         Symbol innerSymbol = innerTable.get("Inner");
         checkSymbol(ensureIsa(innerSymbol, ParentSymbol.class), "Inner", Kind.INTERFACE,
@@ -202,7 +211,7 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of constructor.
+     * Tests member of constructor.  No default constructor.
      */
     @Test
     public void testMemberConstructor() {
@@ -213,15 +222,15 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "HasMember";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 1);
 
@@ -237,7 +246,7 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of overloaded constructors.
+     * Tests members of overloaded constructors.  No default constructor.
      */
     @Test
     public void testMemberConstructorOverload() {
@@ -249,15 +258,15 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "Int";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 2);
 
@@ -280,7 +289,168 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests members of field declarations with variable modifiers.
+     * Tests that no default constructor is created if an explicit constructor
+     * is declared.
+     */
+    @Test
+    public void testMemberConstructorNoDefaultConstructor() {
+        Pair pair = createGlobalLookupNoErrors("""
+                class HasExplicitConstructor {
+                    constructor(String s) {}
+                }
+                """);
+        SymbolTable global = pair.lookup();
+        ASTTypeDeclaration typeDecl = pair.typeDecl();
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
+
+        ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
+        SymbolTable namespaceTable = unnamedNamespace.getTable();
+
+        String expSymbolName = "HasExplicitConstructor";
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
+
+        String symbolName = NAME_CONSTRUCTOR + "(spruce.lang.String)";
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+
+        Symbol constructorDecl = innerTable.get(symbolName);
+        checkSymbol(ensureIsa(constructorDecl, ParameterizedSymbol.class), symbolName, Kind.CONSTRUCTOR,
+                FLAG_NONE,1, 1);
+        ASTConstructorDeclaration constructor = ensureIsa(typeDecl.getMembers().get(0), ASTConstructorDeclaration.class);
+        assertSame(constructorDecl, constructor.getDeclSymbol());
+    }
+
+    /**
+     * Tests that a class without an explicit constructor still has the default
+     * constructor, and its body has a "super" constructor invocation.
+     */
+    @Test
+    public void testDefaultConstructor() {
+        Pair pair = createGlobalLookupNoErrors("""
+                class HasDefaultConstructor {
+                }
+                """);
+        SymbolTable global = pair.lookup();
+        ASTTypeDeclaration typeDecl = pair.typeDecl();
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
+
+        ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
+        SymbolTable namespaceTable = unnamedNamespace.getTable();
+
+        String expSymbolName = "HasDefaultConstructor";
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
+
+        String symbolName = NAME_CONSTRUCTOR + "()";
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+
+        Symbol constructorDecl = innerTable.get(symbolName);
+        checkSymbol(ensureIsa(constructorDecl, ParameterizedSymbol.class), symbolName, Kind.CONSTRUCTOR,
+                FLAG_NONE,0, 0);
+        ASTConstructorDeclaration constructor = ensureIsa(typeDecl.getMembers().get(0), ASTConstructorDeclaration.class);
+        assertSame(constructorDecl, constructor.getDeclSymbol());
+
+        // Test fabricated default constructor's AST nodes.
+        assertEquals(symbolName, constructorDecl.getName());
+        ASTConstructorDeclarator declarator = constructor.getConstructorDecl();
+        ASTFormalParameterList formalParamList = declarator.getFormalParamList();
+        assertEquals(0, formalParamList.getChildren().size());
+        assertNotNull(constructor.getBlock());
+
+        ASTBlock block = constructor.getBlock();
+        ASTBlockStatements blockStmts = block.getBlockStmts();
+        assertEquals(1, blockStmts.getChildren().size());
+
+        ASTConstructorInvocation constrInvocation = ensureIsa(blockStmts.get(0), ASTConstructorInvocation.class);
+        assertEquals(TokenType.SUPER, constrInvocation.getConstructorKeyword().getKeyword());
+        assertEquals(0, constrInvocation.getArgsList().getChildren().size());
+    }
+
+    /**
+     * Tests that the "Any" root class without an explicit constructor still has the default
+     * constructor, but the body does NOT have a constructor invocation.
+     */
+    @Test
+    public void testRootClassDefaultConstructorNoConstructorInvocation() {
+        // Special situation, bypass "createGlobalLookupNoErrors".
+        ClassesSymbolCreator creator = getClassesSymbolCreator();
+        TopLevelParser topLevelParser = ParserTopLevelTest.getTopLevelParser("""
+                namespace spruce.lang;
+                class Any {
+                }
+                """);
+        ASTNamespaceDeclaration namespaceDecl = topLevelParser.parseNamespaceDeclaration();
+        assertEquals(2, namespaceDecl.getNamespace().getChildren().size());
+        ASTTypeDeclaration typeDecl = topLevelParser.parseTypeDeclaration();
+        GlobalLookup global = creator.getGlobalLookup();
+
+        ParentSymbol spruceLang = setupSpruceLangNamespaces(global);
+        ChildSymbolTable langTable = spruceLang.getTable();
+        creator.createSymbolsForTopLevelTypeDeclarationTypeOnly(typeDecl, spruceLang);
+        // Auto-use spruce.lang.
+        ResolutionContext fake = new ResolutionContext(new HashMap<>(), typeDecl.getDeclSymbol());
+        fake.using().put("lang", spruceLang);
+        creator.createSymbolsForTopLevelTypeDeclarationTypeMembers(typeDecl, fake);
+        // End of special situation setup.
+
+        String expSymbolName = "Any";
+        checkSymbolTable(langTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = langTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
+
+        String symbolName = NAME_CONSTRUCTOR + "()";
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+
+        Symbol constructorDecl = innerTable.get(symbolName);
+        checkSymbol(ensureIsa(constructorDecl, ParameterizedSymbol.class), symbolName, Kind.CONSTRUCTOR,
+                FLAG_NONE,0, 0);
+        ASTConstructorDeclaration constructor = ensureIsa(typeDecl.getMembers().get(0), ASTConstructorDeclaration.class);
+        assertSame(constructorDecl, constructor.getDeclSymbol());
+
+        // Test fabricated default constructor's AST nodes.
+        assertEquals(symbolName, constructorDecl.getName());
+        ASTConstructorDeclarator declarator = constructor.getConstructorDecl();
+        ASTFormalParameterList formalParamList = declarator.getFormalParamList();
+        assertEquals(0, formalParamList.getChildren().size());
+        assertNotNull(constructor.getBlock());
+
+        ASTBlock block = constructor.getBlock();
+        ASTBlockStatements blockStmts = block.getBlockStmts();
+        assertEquals(0, blockStmts.getChildren().size());
+    }
+
+    /**
+     * Tests that an interface has no default constructor.
+     */
+    @Test
+    public void testInterfaceNoDefaultConstructor() {
+        Pair pair = createGlobalLookupNoErrors("""
+                interface HasNoDefaultConstructor {
+                }
+                """);
+        SymbolTable global = pair.lookup();
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
+
+        ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
+        SymbolTable namespaceTable = unnamedNamespace.getTable();
+
+        String expSymbolName = "HasNoDefaultConstructor";
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.INTERFACE, FLAG_MOD_ABSTRACT, 0);
+    }
+
+    /**
+     * Tests members of field declarations with variable modifiers.  The class
+     * has a default constructor.
      */
     @Test
     public void testMemberFieldDeclarationVarMods() {
@@ -291,20 +461,20 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "HasMember";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 2);
 
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("immutable"));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList("immutable"));
 
         Symbol immutSymbol = innerTable.get("immutable");
         checkSymbol(immutSymbol, "immutable", Kind.FIELD, FLAG_NONE);
@@ -313,7 +483,7 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests members of field declarations.
+     * Tests members of field declarations.  The class has a default constructor.
      */
     @Test
     public void testMemberFieldDeclaration() {
@@ -325,19 +495,19 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "HasMember";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 3);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 4);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        checkSymbolTable(innerTable, TYPE, 3, Arrays.asList("foo", "bar", "jazz"));
+        checkSymbolTable(innerTable, TYPE, 4, Arrays.asList("foo", "bar", "jazz"));
 
         Symbol fooSymbol = innerTable.get("foo");
         checkSymbol(fooSymbol, "foo", Kind.FIELD, FLAG_NONE);
@@ -355,7 +525,8 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests members of shared field declaration.
+     * Tests members of shared field declaration.  The class has a default
+     * constructor.
      */
     @Test
     public void testMemberSharedFieldDeclaration() {
@@ -366,19 +537,19 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "HasMember";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 2);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("foo"));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList("foo"));
 
         Symbol fooSymbol = innerTable.get("foo");
         checkSymbol(fooSymbol, "foo", Kind.FIELD, FLAG_MOD_SHARED);
@@ -400,7 +571,7 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of constant declaration.
+     * Tests member of constant declaration.  The class has a default constructor.
      */
     @Test
     public void testMemberConstant() {
@@ -411,18 +582,18 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
         String expSymbolName = "HasMember";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS, FLAG_NONE, 2);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList("BAR"));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList("BAR"));
 
         Symbol constantSymbol = innerTable.get("BAR");
         checkSymbol(constantSymbol, "BAR", Kind.FIELD, FLAG_MOD_SHARED | FLAG_MOD_FINAL);
@@ -431,7 +602,7 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of method declaration.
+     * Tests member of method declaration.  The class has a default constructor.
      */
     @Test
     public void testMemberMethodDeclaration() {
@@ -444,20 +615,20 @@ public class SymbolCreatorClassesTest {
                """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "Stringy";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 2);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         String symbolName = "foo(Stringy)";
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList(symbolName));
 
         Symbol fooSymbol = innerTable.get(symbolName);
         checkSymbol(ensureIsa(fooSymbol, ParameterizedSymbol.class), symbolName, Kind.METHOD,
@@ -491,7 +662,8 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of abstract method declaration.
+     * Tests member of abstract method declaration.  The class has a default
+     * constructor.
      */
     @Test
     public void testMemberAbstractMethodDeclaration() {
@@ -502,21 +674,21 @@ public class SymbolCreatorClassesTest {
                """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "HasMember";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.CLASS,
-                FLAG_MOD_ABSTRACT, 1);
+                FLAG_MOD_ABSTRACT, 2);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         String symbolName = "foo(HasMember)";
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList(symbolName));
 
         Symbol fooSymbol = innerTable.get(symbolName);
         checkSymbol(ensureIsa(fooSymbol, ParameterizedSymbol.class), symbolName, Kind.METHOD,
@@ -538,7 +710,7 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of overloaded methods.
+     * Tests member of overloaded methods.  The class has a default constructor.
      */
     @Test
     public void testMemberMethodOverloads() {
@@ -551,18 +723,18 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
         String expSymbolName = "Stringy";
 
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 3);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 4);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
-        checkSymbolTable(innerTable, TYPE, 3, Arrays.asList("foo", "foo()", "foo(Stringy)"));
+        checkSymbolTable(innerTable, TYPE, 4, Arrays.asList("foo", "foo()", "foo(Stringy)"));
 
         String symbolName = "foo";
         Symbol fooSymbol = innerTable.get(symbolName);
@@ -586,7 +758,8 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of interface method declaration.
+     * Tests member of interface method declaration.  The interface does not
+     * have a default constructor.
      */
     @Test
     public void testMemberInterfaceMethod() {
@@ -597,14 +770,14 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "HasMember";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.INTERFACE,
                 FLAG_MOD_ABSTRACT, 1);
@@ -636,7 +809,8 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests member of shared interface method declaration.
+     * Tests member of shared interface method declaration.  The interface does
+     * not have a default constructor.
      */
     @Test
     public void testMemberSharedInterfaceMethod() {
@@ -647,14 +821,14 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "HasMember";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
         checkSymbol(ensureIsa(symbol, ParentSymbol.class), "HasMember", Kind.INTERFACE,
                 FLAG_MOD_ABSTRACT, 1);
@@ -673,7 +847,8 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests bad shared interface method without body.
+     * Tests bad shared interface method without body.  The interface does not
+     * have a default constructor.
      */
     @Test
     public void testMemberBadSharedInterfaceMethodNoBody() {
@@ -685,7 +860,8 @@ public class SymbolCreatorClassesTest {
     }
 
     /**
-     * Tests formal parameter list in a method.
+     * Tests formal parameter list in a method.  The class has a default
+     * constructor.
      */
     @Test
     public void testFormalParameterList() {
@@ -696,20 +872,20 @@ public class SymbolCreatorClassesTest {
                 """);
         SymbolTable global = pair.lookup();
         ASTTypeDeclaration typeDecl = pair.typeDecl();
-        checkSymbolTable(global, GLOBAL, 1, List.of(UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
 
         ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
-        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 3);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
 
         SymbolTable namespaceTable = unnamedNamespace.getTable();
 
         String expSymbolName = "Stringy";
-        checkSymbolTable(namespaceTable, NAMESPACE, 3, List.of(expSymbolName));
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
         Symbol symbol = namespaceTable.get(expSymbolName);
-        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 2);
         SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
         String symbolName = "foo(Stringy, Stringy, Stringy, Stringy)";
-        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+        checkSymbolTable(innerTable, TYPE, 2, Arrays.asList(symbolName));
 
         List<String> expNames = Arrays.asList("first", "last", "age", "ssn");
         ParameterizedSymbol fooSymbol = ensureIsa(innerTable.get(symbolName), ParameterizedSymbol.class);
@@ -764,25 +940,50 @@ public class SymbolCreatorClassesTest {
         expectError(pair.lookup(), creator, expNumErrors);
     }
 
-    // Creates 2 test symbols so early resolution doesn't cause problems here.
-    // But that means that the unnamed namespace STARTS with 2 type symbols in it!!!
+    // Creates some test symbols so early resolution doesn't cause problems here.
     private static Pair createGlobalLookup(String code, ClassesSymbolCreator creator) {
         TopLevelParser topLevelParser = ParserTopLevelTest.getTopLevelParser(code);
         ASTTypeDeclaration typeDecl = topLevelParser.parseTypeDeclaration();
-        Optional<ParentSymbol> optUnnamedNamespace = creator.getGlobalLookup()
-                .getNamespace(UNNAMED_NAMESPACE_NAME);
+        GlobalLookup global = creator.getGlobalLookup();
+        Optional<ParentSymbol> optUnnamedNamespace = global.getNamespace(UNNAMED_NAMESPACE_NAME);
         assertTrue(optUnnamedNamespace.isPresent());
         ParentSymbol unnamedNamespace = optUnnamedNamespace.get();
         ChildSymbolTable table = unnamedNamespace.getTable();
-        table.insertSymbol(
+        unnamedNamespace.setTable(table);
+
+        ParentSymbol spruceLang = setupSpruceLangNamespaces(global);
+        ChildSymbolTable langTable = spruceLang.getTable();
+
+        langTable.insertSymbol(
+                new TypeSymbol(new Location("<fake>", 0, 0, "class Any {}"),
+                        "Any", Kind.CLASS, langTable, FLAG_NONE));
+        langTable.insertSymbol(
                 new TypeSymbol(new Location("<fake>", 0, 0, "class String {}"),
-                        "String", Kind.CLASS, table, FLAG_NONE));table.insertSymbol(
+                        "String", Kind.CLASS, langTable, FLAG_NONE));
+        langTable.insertSymbol(
                 new TypeSymbol(new Location("<fake>", 1, 0, "class Integer {}"),
-                        "Integer", Kind.CLASS, table, FLAG_NONE));
+                        "Integer", Kind.CLASS, langTable, FLAG_NONE));
+
         creator.createSymbolsForTopLevelTypeDeclarationTypeOnly(typeDecl, unnamedNamespace);
-        ResolutionContext fake = new ResolutionContext(Map.of(), typeDecl.getDeclSymbol());
+        // Auto-use spruce.lang.
+        ResolutionContext fake = new ResolutionContext(new HashMap<>(), typeDecl.getDeclSymbol());
+        fake.using().put("lang", spruceLang);
         creator.createSymbolsForTopLevelTypeDeclarationTypeMembers(typeDecl, fake);
         return new Pair(typeDecl, creator.getGlobalLookup());
+    }
+
+    private static ParentSymbol setupSpruceLangNamespaces(GlobalLookup global) {
+        ParentSymbol spruce = new ParentSymbol(new Location("<fake>", 0, 0, "namespace spruce.lang;"),
+                "spruce", Kind.NAMESPACE, global, FLAG_NONE);
+        global.insertSymbol(spruce);
+        ChildSymbolTable spruceTable = new ChildSymbolTable(NAMESPACE, spruce);
+        spruce.setTable(spruceTable);
+        ParentSymbol lang = new ParentSymbol(new Location("<fake>", 0, 0, "namespace spruce.lang;"),
+                "lang", Kind.NAMESPACE, spruceTable, FLAG_NONE);
+        spruceTable.insertSymbol(lang);
+        ChildSymbolTable langTable = new ChildSymbolTable(NAMESPACE, lang);
+        lang.setTable(langTable);
+        return lang;
     }
 
     public record Pair(ASTTypeDeclaration typeDecl, GlobalLookup lookup) {

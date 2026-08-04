@@ -11,6 +11,7 @@ import org.spruce.compiler.bootstrap.ast.expressions.*;
 import org.spruce.compiler.bootstrap.ast.names.ASTExpressionName;
 import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
+import org.spruce.compiler.bootstrap.ast.statements.ASTConstructorInvocation;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
@@ -43,9 +44,91 @@ public class OperationsResolver extends BasicResolver {
         super(resolver, msgProducer, global);
     }
 
+    /**
+     * Resolves symbols in an <code>ArgumentList</code>.
+     * @param argList An <code>ASTArgumentList</code>.
+     * @param ctx A <code>ResolutionContext</code>.
+     * @return Whether all arguments were successfully resolved.
+     */
+    public boolean resolveArguments(ASTArgumentList argList, ResolutionContext ctx) {
+        ExpressionsResolver exprResolver = getExpressionsResolver();
+        List<ASTExpression> args = argList.getTypedChildren();
+        boolean resolved = true;
+        for (ASTExpression arg : args) {
+            exprResolver.resolveExpression(arg, ctx);
+            Optional<TypeSymbol> optResolved = Optional.ofNullable(arg.getResolvedDataType());
+            if (optResolved.isEmpty()) {
+                resolved = false;
+            }
+        }
+        return resolved;
+    }
+
     //
     // Constructor Resolution
     //
+
+    /**
+     * Resolves symbols in a <code>ConstructorInvocation</code>.
+     * @param constrInvocation An <code>ASTConstructorInvocation</code>.
+     * @param ctx A <code>ResolutionContext</code>.
+     */
+    public void resolveConstructorInvocation(ASTConstructorInvocation constrInvocation, ResolutionContext ctx) {
+        // Resolve types of arguments first!
+        ASTArgumentList argList = constrInvocation.getArgsList();
+        if (!resolveArguments(argList, ctx)) {
+            // Don't bother resolving the invocation to a constructor if the
+            // arguments didn't even resolve.
+            return;
+        }
+
+        // 1. Determine the type to search.
+        Optional<TypeSymbol> optTypeToSearch = getTypeToSearch(constrInvocation, ctx);
+        if (optTypeToSearch.isEmpty()) {
+            // Error generated already.
+            return;
+        }
+
+        // 2. Identify potentially applicable constructors, which MUST be
+        //    directly on the type to search.
+
+        // 3. Choose most specific constructor, if one such constructor exists.
+        //    If no one constructor is maximally specific, ambiguous error.
+
+        // 4. No Result type; all must be non-shared.
+    }
+
+    /**
+     * 1. Find the "type to search" for the given <code>ConstructorInvocation</code>,
+     *    if it exists.
+     * @param constrInvocation An <code>ASTConstructorInvocation</code>.
+     * @param ctx A <code>ResolutionContext</code>.
+     * @return An <code>Optional&lt;TypeSymbol&gt;</code>.
+     */
+    public Optional<TypeSymbol> getTypeToSearch(ASTConstructorInvocation constrInvocation, ResolutionContext ctx) {
+        TokenType tokenType = constrInvocation.getConstructorKeyword().getKeyword();
+        TypesResolver typesResolver = getTypesResolver();
+        TypeSymbol type = typesResolver.findEnclosingType(ctx.enclosingSymbol());
+        if (tokenType == SELF) {
+            // 1a. Self
+            return Optional.of(type);
+        }
+        else if (tokenType == SUPER) {
+            // 1b. Super
+            Optional<TypeSymbol> optSuperclass = type.getSuperclass();
+            if (optSuperclass.isEmpty()) {
+                error(constrInvocation.getLocation(), "Type " + type.getName() + " has no superclass");
+            }
+            return optSuperclass;
+        }
+        else {
+            throw internalError("self or super on constructor invocation!");
+        }
+    }
+
+    public void resolveClassInstanceCreationExpression(ASTClassInstanceCreationExpression cice, ResolutionContext ctx) {
+
+    }
 
     //
     // Method Resolution
@@ -58,13 +141,12 @@ public class OperationsResolver extends BasicResolver {
      */
     public void resolveMethodInvocation(ASTMethodInvocation methodInvocation, ResolutionContext ctx) {
         // Resolve types of arguments first!
-        ExpressionsResolver exprResolver = getExpressionsResolver();
         Optional<ASTArgumentList> optArgList = methodInvocation.getArgumentList();
         if (optArgList.isPresent()) {
-            ASTArgumentList argList = optArgList.get();
-            List<ASTExpression> args = argList.getTypedChildren();
-            for (ASTExpression arg : args) {
-                exprResolver.resolveExpression(arg, ctx);
+            if (!resolveArguments(optArgList.get(), ctx)) {
+                // Don't bother resolving the invocation to a constructor if the
+                // arguments didn't even resolve.
+                return;
             }
         }
         ASTIdentifier name = methodInvocation.getIdentifier();

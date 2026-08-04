@@ -82,6 +82,8 @@ public class SymbolCreatorTopLevelTest {
     @Test
     public void testOcuTypeDeclarationListOnly() {
         TopLevelParser parser = ParserTopLevelTest.getTopLevelParser("""
+                namespace spruce.lang;
+                class Any {}
                 class TestClass1 {}
                 class TestClass2 {}
                 class TestClass3 {}
@@ -95,19 +97,25 @@ public class SymbolCreatorTopLevelTest {
 
         GlobalLookup lookup = creator.getGlobalLookup();
         ensureNoErrors(lookup, creator.getTopLevelSymbolCreator());
-        checkSymbolTable(lookup, GLOBAL, 1, Arrays.asList(GlobalLookup.UNNAMED_NAMESPACE_NAME));
+        checkSymbolTable(lookup, GLOBAL, 2, Arrays.asList(GlobalLookup.UNNAMED_NAMESPACE_NAME, "spruce"));
 
         Optional<ParentSymbol> optUnnamedNamespace = lookup.getNamespace(GlobalLookup.UNNAMED_NAMESPACE_NAME);
         assertTrue(optUnnamedNamespace.isPresent(), "Unnamed namespace is not found!");
-        ParentSymbol unnamedNamespace = optUnnamedNamespace.get();
-        checkSymbol(unnamedNamespace, GlobalLookup.UNNAMED_NAMESPACE_NAME, Symbol.Kind.NAMESPACE,
-                FLAG_NONE, 6);
-        assertSame(unnamedNamespace, ocu.getDeclSymbol());
+        Optional<ParentSymbol> optSpruce = lookup.getNamespace("spruce");
+        assertTrue(optSpruce.isPresent());
+        ParentSymbol spruce = optSpruce.get();
+        checkSymbol(spruce, "spruce", Symbol.Kind.NAMESPACE, FLAG_NONE, 1);
+        SymbolTable spruceTable = spruce.getTable();
+        checkSymbolTable(spruceTable, NAMESPACE, 1, Arrays.asList("lang"));
 
-        ChildSymbolTable childTable = unnamedNamespace.getTable();
+        ParentSymbol lang = ensureIsa(spruceTable.get("lang"), ParentSymbol.class);
+        checkSymbol(lang, "lang", Symbol.Kind.NAMESPACE, FLAG_NONE, 7);
+        assertSame(lang, ocu.getDeclSymbol());
+
+        ChildSymbolTable childTable = lang.getTable();
         List<String> expSymbolNames =
-                Arrays.asList("TestClass1", "TestClass2", "TestClass3", "TestClass4", "TestClass5", "TestClass6");
-        checkSymbolTable(childTable, NAMESPACE, 6, expSymbolNames);
+                Arrays.asList("Any", "TestClass1", "TestClass2", "TestClass3", "TestClass4", "TestClass5", "TestClass6");
+        checkSymbolTable(childTable, NAMESPACE, 7, expSymbolNames);
     }
 
     /**
@@ -159,6 +167,8 @@ public class SymbolCreatorTopLevelTest {
     @Test
     public void testClassesSameName() {
         TopLevelParser parser = ParserTopLevelTest.getTopLevelParser("""
+                namespace spruce.lang;
+                class Any {}
                 class SameName {}
                 class SameName {}
                 """);
@@ -173,6 +183,11 @@ public class SymbolCreatorTopLevelTest {
      */
     @Test
     public void testConflictTypeNameNamespaceName() {
+        TopLevelParser parser0 = ParserTopLevelTest.getTopLevelParser("""
+                namespace spruce.lang;
+                class Any {}
+                """);
+        ASTOrdinaryCompilationUnit ocu0 = parser0.parseOrdinaryCompilationUnit();
         TopLevelParser parser1 = ParserTopLevelTest.getTopLevelParser("""
                 namespace spruce.conflict;
                 """);
@@ -183,7 +198,7 @@ public class SymbolCreatorTopLevelTest {
                 """);
         ASTOrdinaryCompilationUnit ocu2 = parser2.parseOrdinaryCompilationUnit();
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
-        creator.createSymbolTable(List.of(ocu1, ocu2));
+        creator.createSymbolTable(List.of(ocu0, ocu1, ocu2));
         expectError(creator.getGlobalLookup(), creator.getTopLevelSymbolCreator(), 2);
     }
 }
