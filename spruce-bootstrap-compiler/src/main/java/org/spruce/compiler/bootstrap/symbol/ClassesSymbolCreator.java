@@ -178,17 +178,8 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         ASTConstructorDeclarator defaultDeclarator = new ASTConstructorDeclarator(loc,
                 new ASTFormalParameterList(loc, List.of()));
 
-        TypeSymbol root = getEarlyResolver().getTypesResolver().resolveRootType(ctx);
-        boolean amIRootType = (typeDecl.getDeclSymbol() == root);
         List<ASTBlockStatement> blockStmts = new ArrayList<>(1);
-        if (!amIRootType) {
-            ASTConstructorInvocation sooper = new ASTConstructorInvocation.Builder()
-                    .setLocation(loc)
-                    .setConstructorKeyword(new ASTKeywordNode(loc, TokenType.SUPER))
-                    .setArgsList(new ASTArgumentList(loc, List.of()))
-                    .build();
-            blockStmts.add(sooper);
-        }
+        createImplicitSuperInvocationNotRoot(loc, type, ctx, blockStmts);
         ASTBlock defaultBlock = new ASTBlock(loc, new ASTBlockStatements(loc, blockStmts));
 
         ASTConstructorDeclaration defaultConstructor = new ASTConstructorDeclaration.Builder()
@@ -199,6 +190,20 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         typeDecl.getClassParts().getTypedChildren().add(defaultConstructor);
 
         createSymbolsForConstructorDeclaration(defaultConstructor, type, ctx);
+    }
+
+    private void createImplicitSuperInvocationNotRoot(Location loc, TypeSymbol type, ResolutionContext ctx,
+                                                      List<ASTBlockStatement> blockStmts) {
+        TypeSymbol root = getEarlyResolver().getTypesResolver().resolveRootType(ctx);
+        boolean amIRootType = (type == root);
+        if (!amIRootType) {
+            ASTConstructorInvocation implicitSuper = new ASTConstructorInvocation.Builder()
+                    .setLocation(loc)
+                    .setConstructorKeyword(new ASTKeywordNode(loc, TokenType.SUPER))
+                    .setArgsList(new ASTArgumentList(loc, List.of()))
+                    .build();
+            blockStmts.add(0, implicitSuper);
+        }
     }
 
     /**
@@ -270,7 +275,24 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         symbol.setDataType(parent);
 
         createSymbolsForFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList(), symbol);
-        getStatementsSymbolCreator().createSymbolsForBlock(constrDecl.getBlock(), symbol);
+
+        ASTBlock constrBody = constrDecl.getBlock();
+        insertSuperInvocationIfNeeded(parent, ctx, constrBody);
+        getStatementsSymbolCreator().createSymbolsForBlock(constrBody, symbol);
+    }
+
+    private void insertSuperInvocationIfNeeded(TypeSymbol type, ResolutionContext ctx, ASTBlock block) {
+        boolean constrInvocationFound = false;
+        List<ASTBlockStatement> blockStmts = block.getBlockStmts().getTypedChildren();
+        for (ASTBlockStatement blockStmt : blockStmts) {
+            if (blockStmt instanceof ASTConstructorInvocation) {
+                constrInvocationFound = true;
+                break;
+            }
+        }
+        if (!constrInvocationFound) {
+            createImplicitSuperInvocationNotRoot(block.getLocation(), type, ctx, blockStmts);
+        }
     }
 
     /**

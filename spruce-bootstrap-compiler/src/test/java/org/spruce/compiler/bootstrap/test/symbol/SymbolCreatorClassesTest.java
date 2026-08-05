@@ -10,6 +10,8 @@ import org.spruce.compiler.bootstrap.ast.classes.*;
 import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
 import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatements;
 import org.spruce.compiler.bootstrap.ast.statements.ASTConstructorInvocation;
+import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclaration;
+import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationStatement;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
 import org.spruce.compiler.bootstrap.common.Location;
@@ -364,6 +366,7 @@ public class SymbolCreatorClassesTest {
         assertNotNull(constructor.getBlock());
 
         ASTBlock block = constructor.getBlock();
+        assertNotNull(constructor.getBlock());
         ASTBlockStatements blockStmts = block.getBlockStmts();
         assertEquals(1, blockStmts.getChildren().size());
 
@@ -424,6 +427,99 @@ public class SymbolCreatorClassesTest {
         ASTBlock block = constructor.getBlock();
         ASTBlockStatements blockStmts = block.getBlockStmts();
         assertEquals(0, blockStmts.getChildren().size());
+    }
+
+    /**
+     * Test that an explicit constructor without an explicit constructor
+     * invocation gets an implicit super() at the top.
+     */
+    @Test
+    public void testExplicitConstructorImplicitSuper() {
+        Pair pair = createGlobalLookupNoErrors("""
+                class HasExplicitConstructor {
+                    constructor(String s) {
+                        String ss = "ss";
+                    }
+                }
+                """);
+        SymbolTable global = pair.lookup();
+        ASTTypeDeclaration typeDecl = pair.typeDecl();
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
+
+        ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
+        SymbolTable namespaceTable = unnamedNamespace.getTable();
+
+        String expSymbolName = "HasExplicitConstructor";
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
+
+        String symbolName = NAME_CONSTRUCTOR + "(spruce.lang.String)";
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+
+        Symbol constructorDecl = innerTable.get(symbolName);
+        checkSymbol(ensureIsa(constructorDecl, ParameterizedSymbol.class), symbolName, Kind.CONSTRUCTOR,
+                FLAG_NONE,2, 1);
+        ASTConstructorDeclaration constructor = ensureIsa(typeDecl.getMembers().get(0), ASTConstructorDeclaration.class);
+        ASTBlockStatements blockStmts = constructor.getBlock().getBlockStmts();
+        assertEquals(2, blockStmts.getChildren().size());
+
+        ASTConstructorInvocation implicit = ensureIsa(blockStmts.getChildren().get(0), ASTConstructorInvocation.class);
+        assertEquals(0, implicit.getArgsList().getChildren().size());
+        assertEquals(TokenType.SUPER, implicit.getConstructorKeyword().getKeyword());
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(blockStmts.getChildren().get(1),
+                ASTLocalVariableDeclarationStatement.class);
+        assertEquals(1, localVarDeclStmt.getLocalVarDecl().getVarDeclList().getChildren().size());
+    }
+
+    /**
+     * Test that an explicit constructor with an explicit constructor
+     * invocation does NOT get an implicit super() at the top.
+     */
+    @Test
+    public void testExplicitConstructorExplicitSuper() {
+        Pair pair = createGlobalLookupNoErrors("""
+                class HasExplicitConstructor {
+                    constructor(String s) {
+                        super();
+                        String ss = "ss";
+                    }
+                }
+                """);
+        SymbolTable global = pair.lookup();
+        ASTTypeDeclaration typeDecl = pair.typeDecl();
+        checkSymbolTable(global, GLOBAL, 2, List.of(UNNAMED_NAMESPACE_NAME, "spruce"));
+
+        ParentSymbol unnamedNamespace = ensureIsa(global.get(UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        checkSymbol(unnamedNamespace, UNNAMED_NAMESPACE_NAME, Kind.NAMESPACE, FLAG_NONE, 1);
+        SymbolTable namespaceTable = unnamedNamespace.getTable();
+
+        String expSymbolName = "HasExplicitConstructor";
+        checkSymbolTable(namespaceTable, NAMESPACE, 1, List.of(expSymbolName));
+        Symbol symbol = namespaceTable.get(expSymbolName);
+        checkSymbol(ensureIsa(symbol, ParentSymbol.class), expSymbolName, Kind.CLASS, FLAG_NONE, 1);
+
+        String symbolName = NAME_CONSTRUCTOR + "(spruce.lang.String)";
+        SymbolTable innerTable = ensureIsa(symbol, ParentSymbol.class).getTable();
+        checkSymbolTable(innerTable, TYPE, 1, Arrays.asList(symbolName));
+
+        Symbol constructorDecl = innerTable.get(symbolName);
+        checkSymbol(ensureIsa(constructorDecl, ParameterizedSymbol.class), symbolName, Kind.CONSTRUCTOR,
+                FLAG_NONE,2, 1);
+        ASTConstructorDeclaration constructor = ensureIsa(typeDecl.getMembers().get(0), ASTConstructorDeclaration.class);
+        ASTBlockStatements blockStmts = constructor.getBlock().getBlockStmts();
+        assertEquals(2, blockStmts.getChildren().size());
+
+        ASTConstructorInvocation implicit = ensureIsa(blockStmts.getChildren().get(0), ASTConstructorInvocation.class);
+        assertEquals(0, implicit.getArgsList().getChildren().size());
+        assertEquals(TokenType.SUPER, implicit.getConstructorKeyword().getKeyword());
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(blockStmts.getChildren().get(1),
+                ASTLocalVariableDeclarationStatement.class);
+        assertEquals(1, localVarDeclStmt.getLocalVarDecl().getVarDeclList().getChildren().size());
     }
 
     /**
