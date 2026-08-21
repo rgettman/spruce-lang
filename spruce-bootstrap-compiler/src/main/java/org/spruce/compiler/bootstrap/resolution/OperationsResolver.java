@@ -75,7 +75,7 @@ public class OperationsResolver extends BasicResolver {
      */
     public void resolveConstructorInvocation(ASTConstructorInvocation constrInvocation, ResolutionContext ctx) {
         // Resolve types of arguments first!
-        ASTArgumentList argList = constrInvocation.getArgsList();
+        ASTArgumentList argList = constrInvocation.getArgumentsList();
         if (!resolveArguments(argList, ctx)) {
             // Don't bother resolving the invocation to a constructor if the
             // arguments didn't even resolve.
@@ -91,11 +91,30 @@ public class OperationsResolver extends BasicResolver {
 
         // 2. Identify potentially applicable constructors, which MUST be
         //    directly on the type to search.
+        TypeSymbol typeToSearch = optTypeToSearch.get();
+        Set<ParameterizedSymbol> potentiallyApplicable = getPotentiallyApplicableConstructors(
+                constrInvocation, typeToSearch);
+        if (potentiallyApplicable.isEmpty()) {
+            errorSymbolNotFound(constrInvocation.getLocation(), Symbol.NAME_CONSTRUCTOR);
+            return;
+        }
 
         // 3. Choose most specific constructor, if one such constructor exists.
         //    If no one constructor is maximally specific, ambiguous error.
+        List<ParameterizedSymbol> maximallySpecific = getMaximallySpecificConstructors(potentiallyApplicable);
+        if (maximallySpecific.isEmpty()) {
+            throw internalError("Maximally specific filter eliminated all constructors!");
+        }
+        if (maximallySpecific.size() > 1) {
+            error(constrInvocation.getLocation(), "Ambiguous constructor call - multiple maximally specific constructors match.");
+            for (ParameterizedSymbol match : maximallySpecific) {
+                note(match.getLocation(), "This constructor matches.");
+            }
+        }
 
         // 4. No Result type; all must be non-shared.
+        ParameterizedSymbol resolved = maximallySpecific.get(0);
+        constrInvocation.setResolvedEntity(resolved);
     }
 
     /**
@@ -122,9 +141,67 @@ public class OperationsResolver extends BasicResolver {
             return optSuperclass;
         }
         else {
-            throw internalError("self or super on constructor invocation!");
+            throw internalError("expected self or super on constructor invocation!");
         }
     }
+
+    /**
+     * 2. Find all "potentially applicable methods" for the given
+     *    <code>ConstructorInvocation</code>, if any exist.  The name must
+     *    match, the number of parameters must match, and all arguments must be
+     *    invocation convertible to the formal parameter type in this
+     *    "invocation context".  The constructor must be directly in the type
+     *    to search; not up its superclass/superinterface hierarchy and not in
+     *    an enclosing class.
+     * @param constrInvocation An <code>ASTConstructorInvocation</code>.
+     * @param typeToSearch A <code>TypeSymbol</code> representing the type to
+     *                     search, found in Step 1.
+     * @return An <code>Optional&lt;TypeSymbol&gt;</code>.
+     */
+    public Set<ParameterizedSymbol> getPotentiallyApplicableConstructors(ASTConstructorInvocation constrInvocation,
+                                                                         TypeSymbol typeToSearch) {
+        // 2.1. Find methods by name.
+        Set<ParameterizedSymbol> methods = findConstructors(typeToSearch);
+
+        // 2.2. Find potentially applicable methods.
+        return getInvocationConvertible(constrInvocation.getArgumentsList(), methods);
+    }
+
+    private Set<ParameterizedSymbol> findConstructors(TypeSymbol type) {
+        SymbolTable table = type.getTable();
+        Set<ParameterizedSymbol> constructors = new HashSet<>();
+        if (table.containsMethodName(Symbol.NAME_CONSTRUCTOR)) {
+            constructors.addAll(table.getMethodsForName(Symbol.NAME_CONSTRUCTOR));
+        }
+        return constructors;
+    }
+
+    /**
+     * 3. Get all maximally specific constructors given a set of applicable
+     *    constructors.  A constructor "a" is "maximally specific" if there is
+     *    no other applicable constructor that is "strictly more specific" than
+     *    "a".  A constructor "a" is strictly more specific than another
+     *    constructor "b" if all of a's formal parameter types are convertible
+     *    to each of b's formal parameter types in a method invocation context.
+     *    Constructors with identical signatures in the same type are already a
+     *    compiler error in the symbol creation phase.
+     *    If a constructor "a" is strictly more specific than constructor "b",
+     *    then constructor "a" eliminates "b" from being a maximally specific
+     *    constructor.
+     * @param applicableConstructors A <code>Set</code> of <code>ParameterizedSymbol</code>s.
+     * @return A <code>List</code> of <code>ParameterizedSymbol</code>s.
+     */
+    public List<ParameterizedSymbol> getMaximallySpecificConstructors(Set<ParameterizedSymbol> applicableConstructors) {
+        // 3.1. Get all constructors that are strictly more specific than others.
+
+        // 3.2. Return all maximally specific constructors.  If there is exactly
+        //      one left, then it is the maximally specific constructor.  If
+        //      there are more than one left, then returning them all will
+        //      result in an ambiguous error.
+        return getStrictlyMoreSpecific(applicableConstructors);
+    }
+
+
 
     public void resolveClassInstanceCreationExpression(ASTClassInstanceCreationExpression cice, ResolutionContext ctx) {
 
@@ -141,13 +218,11 @@ public class OperationsResolver extends BasicResolver {
      */
     public void resolveMethodInvocation(ASTMethodInvocation methodInvocation, ResolutionContext ctx) {
         // Resolve types of arguments first!
-        Optional<ASTArgumentList> optArgList = methodInvocation.getArgumentList();
-        if (optArgList.isPresent()) {
-            if (!resolveArguments(optArgList.get(), ctx)) {
-                // Don't bother resolving the invocation to a constructor if the
-                // arguments didn't even resolve.
-                return;
-            }
+        ASTArgumentList argList = methodInvocation.getArgumentList();
+        if (!resolveArguments(argList, ctx)) {
+            // Don't bother resolving the invocation to a constructor if the
+            // arguments didn't even resolve.
+            return;
         }
         ASTIdentifier name = methodInvocation.getIdentifier();
 
@@ -426,10 +501,10 @@ public class OperationsResolver extends BasicResolver {
      * 2. Find all "potentially applicable methods" for the given
      *    <code>MethodInvocation</code>, if any exist.  The name must match,
      *    the number of parameters must match, and all arguments must be
-     *    convertible to the formal parameter type in this "invocation context":
-     *    can be the same type, can be widened to the same type, or convertible
-     *    such as Integer -> Long.  The method may be in the type to search or
-     *    up its superclass/superinterface hierarchy, but not in an enclosing class.
+     *    invocation convertible to the formal parameter type in this
+     *    "invocation context".  The method may be in the type to search or
+     *    up its superclass/superinterface hierarchy, but not in an enclosing
+     *    class.
      * @param methodInvocation An <code>ASTMethodInvocation</code>.
      * @param typeToSearch A <code>TypeSymbol</code> representing the type to
      *                     search, found in Step 1.
@@ -442,16 +517,14 @@ public class OperationsResolver extends BasicResolver {
         Set<ParameterizedSymbol> methods = findMethodsByName(methodName, typeToSearch);
 
         // 2.2. Find potentially applicable methods.
-        return getPotentiallyApplicableMethods(methodInvocation, methods);
+        return getInvocationConvertible(methodInvocation.getArgumentList(), methods);
     }
 
-    private Set<ParameterizedSymbol> getPotentiallyApplicableMethods(ASTMethodInvocation methodInvocation,
-                                                                      Set<ParameterizedSymbol> methods) {
+    private Set<ParameterizedSymbol> getInvocationConvertible(ASTArgumentList argsList,
+                                                              Set<ParameterizedSymbol> methods) {
         Set<ParameterizedSymbol> applicableMethods = new HashSet<>(methods.size());
         for (ParameterizedSymbol method : methods) {
-            List<TypeSymbol> args = methodInvocation.getArgumentList()
-                    .map(ASTArgumentList::getTypedChildren)
-                    .orElse(List.of()).stream()
+            List<TypeSymbol> args = argsList.getTypedChildren().stream()
                     .map(ASTExpression::getResolvedDataType)
                     .toList();
             List<TypeSymbol> params = method.getParameters().stream()

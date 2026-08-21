@@ -233,11 +233,11 @@ public final class ASTMethodInvocation extends ASTParentNode
     }
 
     /**
-     * Returns an <code>ASTArgumentList</code>, if it exists.
-     * @return An <code>Optional&lt;ASTArgumentList&gt;</code>.
+     * Returns an <code>ASTArgumentList</code>.
+     * @return An <code>ASTArgumentList</code>.
      */
-    public Optional<ASTArgumentList> getArgumentList() {
-        return Optional.ofNullable(myArgsList);
+    public ASTArgumentList getArgumentList() {
+        return myArgsList;
     }
 
     @Override

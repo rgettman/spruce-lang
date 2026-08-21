@@ -10,7 +10,6 @@ import org.spruce.compiler.bootstrap.ast.classes.*;
 import org.spruce.compiler.bootstrap.ast.statements.ASTBlock;
 import org.spruce.compiler.bootstrap.ast.statements.ASTBlockStatements;
 import org.spruce.compiler.bootstrap.ast.statements.ASTConstructorInvocation;
-import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclaration;
 import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationStatement;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTNamespaceDeclaration;
 import org.spruce.compiler.bootstrap.common.BaseMessageProducer;
@@ -372,7 +371,7 @@ public class SymbolCreatorClassesTest {
 
         ASTConstructorInvocation constrInvocation = ensureIsa(blockStmts.get(0), ASTConstructorInvocation.class);
         assertEquals(TokenType.SUPER, constrInvocation.getConstructorKeyword().getKeyword());
-        assertEquals(0, constrInvocation.getArgsList().getChildren().size());
+        assertEquals(0, constrInvocation.getArgumentsList().getChildren().size());
     }
 
     /**
@@ -467,7 +466,7 @@ public class SymbolCreatorClassesTest {
         assertEquals(2, blockStmts.getChildren().size());
 
         ASTConstructorInvocation implicit = ensureIsa(blockStmts.getChildren().get(0), ASTConstructorInvocation.class);
-        assertEquals(0, implicit.getArgsList().getChildren().size());
+        assertEquals(0, implicit.getArgumentsList().getChildren().size());
         assertEquals(TokenType.SUPER, implicit.getConstructorKeyword().getKeyword());
 
         ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(blockStmts.getChildren().get(1),
@@ -514,7 +513,7 @@ public class SymbolCreatorClassesTest {
         assertEquals(2, blockStmts.getChildren().size());
 
         ASTConstructorInvocation implicit = ensureIsa(blockStmts.getChildren().get(0), ASTConstructorInvocation.class);
-        assertEquals(0, implicit.getArgsList().getChildren().size());
+        assertEquals(0, implicit.getArgumentsList().getChildren().size());
         assertEquals(TokenType.SUPER, implicit.getConstructorKeyword().getKeyword());
 
         ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(blockStmts.getChildren().get(1),

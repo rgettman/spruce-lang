@@ -15,7 +15,7 @@ public interface EntityResolution {
 
     /**
      * Returns the resolved entity symbol.  Used during the code generation
-     * phase. It is expected that <code>setResolvedSymbol</code> has already
+     * phase. It is expected that <code>setResolvedEntity</code> has already
      * been called.
      * @return A <code>EntitySymbol</code>.
      */

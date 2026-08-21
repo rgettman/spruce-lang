@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
+import org.spruce.compiler.bootstrap.ast.classes.ASTConstructorDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTFieldDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTFormalParameter;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
@@ -225,6 +226,21 @@ public class ResolverTestUtility {
     }
 
     /**
+     * Retrieve a <code>ConstructorDeclaration</code>.
+     * @param trio A <code>Trio</code>.
+     * @param ocuIdx The 0-based index into the list of
+     *               <code>OrdinaryCompilationUnit</code>s.
+     * @param memberIdx The 0-based index into the members of the first
+     *                  <code>ClassDeclaration</code>.
+     * @return An <code>ASTMethodDeclaration</code>, or fails if not found.
+     */
+    static ASTConstructorDeclaration getConstructor(Trio trio, int ocuIdx, int typeDeclIdx, int memberIdx) {
+        ASTOrdinaryCompilationUnit ocu = trio.ocus().get(ocuIdx);
+        ASTClassDeclaration classDecl = ensureIsa(ocu.getTypeDeclList().get(typeDeclIdx), ASTClassDeclaration.class);
+        return ensureIsa(classDecl.getClassParts().get(memberIdx), ASTConstructorDeclaration.class);
+    }
+
+    /**
      * Retrieve the <code>VariableSymbol</code> for a <code>FormalParameter</code>
      * in a <code>MethodDeclaration</code>.
      * @param methodDecl An <code>ASTMethodDeclaration</code>.
@@ -263,5 +279,16 @@ public class ResolverTestUtility {
         Optional<ASTBlock> optBlock = methodDecl.getBody().getBlock();
         assertTrue(optBlock.isPresent());
         return optBlock.get().getBlockStmts().get(idx);
+    }
+
+    /**
+     * Retrieve the <code>BlockStatement</code> in a <code>ConstructorDeclaration</code>.
+     * @param constrDecl An <code>ASTConstructorDeclaration</code>.
+     * @param idx The 0-based index into the list of <code>BlockStatement</code>s.
+     * @return An <code>ASTBlockStatement</code>, or fails if not found.
+     */
+    static ASTBlockStatement getBlockStatement(ASTConstructorDeclaration constrDecl, int idx) {
+        ASTBlock optBlock = constrDecl.getBlock();
+        return optBlock.getBlockStmts().get(idx);
     }
 }

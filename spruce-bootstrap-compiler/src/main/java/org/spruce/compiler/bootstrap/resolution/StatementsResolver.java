@@ -37,16 +37,15 @@ public class StatementsResolver extends BasicResolver {
      */
     public void resolveBlock(ASTBlock block, ResolutionContext ctx) {
         for (ASTBlockStatement blockStmt : block.getBlockStmts().getTypedChildren()) {
-            // Some of these will need a ResolutionContext for the scope they introduce,
-            // but others will not.
+            // Some of these will need a new ResolutionContext for the scope that they
+            // introduce, but others will not.
             switch (blockStmt) {
             case ASTLocalVariableDeclarationStatement localVarDeclStmt ->
                     resolveLocalVariableDeclarationStatement(localVarDeclStmt, ctx);
-            case ASTConstructorInvocation constrInvocation -> {
-                // TODO: Resolve the constructor invocation in operations resolver!
-            }
             case ASTBlock subBlock -> resolveSubBlock(subBlock, ctx);
             case ASTBasicForStatement basicForStmt -> resolveBasicForStatement(basicForStmt, ctx);
+            case ASTConstructorInvocation constrInvocation -> getOperationsResolver().resolveConstructorInvocation(
+                    constrInvocation, ctx);
             case ASTEnhancedForStatement enhancedForStmt -> resolveEnhancedForStatement(enhancedForStmt, ctx);
             case ASTExpressionStatement exprStmt -> resolveExpressionStatement(exprStmt, ctx);
             case ASTIfStatement ifStmt -> resolveIfStatement(ifStmt, ctx);
