@@ -7,8 +7,8 @@ import org.spruce.compiler.bootstrap.ast.ASTKeywordNode;
 import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTArgumentList;
+import org.spruce.compiler.bootstrap.ast.expressions.ASTInvocation;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.EntityResolution;
 import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
 
 /**
@@ -22,7 +22,7 @@ import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
  * &nbsp;&nbsp;&nbsp;&nbsp;super ( ArgumentList ) ;
  * </em>
  */
-public final class ASTConstructorInvocation extends ASTParentNode implements ASTBlockStatement, EntityResolution {
+public final class ASTConstructorInvocation extends ASTParentNode implements ASTBlockStatement, ASTInvocation {
     private final ASTKeywordNode myConstructorKeyword;
     private final ASTArgumentList myArgsList;
     private EntitySymbol myResolvedEntity;
@@ -118,7 +118,8 @@ public final class ASTConstructorInvocation extends ASTParentNode implements AST
      * Returns an <code>ASTArgumentList</code>.
      * @return An <code>ASTArgumentList</code>.
      */
-    public ASTArgumentList getArgumentsList() {
+    @Override
+    public ASTArgumentList getArgumentList() {
         return myArgsList;
     }
 

@@ -88,11 +88,27 @@ public class BasicResolver {
     }
 
     /**
-     * Returns the <code>OperationsResolver</code>.
-     * @return The <code>OperationsResolver</code>.
+     * Returns the <code>ConstructorsResolver</code>.
+     * @return The <code>ConstructorsResolver</code>.
      */
-    public OperationsResolver getOperationsResolver() {
-        return myResolver.getOperationsResolver();
+    public ConstructorsResolver getConstructorsResolver() {
+        return myResolver.getConstructorsResolver();
+    }
+
+    /**
+     * Returns the <code>MethodsResolver</code>.
+     * @return The <code>MethodsResolver</code>.
+     */
+    public MethodsResolver getMethodsResolver() {
+        return myResolver.getMethodsResolver();
+    }
+
+    /**
+     * Returns the <code>OperatorsResolver</code>.
+     * @return The <code>OperatorsResolver</code>.
+     */
+    public OperatorsResolver getOperatorsResolver() {
+        return myResolver.getOperatorsResolver();
     }
 
     /**

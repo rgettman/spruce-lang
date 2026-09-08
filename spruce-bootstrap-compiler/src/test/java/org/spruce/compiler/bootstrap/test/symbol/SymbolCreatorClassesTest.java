@@ -371,7 +371,7 @@ public class SymbolCreatorClassesTest {
 
         ASTConstructorInvocation constrInvocation = ensureIsa(blockStmts.get(0), ASTConstructorInvocation.class);
         assertEquals(TokenType.SUPER, constrInvocation.getConstructorKeyword().getKeyword());
-        assertEquals(0, constrInvocation.getArgumentsList().getChildren().size());
+        assertEquals(0, constrInvocation.getArgumentList().getChildren().size());
     }
 
     /**
@@ -466,7 +466,7 @@ public class SymbolCreatorClassesTest {
         assertEquals(2, blockStmts.getChildren().size());
 
         ASTConstructorInvocation implicit = ensureIsa(blockStmts.getChildren().get(0), ASTConstructorInvocation.class);
-        assertEquals(0, implicit.getArgumentsList().getChildren().size());
+        assertEquals(0, implicit.getArgumentList().getChildren().size());
         assertEquals(TokenType.SUPER, implicit.getConstructorKeyword().getKeyword());
 
         ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(blockStmts.getChildren().get(1),
@@ -513,7 +513,7 @@ public class SymbolCreatorClassesTest {
         assertEquals(2, blockStmts.getChildren().size());
 
         ASTConstructorInvocation implicit = ensureIsa(blockStmts.getChildren().get(0), ASTConstructorInvocation.class);
-        assertEquals(0, implicit.getArgumentsList().getChildren().size());
+        assertEquals(0, implicit.getArgumentList().getChildren().size());
         assertEquals(TokenType.SUPER, implicit.getConstructorKeyword().getKeyword());
 
         ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(blockStmts.getChildren().get(1),

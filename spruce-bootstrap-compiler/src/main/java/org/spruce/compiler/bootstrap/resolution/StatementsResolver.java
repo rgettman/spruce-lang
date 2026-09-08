@@ -44,7 +44,7 @@ public class StatementsResolver extends BasicResolver {
                     resolveLocalVariableDeclarationStatement(localVarDeclStmt, ctx);
             case ASTBlock subBlock -> resolveSubBlock(subBlock, ctx);
             case ASTBasicForStatement basicForStmt -> resolveBasicForStatement(basicForStmt, ctx);
-            case ASTConstructorInvocation constrInvocation -> getOperationsResolver().resolveConstructorInvocation(
+            case ASTConstructorInvocation constrInvocation -> getConstructorsResolver().resolveInvocation(
                     constrInvocation, ctx);
             case ASTEnhancedForStatement enhancedForStmt -> resolveEnhancedForStatement(enhancedForStmt, ctx);
             case ASTExpressionStatement exprStmt -> resolveExpressionStatement(exprStmt, ctx);
@@ -227,7 +227,7 @@ public class StatementsResolver extends BasicResolver {
     public void resolveStatementExpression(ASTStatementExpression stmtExpr, ResolutionContext ctx) {
         switch(stmtExpr) {
         case ASTAssignment assignment -> resolveAssignment(assignment, ctx);
-        case ASTMethodInvocation methodInvocation -> getOperationsResolver().resolveMethodInvocation(
+        case ASTMethodInvocation methodInvocation -> getMethodsResolver().resolveInvocation(
                 methodInvocation, ctx);
         case ASTClassInstanceCreationExpression cice ->
                 getExpressionsResolver().resolveClassInstanceCreationExpression(cice, ctx);

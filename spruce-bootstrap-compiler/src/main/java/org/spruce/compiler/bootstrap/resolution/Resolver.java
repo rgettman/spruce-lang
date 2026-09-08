@@ -26,7 +26,9 @@ public class Resolver {
     private final StatementsResolver myStatementsResolver;
     private final ExpressionsResolver myExpressionsResolver;
     private final TypesResolver myTypesResolver;
-    private final OperationsResolver myOperationsResolver;
+    private final ConstructorsResolver myConstructorsResolver;
+    private final MethodsResolver myMethodsResolver;
+    private final OperatorsResolver myOperatorsResolver;
     private final MessageProducer myMsgProducer;
 
     /**
@@ -43,7 +45,9 @@ public class Resolver {
         myStatementsResolver = new StatementsResolver(this, msgProducer, global);
         myExpressionsResolver = new ExpressionsResolver(this, msgProducer, global);
         myTypesResolver = new TypesResolver(this, msgProducer, global);
-        myOperationsResolver = new OperationsResolver(this, msgProducer, global);
+        myConstructorsResolver = new ConstructorsResolver(this, msgProducer, global);
+        myMethodsResolver = new MethodsResolver(this, msgProducer, global);
+        myOperatorsResolver = new OperatorsResolver(this, msgProducer, global);
 
         myMsgProducer = msgProducer;
     }
@@ -104,11 +108,27 @@ public class Resolver {
     }
 
     /**
-     * Returns the <code>OperationsResolver</code>.
-     * @return The <code>OperationsResolver</code>.
+     * Returns the <code>ConstructorsResolver</code>.
+     * @return The <code>ConstructorsResolver</code>.
      */
-    public OperationsResolver getOperationsResolver() {
-        return myOperationsResolver;
+    public ConstructorsResolver getConstructorsResolver() {
+        return myConstructorsResolver;
+    }
+
+    /**
+     * Returns the <code>MethodsResolver</code>.
+     * @return The <code>MethodsResolver</code>.
+     */
+    public MethodsResolver getMethodsResolver() {
+        return myMethodsResolver;
+    }
+
+    /**
+     * Returns the <code>OperatorsResolver</code>.
+     * @return The <code>OperatorsResolver</code>.
+     */
+    public OperatorsResolver getOperatorsResolver() {
+        return myOperatorsResolver;
     }
 
     /**

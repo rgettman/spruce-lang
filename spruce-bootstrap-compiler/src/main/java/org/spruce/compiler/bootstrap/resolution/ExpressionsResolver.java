@@ -54,10 +54,10 @@ public class ExpressionsResolver extends BasicResolver {
      */
     public void resolveValueExpression(ASTValueExpression valueExpr, ResolutionContext ctx) {
         switch (valueExpr) {
-        case ASTBinaryExpression binaryExpr -> getOperationsResolver().resolveBinaryExpression(binaryExpr, ctx);
+        case ASTBinaryExpression binaryExpr -> getOperatorsResolver().resolveBinaryExpression(binaryExpr, ctx);
         case ASTCastExpression castExpr -> resolveCastExpression(castExpr, ctx);
         case ASTIsaExpression isaExpr -> resolveIsaExpression(isaExpr, ctx);
-        case ASTUnaryExpression unaryExpr -> getOperationsResolver().resolveUnaryExpression(unaryExpr, ctx);
+        case ASTUnaryExpression unaryExpr -> getOperatorsResolver().resolveUnaryExpression(unaryExpr, ctx);
         case ASTPrimary primary -> resolvePrimary(primary, ctx);
         }
     }
@@ -125,7 +125,7 @@ public class ExpressionsResolver extends BasicResolver {
         case ASTExpressionName exprName -> getNamesResolver().resolveExpressionName(exprName, ctx);
         case ASTFieldAccess fieldAccess -> resolveFieldAccess(fieldAccess, ctx);
         case ASTLiteral literal -> getLiteralsResolver().resolveLiteral(literal, ctx);
-        case ASTMethodInvocation methodInvocation -> getOperationsResolver().resolveMethodInvocation(
+        case ASTMethodInvocation methodInvocation -> getMethodsResolver().resolveInvocation(
                 methodInvocation, ctx);
         // Parenthesized expression.
         case ASTExpression expr -> resolveExpression(expr, ctx);

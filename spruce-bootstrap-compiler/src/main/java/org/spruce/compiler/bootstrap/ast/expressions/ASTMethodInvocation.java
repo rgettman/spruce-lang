@@ -12,7 +12,6 @@ import org.spruce.compiler.bootstrap.ast.names.ASTIdentifier;
 import org.spruce.compiler.bootstrap.ast.names.ASTTypeName;
 import org.spruce.compiler.bootstrap.ast.statements.ASTStatementExpression;
 import org.spruce.compiler.bootstrap.common.Location;
-import org.spruce.compiler.bootstrap.symbol.EntityResolution;
 import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
@@ -30,7 +29,7 @@ import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
  * </em>
  */
 public final class ASTMethodInvocation extends ASTParentNode
-        implements ASTStatementExpression, ASTPrimaryChild, EntityResolution {
+        implements ASTStatementExpression, ASTPrimaryChild, ASTInvocation {
     private final ASTTypeName myTypeName;
     private final ASTKeywordNode mySooper;
     private final ASTExpressionName myExprName;
@@ -236,6 +235,7 @@ public final class ASTMethodInvocation extends ASTParentNode
      * Returns an <code>ASTArgumentList</code>.
      * @return An <code>ASTArgumentList</code>.
      */
+    @Override
     public ASTArgumentList getArgumentList() {
         return myArgsList;
     }
