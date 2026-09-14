@@ -29,6 +29,7 @@ public class Resolver {
     private final ConstructorsResolver myConstructorsResolver;
     private final MethodsResolver myMethodsResolver;
     private final OperatorsResolver myOperatorsResolver;
+    private final CiceResolver myCiceResolver;
     private final MessageProducer myMsgProducer;
 
     /**
@@ -48,6 +49,7 @@ public class Resolver {
         myConstructorsResolver = new ConstructorsResolver(this, msgProducer, global);
         myMethodsResolver = new MethodsResolver(this, msgProducer, global);
         myOperatorsResolver = new OperatorsResolver(this, msgProducer, global);
+        myCiceResolver = new CiceResolver(this, msgProducer, global);
 
         myMsgProducer = msgProducer;
     }
@@ -129,6 +131,14 @@ public class Resolver {
      */
     public OperatorsResolver getOperatorsResolver() {
         return myOperatorsResolver;
+    }
+
+    /**
+     * Returns the <code>CiceResolver</code>.
+     * @return The <code>CiceResolver</code>.
+     */
+    public CiceResolver getCiceResolver() {
+        return myCiceResolver;
     }
 
     /**

@@ -28,7 +28,7 @@ import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
  */
 public class MethodsResolver extends InvocationResolver<ASTMethodInvocation> {
     /**
-     * Constructs an <code>MethodsResolver</code>.
+     * Constructs a <code>MethodsResolver</code>.
      * @param resolver An <code>Resolver</code>.
      * @param msgProducer A <code>MessageProducer</code>.
      * @param global The <code>GlobalLookup</code>.

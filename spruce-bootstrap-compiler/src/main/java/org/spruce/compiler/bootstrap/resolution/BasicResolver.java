@@ -112,6 +112,14 @@ public class BasicResolver {
     }
 
     /**
+     * Returns the <code>CiceResolver</code>.
+     * @return The <code>CiceResolver</code>.
+     */
+    public CiceResolver getCiceResolver() {
+        return myResolver.getCiceResolver();
+    }
+
+    /**
      * Returns the <code>GlobalLookup</code>.
      * @return The <code>GlobalLookup</code>.
      */

@@ -166,8 +166,8 @@ public abstract class InvocationResolver<T extends ASTInvocation> extends BasicR
      * @param invocations A <code>Set</code> of <code>ParameterizedSymbol</code>s.
      * @return Another <code>Set</code> of <code>ParameterizedSymbol</code>s.
      */
-    protected Set<ParameterizedSymbol> getInvocationConvertible(ASTArgumentList argsList,
-                                                                Set<ParameterizedSymbol> invocations) {
+    protected final Set<ParameterizedSymbol> getInvocationConvertible(ASTArgumentList argsList,
+                                                                      Set<ParameterizedSymbol> invocations) {
         Set<ParameterizedSymbol> applicableMethods = new HashSet<>(invocations.size());
         for (ParameterizedSymbol invocation : invocations) {
             List<TypeSymbol> args = argsList.getTypedChildren().stream()
@@ -217,7 +217,7 @@ public abstract class InvocationResolver<T extends ASTInvocation> extends BasicR
      * </ol>
      * </p>
      */
-    protected boolean isInvocationConvertible(TypeSymbol arg, TypeSymbol param) {
+    private boolean isInvocationConvertible(TypeSymbol arg, TypeSymbol param) {
         return arg == param || arg.isSubTypeOf(param);
     }
 
@@ -289,7 +289,7 @@ public abstract class InvocationResolver<T extends ASTInvocation> extends BasicR
      * @param second The second <code>ParameterizedSymbol</code>.
      * @return Whether the first symbol is more specific than the second.
      */
-    protected final boolean isMoreSpecific(ParameterizedSymbol first, ParameterizedSymbol second) {
+    private boolean isMoreSpecific(ParameterizedSymbol first, ParameterizedSymbol second) {
         // At this point the invocations are both applicable, so this logic
         // assumes that they have the same name and the same arity (number of
         // parameters).

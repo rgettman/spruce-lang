@@ -4,7 +4,8 @@ import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.symbol.EntityResolution;
 
 /**
- * <p>An <code>ASTInvocation</code> is an <code>ASTMethodInvocation</code> or an
+ * <p>An <code>ASTInvocation</code> is an <code>ASTMethodInvocation</code>,
+ * a <code>ASTClassInstanceCreationExpression</code>, or an
  * <code>ASTConstructorInvocation</code>.</p>
  *
  * <em>
@@ -19,7 +20,7 @@ public interface ASTInvocation extends EntityResolution {
      * Returns the <code>Location</code>.
      * @return The <code>Location</code>.
      */
-    public Location getLocation();
+    Location getLocation();
 
     /**
      * Returns an <code>ASTArgumentList</code>.

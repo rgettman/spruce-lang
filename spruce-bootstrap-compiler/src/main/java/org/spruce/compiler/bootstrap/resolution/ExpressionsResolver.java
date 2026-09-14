@@ -119,8 +119,7 @@ public class ExpressionsResolver extends BasicResolver {
      */
     public void resolvePrimary(ASTPrimary primary, ResolutionContext ctx) {
         switch(primary.getChild()) {
-        case ASTClassInstanceCreationExpression cice ->
-                resolveClassInstanceCreationExpression(cice, ctx);
+        case ASTClassInstanceCreationExpression cice -> getCiceResolver().resolveInvocation(cice, ctx);
         case ASTClassLiteral classLiteral -> resolveClassLiteral(classLiteral, ctx);
         case ASTExpressionName exprName -> getNamesResolver().resolveExpressionName(exprName, ctx);
         case ASTFieldAccess fieldAccess -> resolveFieldAccess(fieldAccess, ctx);
@@ -148,101 +147,6 @@ public class ExpressionsResolver extends BasicResolver {
         switch(lhs) {
         case ASTExpressionName exprName -> getNamesResolver().resolveExpressionName(exprName, ctx);
         case ASTFieldAccess fieldAccess -> resolveFieldAccess(fieldAccess, ctx);
-        }
-    }
-
-    /**
-     * Resolves symbols in a <code>ClassInstanceCreationExpression</code>.
-     * @param cice An <code>ASTClassInstanceCreationExpression</code>.
-     * @param ctx A <code>ResolutionContext</code>.
-     */
-    public void resolveClassInstanceCreationExpression(ASTClassInstanceCreationExpression cice,
-                                                       ResolutionContext ctx) {
-        // The primary, if present, will be the enclosing instance, and the
-        // UCICE's TypeToInstantiate then must resolve to an inner type with
-        // respect to this primary.
-        // Else, the UCICE will represent a "normal" class instance creation.
-        Optional<ASTPrimary> optPrimary = cice.getPrimary();
-
-        ASTUnqualifiedClassInstanceCreationExpression ucice = cice.getUcice();
-        if (optPrimary.isPresent()) {
-            ASTPrimary primary = optPrimary.get();
-            resolvePrimary(primary, ctx);
-
-            ResolutionContext ciceCtx = ctx.withEnclosingSymbol(primary.getResolvedDataType());
-            resolveQualifiedClassInstanceCreationExpression(ucice, ciceCtx);
-        }
-        else {
-            resolveUnqualifiedClassInstanceCreationExpression(ucice, ctx);
-        }
-        cice.setResolvedDataType(ucice.getResolvedDataType());
-        // Must pull up the UCICE's resolved
-    }
-
-    /**
-     * Resolves symbols in a "regular" <code>UnqualifiedClassInstanceCreationExpression</code>,
-     * e.g., <code>new TypeToInstantiate ( )</code>.
-     * @param ucice An <code>ASTUnqualifiedClassInstanceCreationExpression</code>.
-     * @param ctx A <code>ResolutionContext</code>.
-     */
-    public void resolveUnqualifiedClassInstanceCreationExpression(
-            ASTUnqualifiedClassInstanceCreationExpression ucice, ResolutionContext ctx) {
-        resolveTypeToInstantiate(ucice.getTti(), ctx);
-        resolveArgumentList(ucice.getArgumentList(), ctx);
-        // TODO: Constructor resolution!
-    }
-
-    /**
-     * Resolves symbols in an <code>UnqualifiedClassInstanceCreationExpression</code>
-     * that is part of a qualified class instance creation expression, e.g.,
-     * <code>Primary . new TypeToInstantiate ( )</code>.
-     * @param ucice An <code>ASTUnqualifiedClassInstanceCreationExpression</code>.
-     * @param ctx A <code>TypeSymbol</code> representing the type of the
-     *                  enclosing instance.
-     */
-    public void resolveQualifiedClassInstanceCreationExpression(
-            ASTUnqualifiedClassInstanceCreationExpression ucice, ResolutionContext ctx)  {
-        // Must be a simple name.
-        ASTTypeToInstantiate tti = ucice.getTti();
-        ASTTypeName tn = tti.getTypeName();
-        if (tn.getTypedChildren().size() > 1) {
-            error(tn.getLocation(), "Cannot have qualified name with qualified new.");
-        }
-        // Must be a direct child of the enclosing type of the enclosing instance.
-        String simpleName = tn.get(0).getValue();
-        SymbolTable enclosingTable = ctx.enclosingSymbol().getTable();
-        if (enclosingTable.containsType(simpleName)) {
-            TypeSymbol resolved = (TypeSymbol) enclosingTable.get(simpleName);
-            tn.setResolvedDataType(resolved);
-            tti.setResolvedDataType(resolved);
-        }
-        else {
-            errorSymbolNotFound(tn.getLocation(), simpleName);
-        }
-
-        resolveArgumentList(ucice.getArgumentList(), ctx);
-        // TODO: Constructor resolution!
-    }
-
-    /**
-     * Resolves symbols in a <code>TypeToInstantiate</code>.
-     * @param tti An <code>ASTTypeToInstantiate</code>.
-     * @param ctx A <code>ResolutionContext</code>.
-     */
-    public void resolveTypeToInstantiate(ASTTypeToInstantiate tti, ResolutionContext ctx) {
-        ASTTypeName tn = tti.getTypeName();
-        getNamesResolver().resolveTypeName(tn, ctx);
-        tti.setResolvedDataType(tn.getResolvedDataType());
-    }
-
-    /**
-     * Resolves symbols in an <code>ArgumentList</code>.
-     * @param argList An <code>ASTArgumentList</code>.
-     * @param ctx A <code>ResolutionContext</code>.
-     */
-    public void resolveArgumentList(ASTArgumentList argList, ResolutionContext ctx) {
-        for (ASTExpression arg : argList.getTypedChildren()) {
-            resolveExpression(arg, ctx);
         }
     }
 

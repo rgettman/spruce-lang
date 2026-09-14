@@ -9,7 +9,6 @@ import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTConstructorDeclaration;
 import org.spruce.compiler.bootstrap.ast.statements.ASTConstructorInvocation;
 import org.spruce.compiler.bootstrap.resolution.ConstructorsResolver;
-import org.spruce.compiler.bootstrap.resolution.InvocationResolver;
 import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
@@ -21,6 +20,9 @@ import static org.spruce.compiler.bootstrap.symbol.GlobalLookup.UNNAMED_NAMESPAC
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
+/**
+ * All tests for the constructors resolver.
+ */
 public class ResolverConstructorsTest {
     /**
      * Tests bad argument list in constructor invocation.
@@ -149,6 +151,12 @@ public class ResolverConstructorsTest {
         Optional<TypeSymbol> optTypeToSearch = opResolver.getTypeToSearch(constrInvocation, testMethodCtx);
         assertFalse(optTypeToSearch.isPresent(), "Should not have found type to search!");
     }
+
+    //
+    // Step 2 and step 3 cases are inherited from AbstractConstructorsResolver
+    // to both CiceResolver and ConstructorsResolver.  The following test cases
+    // for step 2 and for step 3 cover CiceResolver also.
+    //
 
     /**
      * Tests constructor invocation step 2 - applicable constructors.

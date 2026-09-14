@@ -16,6 +16,9 @@ import static org.spruce.compiler.bootstrap.symbol.Symbol.*;
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
+/**
+ * All tests for the types resolver.
+ */
 public class ResolverTypesTest {
 
     /**

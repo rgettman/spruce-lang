@@ -8,6 +8,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.ast.statements.ASTStatementExpression;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
@@ -21,10 +22,10 @@ import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
  * </em>
  */
 public final class ASTClassInstanceCreationExpression extends ASTParentNode
-        implements ASTStatementExpression, ASTPrimaryChild {
+        implements ASTStatementExpression, ASTPrimaryChild, ASTInvocation {
     private final ASTPrimary myPrimary;
     private final ASTUnqualifiedClassInstanceCreationExpression myUcice;
-    private TypeSymbol myResolvedDataType;
+    private EntitySymbol myResolvedEntity;
 
     /**
      * Constructs an <code>ASTClassInstanceCreationExpression</code> at the given <code>Location</code>
@@ -70,14 +71,33 @@ public final class ASTClassInstanceCreationExpression extends ASTParentNode
         return myUcice;
     }
 
+    /**
+     * Returns an <code>ASTArgumentList</code>.
+     * @return An <code>ASTArgumentList</code>.
+     */
+    @Override
+    public ASTArgumentList getArgumentList() {
+        return myUcice.getArgumentList();
+    }
+
     @Override
     public void setResolvedDataType(TypeSymbol symbol) {
-        myResolvedDataType = symbol;
+        myResolvedEntity.setDataType(symbol);
     }
 
     @Override
     public TypeSymbol getResolvedDataType() {
-        return myResolvedDataType;
+        return myResolvedEntity != null ? myResolvedEntity.getDataType() : null;
+    }
+
+    @Override
+    public void setResolvedEntity(EntitySymbol symbol) {
+        myResolvedEntity = symbol;
+    }
+
+    @Override
+    public EntitySymbol getResolvedEntity() {
+        return myResolvedEntity;
     }
 
     @Override

@@ -7,6 +7,7 @@ import org.spruce.compiler.bootstrap.ast.ASTParentNode;
 import org.spruce.compiler.bootstrap.symbol.DataTypeResolution;
 import org.spruce.compiler.bootstrap.ast.Node;
 import org.spruce.compiler.bootstrap.common.Location;
+import org.spruce.compiler.bootstrap.symbol.EntitySymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
 /**
@@ -20,10 +21,10 @@ import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
  * </em>
  */
 public class ASTUnqualifiedClassInstanceCreationExpression extends ASTParentNode
-        implements DataTypeResolution {
+        implements DataTypeResolution, ASTInvocation {
     private final ASTTypeToInstantiate myTti;
     private final ASTArgumentList myArgumentList;
-    private TypeSymbol myResolvedSymbol;
+    private EntitySymbol myResolvedEntity;
 
     /**
      * Constructs an <code>ASTUnqualifiedClassInstanceCreationExpression</code>
@@ -57,12 +58,22 @@ public class ASTUnqualifiedClassInstanceCreationExpression extends ASTParentNode
 
     @Override
     public void setResolvedDataType(TypeSymbol symbol) {
-        myResolvedSymbol = symbol;
+        myResolvedEntity.setDataType(symbol);
     }
 
     @Override
     public TypeSymbol getResolvedDataType() {
-        return myResolvedSymbol;
+        return myResolvedEntity != null ? myResolvedEntity.getDataType() : null;
+    }
+
+    @Override
+    public void setResolvedEntity(EntitySymbol symbol) {
+        myResolvedEntity = symbol;
+    }
+
+    @Override
+    public EntitySymbol getResolvedEntity() {
+        return myResolvedEntity;
     }
 
     @Override

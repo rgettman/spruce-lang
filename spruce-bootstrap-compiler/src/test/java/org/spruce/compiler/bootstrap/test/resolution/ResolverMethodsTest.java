@@ -26,6 +26,9 @@ import static org.spruce.compiler.bootstrap.symbol.GlobalLookup.UNNAMED_NAMESPAC
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
 import static org.spruce.compiler.bootstrap.test.util.TestUtility.ensureIsa;
 
+/**
+ * All tests for the methods resolver.
+ */
 public class ResolverMethodsTest {
     /**
      * Tests bad argument list in method invocation.
