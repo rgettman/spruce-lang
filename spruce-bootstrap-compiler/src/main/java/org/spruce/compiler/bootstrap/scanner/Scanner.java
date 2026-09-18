@@ -212,7 +212,7 @@ public class Scanner {
      * Advances to the next token.
      * @return The next token.
      */
-    private Token advance() {
+    protected Token advance() {
         // Note down start of token position.
         myTokenLineNbr = myLineNbr;
         myTokenCharPos = myCharPos;

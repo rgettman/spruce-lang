@@ -224,6 +224,16 @@ public class ParserTopLevelTest {
     }
 
     /**
+     * Test bad type declaration of general modifier list followed by bad token.
+     */
+    @Test
+    public void testBadTypeDeclarationGenModExclamation() {
+        TopLevelParser parser = getTopLevelParser("override !");
+        ASTTypeDeclaration node = parser.parseTypeDeclaration();
+        expectError(node, parser);
+    }
+
+    /**
      * Helper method to get a <code>TopLevelParser</code> directly from code.
      * @param code The code to test.
      * @return A <code>TopLevelParser</code> that will parse the given code.

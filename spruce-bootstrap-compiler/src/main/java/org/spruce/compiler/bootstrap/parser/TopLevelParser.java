@@ -214,7 +214,10 @@ public class TopLevelParser extends BasicParser {
                         .contains(t.getType());
         while (!isCurr(EOF)) {
             if (isOnInitialToken.test(curr())) {
-                children.add(parseTypeDeclaration());
+                ASTTypeDeclaration typeDecl = parseTypeDeclaration();
+                if (typeDecl != null) {
+                    children.add(typeDecl);
+                }
             }
             else {
                 error(curr().getLocation(), "Unexpected token '" +
@@ -235,14 +238,19 @@ public class TopLevelParser extends BasicParser {
      * @return An <code>ASTTypeDeclaration</code>.
      */
     public ASTTypeDeclaration parseTypeDeclaration() {
-        Location loc = curr().getLocation();
         ClassesParser cp = getClassesParser();
 
         ASTGeneralModifierList genModList = cp.parseGeneralModifierList();
+        Location loc = curr().getLocation();
         return switch (curr().getType()) {
             case CLASS -> cp.parseClassDeclaration(loc, genModList);
             case INTERFACE -> cp.parseInterfaceDeclaration(loc, genModList);
-            default -> throw internalError("class expected");
+            default -> {
+                error(curr().getLocation(), "Unexpected token '" +
+                        curr().getType().getRepresentation() + "'.");
+                accept(curr().getType());
+                yield null;
+            }
         };
     }
 }

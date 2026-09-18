@@ -8,7 +8,6 @@ import org.spruce.compiler.bootstrap.ast.classes.ASTClassDeclaration;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTClassInstanceCreationExpression;
 import org.spruce.compiler.bootstrap.ast.expressions.ASTPrimary;
-import org.spruce.compiler.bootstrap.ast.statements.ASTConstructorInvocation;
 import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationStatement;
 import org.spruce.compiler.bootstrap.resolution.CiceResolver;
 import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
@@ -145,6 +144,34 @@ public class ResolverCiceTest {
 
         ResolverTestUtility.Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver(), 2);
+    }
+
+    /**
+     * Tests CICE step 1 - type to search.  Qualified by a primary case (1a),
+     * qualified TypeToInstantiate not allowed.
+     */
+    @Test
+    public void testCiceTypeToSearchQualifiedPrimaryQualifiedTti() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Outer {
+                    class Inner {
+                        class InnerInner {
+                            constructor(Integer i) {}
+                        }
+                    }
+                }
+                class Test {
+                    void test(Outer outer) {
+                        Outer.Inner.InnerInner inner = outer.new Inner.InnerInner();
+                    }
+                }
+                """
+        );
+
+        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 1);
     }
 
     /**
