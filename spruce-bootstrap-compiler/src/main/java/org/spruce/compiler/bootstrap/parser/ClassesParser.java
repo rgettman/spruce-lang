@@ -27,6 +27,12 @@ import static org.spruce.compiler.bootstrap.scanner.TokenType.*;
  * classes.
  */
 public class ClassesParser extends BasicParser {
+
+    private static final List<TokenType> CLASS_MODIFIERS = List.of(ABSTRACT, SHARED);
+    private static final List<TokenType> CLASS_METHOD_MODIFIERS = List.of(ABSTRACT, OVERRIDE, SHARED);
+    private static final List<TokenType> INTERFACE_MODIFIERS = List.of();
+    private static final List<TokenType> INTERFACE_METHOD_MODIFIERS = List.of(OVERRIDE, SHARED);
+
     /**
      * Constructs a <code>ClassesParser</code> using a <code>Scanner</code>.
      *
@@ -79,7 +85,7 @@ public class ClassesParser extends BasicParser {
         // No expected modifiers for interfaces (yet).
         convertToSpecificList(gms,
                         "Unexpected interface modifier.",
-                        Arrays.asList(),
+                        INTERFACE_MODIFIERS,
                         ASTClassModifierList::new);
         builder.setName(getNamesParser().parseIdentifier());
         if (isCurr(EXTENDS)) {
@@ -194,7 +200,7 @@ public class ClassesParser extends BasicParser {
     public ASTInterfaceMethodDeclaration parseInterfaceMethodDeclaration(Location loc, ASTGeneralModifierList gms) {
         ASTInterfaceMethodModifierList interfaceMethodModifiers = convertToSpecificList(gms,
                 "Unexpected interface method modifier.",
-                Arrays.asList(OVERRIDE, SHARED),
+                INTERFACE_METHOD_MODIFIERS,
                 ASTInterfaceMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader();
@@ -218,7 +224,7 @@ public class ClassesParser extends BasicParser {
                                                                          ASTDataType dt) {
         ASTInterfaceMethodModifierList interfaceMethodModifiers = convertToSpecificList(gms,
                 "Unexpected interface method modifier.",
-                Arrays.asList(OVERRIDE),
+                INTERFACE_METHOD_MODIFIERS,
                 ASTInterfaceMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader(dt);
@@ -278,7 +284,7 @@ p     * @param loc The <code>Location</code>.
         }
         builder.setClassModifierList(convertToSpecificList(gms,
                         "Unexpected class modifier.",
-                        Arrays.asList(ABSTRACT, SHARED),
+                        CLASS_MODIFIERS,
                         ASTClassModifierList::new))
                 .setName(getNamesParser().parseIdentifier());
         if (isCurr(EXTENDS)) {
@@ -487,7 +493,7 @@ p     * @param loc The <code>Location</code>.
     public ASTMethodDeclaration parseMethodDeclaration(Location loc, ASTGeneralModifierList gms) {
         ASTMethodModifierList methodModifiers = convertToSpecificList(gms,
                 "Unexpected method modifier.",
-                Arrays.asList(ABSTRACT, OVERRIDE, SHARED),
+                CLASS_METHOD_MODIFIERS,
                 ASTMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader();
@@ -512,7 +518,7 @@ p     * @param loc The <code>Location</code>.
                                                        ASTDataType dt) {
         ASTMethodModifierList methodModifiers = convertToSpecificList(gms,
                 "Unexpected method modifier.",
-                Arrays.asList(ABSTRACT, OVERRIDE, SHARED),
+                CLASS_METHOD_MODIFIERS,
                 ASTMethodModifierList::new
         );
         ASTMethodHeader header = parseMethodHeader(dt);

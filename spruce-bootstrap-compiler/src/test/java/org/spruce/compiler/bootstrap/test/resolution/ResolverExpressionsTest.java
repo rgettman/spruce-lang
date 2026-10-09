@@ -766,7 +766,7 @@ public class ResolverExpressionsTest {
                 CODE_SPRUCE_LANG,
                 """
                 interface Super {
-                    constant Integer inherited;
+                    constant Integer inherited = -2;
                 }
                 class Sub implements Super {
                     void testMethod() {

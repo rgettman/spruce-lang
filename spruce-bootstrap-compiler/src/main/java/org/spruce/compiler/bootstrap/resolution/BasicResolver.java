@@ -6,6 +6,8 @@ import org.spruce.compiler.bootstrap.common.CompilerMessage;
 import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
+import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
+import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 
 /**
  * A <code>BasicResolver</code> provides basic symbol resolution functionality.
@@ -167,6 +169,32 @@ public class BasicResolver {
      */
     public void errorSymbolNotFound(Location loc, String symbolName) {
         error(loc, "Symbol '" + symbolName + "' not found.");
+    }
+
+    /**
+     * Determines whether the given methods are override-equivalent.
+     * Override-equivalent means that the method names are the same, the number
+     * of parameters is the same, and the formal parameters are the same by
+     * position.
+     * @param first A <code>ParameterizedSymbol</code> representing the first method.
+     * @param second A <code>ParameterizedSymbol</code> representing the second method.
+     * @return Whether the given methods are override-equivalent.
+     */
+    public boolean isOverrideEquivalent(ParameterizedSymbol first, ParameterizedSymbol second) {
+        if (!first.getName().equals(second.getName())) {
+            return false;
+        }
+        List<VariableSymbol> firstParams = first.getParameters();
+        List<VariableSymbol> secondParams = second.getParameters();
+        if (firstParams.size() != secondParams.size()) {
+            return false;
+        }
+        for (int i = 0; i < firstParams.size(); i++) {
+            if (firstParams.get(i).getDataType() != secondParams.get(i).getDataType()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

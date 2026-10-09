@@ -287,6 +287,22 @@ public class ParserClassesTest {
     }
 
     /**
+     * Tests shared interface method declaration.
+     */
+    @Test
+    public void testInterfaceMethodDeclarationShared() {
+        ClassesParser parser = getClassesParser("""
+            shared void addAll(Collection other) {
+            }
+            """);
+        ASTGeneralModifierList genModList = parser.parseGeneralModifierList();
+        Location loc = genModList.getLocation();
+        ASTInterfaceMethodDeclaration node = parser.parseInterfaceMethodDeclaration(loc, genModList);
+        ensureNoErrors(node, parser);
+        checkList(node.getModifierList(), INTERFACE_METHOD_MODIFIERS, ASTKeywordNode.class, 1);
+    }
+
+    /**
      * Tests bad constant declaration, no "constant".
      */
     @Test

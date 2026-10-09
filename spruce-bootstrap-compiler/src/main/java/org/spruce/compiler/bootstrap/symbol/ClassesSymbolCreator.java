@@ -97,7 +97,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         Kind kind;
         switch (typeDecl) {
         case ASTClassDeclaration ignored ->
-                kind = Kind.CLASS;
+            kind = Kind.CLASS;
         case ASTInterfaceDeclaration ignored -> {
             kind = Kind.INTERFACE;
             flags |= FLAG_MOD_ABSTRACT;
@@ -112,6 +112,9 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
                 kind, parentTable, flags);
         insertSymbol(parentTable, symbol);
         typeDecl.setDeclSymbol(symbol);
+        if (!isNested && symbol.isShared()) {
+            error(typeDecl.getLocation(), "Top-level type declarations cannot be marked shared.");
+        }
 
         createSymbolTableForTypeDeclarationTypeOnly(typeDecl, symbol);
     }
@@ -348,7 +351,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         if (methodDecl.getBody().getBlock().isPresent()) {
             getStatementsSymbolCreator().createSymbolsForBlock(methodDecl.getBody().getBlock().get(), symbol);
         }
-        // TODO: Move to analysis phase so it doesn't stop further symbol creation and resolution.
+
         checkMethodBodyViolations(methodDecl.getHeader(), methodDecl.getBody(), symbol);
     }
 
@@ -381,14 +384,16 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
         if (methodDecl.getBody().getBlock().isPresent()) {
             getStatementsSymbolCreator().createSymbolsForBlock(methodDecl.getBody().getBlock().get(), symbol);
         }
-        // TODO: Move to analysis phase so it doesn't stop further symbol creation and resolution.
+
         checkMethodBodyViolations(methodDecl.getHeader(), methodDecl.getBody(), symbol);
         if (!parent.isAbstract() && symbol.isAbstract()) {
             error(methodDecl.getLocation(), "Abstract method not allowed in concrete class.");
         }
+        if (symbol.isAbstract() && symbol.isShared()) {
+            error(methodDecl.getLocation(), "Method cannot be both abstract and shared.");
+        }
     }
 
-    // TODO: Move to analysis phase so it doesn't stop further symbol creation and resolution.
     private void checkMethodBodyViolations(ASTMethodHeader header, ASTMethodBody body,
                                            Symbol symbol) {
         boolean bodyPresent = body.getBlock().isPresent();

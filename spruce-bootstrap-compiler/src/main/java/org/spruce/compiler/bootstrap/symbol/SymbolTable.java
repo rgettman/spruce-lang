@@ -123,6 +123,18 @@ public class SymbolTable {
     }
 
     /**
+     * Returns a List of all methods in this table.  If there are no methods,
+     * returns an empty list.
+     * @return A possibly empty <code>List</code> of <code>ParameterizedSymbol</code>s.
+     */
+    public List<ParameterizedSymbol> getAllMethods() {
+        return myMethods.values().stream()
+                .flatMap(List::stream)
+                .filter(Symbol::isMethod)
+                .toList();
+    }
+
+    /**
      * Returns how many symbols exist in this table.
      * @return How many symbols exist in this table.
      */

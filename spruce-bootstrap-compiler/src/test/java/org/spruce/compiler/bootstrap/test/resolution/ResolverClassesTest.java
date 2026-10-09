@@ -8,6 +8,10 @@ import org.spruce.compiler.bootstrap.ast.classes.*;
 
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArray;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataTypeNoArrayList;
+import org.spruce.compiler.bootstrap.resolution.ClassesResolver;
+
+import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
+import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 
@@ -691,6 +695,153 @@ public class ResolverClassesTest {
         expectError(trio.global(), trio.resolver(), 2);
     }
 
+    /**
+     * Tests bad nested type declaration of same simple name as enclosing type.
+     */
+    @Test
+    public void testBadNestedTypeSameSimpleName() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                """,
+                """
+                class Foo  {
+                    class Foo {}
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 1);
+    }
+
+    /**
+     * Tests inheritance/override of type methods, step 1 - get all inherited
+     * and declared methods.
+     */
+    @Test
+    public void testInheritanceOverrideAllMethods() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {
+                    String toString() { return ""; }
+                }
+                class Integer {}
+                class Double {}
+                class String {}
+                """,
+                """
+                class Foo extends Superclass implements SomeOtherInterface, MarkerInterface {
+                    constructor() {}
+                    override String toString() { return "Foo"; }
+                    override Integer getCount() { return 1; }
+                    override Double getAverage() { return 9.0; }
+                }
+                abstract class Superclass implements Superinterface {
+                    override String toString() { return "Superclass"; }
+                }
+                interface Superinterface {
+                    Integer getCount();
+                }
+                interface SomeOtherInterface {
+                    Double getAverage();
+                }
+                interface MarkerInterface {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+
+        ASTClassDeclaration fooDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ClassesResolver resolver = trio.resolver().getClassesResolver();
+        List<ParameterizedSymbol> methods = resolver.getInheritedAndDeclaredMethods(fooDecl.getDeclSymbol());
+        assertEquals(7, methods.size());
+
+        List<String> expectedSymbolNames = List.of("toString()", "getCount()", "getAverage()", "toString()", "toString()",
+                "getCount()", "getAverage()");
+        List<String> expectedTypeNames = List.of("Foo", "Foo", "Foo", "Superclass", "spruce.lang.Any", "Superinterface",
+                "SomeOtherInterface");
+        List<String> expectedResultTypeNames = List.of("spruce.lang.String", "spruce.lang.Integer", "spruce.lang.Double",
+                "spruce.lang.String", "spruce.lang.String", "spruce.lang.Integer", "spruce.lang.Double");
+
+        for (int i = 0; i < methods.size(); i++) {
+            ParameterizedSymbol method = methods.get(i);
+            assertEquals(expectedSymbolNames.get(i), method.getName(),
+                    "Failed method index " + i + " for method name.");
+            ChildSymbolTable table = ensureIsa(method.getParent(), ChildSymbolTable.class);
+            assertEquals(expectedTypeNames.get(i), table.getParent().getFullyQualifiedName(),
+                    "Failed method index " + i + " for type name.");
+            assertEquals(expectedResultTypeNames.get(i), method.getDataType().getFullyQualifiedName(),
+                    "Failed method index " + i + " for type result name.");
+        }
+    }
+
+    /**
+     * Tests inheritance/override of type methods, step 2 - group all methods
+     * that are override-equivalent with each other.
+     */
+    @Test
+    public void testInheritanceOverrideMethodGrouping() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {
+                    String toString() { return ""; }
+                }
+                class Integer {}
+                class Double {}
+                class String {}
+                """,
+                """
+                class Foo extends Superclass implements SomeOtherInterface, MarkerInterface {
+                    override void coolMethod(Sub s, Super t) {}
+                    void coolMethod(Super s, Sub t) {}
+                    override void coolMethod(Super s1, Super s2) {}
+                    Integer getCount() { return 0; }
+                    override Integer getCount(Super s, Sub t) { return 2; }
+                    override Double getAverage() { return 10.0; }
+                }
+                abstract class Superclass implements Superinterface {
+                    void coolMethod(Sub s, Super t) {}
+                    abstract void coolMethod(Super s1, Super s2);
+                    String someOtherMethod(Sub s, Super t) { return "Superclass"; }
+                }
+                interface Superinterface {
+                    Integer getCount(Super s, Sub t);
+                    String someOtherMethod(Sub s, Super t);
+                }
+                interface SomeOtherInterface {
+                    Double getAverage();
+                }
+                interface MarkerInterface {}
+                class Sub extends Super {}
+                class Super {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+
+        ASTClassDeclaration fooDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ClassesResolver resolver = trio.resolver().getClassesResolver();
+        List<ParameterizedSymbol> methods = resolver.getInheritedAndDeclaredMethods(fooDecl.getDeclSymbol());
+        assertEquals(13, methods.size());
+
+        List<List<ParameterizedSymbol>> overrideEquivalentGroups = resolver.groupOverrideEquivalentMethods(methods);
+        assertEquals(8, overrideEquivalentGroups.size());
+
+        List<String> expectedSymbolNames = List.of("coolMethod(Sub, Super)", "coolMethod(Super, Sub)",
+                "coolMethod(Super, Super)", "getCount()", "getCount(Super, Sub)", "getAverage()",
+                "someOtherMethod(Sub, Super)", "toString()");
+        int[] expectedSizes = new int[] {2, 1, 2, 1, 2, 2, 2, 1};
+
+        for (int i = 0; i < overrideEquivalentGroups.size(); i++) {
+            List<ParameterizedSymbol> group = overrideEquivalentGroups.get(i);
+            ParameterizedSymbol method = group.get(0);
+            assertEquals(expectedSymbolNames.get(i), method.getName(),
+                    "Failed method index " + i + " for method name.");
+            assertEquals(expectedSizes[i], group.size());
+        }
+    }
+
     //
     // Types above, members below.
     //
@@ -745,6 +896,29 @@ public class ResolverClassesTest {
                 """
         );
         compileSoFar(codes, 1);
+    }
+
+    /**
+     * Tests bad constant that wasn't initialized.
+     */
+    @Test
+    public void testConstantBadUninitialized() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                interface Test {
+                    constant Integer UNINITIALIZED;
+                }
+                """
+        );
+
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**
@@ -828,6 +1002,623 @@ public class ResolverClassesTest {
                 """
         );
         compileSoFar(codes, 1);
+    }
+
+    /**
+     * Tests method without override, doesn't override method.
+     */
+    @Test
+    public void testMethodNoOverrideDoesNotOverride() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    void test() {}
+                }
+                class Superclass {
+                    Integer someOtherMethod() { return 2; }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        assertTrue(testMethod.getDeclSymbol().getOverridden().isEmpty());
+    }
+
+    /**
+     * Tests method with override, does override method in superclass hierarchy.  Return type matches.
+     */
+    @Test
+    public void testMethodOverrideDoesOverrideFromSuperclass() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override Integer test() { return 3; }
+                }
+                class Superclass {
+                    Integer test() { return 2; }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        ASTClassDeclaration superclassDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1), ASTClassDeclaration.class);
+        ASTMethodDeclaration overriddenMethod = ensureIsa(superclassDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        assertEquals(1, testMethod.getDeclSymbol().getOverridden().size());
+        ParameterizedSymbol overridden = testMethod.getDeclSymbol().getOverridden().get(0);
+        assertSame(overridden, overriddenMethod.getDeclSymbol());
+    }
+
+    /**
+     * Tests method with override, does override method in superinterface hierarchy of superclass.  Return type matches.
+     */
+    @Test
+    public void testMethodOverrideDoesOverrideFromSuperInterfaceOfSuperclass() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override Integer test() { return 3; }
+                }
+                abstract class Superclass implements SomeInterface {
+                }
+                interface SomeInterface {
+                    Integer test();
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        ASTInterfaceDeclaration interfaceDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(2), ASTInterfaceDeclaration.class);
+        ASTInterfaceMethodDeclaration overriddenMethod = ensureIsa(interfaceDecl.getInterfaceParts().getTypedChildren().get(0),
+                ASTInterfaceMethodDeclaration.class);
+        assertEquals(1, testMethod.getDeclSymbol().getOverridden().size());
+        assertSame(testMethod.getDeclSymbol().getOverridden().get(0), overriddenMethod.getDeclSymbol());
+        assertSame(testMethod.getDeclSymbol().getDataType(), overriddenMethod.getDeclSymbol().getDataType());
+    }
+
+    /**
+     * Tests method with override, does override method in superinterface hierarchy.  Return type matches.
+     */
+    @Test
+    public void testMethodOverrideDoesOverrideFromSuperInterface() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test implements SomeInterface {
+                    override Integer test() { return 3; }
+                }
+                interface SomeInterface {
+                    Integer test();
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        ASTInterfaceDeclaration interfaceDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1), ASTInterfaceDeclaration.class);
+        ASTInterfaceMethodDeclaration overriddenMethod = ensureIsa(interfaceDecl.getInterfaceParts().getTypedChildren().get(0),
+                ASTInterfaceMethodDeclaration.class);
+        assertEquals(1, testMethod.getDeclSymbol().getOverridden().size());
+        assertSame(testMethod.getDeclSymbol().getOverridden().get(0), overriddenMethod.getDeclSymbol());
+        assertSame(testMethod.getDeclSymbol().getDataType(), overriddenMethod.getDeclSymbol().getDataType());
+    }
+
+    /**
+     * Tests bad method with no override, but overrides method.
+     */
+    @Test
+    public void testBadMethodNoOverrideDoesOverrideFromSuperclass() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    Integer test() { return 3; }
+                }
+                class Superclass {
+                    Integer test() { return 2; }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Test bad method with override, but doesn't override method.  Signature match, name mismatch.
+     */
+    @Test
+    public void testBadMethodOverrideDoesNotOverrideNameMismatch() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override Integer test(Integer i) { return 3; }
+                }
+                class Superclass {
+                    Integer testing(Integer i) { return 2; }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad method with override, but doesn't override method.  Overloaded instead.
+     */
+    @Test
+    public void testBadMethodOverrideDoesNotOverrideDoesOverload() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override Integer test(Integer i) { return 3; }
+                }
+                class Superclass {
+                    Integer test(String s) { return 2; }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests method that overrides correctly, return type is subtype (covariant return type).
+     */
+    @Test
+    public void testMethodOverrideCovariantReturnType() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override Sub test(String i) { return 3; }
+                }
+                class Superclass {
+                    Super test(String s) { return 2; }
+                }
+                class Super {}
+                class Sub extends Super {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        ASTClassDeclaration superclassDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1), ASTClassDeclaration.class);
+        ASTMethodDeclaration overriddenMethod = ensureIsa(superclassDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        assertEquals(1, testMethod.getDeclSymbol().getOverridden().size());
+        ParameterizedSymbol overridden = testMethod.getDeclSymbol().getOverridden().get(0);
+        assertSame(overridden, overriddenMethod.getDeclSymbol());
+        assertTrue(testMethod.getDeclSymbol().getDataType().isSubTypeOf(overriddenMethod.getDeclSymbol().getDataType()));
+    }
+
+    /**
+     * Test method overrides correctly, return types are void.
+     */
+    @Test
+    public void testMethodOverrideReturnTypesVoid() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override void test(String i) {}
+                }
+                class Superclass {
+                    void test(String s) {}
+                }
+                class Super {}
+                class Sub extends Super {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        ASTClassDeclaration superclassDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(1), ASTClassDeclaration.class);
+        ASTMethodDeclaration overriddenMethod = ensureIsa(superclassDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        assertEquals(1, testMethod.getDeclSymbol().getOverridden().size());
+        ParameterizedSymbol overridden = testMethod.getDeclSymbol().getOverridden().get(0);
+        assertSame(overridden, overriddenMethod.getDeclSymbol());
+        assertTrue(testMethod.getDeclSymbol().getDataType().isSubTypeOf(overriddenMethod.getDeclSymbol().getDataType()));
+    }
+
+    /**
+     * Test bad method override, does override method, but return types mismatch.
+     */
+    @Test
+    public void testBadMethodOverrideReturnTypeMismatch() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override Super test(String i) { return 3; }
+                }
+                class Superclass {
+                    Sub test(String s) { return 2; }
+                }
+                class Super {}
+                class Sub extends Super {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad shared method attempting to override non-shared method.
+     */
+    @Test
+    public void testBadMethodSharedOverrideOfNonShared() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override shared Integer test(String i) { return 3; }
+                }
+                class Superclass {
+                    Integer test(String s) { return 2; }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 2);
+    }
+
+    /**
+     * Tests bad non-shared method attempting to override shared method.  Error.
+     */
+    @Test
+    public void testBadMethodOverrideOfShared() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    override Integer test(String i) { return 3; }
+                }
+                class Superclass {
+                    shared Integer test(String s) { return 2; }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 1);
+    }
+
+    /**
+     * Tests shared method, would have hidden shared method.
+     */
+    @Test
+    public void testMethodSharedDoesNotHideShared() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test extends Superclass {
+                    shared Integer test(String i) { return 3; }
+                }
+                class Superclass {
+                    shared Integer test(String s) { return 2; }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTMethodDeclaration testMethod = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTMethodDeclaration.class);
+        assertTrue(testMethod.getDeclSymbol().getOverridden().isEmpty());
+    }
+
+    /**
+     * Tests interface method that doesn't interfere with anything in the root
+     * class, Any.
+     */
+    @Test
+    public void testInterfaceMethodNoRootInterference() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {
+                    String toString() {
+                        return "Any";
+                    }
+                }
+                class Integer {}
+                class String {}
+                """,
+                """
+                interface Test {
+                    Integer test(String i);
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad shared interface method that interferes with a method in the
+     * root class, Any.
+     */
+    @Test
+    public void testBadInterfaceMethodSharedRootInterference() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {
+                    String toString() {
+                        return "Any";
+                    }
+                }
+                class Integer {}
+                class String {}
+                """,
+                """
+                interface Test {
+                    shared String toString() {}
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad interface method that interferes with a method in the
+     * root class, Any, with a different return type.
+     */
+    @Test
+    public void testBadInterfaceMethodRootInterferenceReturnType() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {
+                    String toString() {
+                        return "Any";
+                    }
+                }
+                class Integer {}
+                class String {}
+                """,
+                """
+                interface Test {
+                    Integer toString();
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests that at least one inherited method is return type substitutable
+     * for all other methods in an override-equivalent group
+     */
+    @Test
+    public void testInheritedMethodsReturnTypeSubstitutable() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                class Test implements Foo, Bar, Baz {}
+                interface Foo {
+                    Super test();
+                }
+                interface Bar {
+                    Sub test();
+                }
+                interface Baz {
+                    SubSub test();
+                }
+                class Super {}
+                class Sub extends Super {}
+                class SubSub extends Sub {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Test bad inherited methods where one method is not return type
+     * substitutable with all others in an override-equivalent group.
+     */
+    @Test
+    public void testBadInheritedMethodsNotReturnTypeSubstitutable() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                class Test implements Foo, Bar, Baz {}
+                interface Foo {
+                    Super test();
+                }
+                interface Bar {
+                    Sub test();
+                }
+                interface Baz {
+                    Integer test();
+                }
+                class Super {}
+                class Sub extends Super {}
+                class SubSub extends Sub {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests overriding method that is return type substitutable for all
+     * methods in the override-equivalent group.
+     */
+    @Test
+    public void testOverridingMethodReturnTypeSubstitutable() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                class Test implements Foo, Bar, Baz {
+                    override SubSub test() {
+                        return new SubSub();
+                    }
+                }
+                interface Foo {
+                    Super test();
+                }
+                interface Bar {
+                    Sub test();
+                }
+                interface Baz {
+                    SubSub test();
+                }
+                class Super {}
+                class Sub extends Super {}
+                class SubSub extends Sub {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+    }
+
+    @Test
+    public void testBadOverridingMethodNotReturnTypeSubstitutable() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                class String {}
+                """,
+                """
+                class Test implements Foo, Bar, Baz {
+                    override void test() {}
+                }
+                interface Foo {
+                    Super test();
+                }
+                interface Bar {
+                    Sub test();
+                }
+                interface Baz {
+                    SubSub test();
+                }
+                class Super {}
+                class Sub extends Super {}
+                class SubSub extends Sub {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**

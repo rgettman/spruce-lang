@@ -325,21 +325,4 @@ public abstract class InvocationResolver<T extends ASTInvocation> extends BasicR
 
         return true;
     }
-
-    private boolean isOverrideEquivalent(ParameterizedSymbol first, ParameterizedSymbol second) {
-        if (!first.getName().equals(second.getName())) {
-            return false;
-        }
-        List<VariableSymbol> firstParams = first.getParameters();
-        List<VariableSymbol> secondParams = second.getParameters();
-        if (firstParams.size() != secondParams.size()) {
-            return false;
-        }
-        for (int i = 0; i < firstParams.size(); i++) {
-            if (firstParams.get(i).getDataType() != secondParams.get(i).getDataType()) {
-                return false;
-            }
-        }
-        return true;
-    }
 }

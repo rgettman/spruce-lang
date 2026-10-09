@@ -8,11 +8,13 @@ import org.spruce.compiler.bootstrap.common.Location;
 /**
  * A <code>ParameterizedSymbol</code> is a <code>ParentSymbol</code> that keeps
  * track of the order of any child symbols that are parameters.  It is an
- * <code>EntitySymbol</code> with an associated datatype symbol.
+ * <code>EntitySymbol</code> with an associated datatype symbol.  It is
+ * possible to have overridden <code>ParameterizedSymbol</code>s.
  */
 public class ParameterizedSymbol extends ParentSymbol implements EntitySymbol {
     private final List<VariableSymbol> myParameters;
     private TypeSymbol myDataType;
+    private List<ParameterizedSymbol> myOverridden;
 
     /**
      * Constructs a <code>ParameterizedSymbol</code> at the given <code>Location</code>,
@@ -27,6 +29,7 @@ public class ParameterizedSymbol extends ParentSymbol implements EntitySymbol {
     public ParameterizedSymbol(Location loc, String name, Kind kind, SymbolTable parent, long flags) {
         super(loc, name, kind, parent, flags);
         myParameters = new ArrayList<>();
+        myOverridden = new ArrayList<>();
     }
 
     /**
@@ -63,6 +66,23 @@ public class ParameterizedSymbol extends ParentSymbol implements EntitySymbol {
     @Override
     public void setDataType(TypeSymbol dataType) {
         myDataType = dataType;
+    }
+
+    /**
+     * Returns the <code>List</code> of <code>ParameterizedSymbol</code>s,
+     * representing any overridden methods.
+     * @return An <code>List</code> of <code>ParameterizedSymbol</code>s.
+     */
+    public List<ParameterizedSymbol> getOverridden() {
+        return myOverridden;
+    }
+
+    /**
+     * Add the given <code>ParameterizedSymbol</code> as an overridden method.
+     * @param overridden The overridden <code>ParameterizedSymbol</code>
+     */
+    public void addOverridden(ParameterizedSymbol overridden) {
+        myOverridden.add(overridden);
     }
 
     /**

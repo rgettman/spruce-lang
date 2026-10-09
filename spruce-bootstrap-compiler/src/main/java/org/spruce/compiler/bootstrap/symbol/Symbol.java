@@ -132,11 +132,11 @@ public class Symbol {
     }
 
     /**
-     * Returns whether the <code>Kind</code> is a method or constructor.
-     * @return Whether the <code>Kind</code> is a method or constructor.
+     * Returns whether the <code>Kind</code> is a method.
+     * @return Whether the <code>Kind</code> is a method.
      */
     public boolean isMethod() {
-        return myKind == Kind.METHOD || myKind == Kind.CONSTRUCTOR;
+        return myKind == Kind.METHOD;
     }
 
     /**

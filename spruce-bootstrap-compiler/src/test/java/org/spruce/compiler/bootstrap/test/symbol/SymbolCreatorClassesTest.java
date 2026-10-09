@@ -17,16 +17,7 @@ import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.parser.TopLevelParser;
 import org.spruce.compiler.bootstrap.resolution.ResolutionContext;
 import org.spruce.compiler.bootstrap.scanner.TokenType;
-import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
-import org.spruce.compiler.bootstrap.symbol.ClassesSymbolCreator;
-import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
-import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
-import org.spruce.compiler.bootstrap.symbol.Symbol;
-import org.spruce.compiler.bootstrap.symbol.SymbolCreator;
-import org.spruce.compiler.bootstrap.symbol.SymbolTable;
-import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
-import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
-import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
+import org.spruce.compiler.bootstrap.symbol.*;
 import org.spruce.compiler.bootstrap.test.parser.ParserTopLevelTest;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,6 +56,14 @@ public class SymbolCreatorClassesTest {
 
         SymbolTable classTable = symbol.getTable();
         checkSymbolTable(classTable, TYPE, 1, List.of(NAME_CONSTRUCTOR + "()"));
+    }
+
+    /**
+     * Tests bad top-level type declaration that is marked shared.
+     */
+    @Test
+    public void testBadSharedTopLevelClass() {
+        createGlobalLookupWithErrors("shared class CannotBeShared {}", 1);
     }
 
     /**
@@ -800,6 +799,18 @@ public class SymbolCreatorClassesTest {
         createGlobalLookupWithErrors("""
                 class Test {
                     shared void testMethod();
+                }
+                """, 1);
+    }
+
+    /**
+     * Tests bad method that is both abstract and shared.
+     */
+    @Test
+    public void testMemberBadSharedAbstractMethod() {
+        createGlobalLookupWithErrors("""
+                abstract class Test {
+                    abstract shared void testMethod();
                 }
                 """, 1);
     }
