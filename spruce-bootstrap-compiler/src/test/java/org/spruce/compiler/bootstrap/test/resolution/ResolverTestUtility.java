@@ -47,6 +47,18 @@ public class ResolverTestUtility {
             class Double {}
             class String {}
             class Class {}
+            interface Iterable {
+                Integer size();
+                Any get(Integer i);
+            }
+            class List implements Iterable {
+                override Integer size() {
+                    return 4;
+                }
+                override Any get(Integer i) {
+                    return 42;
+                }
+            }
             """;
 
     /**

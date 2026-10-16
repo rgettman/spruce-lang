@@ -14,7 +14,7 @@ import org.spruce.compiler.bootstrap.common.Location;
 public class ParameterizedSymbol extends ParentSymbol implements EntitySymbol {
     private final List<VariableSymbol> myParameters;
     private TypeSymbol myDataType;
-    private List<ParameterizedSymbol> myOverridden;
+    private final List<ParameterizedSymbol> myOverridden;
 
     /**
      * Constructs a <code>ParameterizedSymbol</code> at the given <code>Location</code>,

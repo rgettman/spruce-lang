@@ -128,7 +128,15 @@ public class Symbol {
      * @return Whether the <code>Kind</code> is a variable.
      */
     public boolean isVariable() {
-        return isLocal() || myKind == Kind.FIELD;
+        return isLocal() || isField();
+    }
+
+    /**
+     * Returns whether the <code>Kind</code> is a field.
+     * @return Whether the <code>Kind</code> is a field.
+     */
+    public boolean isField() {
+        return myKind == Kind.FIELD;
     }
 
     /**
@@ -145,6 +153,14 @@ public class Symbol {
      */
     public boolean isAbstract() {
         return (myFlags & FLAG_MOD_ABSTRACT) != 0;
+    }
+
+    /**
+     * Returns whether this symbol is final.
+     * @return Whether this symbol is final.
+     */
+    public boolean isFinal() {
+        return (myFlags & FLAG_MOD_FINAL) != 0;
     }
 
     /**

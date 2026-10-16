@@ -9,6 +9,7 @@ import org.spruce.compiler.bootstrap.common.Location;
  */
 public class VariableSymbol extends Symbol implements EntitySymbol {
     private TypeSymbol myDataType;
+    private boolean isConstantValue;
 
     /**
      * Constructs a <code>VariableSymbol</code> at the given <code>Location</code>,
@@ -31,5 +32,23 @@ public class VariableSymbol extends Symbol implements EntitySymbol {
     @Override
     public void setDataType(TypeSymbol dataType) {
         myDataType = dataType;
+    }
+
+    /**
+     * Sets whether this <code>VariableSymbol</code> represents a constant
+     * value.  This should only be called if this represents a field/constant.
+     * @param isConstantValue Whether this represents a constant value.
+     */
+    public void setConstantValue(boolean isConstantValue) {
+        this.isConstantValue = isConstantValue;
+    }
+
+    /**
+     * Returns whether this <code>VariableSymbol</code> represents a constant
+     * value.
+     * @return Whether this is a constant value.
+     */
+    public boolean isConstantValue() {
+        return isConstantValue;
     }
 }

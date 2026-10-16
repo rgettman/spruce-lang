@@ -60,6 +60,15 @@ public final class ASTIsaExpression extends ASTParentNode implements ASTValueExp
         return myResolvedDataType;
     }
 
+    /**
+     * IsaExpressions are never constant expressions.
+     * @return <code>false</code>.
+     */
+    @Override
+    public boolean isConstantExpression() {
+        return false;
+    }
+
     @Override
     public List<Node> getChildren() {
         return Arrays.asList(myExpr, myIsaTarget);

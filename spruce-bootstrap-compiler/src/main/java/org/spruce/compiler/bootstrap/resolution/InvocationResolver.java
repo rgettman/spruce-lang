@@ -203,10 +203,9 @@ public abstract class InvocationResolver<T extends ASTInvocation> extends BasicR
     }
 
     /**
-     * <p>Determines whether an argument is invocation-convertible to a formal
+     * <p>Determines whether the argument is invocation-convertible to a formal
      * parameter.</p>
-     * <p>
-     * Invocation conversion is:
+     * <p>Invocation conversion is:</p>
      * <ol>
      * <li>Identity conversion (match type exactly)</li>
      * <li>Reference widening conversion (argument type is a subtype of
@@ -215,10 +214,14 @@ public abstract class InvocationResolver<T extends ASTInvocation> extends BasicR
      * not exist in Spruce yet, and it cannot exist until a mechanism is
      * decided upon to represent such an implicit conversion.)</li>
      * </ol>
-     * </p>
+     * @param arg A <code>TypeSymbol</code> representing argument's type.
+     * @param param A <code>TypeSymbol</code> representing a formal parameter's
+     *              type to convert the argument to.
+     * @return Whether the argument is invocation-convertible to a formal
+     *     parameter.
      */
     private boolean isInvocationConvertible(TypeSymbol arg, TypeSymbol param) {
-        return arg == param || arg.isSubTypeOf(param);
+        return canConvertIdentity(arg, param) || canConvertWideningReference(arg, param);
     }
 
     /**

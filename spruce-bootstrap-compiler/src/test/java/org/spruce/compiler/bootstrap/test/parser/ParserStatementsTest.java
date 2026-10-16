@@ -821,6 +821,34 @@ public class ParserStatementsTest {
     }
 
     /**
+     * Tests bad enhanced for statement of bad init of multiple variable declarators.
+     */
+    @Test
+    public void testEnhancedForStatementBadInitOfMultipleVariableDeclarators() {
+        StatementsParser parser = getStatementsParser("""
+                for (Integer i, j in array) {
+                    sum = sum + i;
+                }
+                """);
+        ASTForStatement node = parser.parseForStatement();
+        expectError(node, parser, 1);
+    }
+
+    /**
+     * Tests bad enhanced for statement of bad init of variable declarator with initializer.
+     */
+    @Test
+    public void testEnhancedForStatementBadInitOfInitializer() {
+        StatementsParser parser = getStatementsParser("""
+                for (Integer i = 9 in array) {
+                    sum = sum + i;
+                }
+                """);
+        ASTForStatement node = parser.parseForStatement();
+        expectError(node, parser, 1);
+    }
+
+    /**
      * Tests return statement.
      */
     @Test

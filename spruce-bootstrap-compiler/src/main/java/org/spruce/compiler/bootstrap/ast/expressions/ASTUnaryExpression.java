@@ -25,6 +25,7 @@ public final class ASTUnaryExpression extends ASTParentNode implements ASTValueE
     private final ASTValueExpression myFirst;
     private final TokenType myOperation;
     private TypeSymbol myResolvedDataType;
+    private boolean isConstantExpression;
 
     /**
      * Constructs an <code>ASTUnaryExpression</code> at the given <code>Location</code>
@@ -65,6 +66,19 @@ public final class ASTUnaryExpression extends ASTParentNode implements ASTValueE
     @Override
     public TypeSymbol getResolvedDataType() {
         return myResolvedDataType;
+    }
+
+    /**
+     * Sets whether this binary expression is a constant expression.
+     * @param isConstantExpression Whether this binary expression is a constant expression.
+     */
+    public void setConstantExpression(boolean isConstantExpression) {
+        this.isConstantExpression = isConstantExpression;
+    }
+
+    @Override
+    public boolean isConstantExpression() {
+        return isConstantExpression;
     }
 
     @Override

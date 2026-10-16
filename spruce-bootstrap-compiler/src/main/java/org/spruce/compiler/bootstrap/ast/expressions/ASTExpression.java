@@ -13,4 +13,10 @@ import org.spruce.compiler.bootstrap.ast.ParentNode;
  */
 public sealed interface ASTExpression extends ParentNode, ASTPrimaryChild, DataTypeResolution
         permits ASTValueExpression {
+
+    /**
+     * Returns whether this <code>Expression</code> is a constant expression.
+     * @return Whether this <code>Expression</code> is a constant expression.
+     */
+    boolean isConstantExpression();
 }

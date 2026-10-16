@@ -40,7 +40,7 @@ public class ResolverExpressionsTest {
                 """
                 class Test {
                     void testMethod(Integer i) {
-                        Double d = i as Double;
+                        Any a = i as Any;
                     }
                 }
                 """
@@ -51,30 +51,152 @@ public class ResolverExpressionsTest {
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
         ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
         TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
-        TypeSymbol duble = ensureIsa(lang.getTable().get("Double"), TypeSymbol.class);
+        TypeSymbol any = ensureIsa(lang.getTable().get("Any"), TypeSymbol.class);
 
         ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
         VariableSymbol i = getFormalParameterSymbol(methodDecl, 0);
 
         ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
                 getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
-        ASTVariableDeclarator d = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+        ASTVariableDeclarator a = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
 
-        Optional<ASTExpression> optInitD = d.getVarInitializer();
-        assertTrue(optInitD.isPresent());
-        ASTCastExpression castExpr = ensureIsa(optInitD.get(), ASTCastExpression.class);
+        Optional<ASTExpression> optInitA = a.getVarInitializer();
+        assertTrue(optInitA.isPresent());
+        ASTCastExpression castExpr = ensureIsa(optInitA.get(), ASTCastExpression.class);
 
         ASTPrimary exprPrimary = ensureIsa(castExpr.getExpr(), ASTPrimary.class);
         ASTExpressionName exprName = ensureIsa(exprPrimary.getChild(), ASTExpressionName.class);
         EntitySymbol expr = exprName.getResolvedEntity();
         assertSame(i, expr);
-        assertSame(integer, expr.getDataType());
+        TypeSymbol exprType = expr.getDataType();
+        assertSame(integer, exprType);
 
         ASTDataType target = castExpr.getIntersectionType().get(0);
-        assertSame(duble, target.getResolvedDataType());
-        assertSame(duble, castExpr.getResolvedDataType());
-        assertTrue(castExpr.getResolvedDataType("Double").isPresent());
-        assertSame(duble, castExpr.getResolvedDataType("Double").get());
+        assertSame(any, target.getResolvedDataType());
+        assertSame(any, castExpr.getResolvedDataType());
+        assertTrue(castExpr.getResolvedDataType("Any").isPresent());
+        assertSame(any, castExpr.getResolvedDataType("Any").get());
+        assertTrue(trio.resolver().getExpressionsResolver().isCastingConvertible(exprType, target.getResolvedDataType()));
+    }
+
+    /**
+     * Tests cast expression resolution, narrowing class case.
+     */
+    @Test
+    public void testCastExpressionResolutionNarrowingClass() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Any a) {
+                        Integer i = a as Integer;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
+        TypeSymbol any = ensureIsa(lang.getTable().get("Any"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        VariableSymbol a = getFormalParameterSymbol(methodDecl, 0);
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator i = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+
+        Optional<ASTExpression> optInitI = i.getVarInitializer();
+        assertTrue(optInitI.isPresent());
+        ASTCastExpression castExpr = ensureIsa(optInitI.get(), ASTCastExpression.class);
+
+        ASTPrimary exprPrimary = ensureIsa(castExpr.getExpr(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(exprPrimary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(a, expr);
+        TypeSymbol exprType = expr.getDataType();
+        assertSame(any, exprType);
+
+        ASTDataType target = castExpr.getIntersectionType().get(0);
+        assertSame(integer, target.getResolvedDataType());
+        assertSame(integer, castExpr.getResolvedDataType());
+        assertTrue(castExpr.getResolvedDataType("Integer").isPresent());
+        assertSame(integer, castExpr.getResolvedDataType("Integer").get());
+        assertTrue(trio.resolver().getExpressionsResolver().isCastingConvertible(exprType, target.getResolvedDataType()));
+    }
+
+    /**
+     * Tests cast expression resolution, interfaces case.
+     */
+    @Test
+    public void testCastExpressionResolutionInterfaces() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Unrelated1 u1) {
+                        Unrelated2 u2 = u1 as Unrelated2;
+                    }
+                }
+                interface Unrelated1 {}
+                interface Unrelated2 {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol unnamed = ensureIsa(trio.global().get(GlobalLookup.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol unrelated1 = ensureIsa(unnamed.getTable().get("Unrelated1"), TypeSymbol.class);
+        TypeSymbol unrelated2 = ensureIsa(unnamed.getTable().get("Unrelated2"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        VariableSymbol a = getFormalParameterSymbol(methodDecl, 0);
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator u2 = localVarDeclStmt.getLocalVarDecl().getVarDeclList().get(0);
+
+        Optional<ASTExpression> optInitU2 = u2.getVarInitializer();
+        assertTrue(optInitU2.isPresent());
+        ASTCastExpression castExpr = ensureIsa(optInitU2.get(), ASTCastExpression.class);
+
+        ASTPrimary exprPrimary = ensureIsa(castExpr.getExpr(), ASTPrimary.class);
+        ASTExpressionName exprName = ensureIsa(exprPrimary.getChild(), ASTExpressionName.class);
+        EntitySymbol expr = exprName.getResolvedEntity();
+        assertSame(a, expr);
+        TypeSymbol exprType = expr.getDataType();
+        assertSame(unrelated1, exprType);
+
+        ASTDataType target = castExpr.getIntersectionType().get(0);
+        assertSame(unrelated2, target.getResolvedDataType());
+        assertSame(unrelated2, castExpr.getResolvedDataType());
+        assertTrue(castExpr.getResolvedDataType("Unrelated2").isPresent());
+        assertSame(unrelated2, castExpr.getResolvedDataType("Unrelated2").get());
+        assertTrue(trio.resolver().getExpressionsResolver().isCastingConvertible(exprType, target.getResolvedDataType()));
+    }
+
+    /**
+     * Tests bad cast expression of unrelated classes.
+     */
+    @Test
+    public void testCastExpressionResolutionBadClasses() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Unrelated1 u1) {
+                        Unrelated2 u2 = u1 as Unrelated2;
+                    }
+                }
+                class Unrelated1 {}
+                class Unrelated2 {}
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
     }
 
     /**
@@ -89,47 +211,54 @@ public class ResolverExpressionsTest {
                 """
                 class Test {
                     void testMethod() {
-                        Integer i = 2;
-                        Double d = i as Integer && Double;
+                        Sub s = new Sub();
+                        Super t = s as Sub && Super;
                     }
                 }
+                class Super {}
+                class Sub extends Super {}
                 """
         );
         Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
-        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
-        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
-        TypeSymbol integer = ensureIsa(lang.getTable().get("Integer"), TypeSymbol.class);
-        TypeSymbol duble = ensureIsa(lang.getTable().get("Double"), TypeSymbol.class);
+        ParentSymbol unnamed = ensureIsa(trio.global().get(GlobalLookup.UNNAMED_NAMESPACE_NAME), ParentSymbol.class);
+        TypeSymbol sooper = ensureIsa(unnamed.getTable().get("Super"), TypeSymbol.class);
+        TypeSymbol sub = ensureIsa(unnamed.getTable().get("Sub"), TypeSymbol.class);
 
         ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
         ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
                 getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
-        ASTVariableDeclarator varDeclI = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
-        VariableSymbol i = varDeclI.getDeclSymbol();
+        ASTVariableDeclarator varDeclS = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        VariableSymbol s = varDeclS.getDeclSymbol();
 
         ASTLocalVariableDeclarationStatement localVarDeclStmt1 = ensureIsa(
                 getBlockStatement(methodDecl, 1), ASTLocalVariableDeclarationStatement.class);
-        ASTVariableDeclarator d = localVarDeclStmt1.getLocalVarDecl().getVarDeclList().get(0);
+        ASTVariableDeclarator t = localVarDeclStmt1.getLocalVarDecl().getVarDeclList().get(0);
 
-        Optional<ASTExpression> optInitD = d.getVarInitializer();
-        assertTrue(optInitD.isPresent());
-        ASTCastExpression castExpr = ensureIsa(optInitD.get(), ASTCastExpression.class);
+        Optional<ASTExpression> optInitT = t.getVarInitializer();
+        assertTrue(optInitT.isPresent());
+        ASTCastExpression castExpr = ensureIsa(optInitT.get(), ASTCastExpression.class);
 
         ASTPrimary exprPrimary = ensureIsa(castExpr.getExpr(), ASTPrimary.class);
         ASTExpressionName exprName = ensureIsa(exprPrimary.getChild(), ASTExpressionName.class);
         EntitySymbol expr = exprName.getResolvedEntity();
-        assertSame(i, expr);
-        assertSame(integer, expr.getDataType());
+        assertSame(s, expr);
+        TypeSymbol exprType = expr.getDataType();
+        assertSame(sub, exprType);
 
-        ASTDataType target = castExpr.getIntersectionType().get(0);
-        assertSame(integer, target.getResolvedDataType());
-        assertSame(integer, castExpr.getResolvedDataType());
-        assertTrue(castExpr.getResolvedDataType("Integer").isPresent());
-        assertSame(integer, castExpr.getResolvedDataType("Integer").get());
-        assertTrue(castExpr.getResolvedDataType("Double").isPresent());
-        assertSame(duble, castExpr.getResolvedDataType("Double").get());
+        ASTDataType interType = castExpr.getIntersectionType().get(0);
+        assertSame(sub, interType.getResolvedDataType());
+        assertSame(sub, castExpr.getResolvedDataType());
+        assertTrue(castExpr.getResolvedDataType("Sub").isPresent());
+        assertSame(sub, castExpr.getResolvedDataType("Sub").get());
+        assertTrue(castExpr.getResolvedDataType("Super").isPresent());
+        assertSame(sooper, castExpr.getResolvedDataType("Super").get());
+        TypeSymbol firstCast = castExpr.getResolvedDataType("Sub").get();
+        TypeSymbol secondCast = castExpr.getResolvedDataType("Super").get();
+
+        assertTrue(trio.resolver().getExpressionsResolver().isCastingConvertible(exprType, firstCast));
+        assertTrue(trio.resolver().getExpressionsResolver().isCastingConvertible(exprType, secondCast));
     }
 
     /**
@@ -162,7 +291,7 @@ public class ResolverExpressionsTest {
                 """
                 class Test {
                     void testMethod() {
-                        Integer i = 2;
+                        Double i = 2.0;
                         Double d = i as Double && Double;
                     }
                 }
@@ -170,6 +299,128 @@ public class ResolverExpressionsTest {
         );
         Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests that a cast expression whose expression is not a constant
+     * expression is itself not a constant expression.
+     */
+    @Test
+    public void testCastExpressionExpressionNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer i = 21;
+                    void testMethod(List list) {
+                        Integer size = list.size() as Integer;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTCastExpression castExpr = ensureIsa(optInitJ.get(), ASTCastExpression.class);
+        assertFalse(castExpr.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that a cast expression whose expression is a constant expression
+     * and casts to an allowed type is itself a constant expression.
+     */
+    @Test
+    public void testCastExpressionExpressionCastAllowedTypeConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Integer size = 23 as Integer;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTCastExpression castExpr = ensureIsa(optInitJ.get(), ASTCastExpression.class);
+        assertTrue(castExpr.isConstantExpression(), "Should be a constant expression!");
+    }
+
+    /**
+     * Tests that a cast expression whose expression is a constant expression
+     * and casts to some other disallowed type is not a constant expression.
+     */
+    @Test
+    public void testCastExpressionCastNotAllowedTypeNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(List list) {
+                        Any a = list as Any;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTCastExpression castExpr = ensureIsa(optInitJ.get(), ASTCastExpression.class);
+        assertFalse(castExpr.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that a cast expression whose expression is a constant expression
+     * and casts to multiple types, including a disallowed type, is not a
+     * constant expression.
+     */
+    @Test
+    public void testCastExpressionCastMultipleNotAllowedTypeNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Integer i) {
+                        Integer a = i as Integer && Any;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTCastExpression castExpr = ensureIsa(optInitJ.get(), ASTCastExpression.class);
+        assertFalse(castExpr.isConstantExpression(), "Should not be a constant expression!");
     }
 
     /**
@@ -235,6 +486,173 @@ public class ResolverExpressionsTest {
         );
         Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests bad IsaExpression of provably distinct classes.
+     */
+    @Test
+    public void testIsaExpressionProvablyDistinctClasses() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Integer i = 2;
+                        Boolean b = i isa String;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests that isa expressions are not constant expressions.
+     */
+    @Test
+    public void testIsaExpressionNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(String s) {
+                        Boolean b = s isa String;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclB = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        assertTrue(varDeclB.getVarInitializer().isPresent());
+        ASTIsaExpression isaExpr = ensureIsa(varDeclB.getVarInitializer().get(), ASTIsaExpression.class);
+        assertFalse(isaExpr.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that primary of class instance creation expression is not a
+     * constant expression.
+     */
+    @Test
+    public void testPrimaryOfCiceNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Test t = new Test();
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that primary of method invocation is not a constant expression.
+     */
+    @Test
+    public void testPrimaryOfMethodInvocationNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(List list) {
+                        Integer size = list.size();
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that a primary of a parenthesized expression that does not resolve
+     * to a constant expression is not a constant expression.
+     */
+    @Test
+    public void testPrimaryOfParenExpressionNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Integer i) {
+                        Integer j = (i);
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that a primary of a parenthesized expression that does resolve to
+     * a constant expression is itself a constant expression.
+     */
+    @Test
+    public void testPrimaryOfParenExpressionConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Integer j = (22);
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertTrue(primary.isConstantExpression(), "Should be a constant expression!");
     }
 
     /**
@@ -565,6 +983,68 @@ public class ResolverExpressionsTest {
         );
         Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver());
+    }
+
+    /**
+     * Tests that a primary of a field access that doesn't resolve to a
+     * field is not a constant expression.
+     */
+    @Test
+    public void testPrimaryOfFieldAccessFieldNotConstantValueNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer i = 21;
+                    void testMethod(Test t) {
+                        Integer j = (t).i;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that a primary of a field access that does resolve to a field
+     * is a constant expression.
+     */
+    @Test
+    public void testPrimaryOfFieldAccessFieldConstantValueConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    constant Integer i = 21;
+                    void testMethod(Test t) {
+                        Integer j = (t).i;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertTrue(primary.isConstantExpression(), "Should be a constant expression!");
     }
 
     /**
@@ -1077,8 +1557,6 @@ public class ResolverExpressionsTest {
         assertSame(integer, primary.getResolvedDataType());
     }
 
-    // TODO: Test shared/non-shared violations of resolution!
-
     /**
      * Tests expression name resolution to a field.
      */
@@ -1364,6 +1842,98 @@ public class ResolverExpressionsTest {
     }
 
     /**
+     * Tests that a primary of an expression name that doesn't resolve to a
+     * field is not a constant expression.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameNotFieldNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Integer i) {
+                        Integer j = i;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that a primary of an expression name that doesn't resolve to a
+     * field is not a constant expression.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameFieldNotConstantValueNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer i = 21;
+                    void testMethod() {
+                        Integer j = i;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests that a primary of an expression name that does resolve to a field
+     * is a constant expression.
+     */
+    @Test
+    public void testPrimaryOfExpressionNameFieldConstantValueConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    constant Integer i = 21;
+                    void testMethod() {
+                        Integer j = i;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 1);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclJ = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitJ = varDeclJ.getVarInitializer();
+        assertTrue(optInitJ.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitJ.get(), ASTPrimary.class);
+        assertTrue(primary.isConstantExpression(), "Should be a constant expression!");
+    }
+
+    /**
      * Tests resolution of self.
      */
     @Test
@@ -1395,6 +1965,35 @@ public class ResolverExpressionsTest {
         ASTSelf exprSelf = ensureIsa(primary.getChild(), ASTSelf.class);
         assertSame(test, exprSelf.getResolvedDataType());
         assertSame(test, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests that a primary of self is not a constant expression.
+     */
+    @Test
+    public void testPrimaryOfSelfNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Test t = self;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclI = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitI = varDeclI.getVarInitializer();
+        assertTrue(optInitI.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitI.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
     }
 
     /**
@@ -1520,6 +2119,40 @@ public class ResolverExpressionsTest {
     }
 
     /**
+     * Tests that a primary of a typename self is not a constant expression.
+     */
+    @Test
+    public void testPrimaryOfTypeNameSelfNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Enclosing {
+                    class Test {
+                        void testMethod() {
+                            Enclosing e = Enclosing.self;
+                        }
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration enclosingDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTClassDeclaration testDecl = ensureIsa(enclosingDecl.getClassParts().get(0), ASTClassDeclaration.class);
+
+        ASTMethodDeclaration methodDecl = ensureIsa(testDecl.getClassParts().get(0), ASTMethodDeclaration.class);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclE = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitE = varDeclE.getVarInitializer();
+        assertTrue(optInitE.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitE.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
      * Tests class literal resolution.
      */
     @Test
@@ -1558,6 +2191,35 @@ public class ResolverExpressionsTest {
         Optional<TypeSymbol> optDt = Optional.ofNullable(classLiteral.getDataType().getResolvedDataType());
         assertTrue(optDt.isPresent());
         assertSame(string, optDt.get());
+    }
+
+    /**
+     * Tests that a primary of a class literal is not a constant expression.
+     */
+    @Test
+    public void testPrimaryOfClassLiteralNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Class c = Test.class;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclI = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitI = varDeclI.getVarInitializer();
+        assertTrue(optInitI.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitI.get(), ASTPrimary.class);
+        assertFalse(primary.isConstantExpression(), "Should not be a constant expression!");
     }
 
     /**
@@ -1770,5 +2432,34 @@ public class ResolverExpressionsTest {
         TypeSymbol resolved = intLiteral.getResolvedDataType();
         assertSame(integer, resolved);
         assertSame(integer, primary.getResolvedDataType());
+    }
+
+    /**
+     * Tests primary of a literal is a constant expression.
+     */
+    @Test
+    public void testPrimaryOfLiteralConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod() {
+                        Integer i = 20;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        ASTLocalVariableDeclarationStatement localVarDeclStmt0 = ensureIsa(
+                getBlockStatement(methodDecl, 0), ASTLocalVariableDeclarationStatement.class);
+        ASTVariableDeclarator varDeclI = localVarDeclStmt0.getLocalVarDecl().getVarDeclList().get(0);
+        Optional<ASTExpression> optInitI = varDeclI.getVarInitializer();
+        assertTrue(optInitI.isPresent());
+
+        ASTPrimary primary = ensureIsa(optInitI.get(), ASTPrimary.class);
+        assertTrue(primary.isConstantExpression(), "Should be a constant expression!");
     }
 }

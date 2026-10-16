@@ -351,9 +351,19 @@ public class StatementsParser extends BasicParser {
         ASTLocalVariableDeclaration localVariableDecl;
         if (init instanceof ASTLocalVariableDeclaration localVarDecl) {
             localVariableDecl = localVarDecl;
+            int numVars = localVariableDecl.getVarDeclList().getTypedChildren().size();
+            if (numVars != 1) {
+                error(localVariableDecl.getLocation(), "Must have exactly 1 variable declaration, found " + numVars + ".");
+            }
+            else {
+                ASTVariableDeclarator varDecl = localVariableDecl.getVarDeclList().getTypedChildren().get(0);
+                if (varDecl.getVarInitializer().isPresent()) {
+                    error(varDecl.getVarInitializer().get().getLocation(), "Must not initialize enhanced for loop variable declaration.");
+                }
+            }
         }
         else {
-            error(init.getLocation(), "Enhanced for loop requires a variable declaration before the colon.");
+            error(init.getLocation(), "Enhanced for loop requires a variable declaration before 'in'.");
             localVariableDecl = ASTLocalVariableDeclaration.badLocalVariableDeclaration(init.getLocation());
         }
         ASTValueExpression valueExpr = getExpressionsParser().parseValueExpression();

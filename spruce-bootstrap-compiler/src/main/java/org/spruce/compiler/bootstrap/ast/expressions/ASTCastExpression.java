@@ -26,6 +26,7 @@ public final class ASTCastExpression extends ASTParentNode implements ASTValueEx
     private final ASTIntersectionType myIntersectionType;
     private TypeSymbol myFirstDataType;
     private final Map<String, TypeSymbol> myResolvedDataTypes;
+    private boolean isConstantExpression;
 
     /**
      * Constructs an <code>ASTCastExpression</code> at the given <code>Location</code>
@@ -79,6 +80,19 @@ public final class ASTCastExpression extends ASTParentNode implements ASTValueEx
     @Override
     public Optional<TypeSymbol> getResolvedDataType(String name) {
         return Optional.ofNullable(myResolvedDataTypes.get(name));
+    }
+
+    /**
+     * Sets whether this binary expression is a constant expression.
+     * @param isConstantExpression Whether this binary expression is a constant expression.
+     */
+    public void setConstantExpression(boolean isConstantExpression) {
+        this.isConstantExpression = isConstantExpression;
+    }
+
+    @Override
+    public boolean isConstantExpression() {
+        return isConstantExpression;
     }
 
     @Override

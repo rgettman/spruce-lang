@@ -68,6 +68,9 @@ public class OperatorsResolver extends BasicResolver {
             default -> throw internalError("Can't resolve unexpected unary operator '" +
                     unaryExpr.getOperation() + "'!");
             }
+            // This assumes that all unary operators that form unary
+            // expressions are eligible to be constant expressions.
+            unaryExpr.setConstantExpression(first.isConstantExpression());
         }
         // Else there was an error resolving the operand already.
     }
@@ -115,14 +118,29 @@ public class OperatorsResolver extends BasicResolver {
             }
             // ISA is handled by ExpressionsResolver.resolveIsaExpression.
             // Relational operators.
-            case DOUBLE_EQUAL, EXCLAMATION_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL,
+            case DOUBLE_EQUAL, EXCLAMATION_EQUAL -> {
+                // numeric, numeric -> boolean
+                if (typesResolver.isNumeric(firstSymbol, ctx) && typesResolver.isNumeric(secondSymbol, ctx)) {
+                    binaryExpr.setResolvedDataType(bool);
+                }
+                // boolean, boolean -> boolean
+                else if (typesResolver.isBoolean(firstSymbol, ctx) && typesResolver.isBoolean(secondSymbol, ctx)) {
+                    binaryExpr.setResolvedDataType(bool);
+                }
+                else {
+                    // Yes, we can't even use == or != on non-numerics and non-booleans!
+                    // Yes, operator overloading will cover this case, eventually.
+                    errorBinaryOperator(binaryExpr.getLocation(), operator, firstSymbol, secondSymbol);
+                }
+            }
+            case LESS_THAN, LESS_THAN_OR_EQUAL,
                  GREATER_THAN, GREATER_THAN_OR_EQUAL -> {
                 // numeric, numeric -> boolean
                 if (typesResolver.isNumeric(firstSymbol, ctx) && typesResolver.isNumeric(secondSymbol, ctx)) {
                     binaryExpr.setResolvedDataType(bool);
                 }
                 else {
-                    // Yes, we can't even use == or != on non-numerics!
+                    // Yes, we can't even use <, <=, >, >= on non-numerics!
                     // Yes, operator overloading will cover this case, eventually.
                     errorBinaryOperator(binaryExpr.getLocation(), operator, firstSymbol, secondSymbol);
                 }
@@ -177,6 +195,10 @@ public class OperatorsResolver extends BasicResolver {
             default -> throw internalError("Can't resolve unexpected binary operator '" +
                     binaryExpr.getOperation() + "'!");
             }
+
+            // This assumes that all binary operators that form binary
+            // expressions are eligible to be constant expressions.
+            binaryExpr.setConstantExpression(first.isConstantExpression() && second.isConstantExpression());
         }
         // Else there was an error resolving at least one of the operands
         // already.

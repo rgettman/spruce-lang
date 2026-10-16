@@ -7,6 +7,7 @@ import org.spruce.compiler.bootstrap.common.Location;
 import org.spruce.compiler.bootstrap.common.MessageProducer;
 import org.spruce.compiler.bootstrap.symbol.GlobalLookup;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
+import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 
 /**
@@ -172,6 +173,16 @@ public class BasicResolver {
     }
 
     /**
+     * Helper method to produce an error message of mismatched types.
+     * @param loc The <code>Location</code>.
+     * @param targetTypeName The target type name.
+     * @param foundTypeName The found type name.
+     */
+    public void errorTypeMismatch(Location loc, String targetTypeName, String foundTypeName) {
+        error(loc, "Required type: " + targetTypeName + ", found: " + foundTypeName);
+    }
+
+    /**
      * Determines whether the given methods are override-equivalent.
      * Override-equivalent means that the method names are the same, the number
      * of parameters is the same, and the formal parameters are the same by
@@ -195,6 +206,86 @@ public class BasicResolver {
             }
         }
         return true;
+    }
+
+    /**
+     * Can there be an identity conversion from the source type to the target
+     * type?
+     * @param source A <code>TypeSymbol</code> representing the source type.
+     * @param target A <code>TypeSymbol</code> representing the target type.
+     * @return Whether there is an identity conversion from the source type to
+     *     the target type.
+     */
+    public boolean canConvertIdentity(TypeSymbol source, TypeSymbol target) {
+        return source == target;
+    }
+
+    /**
+     * Can there be a widening reference conversion from the source type to the
+     * target type?  Yes, if the source is a subtype of the target.
+     * @param source A <code>TypeSymbol</code> representing the source type.
+     * @param target A <code>TypeSymbol</code> representing the target type.
+     * @return Whether there is a widening reference conversion from the source
+     *     type to the target type.
+     */
+    public boolean canConvertWideningReference(TypeSymbol source, TypeSymbol target) {
+        return source.isSubTypeOf(target);
+    }
+
+    /**
+     * <p>Can there be a narrowing reference conversion from the source type to the
+     * target type?  Yes, in the following circumstances:</p>
+     * <ul>
+     * <li>The source is not a subtype of the target.</li>
+     * <li>The two types are not disjoint.</li>
+     * <li>Not supported by Spruce yet, but if the types each have parameterized
+     * supertypes whose erasures are provably distinct.  Disallows conversion:
+     * <code>ArrayList&lt;String&gt;</code> to <code>ArrayList&lt;Any&gt;</code>.
+     * </li>
+     * </ul>
+     * <p>There are other criteria beside disjointedness that are not
+     * supportable by Spruce yet, but can substitute for non-disjointedness to
+     * allow the conversion:</p>
+     * <ul>
+     * <li>The target is an array type and the source is the root type or any
+     * interfaces implemented by arrays.</li>
+     * <li>The types are arrays and the source element type has a narrowing
+     * conversion to the target element type.</li>
+     * <li>The source is a type variable, and there is a narrowing reference
+     * conversion from the upper bound of the source to the type.</li>
+     * <li>The target is a type variable, and there is a widening or narrowing
+     * conversion from the source to the upper bound of the target.</li>
+     * </ul>
+     * @param source A <code>TypeSymbol</code> representing the source type.
+     * @param target A <code>TypeSymbol</code> representing the target type.
+     * @return Whether there is a narrowing reference conversion from the source
+     *     type to the target type.
+     * @see #areDisjoint(TypeSymbol, TypeSymbol)
+     */
+    public boolean canConvertNarrowingReference(TypeSymbol source, TypeSymbol target) {
+        return !source.isSubTypeOf(target) && !areDisjoint(source, target);
+    }
+
+    /**
+     * <p>Are the two given types disjoint?  There are if:</p>
+     * <ul>
+     * <li>Both are classes and one is not a subtype of the other.</li>
+     * </ul>
+     * <p>Other cases are not yet possible because Spruce doesn't support them
+     * yet:</p>
+     * <ul>
+     * <li>One is a class and the other is an interface, the class is not a
+     * subtype of the interface, and the class is either final, or one or both
+     * are sealed and all the permitted direct subtypes are also disjoint.</li>
+     * <li>Both are interfaces, neither are subtypes of the other, and one or both
+     * are sealed and all the permitted direct subtypes are also disjoint.</li>
+     * </ul>
+     * @param a A <code>TypeSymbol</code>.
+     * @param b Another <code>TypeSymbol</code>.
+     * @return Returns whether the given types are disjoint.
+     */
+    public boolean areDisjoint(TypeSymbol a, TypeSymbol b) {
+        return a.isClass() && b.isClass() && !a.isSubTypeOf(b) && !b.isSubTypeOf(a);
     }
 
     /**

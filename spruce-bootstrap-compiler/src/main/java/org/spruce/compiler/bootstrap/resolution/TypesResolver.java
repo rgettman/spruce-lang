@@ -37,6 +37,10 @@ public class TypesResolver extends BasicResolver {
      */
     public static final String CHARACTER_TYPE = "Character";
     /**
+     * The name of the class type.
+     */
+    public static final String CLASS_TYPE = "Class";
+    /**
      * The name of the double floating-point type.
      */
     public static final String DOUBLE_TYPE = "Double";
@@ -44,6 +48,10 @@ public class TypesResolver extends BasicResolver {
      * The name of the integer type.
      */
     public static final String INTEGER_TYPE = "Integer";
+    /**
+     * The name of the iterable type.
+     */
+    public static final String ITERABLE_TYPE = "Iterable";
     /**
      * The name of the string type.
      */

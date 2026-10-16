@@ -41,6 +41,7 @@ public final class ASTPrimary extends ASTParentNode implements ASTValueExpressio
     private final ASTPrimaryChild myChild;
     private final Type myType;
     private TypeSymbol myResolvedDataType;
+    private boolean isConstantExpression;
 
     /**
      * Constructs an <code>ASTPrimary</code> at the given <code>Location</code>
@@ -128,6 +129,19 @@ public final class ASTPrimary extends ASTParentNode implements ASTValueExpressio
     @Override
     public TypeSymbol getResolvedDataType() {
         return myResolvedDataType;
+    }
+
+    /**
+     * Sets whether this binary expression is a constant expression.
+     * @param isConstantExpression Whether this binary expression is a constant expression.
+     */
+    public void setConstantExpression(boolean isConstantExpression) {
+        this.isConstantExpression = isConstantExpression;
+    }
+
+    @Override
+    public boolean isConstantExpression() {
+        return isConstantExpression;
     }
 
     @Override

@@ -14,6 +14,7 @@ import org.spruce.compiler.bootstrap.symbol.ChildSymbolTable;
 import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
+import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.spruce.compiler.bootstrap.test.resolution.ResolverTestUtility.*;
@@ -842,6 +843,39 @@ public class ResolverClassesTest {
         }
     }
 
+    /**
+     * Tests ambiguous reference to same-name inherited member types.
+     */
+    @Test
+    public void testBadAmbiguousTypeResolutionInherited() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {
+                    String toString() { return ""; }
+                }
+                class Integer {}
+                class Double {}
+                class String {}
+                """,
+                """
+                class Foo implements SomeInterface, SomeOtherInterface {
+                    void test() {
+                        Ambiguous a;
+                    }
+                }
+                interface SomeInterface {
+                    class Ambiguous {}
+                }
+                interface SomeOtherInterface {
+                    class Ambiguous {}
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 1);
+    }
+
     //
     // Types above, members below.
     //
@@ -874,7 +908,10 @@ public class ResolverClassesTest {
         ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
         ASTFieldDeclaration integerField = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
                 ASTFieldDeclaration.class);
-        assertEquals(integer, integerField.getVarDeclList().get(0).getDeclSymbol().getDataType());
+        TypeSymbol targetType = integerField.getDataType().getResolvedDataType();
+        TypeSymbol exprType = integerField.getVarDeclList().get(0).getDeclSymbol().getDataType();
+        assertEquals(integer, exprType);
+        assertTrue(trio.resolver().getStatementsResolver().isAssignmentConvertible(exprType, targetType));
     }
 
     /**
@@ -896,6 +933,226 @@ public class ResolverClassesTest {
                 """
         );
         compileSoFar(codes, 1);
+    }
+
+    /**
+     * Tests field declaration of constant value.
+     */
+    @Test
+    public void testFieldDeclarationConstantValue() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test {
+                    constant Integer i = 1;
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTFieldDeclaration integerConstant = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTFieldDeclaration.class);
+        VariableSymbol varSymbol = integerConstant.getVarDeclList().get(0).getDeclSymbol();
+        assertTrue(varSymbol.isConstantValue(), "Should be a constant expression!");
+    }
+
+    /**
+     * Tests field declaration that is not a constant value because it's not a
+     * constant.
+     */
+    @Test
+    public void testFieldDeclarationNotConstantValueNotAConstant() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test {
+                    Integer i = 1;
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTFieldDeclaration integerConstant = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTFieldDeclaration.class);
+        VariableSymbol varSymbol = integerConstant.getVarDeclList().get(0).getDeclSymbol();
+        assertFalse(varSymbol.isConstantValue(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests field declaration that is not a constant value because the
+     * initializer is not a constant expression.
+     */
+    @Test
+    public void testFieldDeclarationNotConstantValueNotAConstantNotAConstantExpression() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test {
+                    constant Integer i = getValue();
+                    shared Integer getValue() {
+                        return 13;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTFieldDeclaration integerConstant = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTFieldDeclaration.class);
+        VariableSymbol varSymbol = integerConstant.getVarDeclList().get(0).getDeclSymbol();
+        assertFalse(varSymbol.isConstantValue(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests constant declaration in class.
+     */
+    @Test
+    public void testConstantDeclarationClass() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                class Test {
+                    constant Integer i = 1;
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
+
+        ASTClassDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTClassDeclaration.class);
+        ASTFieldDeclaration integerConstant = ensureIsa(testDecl.getClassParts().getTypedChildren().get(0),
+                ASTFieldDeclaration.class);
+        TypeSymbol targetType = integerConstant.getDataType().getResolvedDataType();
+        TypeSymbol exprType = integerConstant.getVarDeclList().get(0).getDeclSymbol().getDataType();
+        assertEquals(integer, exprType);
+        assertTrue(trio.resolver().getStatementsResolver().isAssignmentConvertible(exprType, targetType));
+    }
+
+    /**
+     * Tests constant declaration in interface.
+     */
+    @Test
+    public void testConstantDeclarationInterface() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                interface Test {
+                    constant Integer i = 1;
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        ParentSymbol integer = ensureIsa(lang.getTable().get("Integer"), ParentSymbol.class);
+
+        ASTInterfaceDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTInterfaceDeclaration.class);
+        ASTConstantDeclaration integerConstant = ensureIsa(testDecl.getInterfaceParts().getTypedChildren().get(0),
+                ASTConstantDeclaration.class);
+        TypeSymbol targetType = integerConstant.getDataType().getResolvedDataType();
+        TypeSymbol exprType = integerConstant.getVarDeclList().get(0).getDeclSymbol().getDataType();
+        assertEquals(integer, exprType);
+        assertTrue(trio.resolver().getStatementsResolver().isAssignmentConvertible(exprType, targetType));
+    }
+
+    /**
+     * Tests that the field variable is marked as a constant value if the
+     * initializer is a constant expression.
+     */
+    @Test
+    public void testConstantDeclarationConstantValue() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                interface Test {
+                    constant Integer i = 10;
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTInterfaceDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTInterfaceDeclaration.class);
+        ASTConstantDeclaration integerConstant = ensureIsa(testDecl.getInterfaceParts().getTypedChildren().get(0),
+                ASTConstantDeclaration.class);
+        VariableSymbol varSymbol = integerConstant.getVarDeclList().get(0).getDeclSymbol();
+        assertTrue(varSymbol.isConstantValue(), "Should be a constant expression!");
+    }
+
+
+
+    /**
+     * Tests that the field variable is not marked as a constant value if the
+     * initializer is a not constant expression.
+     */
+    @Test
+    public void testConstantDeclarationNotConstantValue() {
+        List<String> codes = List.of(
+                """
+                namespace spruce.lang;
+                class Any {}
+                class Integer {}
+                """,
+                """
+                use spruce.lang.Integer;
+                interface Test {
+                    constant Integer i = getValue();
+                    shared Integer getValue() {
+                        return 11;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTInterfaceDeclaration testDecl = ensureIsa(trio.ocus().get(1).getTypeDeclList().get(0), ASTInterfaceDeclaration.class);
+        ASTConstantDeclaration integerConstant = ensureIsa(testDecl.getInterfaceParts().getTypedChildren().get(0),
+                ASTConstantDeclaration.class);
+        VariableSymbol varSymbol = integerConstant.getVarDeclList().get(0).getDeclSymbol();
+        assertFalse(varSymbol.isConstantValue(), "Should not be a constant expression!");
     }
 
     /**
@@ -1232,10 +1489,10 @@ public class ResolverClassesTest {
                 """
                 use spruce.lang.Integer;
                 class Test extends Superclass {
-                    override Sub test(String i) { return 3; }
+                    override Sub test(String i) { return new Sub(); }
                 }
                 class Superclass {
-                    Super test(String s) { return 2; }
+                    Super test(String s) { return new Super(); }
                 }
                 class Super {}
                 class Sub extends Super {}
@@ -1310,10 +1567,10 @@ public class ResolverClassesTest {
                 """
                 use spruce.lang.Integer;
                 class Test extends Superclass {
-                    override Super test(String i) { return 3; }
+                    override Super test(String i) { return new Super(); }
                 }
                 class Superclass {
-                    Sub test(String s) { return 2; }
+                    Sub test(String s) { return new Sub(); }
                 }
                 class Super {}
                 class Sub extends Super {}
@@ -1748,7 +2005,4 @@ public class ResolverClassesTest {
         assertEquals(integer, params.get(0).getDataType().getResolvedDataType());
         assertEquals(string, params.get(1).getDataType().getResolvedDataType());
     }
-
-    // TODO: Semantic analysis testing: superclass cycles,
-    // constructor resolution, method resolution, etc.
 }

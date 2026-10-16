@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.spruce.compiler.bootstrap.ast.classes.*;
+import org.spruce.compiler.bootstrap.ast.expressions.ASTExpression;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.bootstrap.ast.toplevel.ASTTypeDeclarationList;
 import org.spruce.compiler.bootstrap.ast.types.ASTDataType;
@@ -17,6 +18,8 @@ import org.spruce.compiler.bootstrap.symbol.ParameterizedSymbol;
 import org.spruce.compiler.bootstrap.symbol.Symbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
 import org.spruce.compiler.bootstrap.symbol.VariableSymbol;
+
+import static org.spruce.compiler.bootstrap.symbol.TypeSymbol.VOID;
 
 /**
  * A <code>ClassesResolver</code> is a <code>BasicResolver</code> that resolves
@@ -525,14 +528,25 @@ public class ClassesResolver extends BasicResolver {
         TypesResolver typesResolver = getTypesResolver();
         ASTDataType dt = constDecl.getDataType();
         typesResolver.resolveDataType(dt, ctx);
+        TypeSymbol targetType = dt.getResolvedDataType();
 
         for (ASTVariableDeclarator varDecl : constDecl.getVarDeclList().getTypedChildren()) {
-            varDecl.getDeclSymbol().setDataType(dt.getResolvedDataType());
+            varDecl.getDeclSymbol().setDataType(targetType);
 
             // All constants must have an initializer.
             if (varDecl.getVarInitializer().isEmpty()) {
                 error(varDecl.getLocation(), "Constant declaration must be initialized.");
+                return;
             }
+
+            ASTExpression initializer = varDecl.getVarInitializer().get();
+            getExpressionsResolver().resolveExpression(initializer, ctx);
+
+            TypeSymbol exprType = initializer.getResolvedDataType();
+            if (targetType != null && exprType != null && !getStatementsResolver().isAssignmentConvertible(exprType, targetType)) {
+                errorTypeMismatch(initializer.getLocation(), targetType.getFullyQualifiedName(), exprType.getFullyQualifiedName());
+            }
+            varDecl.getDeclSymbol().setConstantValue(initializer.isConstantExpression());
         }
     }
 
@@ -547,9 +561,23 @@ public class ClassesResolver extends BasicResolver {
         TypesResolver typesResolver = getTypesResolver();
         ASTDataType dt = fieldDecl.getDataType();
         typesResolver.resolveDataType(dt, ctx);
+        TypeSymbol targetType = dt.getResolvedDataType();
 
         for (ASTVariableDeclarator varDecl : fieldDecl.getVarDeclList().getTypedChildren()) {
-            varDecl.getDeclSymbol().setDataType(dt.getResolvedDataType());
+            varDecl.getDeclSymbol().setDataType(targetType);
+
+            if (varDecl.getVarInitializer().isPresent()) {
+                ASTExpression initializer = varDecl.getVarInitializer().get();
+                getExpressionsResolver().resolveExpression(initializer, ctx);
+
+                TypeSymbol exprType = initializer.getResolvedDataType();
+                if (targetType != null && exprType != null && !getStatementsResolver().isAssignmentConvertible(exprType, targetType)) {
+                    errorTypeMismatch(initializer.getLocation(), targetType.getFullyQualifiedName(), exprType.getFullyQualifiedName());
+                }
+                // Really should require final and immutable, but that's what constant is (so far).
+                VariableSymbol varSymbol = varDecl.getDeclSymbol();
+                varSymbol.setConstantValue(varSymbol.isShared() && varSymbol.isFinal() && initializer.isConstantExpression());
+            }
         }
     }
 
@@ -564,10 +592,10 @@ public class ClassesResolver extends BasicResolver {
         resolveMethodHeader(methodDecl.getHeader(), ctxMethod);
         String methodName = methodDecl.getHeader().getMethodDecl().getName().getValue();
 
+        TypeSymbol targetType = methodDecl.getHeader().getResult().getResolvedDataType();
         methodDecl.getBody().getBlock().ifPresent(
-                block -> getStatementsResolver().resolveBlock(block, ctxMethod));
+                block -> getStatementsResolver().resolveBlock(block, targetType, ctxMethod));
         checkInterferenceWithRootClass(method, methodName, ctx);
-        //checkOverride(method, methodName);
     }
 
     /**
@@ -610,9 +638,9 @@ public class ClassesResolver extends BasicResolver {
         ResolutionContext ctxMethod = ctx.withEnclosingSymbol(method, isShared);
         resolveMethodHeader(methodDecl.getHeader(), ctxMethod);
 
+        TypeSymbol targetType = methodDecl.getHeader().getResult().getResolvedDataType();
         methodDecl.getBody().getBlock().ifPresent(
-                block -> getStatementsResolver().resolveBlock(block, ctxMethod));
-        //checkOverride(method, methodDecl.getHeader().getMethodDecl().getName().getValue());
+                block -> getStatementsResolver().resolveBlock(block, targetType, ctxMethod));
     }
 
     private Optional<ParameterizedSymbol> findMethodOnType(ParameterizedSymbol method, String methodName, TypeSymbol type) {
@@ -657,7 +685,7 @@ public class ClassesResolver extends BasicResolver {
      */
     public void resolveMethodResult(ASTResult result, ResolutionContext ctx) {
         if (result.getVoidKeyword().isPresent()) {
-            result.setResolvedDataType(TypeSymbol.VOID);
+            result.setResolvedDataType(VOID);
         }
         else if (result.getDataType().isPresent()){
             ASTDataType dt = result.getDataType().get();
@@ -693,6 +721,8 @@ public class ClassesResolver extends BasicResolver {
         ResolutionContext ctxConstructor = ctx.withEnclosingSymbol(
                 constrDecl.getDeclSymbol(), false);
         resolveFormalParameterList(constrDecl.getConstructorDecl().getFormalParamList());
-        getStatementsResolver().resolveBlock(constrDecl.getBlock(), ctxConstructor);
+
+        // Constructors don't have a return type, but it's effectively void.
+        getStatementsResolver().resolveBlock(constrDecl.getBlock(), VOID, ctxConstructor);
     }
 }

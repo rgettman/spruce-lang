@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.spruce.compiler.bootstrap.ast.classes.ASTMethodDeclaration;
 import org.spruce.compiler.bootstrap.ast.expressions.*;
 import org.spruce.compiler.bootstrap.ast.statements.ASTLocalVariableDeclarationStatement;
+import org.spruce.compiler.bootstrap.ast.statements.ASTReturnStatement;
 import org.spruce.compiler.bootstrap.ast.statements.ASTVariableDeclarator;
 import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
 import org.spruce.compiler.bootstrap.symbol.TypeSymbol;
@@ -43,7 +44,7 @@ public class ResolverOperatorsTest {
                 """
         );
 
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
@@ -121,7 +122,7 @@ public class ResolverOperatorsTest {
                 """
         );
 
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
@@ -192,7 +193,7 @@ public class ResolverOperatorsTest {
                 """
         );
 
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver(), 3);
     }
 
@@ -217,7 +218,7 @@ public class ResolverOperatorsTest {
                 """
         );
 
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
@@ -288,7 +289,7 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver(), 3);
     }
 
@@ -312,7 +313,7 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
@@ -368,6 +369,70 @@ public class ResolverOperatorsTest {
     }
 
     /**
+     * Tests binary expression resolution of relational operators for booleans.
+     */
+    @Test
+    public void testBinaryExpressionRelationalBooleanResolution() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Boolean b1, Boolean b2) {
+                        Boolean eq = b1 == b2;
+                        Boolean ne = b1 != b2;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol bool = ensureIsa(lang.getTable().get("Boolean"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        VariableSymbol b1 = getFormalParameterSymbol(methodDecl, 0);
+        assertSame(bool, b1.getDataType());
+        VariableSymbol b2 = getFormalParameterSymbol(methodDecl, 1);
+        assertSame(bool, b2.getDataType());
+
+        ASTExpression expr0 = getVarInitializerFromVarDecl(methodDecl, 0);
+        ASTBinaryExpression binaryExpr0 = ensureIsa(expr0, ASTBinaryExpression.class);
+        ASTPrimary primary00 = ensureIsa(binaryExpr0.getFirst(), ASTPrimary.class);
+        ASTPrimary primary01 = ensureIsa(binaryExpr0.getSecond(), ASTPrimary.class);
+        checkBinaryExpression(primary00, primary01, binaryExpr0, bool, bool, bool);
+
+        ASTExpression expr1 = getVarInitializerFromVarDecl(methodDecl, 1);
+        ASTBinaryExpression binaryExpr1 = ensureIsa(expr1, ASTBinaryExpression.class);
+        ASTPrimary primary10 = ensureIsa(binaryExpr1.getFirst(), ASTPrimary.class);
+        ASTPrimary primary11 = ensureIsa(binaryExpr1.getSecond(), ASTPrimary.class);
+        checkBinaryExpression(primary10, primary11, binaryExpr1, bool, bool, bool);
+    }
+
+    /**
+     * Tests bad binary expression resolution of inequality operators between booleans.
+     */
+    @Test
+    public void testBadBinaryExpressionInequalityBooleanResolution() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Boolean b1, Boolean b2) {
+                        Boolean bad0 = b1 < b2;
+                        Boolean bad1 = b1 <= b2;
+                        Boolean bad2 = b1 > b2;
+                        Boolean bad3 = b1 >= b2;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        expectError(trio.global(), trio.resolver(), 4);
+    }
+
+    /**
      * Tests bad binary expression resolution of relational operators.
      */
     @Test
@@ -384,7 +449,7 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver(), 3);
     }
 
@@ -404,7 +469,7 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
@@ -447,8 +512,115 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver(), 3);
+    }
+
+    /**
+     * Tests binary expression that is a constant expression.
+     */
+    @Test
+    public void testBinaryExpressionConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    String testMethod() {
+                        return "Hello" + " World!";
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        assertTrue(methodDecl.getBody().getBlock().isPresent());
+        ASTReturnStatement returnStmt = ensureIsa(methodDecl.getBody().getBlock().get().getBlockStmts().get(0),
+                ASTReturnStatement.class);
+        assertTrue(returnStmt.getExpr().isPresent());
+        assertTrue(returnStmt.getExpr().get().isConstantExpression(), "Should be a constant expression!");
+    }
+
+    /**
+     * Tests binary expression that is a not a constant expression, one operand
+     * isn't constant.
+     */
+    @Test
+    public void testBinaryExpressionNotConstantExpressionFirstOperandNotConstant() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer testMethod(Integer a) {
+                        return a + 1;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        assertTrue(methodDecl.getBody().getBlock().isPresent());
+        ASTReturnStatement returnStmt = ensureIsa(methodDecl.getBody().getBlock().get().getBlockStmts().get(0),
+                ASTReturnStatement.class);
+        assertTrue(returnStmt.getExpr().isPresent());
+        assertFalse(returnStmt.getExpr().get().isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests binary expression that is a not a constant expression, second operand
+     * isn't constant.
+     */
+    @Test
+    public void testBinaryExpressionNotConstantExpressionSecondOperandNotConstant() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer testMethod(Integer a) {
+                        return 2 - a;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        assertTrue(methodDecl.getBody().getBlock().isPresent());
+        ASTReturnStatement returnStmt = ensureIsa(methodDecl.getBody().getBlock().get().getBlockStmts().get(0),
+                ASTReturnStatement.class);
+        assertTrue(returnStmt.getExpr().isPresent());
+        assertFalse(returnStmt.getExpr().get().isConstantExpression(), "Should not be a constant expression!");
+    }
+
+    /**
+     * Tests binary expression that is a not a constant expression, neither operand
+     * is constant.
+     */
+    @Test
+    public void testBinaryExpressionNotConstantExpressionNeitherOperandConstant() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Boolean testMethod(Boolean a, Boolean b) {
+                        return a || b;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        assertTrue(methodDecl.getBody().getBlock().isPresent());
+        ASTReturnStatement returnStmt = ensureIsa(methodDecl.getBody().getBlock().get().getBlockStmts().get(0),
+                ASTReturnStatement.class);
+        assertTrue(returnStmt.getExpr().isPresent());
+        assertFalse(returnStmt.getExpr().get().isConstantExpression(), "Should not be a constant expression!");
     }
 
     /**
@@ -468,7 +640,7 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
@@ -517,7 +689,7 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver(), 2);
     }
 
@@ -536,7 +708,7 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         ensureNoErrors(trio.global(), trio.resolver());
 
         ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
@@ -571,8 +743,60 @@ public class ResolverOperatorsTest {
                 }
                 """
         );
-        ResolverTestUtility.Trio trio = compileSoFar(codes);
+        Trio trio = compileSoFar(codes);
         expectError(trio.global(), trio.resolver(), 2);
+    }
+
+    /**
+     * Tests unary expression that is a constant expression.
+     */
+    @Test
+    public void testUnaryExpressionConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Integer testMethod() {
+                        return -3;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        assertTrue(methodDecl.getBody().getBlock().isPresent());
+        ASTReturnStatement returnStmt = ensureIsa(methodDecl.getBody().getBlock().get().getBlockStmts().get(0),
+                ASTReturnStatement.class);
+        assertTrue(returnStmt.getExpr().isPresent());
+        assertTrue(returnStmt.getExpr().get().isConstantExpression(), "Should be a constant expression!");
+    }
+
+    /**
+     * Tests unary expression that is not a constant expression.
+     */
+    @Test
+    public void testUnaryExpressionNotConstantExpression() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    Boolean testMethod(Boolean b) {
+                        return !b;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        assertTrue(methodDecl.getBody().getBlock().isPresent());
+        ASTReturnStatement returnStmt = ensureIsa(methodDecl.getBody().getBlock().get().getBlockStmts().get(0),
+                ASTReturnStatement.class);
+        assertTrue(returnStmt.getExpr().isPresent());
+        assertFalse(returnStmt.getExpr().get().isConstantExpression(), "Should not be a constant expression!");
     }
 
     private void checkBinaryExpression(ASTValueExpression first, ASTValueExpression second,
