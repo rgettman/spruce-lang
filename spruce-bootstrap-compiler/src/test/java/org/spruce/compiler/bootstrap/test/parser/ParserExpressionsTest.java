@@ -210,6 +210,28 @@ public class ParserExpressionsTest {
     }
 
     /**
+     * Tests relational expression of "is" and additive expression.
+     */
+    @Test
+    public void testRelationalExpressionOfIs() {
+        ExpressionsParser parser = getExpressionsParser("obj is other");
+        ASTValueExpression node = parser.parseRelationalExpression();
+        ensureNoErrors(node, parser);
+        checkBinaryPostorder(TestUtility.ensureIsa(node, ASTBinaryExpression.class), ASTPrimary.class, ASTPrimary.class, IS);
+    }
+
+    /**
+     * Tests relational expression of "isnt" and additive expression.
+     */
+    @Test
+    public void testRelationalExpressionOfIsnt() {
+        ExpressionsParser parser = getExpressionsParser("obj isnt somethingElse");
+        ASTValueExpression node = parser.parseRelationalExpression();
+        ensureNoErrors(node, parser);
+        checkBinaryPostorder(TestUtility.ensureIsa(node, ASTBinaryExpression.class), ASTPrimary.class, ASTPrimary.class, ISNT);
+    }
+
+    /**
      * Tests additive expression of "+" and multiplicative expression.
      */
     @Test

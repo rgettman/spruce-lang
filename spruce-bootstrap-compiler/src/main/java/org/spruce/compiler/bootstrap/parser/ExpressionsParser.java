@@ -146,7 +146,9 @@ public class ExpressionsParser extends BasicParser {
      * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression &gt;= AdditiveExpression<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression == AdditiveExpression<br>
      * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression != AdditiveExpression<br>
-     * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression isa DataType
+     * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression is AdditiveExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression isnt AdditiveExpression<br>
+     * &nbsp;&nbsp;&nbsp;&nbsp;RelationalExpression isa IsaTarget
      * </em>
      * @return An <code>ASTValueExpression</code>.
      */
@@ -156,7 +158,7 @@ public class ExpressionsParser extends BasicParser {
         TokenType curr;
         while ( (curr = isAcceptedOperator(Arrays.asList(
                 LESS_THAN, LESS_THAN_OR_EQUAL, GREATER_THAN, GREATER_THAN_OR_EQUAL, DOUBLE_EQUAL,
-                EXCLAMATION_EQUAL, ISA)) ) != null) {
+                EXCLAMATION_EQUAL, ISA, IS, ISNT)) ) != null) {
             accept(curr);
             if (curr == ISA) {
                 result = new ASTIsaExpression(loc, result, parseIsaTarget());

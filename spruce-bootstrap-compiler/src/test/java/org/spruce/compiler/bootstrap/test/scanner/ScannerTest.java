@@ -428,14 +428,18 @@ public class ScannerTest {
     }
 
     /**
-     * Tests recognizing <code>isa</code>.
+     * Tests recognizing <code>isa</code>, <code>is</code>, and <code>isnt</code>.
      */
     @Test
-    public void testIsa() {
-        String line = "a isa b";
+    public void testIsaIsIsnt() {
+        String line = "a isa b a is b a isnt b";
 
         List<Token> expectedTokens = Arrays.asList(
                 new Token(IDENTIFIER, "a"), new Token(ISA, "isa"),
+                new Token(IDENTIFIER, "b"),
+                new Token(IDENTIFIER, "a"), new Token(IS, "is"),
+                new Token(IDENTIFIER, "b"),
+                new Token(IDENTIFIER, "a"), new Token(ISNT, "isnt"),
                 new Token(IDENTIFIER, "b")
                 );
 

@@ -517,6 +517,49 @@ public class ResolverOperatorsTest {
     }
 
     /**
+     * Tests binary expression resolution of is, isnt operators.
+     */
+    @Test
+    public void testBinaryExpressionIsIsntBoolean() {
+        List<String> codes = List.of(
+                CODE_SPRUCE_LANG,
+                """
+                class Test {
+                    void testMethod(Any a0, Any a1) {
+                        Boolean b0 = a0 is a1;
+                        Boolean b1 = a0 isnt a1;
+                    }
+                }
+                """
+        );
+        Trio trio = compileSoFar(codes);
+        ensureNoErrors(trio.global(), trio.resolver());
+
+        ParentSymbol spruce = ensureIsa(trio.global().get("spruce"), ParentSymbol.class);
+        ParentSymbol lang = ensureIsa(spruce.getTable().get("lang"), ParentSymbol.class);
+        TypeSymbol bool = ensureIsa(lang.getTable().get("Boolean"), TypeSymbol.class);
+        TypeSymbol any = ensureIsa(lang.getTable().get("Any"), TypeSymbol.class);
+
+        ASTMethodDeclaration methodDecl = getMethod(trio, 1, 0);
+        VariableSymbol a0 = getFormalParameterSymbol(methodDecl, 0);
+        assertSame(any, a0.getDataType());
+        VariableSymbol a1 = getFormalParameterSymbol(methodDecl, 0);
+        assertSame(any, a1.getDataType());
+
+        ASTExpression expr0 = getVarInitializerFromVarDecl(methodDecl, 0);
+        ASTBinaryExpression binaryExpr0 = ensureIsa(expr0, ASTBinaryExpression.class);
+        ASTPrimary primary00 = ensureIsa(binaryExpr0.getFirst(), ASTPrimary.class);
+        ASTPrimary primary01 = ensureIsa(binaryExpr0.getSecond(), ASTPrimary.class);
+        checkBinaryExpression(primary00, primary01, binaryExpr0, any, any, bool);
+
+        ASTExpression expr1 = getVarInitializerFromVarDecl(methodDecl, 1);
+        ASTBinaryExpression binaryExpr1 = ensureIsa(expr1, ASTBinaryExpression.class);
+        ASTPrimary primary10 = ensureIsa(binaryExpr1.getFirst(), ASTPrimary.class);
+        ASTPrimary primary11 = ensureIsa(binaryExpr1.getSecond(), ASTPrimary.class);
+        checkBinaryExpression(primary10, primary11, binaryExpr1, any, any, bool);
+    }
+
+    /**
      * Tests binary expression that is a constant expression.
      */
     @Test

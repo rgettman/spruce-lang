@@ -145,6 +145,10 @@ public class OperatorsResolver extends BasicResolver {
                     errorBinaryOperator(binaryExpr.getLocation(), operator, firstSymbol, secondSymbol);
                 }
             }
+            case IS, ISNT ->
+                // anything, anything -> boolean
+                binaryExpr.setResolvedDataType(bool);
+
             // Addition, numerics or strings with anything else (string conversion).
             case PLUS -> {
                 // character, character -> character

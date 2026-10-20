@@ -210,10 +210,20 @@ public enum TokenType {
      */
     INTERFACE,
     /**
+     * Determines if an object reference refers to the same object as another
+     * object reference (reference == in Java).
+     */
+    IS,
+    /**
      * Determines if an object referred to by a reference is an instance of a
      * class, interface, or enum.
      */
     ISA,
+    /**
+     * Determines if an object reference does not refer to the same object as another
+     * object reference (reference != in Java).
+     */
+    ISNT,
     /**
      * Declare membership in a namespace.
      */
