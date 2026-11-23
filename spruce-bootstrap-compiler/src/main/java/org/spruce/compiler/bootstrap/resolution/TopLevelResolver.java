@@ -31,7 +31,7 @@ public class TopLevelResolver extends BasicResolver {
 
     /**
      * Constructs a <code>TopLevelResolver</code>.
-     * @param resolver An <code>Resolver</code>.
+     * @param resolver A <code>Resolver</code>.
      * @param msgProducer A <code>MessageProducer</code>.
      * @param global The <code>GlobalLookup</code>.
      */

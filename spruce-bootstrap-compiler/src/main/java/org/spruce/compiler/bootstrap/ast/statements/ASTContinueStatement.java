@@ -16,8 +16,9 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;continue ;<br>
  * </em>
  */
-public final class ASTContinueStatement extends ASTParentNode implements ASTStatement {
+public final class ASTContinueStatement extends ASTParentNode implements ASTStatement, ASTHasTarget {
     private final ASTKeywordNode myContinueKeyword;
+    private ASTBlockStatement myTarget;
 
     /**
      * Constructs an <code>ASTContinueStatement</code> at the given <code>Location</code>
@@ -36,6 +37,16 @@ public final class ASTContinueStatement extends ASTParentNode implements ASTStat
      */
     public ASTKeywordNode getContinueKeyword() {
         return myContinueKeyword;
+    }
+
+    @Override
+    public void setTarget(ASTBlockStatement target) {
+        myTarget = target;
+    }
+
+    @Override
+    public ASTBlockStatement getTarget() {
+        return myTarget;
     }
 
     @Override

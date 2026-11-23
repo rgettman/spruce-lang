@@ -21,6 +21,7 @@ import org.spruce.compiler.bootstrap.symbol.ParentSymbol;
  */
 public final class ASTBlock extends ASTParentNode implements ASTStatement, SymbolDeclaration<ParentSymbol> {
     private final ASTBlockStatements myBlockStmts;
+    private final Location myEndLocation;
     private ParentSymbol myDeclSymbol;
 
     /**
@@ -29,9 +30,10 @@ public final class ASTBlock extends ASTParentNode implements ASTStatement, Symbo
      * @param location The <code>Location</code>.
      * @param blockStmts An <code>ASTBlockStatements</code>.
      */
-    public ASTBlock(Location location, ASTBlockStatements blockStmts) {
+    public ASTBlock(Location location, ASTBlockStatements blockStmts, Location endLocation) {
         super(location);
         myBlockStmts = blockStmts;
+        myEndLocation = endLocation;
     }
 
     /**
@@ -40,6 +42,14 @@ public final class ASTBlock extends ASTParentNode implements ASTStatement, Symbo
      */
     public ASTBlockStatements getBlockStmts() {
         return myBlockStmts;
+    }
+
+    /**
+     * Returns the end <code>Location</code>.
+     * @return The end <code>Location</code>.
+     */
+    public Location getEndLocation() {
+        return myEndLocation;
     }
 
     @Override

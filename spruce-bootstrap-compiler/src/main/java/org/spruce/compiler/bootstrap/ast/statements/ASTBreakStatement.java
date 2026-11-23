@@ -16,8 +16,9 @@ import org.spruce.compiler.bootstrap.common.Location;
  * &nbsp;&nbsp;&nbsp;&nbsp;break ;<br>
  * </em>
  */
-public final class ASTBreakStatement extends ASTParentNode implements ASTStatement {
+public final class ASTBreakStatement extends ASTParentNode implements ASTStatement, ASTHasTarget {
     private final ASTKeywordNode myBreakKeyword;
+    private ASTBlockStatement myTarget;
 
     /**
      * Constructs an <code>ASTBreakStatement</code> at the given <code>Location</code>
@@ -36,6 +37,16 @@ public final class ASTBreakStatement extends ASTParentNode implements ASTStateme
      */
     public ASTKeywordNode getBreakKeyword() {
         return myBreakKeyword;
+    }
+
+    @Override
+    public void setTarget(ASTBlockStatement target) {
+        myTarget = target;
+    }
+
+    @Override
+    public ASTBlockStatement getTarget() {
+        return myTarget;
     }
 
     @Override

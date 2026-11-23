@@ -53,10 +53,11 @@ public class StatementsParser extends BasicParser {
             error(curr().getLocation(), "Expected '{'.");
         }
         ASTBlockStatements blockStmts = parseBlockStatements();
+        Location endLoc = curr().getLocation();
         if (accept(CLOSE_BRACE) == null) {
-            error(curr().getLocation(), "Expected '}'.");
+            error(endLoc, "Expected '}'.");
         }
-        return new ASTBlock(loc, blockStmts);
+        return new ASTBlock(loc, blockStmts, endLoc);
     }
 
     /**

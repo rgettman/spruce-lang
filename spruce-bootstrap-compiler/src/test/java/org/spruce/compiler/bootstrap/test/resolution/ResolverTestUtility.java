@@ -37,7 +37,7 @@ public class ResolverTestUtility {
     /**
      * Standard classes in spruce.lang for resolution.
      */
-    static final String CODE_SPRUCE_LANG =
+    public static final String CODE_SPRUCE_LANG =
             """
             namespace spruce.lang;
             class Any {}
@@ -67,7 +67,7 @@ public class ResolverTestUtility {
      *                  for one compilation unit.
      * @return A <code>List</code> of <code>ASTOrdinaryCompilationUnit</code>s.
      */
-    static List<ASTOrdinaryCompilationUnit> parseCodes(List<String> codeUnits) {
+    public static List<ASTOrdinaryCompilationUnit> parseCodes(List<String> codeUnits) {
         List<ASTOrdinaryCompilationUnit> ocus = new ArrayList<>(codeUnits.size());
         for (String codeUnit : codeUnits) {
             TopLevelParser parser = ParserTopLevelTest.getTopLevelParser(codeUnit);
@@ -87,7 +87,7 @@ public class ResolverTestUtility {
      * @param numSymbolErrorsExpected The number of symbol generation error expected.
      * @return A <code>GlobalLookup</code> representing the global symbol table.
      */
-    static GlobalLookup createGlobalSymbolTable(List<ASTOrdinaryCompilationUnit> ocus,
+    public static GlobalLookup createGlobalSymbolTable(List<ASTOrdinaryCompilationUnit> ocus,
                                                 int numSymbolErrorsExpected) {
         SymbolCreator creator = new SymbolCreator(new BaseMessageProducer(), new GlobalLookup());
         creator.createSymbolTable(ocus);

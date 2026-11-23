@@ -183,7 +183,7 @@ public class ClassesSymbolCreator extends BasicSymbolCreator {
 
         List<ASTBlockStatement> blockStmts = new ArrayList<>(1);
         createImplicitSuperInvocationNotRoot(loc, type, ctx, blockStmts);
-        ASTBlock defaultBlock = new ASTBlock(loc, new ASTBlockStatements(loc, blockStmts));
+        ASTBlock defaultBlock = new ASTBlock(loc, new ASTBlockStatements(loc, blockStmts), loc);
 
         ASTConstructorDeclaration defaultConstructor = new ASTConstructorDeclaration.Builder()
                 .setLocation(loc)
